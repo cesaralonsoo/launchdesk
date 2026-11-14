@@ -2,22 +2,21 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0B0F15" />
     <title>LaunchDesk — Your startup team, for pennies</title>
     <meta name="description" content="Pitch your idea. An AI team validates it, plans it and builds your launch kit. Pay in BCH only for the stages you need." />
+    <meta property="og:title" content="LaunchDesk — Your startup team, for pennies" />
+    <meta property="og:description" content="Never pay for a bad idea again. Seven AI specialists validate, plan and launch your idea. Paid in cents with Bitcoin Cash." />
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet" />
   </head>
   <body>
-    <div id="banner"></div>
-    <header class="top">
-      <a href="/" class="brand" data-link><span class="logo"></span>LaunchDesk</a>
-      <button id="wallet-btn" class="btn ghost sm">Connect wallet</button>
-    </header>
-    <main id="app"></main>
-    <div id="modal" class="modal" hidden></div>
+    <a class="skip" href="#main">Skip to content</a>
+    <div id="root"></div>
+    <noscript>LaunchDesk needs JavaScript to run.</noscript>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

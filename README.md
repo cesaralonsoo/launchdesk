@@ -2,19 +2,19 @@
 
 **Your startup team, for pennies.**
 
-Pitch your idea. An AI team validates it, plans it and builds your launch kit.
+Pitch your idea. Seven AI specialists in a 3D office validate it, plan it and launch it.
 Pay in BCH only for the stages you need. Never pay for a bad idea again.
 
 Built for **BCH BLAZE 2026** (Mainnet track).
 
 ## How it works
 
-1. **Nova — Validation (10¢).** Score out of 100, go / pivot / no-go, market, competitors, risks and the cheapest test to run this week.
-2. **You decide.** Stop and keep your money, or go further.
-3. **Max — Business plan (25¢).** Customers, pricing, channels, costs and a 90-day roadmap.
-4. **Pip — Launch kit (25¢).** Names, tagline, landing page copy, social posts, launch email and checklist.
+1. **Stage 1 · Validate (10¢).** Mia (chief of staff) writes the brief and a 4-week plan, Leo (market research) scores the opportunity out of 10 with real competitors, Sam (strategy & finance) builds the business model, break-even and a 12-month projection. Estimates are labelled as estimates.
+2. **You decide.** Go on, or stop and keep the report.
+3. **Stage 2 · Build & Launch (20¢).** Nova (brand) proposes names, palette and voice, Dex (design) draws logo concepts and writes the landing page, Rae (marketing) plans a 30-day launch with ready-to-post copy, and Pip publishes the landing page at `/s/<slug>` with BCH pre-orders that go straight to the founder's wallet.
+4. **Your startup pack.** Every result in one place, downloadable as a single HTML file, with a receipt of the real on-chain payments.
 
-Each stage is paid on Bitcoin Cash mainnet through **WizardConnect** (Selene, Cashonize, Paytaca).
+Each stage is paid on Bitcoin Cash mainnet through **WizardConnect** (Selene, Cashonize, Paytaca). Money moving between departments inside the office is internal bookkeeping and is always labelled "internal · not on-chain".
 
 ## Payments
 
@@ -27,7 +27,7 @@ Each stage is paid on Bitcoin Cash mainnet through **WizardConnect** (Selene, Ca
 ```bash
 cp .env.example .env   # MOCK_AI=1 runs without an API key
 npm install
-npm run dev            # web on :5173, API on :8787
+npm run dev            # web on :5173, API on :8790
 npm test
 ```
 

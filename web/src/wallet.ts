@@ -36,6 +36,9 @@ mgr.on("disconnect", () => {
 });
 
 const attach = (existing?: { privateKey: string; secret: string; walletPublicKey: string }) => {
+  // The manager attaches its message listener only to the first relay client it sees. A fresh relay
+  // (re-pairing after a disconnect) has a new client, so let the manager attach to that one too.
+  (mgr as unknown as { listenerAttached: boolean }).listenerAttached = false;
   relay = initiateDappRelay((p) => mgr.updateConnection(p.client, p.status), existing ? { existingCredentials: existing } : undefined);
   mgr.attachRelay(relay);
   return relay;
@@ -56,14 +59,18 @@ export function resume(): boolean {
 }
 
 /** Starts a fresh pairing and returns the deep link + QR code. */
+let pending: { uri: string; qrSvg: string } | null = null;
 export function pair(): { uri: string; qrSvg: string } {
+  // Reopening the pay dialog keeps the same QR: a wallet that is mid-scan still lands on this session.
+  if (state === "pairing" && relay && pending) return pending;
   relay?.cleanup();
   const r = attach();
   const qr = qrcode(0, "M");
   qr.addData(r.qrUri, "Alphanumeric");
   qr.make();
   setState("pairing");
-  return { uri: r.uri, qrSvg: qr.createSvgTag({ cellSize: 5, margin: 2, scalable: true }) };
+  pending = { uri: r.uri, qrSvg: qr.createSvgTag({ cellSize: 5, margin: 2, scalable: true }) };
+  return pending;
 }
 
 export async function disconnect() {
@@ -126,6 +133,7 @@ async function findUtxos(): Promise<Utxo[]> {
 export async function payWithWallet(payTo: string, sats: number, tag: string, prompt: string, signal?: AbortSignal) {
   if (state !== "ready") throw new Error("Connect your wallet first");
   const utxos = await findUtxos();
+  if (signal?.aborted) throw new Error("Payment cancelled");
   const feeFor = (n: number) => 10 + 148 * n + 34 * 2 + 9 + tag.length + 20;
   const pick: Utxo[] = [];
   let total = 0;
@@ -163,3 +171,6 @@ export async function payWithWallet(payTo: string, sats: number, tag: string, pr
   if (!res.signedTransaction) throw new Error("The wallet did not return a signed transaction");
   return res.signedTransaction;
 }
+
+/** The connected wallet's first receive address (used as the founder's payout address). */
+export const receiveAddress = () => addressAt(RECEIVE, 0);

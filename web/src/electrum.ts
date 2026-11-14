@@ -3,17 +3,29 @@ const SERVERS = ["wss://bch.imaginary.cash:50004", "wss://fulcrum.pat.mn:50004",
 
 export type Electrum = { call<T = any>(method: string, params: unknown[]): Promise<T>; close(): void };
 
+const CALL_MS = 10_000;
+
 function open(url: string): Promise<Electrum> {
   return new Promise((resolve, reject) => {
     const ws = new WebSocket(url);
     let id = 0;
     const pending = new Map<number, { ok: (v: any) => void; ko: (e: Error) => void }>();
+    const close = () => {
+      if (ws.readyState < 2) ws.close();
+    };
     const t = setTimeout(() => {
-      ws.close();
+      close();
       reject(new Error("timeout " + url));
     }, 8000);
-    ws.onerror = () => reject(new Error("cannot reach " + url));
-    ws.onclose = () => pending.forEach((p) => p.ko(new Error("connection closed")));
+    ws.onerror = () => {
+      clearTimeout(t);
+      reject(new Error("cannot reach " + url));
+    };
+    ws.onclose = () => {
+      clearTimeout(t);
+      pending.forEach((p) => p.ko(new Error("connection closed")));
+      pending.clear();
+    };
     ws.onmessage = (e) => {
       const m = JSON.parse(e.data as string);
       const p = m.id != null && pending.get(m.id);
@@ -27,10 +39,19 @@ function open(url: string): Promise<Electrum> {
         call: (method, params) =>
           new Promise((ok, ko) => {
             const i = ++id;
-            pending.set(i, { ok, ko });
+            // A stalled server must never leave the payment hanging on "Approve in your wallet".
+            const timer = setTimeout(() => {
+              pending.delete(i);
+              ko(new Error("The Bitcoin Cash server did not answer in time."));
+            }, CALL_MS);
+            pending.set(i, {
+              ok: (v) => (clearTimeout(timer), ok(v)),
+              ko: (e) => (clearTimeout(timer), ko(e)),
+            });
+            if (ws.readyState !== 1) return pending.get(i)!.ko(new Error("connection closed"));
             ws.send(JSON.stringify({ jsonrpc: "2.0", id: i, method, params }));
           }),
-        close: () => ws.close(),
+        close,
       });
     };
   });
@@ -39,11 +60,13 @@ function open(url: string): Promise<Electrum> {
 export async function connectElectrum(): Promise<Electrum> {
   let last: unknown;
   for (const url of SERVERS) {
+    let c: Electrum | null = null;
     try {
-      const c = await open(url);
+      c = await open(url);
       await c.call("server.version", ["LaunchDesk", "1.5"]);
       return c;
     } catch (e) {
+      c?.close(); // a failed handshake must not leak the socket
       last = e;
     }
   }
