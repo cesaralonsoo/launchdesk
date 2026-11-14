@@ -5,7 +5,7 @@ import { closeButton, openModal } from "./modal";
 import { play } from "./sound";
 import { app, fmtUsd } from "./state";
 import { TEAM } from "./team";
-import { avatar, ring, verdictPill } from "./ui";
+import { avatar, bchMark, ring, verdictPill } from "./ui";
 
 export type GateChoice = "approve" | "stop" | null;
 
@@ -33,24 +33,24 @@ export function openGate(p: Project): Promise<GateChoice> {
   const meta = h(
     "div",
     { class: "gate-meta" },
-    h("span", { class: "kicker bch" }, "Stage 1 report"),
-    secs ? h("span", { class: "gm-t" }, `ready in ${secs}s`) : null,
-    paid ? (paid.sats > 0 ? h("span", { class: "gm-t" }, `paid ${fmtUsd(paid.cents)}`) : h("span", { class: "demo-pill" }, "local test")) : null,
+    h("span", { class: "kicker" }, "Stage 1 report"),
+    secs ? h("span", { class: "gm-t" }, `Ready in ${secs}s`) : null,
+    paid ? (paid.sats > 0 ? h("span", { class: "gm-t" }, `Paid ${fmtUsd(paid.cents)}`) : h("span", { class: "demo-pill" }, "Local test")) : null,
   );
 
   const approveBtn = h(
     "button",
-    { type: "button", class: `btn lg ${noGo ? "ghost" : "primary"}`, onclick: () => pick("approve"), "data-autofocus": noGo ? null : "" },
-    `Approve & pay ${fmtUsd(buildCents)}`,
+    { type: "button", class: `btn lg ${noGo ? "" : "primary"}`, onclick: () => pick("approve"), "data-autofocus": noGo ? null : "" },
+    noGo ? null : bchMark(16),
+    `Pay ${fmtUsd(buildCents)} and build`,
   );
   const stopBtn = h(
     "button",
-    { type: "button", class: `btn lg ${noGo ? "primary" : "ghost"}`, onclick: () => pick("stop"), "data-autofocus": noGo ? "" : null },
-    "Stop here · keep the report",
+    { type: "button", class: `btn lg ${noGo ? "primary" : ""}`, onclick: () => pick("stop"), "data-autofocus": noGo ? "" : null },
+    "Stop and keep the report",
   );
 
   m.body.append(
-    h("div", { class: "gate-bar", "aria-hidden": "true" }),
     h("div", { class: "modal-head" }, meta, closeButton(m.close, "Decide later")),
     h(
       "div",
@@ -63,7 +63,7 @@ export function openGate(p: Project): Promise<GateChoice> {
             h(
               "div",
               null,
-              h("div", { class: "kicker" }, "Opportunity · Leo"),
+              h("div", { class: "kicker" }, "Opportunity · by Leo"),
               h("h2", { class: "gate-headline" }, verdictPill(leo.verdict), " ", leo.headline),
               h("p", { class: "muted" }, leo.summary),
             ),
@@ -80,6 +80,7 @@ export function openGate(p: Project): Promise<GateChoice> {
         : null,
       sam?.main_risk ? h("div", { class: "risk" }, h("b", null, "Main risk"), h("span", null, sam.main_risk)) : null,
       h("h3", { class: "gate-q" }, noGo ? "Leo says no-go. Keep your money?" : `Continue to Build & Launch for ${fmtUsd(buildCents)}?`),
+      h("p", { class: "gate-qs" }, "Four more specialists take it from here:"),
       h(
         "div",
         { class: "gate-depts" },

@@ -1,7 +1,7 @@
 // The generated landing page. Used by the public /s/:slug route and by the pack's previews.
 import type { SiteData } from "../types";
 import { renderIcon, renderLogoTile } from "../pack/logo";
-import { brandColors, esc, mix } from "../pack/util";
+import { brandColors, contrast, esc, mix } from "../pack/util";
 import siteCss from "./site.css?inline";
 import { BCH_BADGE, bchAmount, bchMark, copyText, paymentUri, qrSvg } from "./qr";
 
@@ -15,17 +15,27 @@ export function ensureSiteCss(): void {
 }
 export const SITE_CSS: string = siteCss;
 
-export const ICON_CHECK = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.2 4.2L19 7"/></svg>`;
-const ICON_TAG = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12.6V4.5a1 1 0 0 1 1-1h8.1l8 8a1.4 1.4 0 0 1 0 2l-7.1 7.1a1.4 1.4 0 0 1-2 0z"/><circle cx="8.3" cy="8.3" r="1.6" fill="currentColor"/></svg>`;
-const ICON_SHIELD = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.2 7.5 9.5 4.3-1.3 7.5-4.9 7.5-9.5V6z"/><path d="m8.8 12 2.2 2.2 4.4-4.4"/></svg>`;
-const ICON_X = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>`;
-const LD_MARK = `<svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5c3.6 2.6 5.4 6.2 5.4 10.4l-2.4 3.4H9l-2.4-3.4C6.6 8.7 8.4 5.1 12 2.5z" fill="#0AC18E"/><circle cx="12" cy="10" r="2" fill="#0B0F15"/><path d="M9.5 18h5l-2.5 4z" fill="#F5C542"/></svg>`;
+export const ICON_CHECK = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.2 4.2L19 7"/></svg>`;
+const ICON_TAG = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12.6V4.5a1 1 0 0 1 1-1h8.1l8 8a1.4 1.4 0 0 1 0 2l-7.1 7.1a1.4 1.4 0 0 1-2 0z"/><circle cx="8.3" cy="8.3" r="1.6" fill="currentColor"/></svg>`;
+const ICON_SHIELD = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.2 7.5 9.5 4.3-1.3 7.5-4.9 7.5-9.5V6z"/><path d="m8.8 12 2.2 2.2 4.4-4.4"/></svg>`;
+const ICON_X = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>`;
+const LD_MARK = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3 2.6 4 6.2 3.2 10.4H8.8C8 9.2 9 5.6 12 3z"/><path d="M8.8 13.4 6.5 17h3M15.2 13.4l2.3 3.6h-3M10.5 20.5h3"/></svg>`;
 
+/** Neutral Apple-like page; the founder's brand colour is the only accent. */
 export function brandVars(data: Pick<SiteData, "palette">): string {
   const c = brandColors(data.palette);
-  const soft = mix(c.accent, c.bg, 0.8);
-  const line = mix(c.ink, c.bg, 0.86);
-  return `--b-bg:${c.bg};--b-ink:${c.ink};--b-muted:${c.muted};--b-primary:${c.primary};--b-on-primary:${c.onPrimary};--b-accent:${c.accent};--b-on-accent:${c.onAccent};--b-extra:${c.extra};--b-soft:${soft};--b-line:${line}`;
+  // The CTA colour: the brand primary, unless it is too pale to carry white or ink text on white.
+  const primary = contrast(c.primary, "#ffffff") >= 3 ? c.primary : contrast(c.accent, "#ffffff") >= 3 ? c.accent : "#1D1D1F";
+  const onPrimary = contrast(primary, "#ffffff") >= 3 ? "#ffffff" : "#1D1D1F";
+  const accentInk = contrast(primary, "#ffffff") >= 4.5 ? primary : "#1D1D1F";
+  const soft = mix(primary, "#ffffff", 0.9);
+  return `--b-bg:#ffffff;--b-ink:#1D1D1F;--b-muted:#6E6E73;--b-primary:${primary};--b-on-primary:${onPrimary};--b-accent:${primary};--b-accent-ink:${accentInk};--b-on-accent:${onPrimary};--b-extra:${c.extra};--b-soft:${soft};--b-tint:#F5F5F7;--b-line:rgba(0,0,0,.08);--b-fill:rgba(118,118,128,.12);--b-fill-2:rgba(118,118,128,.2)`;
+}
+
+/** The colour the hero icon is drawn in (same rule as the CTA). */
+function heroColor(data: Pick<SiteData, "palette">): string {
+  const c = brandColors(data.palette);
+  return contrast(c.primary, "#ffffff") >= 3 ? c.primary : contrast(c.accent, "#ffffff") >= 3 ? c.accent : "#1D1D1F";
 }
 
 /**
@@ -88,7 +98,6 @@ function featureIcons(bullets: string[], logoIcon: string): string[] {
 
 /** Static markup of the landing page (no behaviour). `homeHref` is where "Made with LaunchDesk" points. */
 export function landingMarkup(data: SiteData, opts: { homeHref?: string } = {}): string {
-  const c = brandColors(data.palette);
   const L = data.landing;
   const name = data.name || "Your brand";
   const bullets = (L.bullets || []).slice(0, 3);
@@ -116,33 +125,33 @@ export function landingMarkup(data: SiteData, opts: { homeHref?: string } = {}):
 
     <section class="lds-hero" id="top">
       <div>
-        <span class="lds-eyebrow"><i></i>${esc(data.tagline || "Pre-orders open")}</span>
+        <span class="lds-eyebrow">${esc(data.tagline || "Pre-orders open")}</span>
         <h1 class="lds-h1">${esc(L.headline)}</h1>
         <p class="lds-sub">${esc(L.subheadline)}</p>
         <div class="lds-ctas">
-          <button class="lds-cta" data-lds-pay type="button">${bchMark(24, true)}<span>${cta}</span></button>
+          <button class="lds-cta" data-lds-pay type="button">${bchMark(20, true)}<span>${cta}</span></button>
           ${L.offer ? `<span class="lds-offer">${ICON_TAG}${esc(L.offer)}</span>` : ""}
         </div>
         <div class="lds-trust">
-          ${usd ? `<span>${ICON_CHECK}Pre-order: ${esc(price.short)}${amount ? ` ≈ ${(Number(amount) || 0).toFixed(3)} BCH` : ""}</span>` : ""}
+          ${usd ? `<span>${ICON_CHECK}Pre-order ${esc(price.short)}${amount ? ` ≈ ${(Number(amount) || 0).toFixed(3)} BCH` : ""}</span>` : ""}
           <span>${ICON_SHIELD}${data.demo ? "Local test · demo address" : `Paid straight to ${esc(name)}'s wallet`}</span>
         </div>
       </div>
       <div class="lds-visual" aria-hidden="true">
         <span class="lds-ring r1"></span><span class="lds-ring r2"></span>
-        <span class="lds-bigicon">${renderIcon(icon, c.bg === "#ffffff" ? "#ffffff" : mix(c.bg, "#ffffff", 0.4), 132, c.accent)}</span>
+        <span class="lds-bigicon">${renderIcon(icon, heroColor(data), 132, mix(heroColor(data), "#ffffff", 0.9))}</span>
         <div class="lds-float f1">${renderLogoTile(data.logo, data.palette, name, 40)}<div>${esc(name)}<small>${esc(data.tagline || "")}</small></div></div>
         ${usd ? `<div class="lds-float f2"><div><small>Pre-order</small><b>${esc(price.short)}</b></div></div>` : ""}
       </div>
     </section>
 
     <section class="lds-features" id="lds-features">
-      ${bullets.map((b, i) => `<div class="lds-feature"><div class="n">${renderIcon(icons[i], c.onPrimary, 20, c.primary)}</div><h3>${esc(b)}</h3></div>`).join("")}
+      ${bullets.map((b, i) => `<div class="lds-feature"><div class="n">${renderIcon(icons[i], contrast(heroColor(data), "#ffffff") >= 3 ? "#ffffff" : "#1D1D1F", 20, heroColor(data))}</div><h3>${esc(b)}</h3></div>`).join("")}
     </section>
 
     <section class="lds-band">
       <div><h2>${esc(offer.head || `Be first in line at ${name}.`)}</h2>${offer.was ? `<p class="lds-was"><s>${esc(offer.was)}</s></p>` : ""}<p>Reserve yours today. Pay in Bitcoin Cash in a few seconds, from any BCH wallet.</p></div>
-      <button class="lds-cta" data-lds-pay type="button">${bchMark(24, true)}<span>${cta}</span></button>
+      <button class="lds-cta" data-lds-pay type="button">${bchMark(20, true)}<span>Pre-order</span></button>
     </section>
 
     <section class="lds-how" id="lds-how">
@@ -181,7 +190,7 @@ export function paySheetMarkup(data: SiteData): string {
   <div class="lds-qrbox">${qrSvg(uri, { size: 216, badge: `<circle cx="50" cy="50" r="50" fill="#fff"/><g transform="translate(8 8) scale(.84)">${BCH_BADGE}</g>`, label: "Bitcoin Cash payment QR" })}</div>
   <div class="lds-scan">Scan with any Bitcoin Cash wallet</div>
   <div class="lds-addr"><code title="${esc(addr)}">${esc(shown)}</code><button class="lds-copy" type="button" data-lds-copy="${esc(addr)}">Copy address</button></div>
-  <a class="lds-open" href="${esc(uri)}">${bchMark(20, true)}Open in wallet app</a>
+  <a class="lds-open" href="${esc(uri)}">Open in wallet app</a>
   ${data.demo
     ? `<div class="lds-direct lds-demo">${ICON_SHIELD}<span><b>Local test · demo address.</b> This page was generated without a connected wallet, so the QR shows a placeholder address. Don't pay it.</span></div>`
     : `<div class="lds-direct">${ICON_SHIELD}<span>This payment goes straight to ${esc(data.name)}'s own wallet. LaunchDesk never holds customers' money.</span></div>`}

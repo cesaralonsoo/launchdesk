@@ -3,7 +3,7 @@ import { h, patch } from "./dom";
 import { logoSvg } from "./logo";
 import { app, deptStatus, fmtUsd, readyCount, stageOf } from "./state";
 import { TEAM, WORK_ORDER } from "./team";
-import { verdictPill } from "./ui";
+import { iconSvg, verdictPill } from "./ui";
 
 export const PACK_TAB: Record<WorkDept, string> = {
   mia: "plan", leo: "opportunity", sam: "model", nova: "brand", dex: "brand", rae: "launch", pip: "landing",
@@ -40,19 +40,18 @@ function value(p: Project, d: WorkDept): Val | null {
     case "rae":
       return r.rae ? { big: `${r.rae.posts.length} posts`, sub: `30 days · ${r.rae.first_posts.length} ready to publish` } : null;
     case "pip":
-      return r.pip ? { big: "Live ✓", sub: `/s/${r.pip.slug}` } : null;
+      return r.pip ? { big: "Live", sub: `/s/${r.pip.slug}` } : null;
   }
 }
 
 export function liveOutput(onOpen: (d: WorkDept) => void) {
-  const count = h("span", { class: "count-chip" }, "0 of 7 ready");
+  const count = h("span", { class: "out-count" }, "0 of 7 ready");
   const tiles = new Map<WorkDept, HTMLButtonElement>();
   const row = h("ul", { class: "tiles" });
   for (const d of WORK_ORDER) {
     const b = h("button", {
       type: "button",
       class: "tile",
-      style: `--c:${TEAM[d].color}`,
       onclick: () => b.getAttribute("aria-disabled") !== "true" && onOpen(d),
     });
     tiles.set(d, b);
@@ -61,7 +60,7 @@ export function liveOutput(onOpen: (d: WorkDept) => void) {
   const el = h(
     "section",
     { class: "output", "aria-label": "Live output" },
-    h("div", { class: "out-h" }, h("h2", null, "Live output"), h("span", { class: "muted small out-sub" }, "What you get · each result lands here as soon as a department delivers it"), count),
+    h("div", { class: "out-h" }, h("h2", null, "Live output"), h("span", { class: "out-sub" }, "Each result lands here the moment a department delivers it"), count),
     row,
   );
 
@@ -82,11 +81,16 @@ export function liveOutput(onOpen: (d: WorkDept) => void) {
       b.setAttribute("aria-disabled", String(!v));
       b.setAttribute("aria-label", `${TEAM[d].tile}: ${v ? "ready, open in the startup pack" : st === "working" ? TEAM[d].busy : `Stage ${stage === "validate" ? 1 : 2} · ${price}`}`);
       patch(b, key, () => [
-        h("span", { class: "tile-h" }, h("span", { class: "dot", style: `--c:${TEAM[d].color}` }), TEAM[d].tile!),
+        h("span", { class: "tile-h" }, h("span", { class: "tile-ico", html: iconSvg(d, 14) }), h("span", { class: "tile-t" }, TEAM[d].tile!)),
+        h(
+          "span",
+          { class: "tile-st", "aria-hidden": "true" },
+          v ? h("span", { class: "tile-ok", html: iconSvg("check", 12, 2.2) }) : st === "working" ? h("span", { class: "s-dot work" }) : st === "error" ? h("span", { class: "s-dot err" }) : null,
+        ),
         v
           ? [h("span", { class: "tile-big" }, v.big), h("span", { class: `tile-sub${d === "leo" ? " two" : ""}`, title: typeof v.sub === "string" ? v.sub : null }, v.sub)]
           : st === "working"
-            ? h("span", { class: "tile-busy" }, h("span", { class: "spinner sm", "aria-hidden": "true" }), h("span", { class: "tb-t" }, TEAM[d].short))
+            ? h("span", { class: "tile-busy" }, h("span", { class: "tb-t" }, TEAM[d].short))
             : st === "error"
               ? h("span", { class: "tile-sub err" }, `Retry ${TEAM[d].name}`)
               : h("span", { class: "tile-sub" }, `Stage ${stage === "validate" ? 1 : 2} · ${price}`),

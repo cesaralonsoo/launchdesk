@@ -15,6 +15,7 @@ import { sideColumn } from "./side";
 import { play } from "./sound";
 import { app, deptStatus, fmtSats, isDevTx, needsPolling, phaseOf, setStopped, stageDone, stageSats, stepOf, type Phase } from "./state";
 import { logoSvg } from "./logo";
+import { iconSvg } from "./ui";
 import { STAGE_INFO, TEAM, WORK_ORDER } from "./team";
 
 const POLL_MS = 1500;
@@ -84,7 +85,7 @@ export function mountApp(root: HTMLElement) {
   const officeHost = h("div", { class: "office-host" });
   const statusPill = h("div", { class: "ov-status", role: "status", "aria-live": "polite" });
   const guideText = h("p", { id: "guide-text" });
-  const guideToggle = h("button", { type: "button", class: "guide-h", "aria-expanded": "true", "aria-controls": "guide-text" }, h("span", null, "What's happening"), h("span", { class: "chev", "aria-hidden": "true" }));
+  const guideToggle = h("button", { type: "button", class: "guide-h", "aria-expanded": "true", "aria-controls": "guide-text" }, h("span", null, "What's happening"), h("span", { class: "chev", "aria-hidden": "true", html: iconSvg("chevronDown", 14) }));
   const guide = h("div", { class: "ov-guide" }, guideToggle, guideText);
   guideToggle.addEventListener("click", () => {
     const c = guide.classList.toggle("collapsed");
@@ -102,15 +103,15 @@ export function mountApp(root: HTMLElement) {
     },
     h("span", { class: "gs-k" }, "What's happening"),
     stripText,
-    h("span", { class: "chev", "aria-hidden": "true" }),
+    h("span", { class: "chev", "aria-hidden": "true", html: iconSvg("chevronDown", 14) }),
   );
   const ctrl = (label: string, icon: string, fn: () => void) => h("button", { type: "button", class: "zbtn", "aria-label": label, title: label, onclick: () => (play("tap"), fn()), html: icon });
   const zoomGroup = h(
     "div",
     { class: "zoom", role: "group", "aria-label": "Office view" },
-    ctrl("Zoom out", '<svg viewBox="0 0 24 24" width="16" height="16"><path d="M6 12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>', () => office?.zoom(-1)),
-    ctrl("Zoom in", '<svg viewBox="0 0 24 24" width="16" height="16"><path d="M6 12h12M12 6v12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>', () => office?.zoom(1)),
-    ctrl("Fit the whole office", '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>', () => office?.fit()),
+    ctrl("Zoom out", iconSvg("minus", 16), () => office?.zoom(-1)),
+    ctrl("Zoom in", iconSvg("plus", 16), () => office?.zoom(1)),
+    ctrl("Fit the whole office", iconSvg("fit", 16), () => office?.fit()),
   );
   const controls = h("div", { class: "ov-controls" }, zoomGroup, h("span", { class: "hint" }, coarse() ? "Tap anyone to say hi" : "Click anyone to say hi"));
   const banner = h("div", { class: "ov-banner", "aria-live": "polite" });
@@ -135,7 +136,7 @@ export function mountApp(root: HTMLElement) {
           ta.focus({ preventScroll: true });
         },
       },
-      h("span", { "data-hb-label": "" }, "Start Stage 1"),
+      h("span", { "data-hb-label": "" }, "Validate my idea"),
     ),
     h("small", { "data-hb-sub": "" }, "Paid in BCH"),
   );
@@ -279,7 +280,7 @@ export function mountApp(root: HTMLElement) {
     switch (ph.kind) {
       case "unpaid":
         text = "Waiting for your payment";
-        tone = "gold";
+        tone = "wait";
         g = `Approve the ${STAGE_INFO[ph.stage].label} payment in your wallet. The team starts the moment it lands on Bitcoin Cash.`;
         break;
       case "working": {
@@ -301,8 +302,8 @@ export function mountApp(root: HTMLElement) {
         break;
       }
       case "gate":
-        text = "Waiting for your go / no-go";
-        tone = "gold";
+        text = "Your turn: go or stop";
+        tone = "wait";
         g = "Stage 1 is done. Read the report and decide: build it for $0.20, or stop here and keep the report.";
         break;
       case "stopped":
@@ -312,14 +313,14 @@ export function mountApp(root: HTMLElement) {
       case "done": {
         const name = app.project?.results.nova?.names[app.project.results.nova.chosen]?.name;
         const fresh = !!app.project && !packSeen(app.project.id);
-        text = fresh && name ? `${name} is live · open the pack` : "Your startup pack is ready";
+        text = fresh && name ? `${name} is live. Open the pack` : "Your startup pack is ready";
         tone = fresh ? "live" : "ok";
         g = "Your startup pack is ready. Open any tile below to read it, or download the whole pack.";
         break;
       }
       case "error": {
         const who = ph.dept ? TEAM[ph.dept] : null;
-        text = who ? `${who.name} hit a snag · Retry ${who.name}` : "The team hit a snag · Retry";
+        text = who ? `${who.name} hit a snag. Retry ${who.name}` : "The team hit a snag. Retry";
         tone = "err";
         g = who
           ? `${who.name} couldn't finish ${who.snag}. ${coarse() ? "Tap" : "Click"} ${who.name}'s room or Retry: it's free, you already paid for this stage.`
@@ -344,8 +345,8 @@ export function mountApp(root: HTMLElement) {
     document.body.classList.toggle("is-home", !p);
     const price = app.config ? `$${(app.config.prices.validate / 100).toFixed(2)}` : "$0.10";
     const price2 = app.config ? `$${(app.config.prices.build / 100).toFixed(2)}` : "$0.20";
-    homeBar.querySelector("[data-hb-label]")!.textContent = `Start Stage 1 · ${price}`;
-    homeBar.querySelector("[data-hb-sub]")!.textContent = `Paid in BCH · ${price2} to launch`;
+    homeBar.querySelector("[data-hb-label]")!.textContent = `Validate my idea · ${price}`;
+    homeBar.querySelector("[data-hb-sub]")!.textContent = `Paid in Bitcoin Cash · ${price2} more to launch`;
     overlays(ph);
     out.render(p);
     side.render(p);
@@ -380,7 +381,7 @@ export function mountApp(root: HTMLElement) {
   const packShown = new Set<string>();
 
   function showBanner(kicker: string, value: string, sub: string) {
-    banner.replaceChildren(h("div", { class: "ovb" }, h("small", null, kicker), h("b", { class: "mono" }, value), h("span", null, sub)));
+    banner.replaceChildren(h("div", { class: "ovb" }, h("small", null, kicker), h("b", null, value), h("span", null, sub)));
     banner.classList.add("on");
   }
   const hideBanner = () => {
@@ -499,7 +500,7 @@ export function mountApp(root: HTMLElement) {
           // Money between departments is bookkeeping inside the office: always labelled as internal (or simulated).
           office?.chip(
             d,
-            d !== "mia" && share > 0 ? (sim ? `Mia → ${TEAM[d].name} · ≈ ${fmtSats(share)} sats · simulated` : `Mia → ${TEAM[d].name} · +${fmtSats(share)} sats · internal`) : "Delivered ✓",
+            d !== "mia" && share > 0 ? (sim ? `Mia → ${TEAM[d].name} · ≈ ${fmtSats(share)} sats · simulated` : `Mia → ${TEAM[d].name} · +${fmtSats(share)} sats · internal`) : "Delivered",
             "dept",
           );
           play("done");

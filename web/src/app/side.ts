@@ -17,7 +17,7 @@ import {
   type Phase,
 } from "./state";
 import { EXAMPLES, STAGE_INFO, TEAM, WORK_ORDER } from "./team";
-import { avatar, extIcon, spinner, statusPill, type AgendaStatus } from "./ui";
+import { avatar, bchMark, extIcon, icon, iconSvg, spinner, statusPill, type AgendaStatus } from "./ui";
 
 export type SideActions = {
   start: (idea: string) => Promise<void>;
@@ -40,9 +40,9 @@ function stageCard(stage: Stage, lines: string) {
   return h(
     "div",
     { class: `stage-card s-${stage}` },
-    h("div", { class: "sc-top" }, h("span", { class: "kicker" }, `Stage ${info.n}`), h("span", { class: "sc-price", "data-price": stage }, price(stage))),
-    h("div", { class: "sc-title" }, info.title),
-    h("div", { class: "sc-row" }, h("span", { class: "avs" }, STAGE_DEPTS[stage].map((d) => avatar(d))), h("span", { class: "sc-lines" }, lines)),
+    h("span", { class: "sc-n", "aria-hidden": "true" }, String(info.n)),
+    h("div", { class: "sc-m" }, h("div", { class: "sc-title" }, info.title), h("div", { class: "sc-lines" }, lines)),
+    h("span", { class: "sc-price", "data-price": stage }, price(stage)),
   );
 }
 
@@ -55,19 +55,17 @@ function newProject(act: SideActions) {
     "aria-describedby": "idea-err",
   });
   const err = h("p", { class: "field-err", id: "idea-err", role: "alert" });
-  const btnLabel = () => `Start Stage 1 · ${price("validate")}`;
+  const btnLabel = () => `Validate my idea · ${price("validate")}`;
   const btn = h("button", { type: "submit", class: "btn primary lg block start-btn", "data-price-label": "validate" }, btnLabel());
   const form = h(
     "form",
     { class: "card new-card", "aria-labelledby": "np-title", novalidate: true },
-    h("div", { class: "kicker bch" }, "New project · Tell us your idea"),
+    h("div", { class: "kicker" }, "New project"),
     h("h1", { id: "np-title", class: "np-title" }, "Your startup team, for pennies."),
     h(
       "p",
       { class: "np-lead" },
-      "Seven AI specialists validate, plan and launch your idea. ",
-      h("b", null, h("span", { "data-price": "validate" }, price("validate")), " to validate, ", h("span", { "data-price": "build" }, price("build")), " to launch."),
-      " Never pay for a bad idea again.",
+      "Seven AI specialists validate, plan and launch your idea. Never pay for a bad idea again.",
     ),
     h("label", { class: "sr-only", for: "idea" }, "Your business idea"),
     ta,
@@ -75,6 +73,7 @@ function newProject(act: SideActions) {
     h(
       "div",
       { class: "examples", role: "group", "aria-label": "Example ideas" },
+      h("span", { class: "ex-l" }, "Try"),
       EXAMPLES.map((ex) =>
         h(
           "button",
@@ -93,21 +92,25 @@ function newProject(act: SideActions) {
         ),
       ),
     ),
-    stageCard("validate", "Plan · Opportunity score · Business model & numbers"),
-    h("div", { class: "decide" }, h("span", { class: "decide-arrow", "aria-hidden": "true" }, "↓"), "You decide: ", h("b", null, "go"), " or ", h("b", null, "stop and keep the report")),
-    stageCard("build", "Name · Logo · Landing page · 30-day launch · Go live"),
+    h(
+      "div",
+      { class: "stages", role: "list", "aria-label": "How it works" },
+      stageCard("validate", "Plan, opportunity score, business model"),
+      h("div", { class: "decide" }, "Then you decide: continue, or stop and keep the report."),
+      stageCard("build", "Name, logo, landing page, 30-day launch, go live"),
+    ),
     h(
       "div",
       { class: "start-dock" },
       btn,
-      h("p", { class: "foot" }, "Paid in Bitcoin Cash micro-payments", h("span", { "data-rate": "" }, rateText())),
+      h("p", { class: "foot" }, bchMark(13), "Paid in Bitcoin Cash", h("span", { "data-rate": "" }, rateText())),
     ),
   );
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const idea = ta.value.trim();
     if (idea.length < 15) {
-      err.textContent = "Tell us a bit more — one sentence about what you sell and to whom.";
+      err.textContent = "Tell us a bit more: one sentence on what you sell, and to whom.";
       ta.focus();
       return;
     }
@@ -175,29 +178,29 @@ function actionBar(p: Project, ph: Phase, act: SideActions) {
       return h(
         "div",
         { class: "next" },
-        h("div", null, h("b", null, "Waiting for your payment"), h("small", null, `${STAGE_INFO[ph.stage].label} · ${price(ph.stage)}`)),
-        h("button", { type: "button", class: "btn primary sm", onclick: () => act.pay(ph.stage) }, `Pay ${price(ph.stage)}`),
+        h("div", null, h("b", null, "Waiting for your payment"), h("small", null, STAGE_INFO[ph.stage].label)),
+        h("button", { type: "button", class: "btn primary", onclick: () => act.pay(ph.stage) }, bchMark(15), `Pay ${price(ph.stage)} with BCH`),
       );
     case "gate":
       return h(
         "div",
-        { class: "next gold" },
-        h("div", null, h("b", null, "Stage 1 report is ready"), h("small", null, "Go on to Build & Launch, or stop and keep it.")),
-        h("button", { type: "button", class: "btn gold sm", onclick: act.gate }, "Review & decide"),
+        { class: "next wait" },
+        h("div", null, h("b", null, "Your Stage 1 report is ready"), h("small", null, "Continue to Build & Launch, or stop and keep it.")),
+        h("button", { type: "button", class: "btn primary", onclick: act.gate }, "Review and decide"),
       );
     case "stopped":
       return h(
         "div",
         { class: "next" },
-        h("div", null, h("b", null, "You kept the Stage 1 report"), h("small", null, "No further payment. You can still continue later.")),
-        h("div", { class: "next-btns" }, h("button", { type: "button", class: "btn ghost sm", onclick: () => act.pack("opportunity") }, "Open report"), h("button", { type: "button", class: "btn primary sm", onclick: act.gate }, `Continue · ${price("build")}`)),
+        h("div", null, h("b", null, "You kept the Stage 1 report"), h("small", null, "Nothing else is charged. You can still continue later.")),
+        h("div", { class: "next-btns" }, h("button", { type: "button", class: "btn sm", onclick: () => act.pack("opportunity") }, "Open report"), h("button", { type: "button", class: "btn primary sm", onclick: act.gate }, `Continue · ${price("build")}`)),
       );
     case "done":
       return h(
         "div",
-        { class: "next bch" },
+        { class: "next done" },
         h("div", null, h("b", null, "Your startup pack is ready"), h("small", null, p.results.pip ? `Live at /s/${p.results.pip.slug}` : "All 7 departments delivered")),
-        h("button", { type: "button", class: "btn primary sm", onclick: () => act.pack() }, "Open pack"),
+        h("button", { type: "button", class: "btn primary", onclick: () => act.pack() }, "Open pack"),
       );
     case "error": {
       const who = ph.dept ? TEAM[ph.dept] : null;
@@ -210,7 +213,7 @@ function actionBar(p: Project, ph: Phase, act: SideActions) {
           h("b", null, who ? `${who.name} couldn't finish ${who.snag}` : "The team hit a problem"),
           h("small", null, "Retry is free: you already paid for this stage."),
         ),
-        h("button", { type: "button", class: "btn sm danger", onclick: act.retry }, who ? `Retry ${who.name}` : "Retry"),
+        h("button", { type: "button", class: "btn primary", onclick: act.retry }, who ? `Retry ${who.name}` : "Retry"),
       );
     }
     default:
@@ -219,7 +222,7 @@ function actionBar(p: Project, ph: Phase, act: SideActions) {
 }
 
 function ledger(p: Project) {
-  type L = { at: number; real: boolean; from: string; to: string; sub: Node | string; sats: number; right: string; ico: string; sim?: boolean };
+  type L = { at: number; real: boolean; from: string; to: string; sub: Node | string; sats: number; right: string; sim?: boolean };
   const items: L[] = [];
   (["validate", "build"] as Stage[]).forEach((s) => {
     const pay = p.payments[s];
@@ -236,19 +239,18 @@ function ledger(p: Project) {
         : h("span", null, `Stage ${n} · `, h("a", { href: explorerTx(pay.txid), target: "_blank", rel: "noopener", class: "tx", "aria-label": `View transaction ${pay.txid} on a block explorer` }, `tx ${shortTx(pay.txid)}`, extIcon())),
       sats: pay.sats,
       right: dev ? "local test · nothing paid" : fmtUsd(pay.cents),
-      ico: "B",
     });
     // Internal flows: how the stage budget moves through the office. Never on-chain, never a txid.
     // In a local test nothing was paid: the amounts are the stage price at today's rate, and say so.
     const budget = stageSats(p, s);
     if (budget <= 0) return;
     const tag = dev ? "≈ at stage price · simulated" : "internal · not on-chain";
-    items.push({ at: pay.at + 1, real: false, from: "Lobby", to: "Mia", sub: `Stage ${n} budget`, sats: budget, right: tag, ico: "→", sim: dev });
+    items.push({ at: pay.at + 1, real: false, from: "Lobby", to: "Mia", sub: `Stage ${n} budget`, sats: budget, right: tag, sim: dev });
     const depts = STAGE_DEPTS[s];
     const share = Math.floor(budget / depts.length);
     depts.forEach((d, i) => {
       if (d === "mia" || deptStatus(p, d) !== "done") return;
-      items.push({ at: pay.at + 2 + i, real: false, from: "Mia", to: TEAM[d].name, sub: TEAM[d].task, sats: share, right: tag, ico: "→", sim: dev });
+      items.push({ at: pay.at + 2 + i, real: false, from: "Mia", to: TEAM[d].name, sub: TEAM[d].task, sats: share, right: tag, sim: dev });
     });
   });
   items.sort((a, b) => b.at - a.at);
@@ -262,7 +264,7 @@ function ledger(p: Project) {
       "div",
       { class: "card-h" },
       h("h2", { id: "ledger-h" }, "Office ledger"),
-      h("span", { class: "count-chip" }, `${items.length} ${items.length === 1 ? "entry" : "entries"} · ${realCount} on-chain`),
+      h("span", { class: "card-meta" }, `${items.length} ${items.length === 1 ? "entry" : "entries"} · ${realCount} on-chain`),
     ),
     items.length
       ? h(
@@ -272,9 +274,9 @@ function ledger(p: Project) {
             h(
               "li",
               { class: `led ${it.real ? "real" : "internal"}${i >= MAX ? " extra" : ""}` },
-              h("span", { class: "led-ico", "aria-hidden": "true" }, it.ico),
+              it.real || it.from === "You" ? h("span", { class: "led-ico", "aria-hidden": "true" }, bchMark(18)) : h("span", { class: "led-ico", "aria-hidden": "true", html: iconSvg("transfer", 15) }),
               h("div", { class: "led-m" }, h("b", null, `${it.from} → ${it.to}`), h("small", null, it.sub)),
-              h("div", { class: "led-v" }, h("b", { class: "mono" }, `${it.sim ? "≈ " : ""}${fmtSats(it.sats)} sats`), it.right ? h("small", null, it.right) : null),
+              h("div", { class: "led-v" }, h("b", { class: "num" }, `${it.sim ? "≈ " : ""}${fmtSats(it.sats)} sats`), it.right ? h("small", null, it.right) : null),
             ),
           ),
         )
@@ -284,27 +286,27 @@ function ledger(p: Project) {
           "button",
           {
             type: "button",
-            class: "btn ghost sm led-more",
+            class: "link small led-more",
             "aria-expanded": "false",
             "aria-controls": `led-${p.id}`,
             onclick: (e: Event) => {
               const b = e.currentTarget as HTMLButtonElement;
               const open = b.closest(".ledger")!.classList.toggle("open");
               b.setAttribute("aria-expanded", String(open));
-              b.textContent = open ? "Show less ↑" : `${more} more ↓`;
+              b.textContent = open ? "Show less" : `Show ${more} more`;
             },
           },
-          `${more} more ↓`,
+          `Show ${more} more`,
         )
       : null,
     h(
       "details",
       { class: "how" },
-      h("summary", null, h("span", { class: "kicker" }, "How the money moves"), h("span", { class: "chev", "aria-hidden": "true" })),
+      h("summary", null, h("span", null, "How the money moves"), h("span", { class: "chev", "aria-hidden": "true", html: iconSvg("chevronDown", 14) })),
       h(
         "ol",
         null,
-        h("li", null, h("b", null, "You pay the office per stage"), h("small", null, "on-chain · Bitcoin Cash · cents, not dollars")),
+        h("li", null, h("b", null, "You pay the office per stage"), h("small", null, "On-chain · Bitcoin Cash · cents, not dollars")),
         h("li", null, h("b", null, "The lobby hands Mia the stage budget"), h("small", null, "internal · not on-chain")),
         h("li", null, h("b", null, "Mia pays each department as it delivers"), h("small", null, "internal · not on-chain")),
       ),
@@ -350,7 +352,7 @@ export function statsCard(s: Stats | null): HTMLElement | null {
     "section",
     { class: "card stats", "aria-label": "LaunchDesk in numbers" },
     h("div", { class: "stat-row" }, tile("ideas", "Ideas validated"), tile("payments", "On-chain payments"), tile("launched", "Businesses launched")),
-    h("p", { class: "stat-cap" }, "Mainnet runs only · straight from the database"),
+    h("p", { class: "stat-cap" }, "Mainnet runs only, straight from the database"),
   );
 }
 
@@ -373,7 +375,7 @@ function runCard(p: Project): HTMLElement | null {
   return h(
     "section",
     { class: "card stats run", "aria-label": "This run" },
-    h("div", { class: "stat-k" }, h("span", { class: "kicker" }, "This run"), local ? h("span", { class: "demo-pill" }, "local test") : null),
+    h("div", { class: "stat-k" }, h("span", { class: "kicker" }, "This run"), local ? h("span", { class: "demo-pill" }, "Local test") : null),
     h("div", { class: "stat-row" }, stat(`${paid.length}/2`, "Stages run"), stat(`${delivered}/7`, "Departments delivered"), stat(ms ? fmtDur(ms) : "0s", "Time taken")),
     h("p", { class: "stat-cap" }, local ? "Local tests are never counted in LaunchDesk's mainnet numbers" : "Your run will be the first one counted on mainnet"),
   );
@@ -394,10 +396,10 @@ function projectView(p: Project, act: SideActions) {
     h(
       "section",
       { class: "card proj", "aria-labelledby": "proj-title" },
-      h("div", { class: "kicker bch" }, "Your project"),
+      h("div", { class: "kicker" }, "Your project"),
       h("h1", { id: "proj-title", class: `proj-title${changed ? " swap" : ""}`, title: p.idea }, title),
       actionBar(p, ph, act),
-      h("div", { class: "agenda-h" }, h("span", { class: "kicker" }, "Today's agenda"), h("span", { class: "muted small" }, "scheduled by Mia")),
+      h("div", { class: "agenda-h" }, h("span", { class: "kicker" }, "Today's agenda"), h("span", { class: "card-meta" }, "Scheduled by Mia")),
       h(
         "ol",
         { class: "agenda" },
@@ -405,8 +407,8 @@ function projectView(p: Project, act: SideActions) {
           const clickable =
             r.dept === "you" ? r.status === "waiting" || r.status === "stopped" : r.status === "working" || r.status === "done" || r.status === "error";
           const inner = [
-            h("span", { class: "ag-t mono" }, r.time),
-            r.dept === "you" ? h("span", { class: "dot", style: "--c:var(--gold)" }) : h("span", { class: "dot", style: `--c:${TEAM[r.dept].color}` }),
+            h("span", { class: "ag-t num" }, r.time),
+            avatar(r.dept, "sm"),
             h("span", { class: "ag-m" }, h("b", null, r.label), r.note ? h("small", null, r.note) : null),
             statusPill(r.status),
           ];
@@ -428,7 +430,7 @@ function projectView(p: Project, act: SideActions) {
           );
         }),
       ),
-      h("button", { type: "button", class: "link small new-idea", onclick: act.newIdea }, "+ Start a new idea"),
+      h("button", { type: "button", class: "link small new-idea", onclick: act.newIdea }, icon("plus", 14), "Start a new idea"),
     ),
     hasStats(app.stats) && !localRun ? statsCard(app.stats) : runCard(p),
     ledger(p),
@@ -466,7 +468,7 @@ export function sideColumn(act: SideActions) {
   const refreshConfig = () => {
     el.querySelectorAll<HTMLElement>("[data-price]").forEach((x) => (x.textContent = price(x.dataset.price as Stage)));
     el.querySelectorAll<HTMLElement>("[data-price-label]").forEach((x) => {
-      if (!(x as HTMLButtonElement).disabled) x.textContent = `Start Stage 1 · ${price("validate")}`;
+      if (!(x as HTMLButtonElement).disabled) x.textContent = `Validate my idea · ${price("validate")}`;
     });
     el.querySelectorAll<HTMLElement>("[data-rate]").forEach((x) => (x.textContent = rateText()));
     if (current) render(current);

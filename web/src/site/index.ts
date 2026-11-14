@@ -1,7 +1,7 @@
 // Public generated landing page at /s/:slug.
 import type { SiteData } from "../types";
 import { renderLogo } from "../pack/logo";
-import { brandColors, esc } from "../pack/util";
+import { esc } from "../pack/util";
 import { ensureSiteCss, landingMarkup, wireLanding } from "./landing";
 
 export { landingMarkup, wireLanding, ensureSiteCss } from "./landing";
@@ -9,15 +9,11 @@ export { landingMarkup, wireLanding, ensureSiteCss } from "./landing";
 let cleanup: (() => void) | null = null;
 
 function ensureFonts(): void {
-  const has = [...document.querySelectorAll<HTMLLinkElement>("link[rel=stylesheet]")].some((l) => /family=Sora/.test(l.href));
-  const hasMono = [...document.querySelectorAll<HTMLLinkElement>("link[rel=stylesheet]")].some((l) => /JetBrains/.test(l.href));
-  const fams: string[] = [];
-  if (!has) fams.push("family=Sora:wght@600;700;800", "family=Plus+Jakarta+Sans:wght@400;500;600;700;800");
-  if (!hasMono) fams.push("family=JetBrains+Mono:wght@400;500;600");
-  if (!fams.length) return;
+  const has = [...document.querySelectorAll<HTMLLinkElement>("link[rel=stylesheet]")].some((l) => /family=Inter/.test(l.href));
+  if (has) return;
   const l = document.createElement("link");
   l.rel = "stylesheet";
-  l.href = `https://fonts.googleapis.com/css2?${fams.join("&")}&display=swap`;
+  l.href = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap";
   document.head.appendChild(l);
 }
 
@@ -54,7 +50,7 @@ export async function renderSite(container: HTMLElement, slug: string): Promise<
   ensureSiteCss();
   ensureFonts();
   document.body.style.margin = "0";
-  document.body.style.background = "#0B0F15";
+  document.body.style.background = "#F5F5F7";
   container.innerHTML = `<div class="lds-state"><div><div class="lds-spin"></div></div></div>`;
 
   let data: SiteData;
@@ -67,20 +63,19 @@ export async function renderSite(container: HTMLElement, slug: string): Promise<
   } catch {
     document.title = "Page not found · LaunchDesk";
     container.innerHTML = `<div class="lds-state"><div>
-      <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#6F7E93" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 9.5h.01M15 9.5h.01M8.5 16c1-1.2 2.2-1.8 3.5-1.8s2.5.6 3.5 1.8"/></svg>
+      <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#86868B" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 9.5h.01M15 9.5h.01M8.5 16c1-1.2 2.2-1.8 3.5-1.8s2.5.6 3.5 1.8"/></svg>
       <h1>This page isn't live yet</h1>
       <p>We couldn't find a launched project at <code>/s/${esc(slug)}</code>.</p>
       <a href="/">Build yours with LaunchDesk</a></div></div>`;
     return;
   }
 
-  const c = brandColors(data.palette);
   document.title = `${data.name}${data.tagline ? ` — ${data.tagline}` : ""}`;
   setMeta("description", data.landing.subheadline || data.tagline || "");
-  setMeta("theme-color", c.bg);
+  setMeta("theme-color", "#ffffff");
   setFavicon(renderLogo(data.logo, data.palette, data.name, 64));
-  document.body.style.background = c.bg;
-  document.documentElement.style.background = c.bg;
+  document.body.style.background = "#ffffff";
+  document.documentElement.style.background = "#ffffff";
 
   container.innerHTML = landingMarkup(data);
   cleanup = wireLanding(container, data, document.body);

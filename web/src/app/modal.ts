@@ -25,7 +25,7 @@ export function openModal(opts: { label: string; className?: string; onClose?: (
     isClosed = true;
     document.removeEventListener("keydown", onKey, true);
     back.classList.add("leaving");
-    setTimeout(() => back.remove(), 180);
+    setTimeout(() => back.remove(), 220);
     stack = stack.filter((m) => m !== handle);
     opts.onClose?.();
     prevFocus?.focus?.({ preventScroll: true });
@@ -74,7 +74,10 @@ export function openModal(opts: { label: string; className?: string; onClose?: (
 }
 
 export const closeButton = (close: () => void, label = "Close") =>
-  h("button", { class: "icon-btn modal-x", type: "button", "aria-label": label, onclick: close }, h("span", { "aria-hidden": "true", html: "&times;" }));
+  h("button", { class: "icon-btn modal-x", type: "button", "aria-label": label, title: label, onclick: close, html: CLOSE_SVG });
+
+const CLOSE_SVG =
+  '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>';
 
 export function toast(text: string, tone: "ok" | "err" | "info" = "info") {
   let host = document.querySelector<HTMLElement>(".toasts");

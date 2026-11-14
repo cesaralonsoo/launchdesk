@@ -1,168 +1,165 @@
-/* Generated landing page. Everything is scoped under .lds and driven by brand variables set inline:
-   --b-bg --b-ink --b-muted --b-primary --b-on-primary --b-accent --b-on-accent --b-extra --b-soft --b-line */
+/* Generated landing page. Scoped under .lds. Apple-like layout on white; the founder's brand colour (from Nova)
+   is the only accent: --b-primary / --b-on-primary / --b-accent / --b-soft come from the palette inline. */
 .lds {
   container-type: inline-size;
   container-name: lds;
   position: relative;
   background: var(--b-bg);
   color: var(--b-ink);
-  font-family: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  font-size: 16px;
-  line-height: 1.5;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Helvetica Neue", Arial, sans-serif;
+  font-size: 17px;
+  line-height: 25px;
+  letter-spacing: -0.022em;
   -webkit-font-smoothing: antialiased;
   text-align: left;
-  letter-spacing: 0;
 }
 .lds *, .lds *::before, .lds *::after { box-sizing: border-box; }
 .lds h1, .lds h2, .lds h3, .lds p { margin: 0; }
+.lds h1, .lds h2, .lds h3 { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Helvetica Neue", Arial, sans-serif; font-weight: 600; }
 .lds a { color: inherit; }
-:where(.lds button) { font: inherit; cursor: pointer; }
-.lds .lds-wrap { max-width: 1120px; margin: 0 auto; padding: 0 40px; }
-.lds .lds-display { font-family: Sora, "Plus Jakarta Sans", system-ui, sans-serif; letter-spacing: -0.02em; }
+:where(.lds button) { font: inherit; cursor: pointer; letter-spacing: inherit; }
+.lds :where(a, button):focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(0, 113, 227, .25), 0 0 0 1px #0071E3; }
+.lds .lds-wrap { max-width: 1080px; margin: 0 auto; padding: 0 40px; }
 
 /* nav */
-.lds-nav { display: flex; align-items: center; justify-content: space-between; height: 76px; }
-.lds-brand { display: flex; align-items: center; gap: 12px; font-family: Sora, sans-serif; font-weight: 800; font-size: 20px; text-decoration: none; letter-spacing: -0.02em; }
+.lds-nav { display: flex; align-items: center; justify-content: space-between; height: 64px; border-bottom: 1px solid var(--b-line); }
+.lds-brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 17px; text-decoration: none; }
 .lds-brand .ld-logotile { box-shadow: 0 0 0 1px var(--b-line); }
-.lds-navlinks { display: flex; align-items: center; gap: 22px; font-size: 14px; font-weight: 600; color: var(--b-muted); }
+.lds-navlinks { display: flex; align-items: center; gap: 24px; font-size: 13px; color: var(--b-muted); }
 .lds-navlinks a { text-decoration: none; }
 .lds-navlinks a:hover { color: var(--b-ink); }
-.lds-pill { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 18px; border-radius: 999px; border: 1.5px solid var(--b-ink); background: transparent; color: var(--b-ink); font-weight: 700; font-size: 14px; }
-.lds-pill:hover { background: var(--b-ink); color: var(--b-bg); }
+.lds-pill { display: inline-flex; align-items: center; height: 30px; padding: 0 14px; border-radius: 999px; border: 0; background: var(--b-fill); color: var(--b-ink); font-weight: 500; font-size: 13px; }
+.lds-pill:hover { background: var(--b-fill-2); }
 
-/* hero */
-.lds-hero { display: grid; grid-template-columns: 1.08fr 0.92fr; gap: 56px; align-items: center; padding: 40px 0 72px; }
-.lds-eyebrow { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px 6px 8px; border-radius: 999px; background: var(--b-soft); font-size: 13px; font-weight: 700; color: var(--b-ink); }
-.lds-eyebrow i { width: 8px; height: 8px; border-radius: 50%; background: #0AC18E; box-shadow: 0 0 0 4px color-mix(in srgb, #0AC18E 22%, transparent); }
-.lds-h1 { font-family: Sora, sans-serif; font-weight: 800; font-size: clamp(40px, 5.4cqi, 62px); line-height: 1.04; letter-spacing: -0.035em; margin: 20px 0 18px !important; text-wrap: balance; }
-.lds-sub { font-size: 19px; line-height: 1.55; color: var(--b-muted); max-width: 32em; text-wrap: pretty; }
-.lds-ctas { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 30px; }
-.lds-cta { display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 56px; padding: 0 26px 0 20px; border: 0; border-radius: 16px; background: #0AC18E; color: #062A1F; font-weight: 800; font-size: 16.5px; letter-spacing: -0.01em; box-shadow: 0 10px 28px -10px rgba(10, 193, 142, .75), inset 0 -2px 0 rgba(0,0,0,.12); transition: transform .15s ease, box-shadow .15s ease, background .15s; }
-.lds-cta:hover { transform: translateY(-1px); background: #0FD9A0; box-shadow: 0 16px 34px -12px rgba(10, 193, 142, .85), inset 0 -2px 0 rgba(0,0,0,.12); }
-.lds-cta:active { transform: translateY(0); }
+/* hero: big headline, short subhead, one CTA */
+.lds-hero { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 56px; align-items: center; padding: 72px 0 80px; }
+.lds-eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; line-height: 20px; font-weight: 500; color: var(--b-accent-ink); }
+.lds-eyebrow i { width: 7px; height: 7px; border-radius: 50%; background: #0AC18E; }
+.lds-h1 { font-size: clamp(40px, 5.2cqi, 56px); line-height: 1.07; letter-spacing: -0.015em; margin: 14px 0 16px !important; text-wrap: balance; }
+.lds-sub { font-size: 21px; line-height: 1.38; letter-spacing: 0.01em; color: var(--b-muted); max-width: 30em; text-wrap: pretty; }
+.lds-ctas { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 32px; }
+.lds-cta { display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 50px; padding: 0 24px; border: 0; border-radius: 12px; background: var(--b-primary); color: var(--b-on-primary); font-weight: 600; font-size: 17px; transition: transform .2s cubic-bezier(.25,.1,.25,1), filter .2s cubic-bezier(.25,.1,.25,1); }
+.lds-cta:hover { filter: brightness(.92); }
+.lds-cta:active { transform: scale(.98); }
 .lds-cta svg { flex: none; }
-.lds-offer { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: var(--b-ink); padding: 10px 14px; border-radius: 12px; border: 1.5px dashed color-mix(in srgb, var(--b-accent) 70%, transparent); background: color-mix(in srgb, var(--b-accent) 10%, transparent); }
-.lds-offer svg { color: var(--b-accent); }
-.lds-trust { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 22px; font-size: 13px; color: var(--b-muted); font-weight: 600; }
-.lds-trust span { display: inline-flex; align-items: center; gap: 7px; }
-.lds-trust svg { color: var(--b-accent); }
+.lds-offer { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; color: var(--b-muted); }
+.lds-offer svg { color: var(--b-muted); }
+.lds-trust { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 24px; font-size: 13px; line-height: 18px; color: var(--b-muted); font-variant-numeric: tabular-nums; }
+.lds-trust span { display: inline-flex; align-items: center; gap: 6px; }
+.lds-trust svg { color: #0AC18E; }
 
-.lds-visual { position: relative; aspect-ratio: 1 / 0.94; border-radius: 28px; overflow: hidden; background: radial-gradient(120% 90% at 18% 10%, color-mix(in srgb, var(--b-accent) 92%, #fff) 0%, var(--b-accent) 28%, color-mix(in srgb, var(--b-accent) 40%, var(--b-primary)) 62%, var(--b-primary) 100%); box-shadow: 0 30px 60px -28px color-mix(in srgb, var(--b-primary) 70%, transparent); isolation: isolate; }
-.lds-visual::before { content: ""; position: absolute; inset: 0; background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,.16) 1px, transparent 0); background-size: 22px 22px; mask-image: linear-gradient(160deg, #000 10%, transparent 70%); z-index: -1; }
-.lds-visual .lds-ring { position: absolute; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.18); }
-.lds-visual .lds-ring.r1 { width: 74%; aspect-ratio: 1; left: 13%; top: 10%; }
-.lds-visual .lds-ring.r2 { width: 50%; aspect-ratio: 1; left: 25%; top: 22%; border-color: rgba(255,255,255,.26); }
-.lds-visual .lds-bigicon { position: absolute; left: 50%; top: 47%; transform: translate(-50%, -50%); filter: drop-shadow(0 18px 24px rgba(0,0,0,.25)); }
-.lds-visual .lds-float { position: absolute; display: flex; align-items: center; gap: 10px; padding: 10px 14px 10px 10px; border-radius: 16px; background: color-mix(in srgb, var(--b-bg) 94%, transparent); color: var(--b-ink); box-shadow: 0 14px 30px -12px rgba(0,0,0,.4); font-size: 13px; font-weight: 700; line-height: 1.25; backdrop-filter: blur(8px); }
-.lds-visual .lds-float small { display: block; font-weight: 600; color: var(--b-muted); font-size: 11.5px; }
+.lds-visual { position: relative; aspect-ratio: 1 / 0.94; border-radius: 28px; overflow: hidden; background: var(--b-soft); isolation: isolate; }
+.lds-visual .lds-ring { display: none; }
+.lds-visual .lds-bigicon { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); }
+.lds-visual .lds-float { position: absolute; display: flex; align-items: center; gap: 10px; padding: 10px 14px 10px 10px; border-radius: 16px; background: #fff; color: #1D1D1F; box-shadow: 0 0 0 1px rgba(0,0,0,.04), 0 4px 16px rgba(0,0,0,.06); font-size: 13px; font-weight: 600; line-height: 18px; }
+.lds-visual .lds-float small { display: block; font-weight: 400; color: #6E6E73; font-size: 12px; line-height: 16px; }
 .lds-visual .f1 { left: 6%; bottom: 7%; }
-.lds-visual .f2 { right: 6%; top: 7%; }
-.lds-visual .f2 b { font-family: Sora, sans-serif; font-size: 18px; letter-spacing: -0.02em; }
+.lds-visual .f2 { right: 6%; top: 7%; padding: 10px 14px; }
+.lds-visual .f2 b { font-size: 21px; line-height: 26px; font-weight: 600; font-variant-numeric: tabular-nums; }
 
 /* features */
-.lds-features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; padding-bottom: 80px; }
-.lds-feature { display: flex; align-items: center; gap: 16px; padding: 20px 22px; border-radius: 20px; background: color-mix(in srgb, var(--b-ink) 4%, var(--b-bg)); border: 1px solid var(--b-line); }
-.lds-feature .n { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border-radius: 13px; background: var(--b-primary); color: var(--b-on-primary); }
-.lds-feature h3 { font-family: Sora, sans-serif; font-size: 18px; font-weight: 700; letter-spacing: -0.015em; line-height: 1.3; }
+.lds-features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; padding-bottom: 80px; }
+.lds-feature { display: flex; flex-direction: column; gap: 14px; padding: 24px; border-radius: 20px; background: var(--b-tint); }
+.lds-feature .n { display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 12px; background: var(--b-primary); color: var(--b-on-primary); }
+.lds-feature h3 { font-size: 17px; line-height: 22px; letter-spacing: -0.022em; }
 
-/* offer band */
-.lds-band { border-radius: 28px; background: var(--b-primary); color: var(--b-on-primary); padding: 44px 48px; display: grid; grid-template-columns: 1fr auto; gap: 28px; align-items: center; position: relative; overflow: hidden; }
-.lds-band::after { content: ""; position: absolute; right: -80px; top: -120px; width: 320px; height: 320px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--b-accent) 55%, transparent), transparent 70%); }
-.lds-band h2 { font-family: Sora, sans-serif; font-weight: 800; font-size: clamp(26px, 3cqi, 36px); letter-spacing: -0.03em; line-height: 1.1; position: relative; z-index: 1; }
-.lds-band p { margin-top: 10px !important; opacity: .78; font-size: 16px; position: relative; z-index: 1; }
-.lds-band .lds-cta { position: relative; z-index: 1; }
+/* offer card */
+.lds-band { border-radius: 28px; background: var(--b-tint); padding: 40px 44px; display: grid; grid-template-columns: 1fr auto; gap: 28px; align-items: center; }
+.lds-band h2 { font-size: clamp(24px, 2.8cqi, 32px); line-height: 1.15; letter-spacing: 0.004em; }
+.lds-band p { margin-top: 8px !important; color: var(--b-muted); font-size: 17px; }
+.lds-band .lds-cta { background: var(--b-ink); color: var(--b-bg); }
 
 /* how */
-.lds-how { padding: 80px 0 72px; }
-.lds-kicker { font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--b-accent); }
-.lds-how h2 { font-family: Sora, sans-serif; font-weight: 800; font-size: clamp(26px, 3cqi, 34px); letter-spacing: -0.03em; margin: 10px 0 30px !important; }
-.lds-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; counter-reset: s; }
-.lds-step { position: relative; padding: 22px 22px 22px 70px; border-radius: 18px; border: 1px solid var(--b-line); min-height: 96px; }
-.lds-step::before { counter-increment: s; content: counter(s); position: absolute; left: 20px; top: 20px; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--b-soft); font-family: Sora, sans-serif; font-weight: 800; font-size: 15px; }
-.lds-step b { display: block; font-size: 15.5px; margin-bottom: 4px; }
-.lds-step span { font-size: 14px; color: var(--b-muted); }
+.lds-how { padding: 80px 0 80px; }
+.lds-kicker { font-size: 15px; font-weight: 600; color: var(--b-muted); }
+.lds-how h2 { font-size: clamp(28px, 3cqi, 40px); line-height: 1.1; letter-spacing: -0.01em; margin: 6px 0 32px !important; }
+.lds-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; counter-reset: s; }
+.lds-step { position: relative; padding-top: 52px; }
+.lds-step::before { counter-increment: s; content: counter(s); position: absolute; left: 0; top: 0; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--b-fill); font-weight: 600; font-size: 15px; }
+.lds-step b { display: block; font-size: 17px; font-weight: 600; margin-bottom: 4px; }
+.lds-step span { font-size: 15px; line-height: 21px; color: var(--b-muted); }
 
 .lds-foot { border-top: 1px solid var(--b-line); }
-.lds-foot .lds-wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 72px; font-size: 13px; color: var(--b-muted); }
-.lds-made { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; font-weight: 700; padding: 6px 10px 6px 6px; border-radius: 999px; border: 1px solid var(--b-line); }
+.lds-foot .lds-wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 64px; font-size: 12px; color: var(--b-muted); }
+.lds-made { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; }
 .lds-made:hover { color: var(--b-ink); }
-.lds-made i { width: 20px; height: 20px; border-radius: 6px; background: #0B0F15; display: grid; place-items: center; }
+.lds-made i { width: 18px; height: 18px; border-radius: 5px; background: #1D1D1F; display: grid; place-items: center; }
 
-/* pay sheet */
+/* pay sheet: clean QR card */
 :where(.lds-sheet button) { font: inherit; cursor: pointer; }
-.lds-sheet { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(10, 12, 16, .55); backdrop-filter: blur(6px); opacity: 0; transition: opacity .2s ease; font-family: "Plus Jakarta Sans", system-ui, sans-serif; }
+.lds-sheet { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(0, 0, 0, .28); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); opacity: 0; transition: opacity .28s cubic-bezier(.25,.1,.25,1); font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Helvetica Neue", Arial, sans-serif; letter-spacing: -0.016em; -webkit-font-smoothing: antialiased; }
 .lds-sheet.in { opacity: 1; }
 .lds-sheet.contained { position: absolute; padding: 0; align-items: flex-end; }
-.lds-sheet-card { width: 100%; max-width: 420px; background: #fff; color: #12161C; border-radius: 26px; padding: 22px 22px 20px; box-shadow: 0 40px 80px -20px rgba(0,0,0,.5); transform: translateY(16px) scale(.98); transition: transform .25s cubic-bezier(.2,.8,.2,1); text-align: center; position: relative; }
+.lds-sheet-card { width: 100%; max-width: 400px; background: #fff; color: #1D1D1F; border-radius: 24px; padding: 24px; box-shadow: 0 0 0 1px rgba(0,0,0,.05), 0 24px 60px rgba(0,0,0,.14); transform: scale(.98); transition: transform .28s cubic-bezier(.2,.8,.2,1); text-align: center; position: relative; }
 .lds-sheet.in .lds-sheet-card { transform: none; }
-.lds-sheet.contained .lds-sheet-card { border-radius: 22px 22px 0 0; max-width: none; padding: 16px 16px 18px; }
-.lds-sheet-x { position: absolute; right: 14px; top: 14px; width: 34px; height: 34px; border-radius: 50%; border: 0; background: #F1F3F6; color: #4A5565; display: grid; place-items: center; }
-.lds-sheet-x:hover { background: #E5E8ED; }
+.lds-sheet.contained .lds-sheet-card { border-radius: 20px 20px 0 0; max-width: none; padding: 18px 16px 18px; }
+.lds-sheet-x { position: absolute; right: 16px; top: 16px; width: 32px; height: 32px; border-radius: 50%; border: 0; background: rgba(118,118,128,.12); color: #424245; display: grid; place-items: center; }
+.lds-sheet-x:hover { background: rgba(118,118,128,.2); }
 .lds-sheet-head { display: flex; align-items: center; gap: 12px; text-align: left; padding-right: 40px; }
-.lds-sheet-head b { display: block; font-family: Sora, sans-serif; font-size: 17px; letter-spacing: -0.02em; }
-.lds-sheet-head small { display: block; color: #5B6575; font-size: 13px; font-weight: 600; }
-.lds-amount { margin: 18px 0 4px; display: flex; align-items: baseline; justify-content: center; gap: 10px; }
-.lds-amount b { font-family: Sora, sans-serif; font-size: 34px; letter-spacing: -0.03em; }
-.lds-amount span { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 13px; color: #5B6575; }
-.lds-qrbox { margin: 12px auto 0; width: fit-content; padding: 12px; border-radius: 20px; border: 1px solid #E6E9EE; background: #fff; box-shadow: 0 8px 20px -14px rgba(0,0,0,.35); }
+.lds-sheet-head b { display: block; font-size: 17px; line-height: 22px; font-weight: 600; }
+.lds-sheet-head small { display: block; color: #6E6E73; font-size: 13px; line-height: 18px; }
+.lds-amount { margin: 20px 0 4px; display: flex; align-items: baseline; justify-content: center; gap: 10px; font-variant-numeric: tabular-nums; }
+.lds-amount b { font-size: 40px; line-height: 44px; font-weight: 600; letter-spacing: -0.01em; }
+.lds-amount span { font-size: 13px; color: #6E6E73; }
+.lds-qrbox { margin: 14px auto 0; width: fit-content; padding: 12px; border-radius: 20px; background: #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.06); }
 .lds-qrbox svg { display: block; width: 216px; height: 216px; }
 .lds-sheet.contained .lds-qrbox svg { width: 168px; height: 168px; }
-.lds-scan { margin-top: 12px; font-size: 13px; color: #5B6575; font-weight: 600; }
-.lds-addr { margin-top: 14px; display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 12px; border-radius: 12px; background: #F4F6F8; text-align: left; }
-.lds-addr code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 12px; color: #2A3240; }
-.lds-copy { flex: none; height: 32px; padding: 0 12px; border-radius: 9px; border: 0; background: #12161C; color: #fff; font-weight: 700; font-size: 12.5px; }
-.lds-copy.ok { background: #0AC18E; color: #062A1F; }
-.lds-open { margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; height: 48px; border-radius: 14px; background: #0AC18E; color: #062A1F !important; font-weight: 800; text-decoration: none; font-size: 15px; }
-.lds-open:hover { background: #0FD9A0; }
-.lds-direct { margin-top: 12px; font-size: 12px; color: #6A7383; line-height: 1.45; display: flex; gap: 8px; text-align: left; align-items: flex-start; }
-.lds-direct svg { flex: none; margin-top: 1px; color: #0AC18E; }
-.lds-noaddr { margin-top: 14px; padding: 14px; border-radius: 14px; background: #FFF6E6; color: #7A4B00; font-size: 13px; font-weight: 600; }
+.lds-scan { margin-top: 12px; font-size: 13px; color: #6E6E73; }
+.lds-addr { margin-top: 16px; display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 12px; border-radius: 12px; background: #FBFBFD; box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); text-align: left; }
+.lds-addr code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 12px; color: #424245; letter-spacing: 0; }
+.lds-copy { flex: none; height: 30px; padding: 0 12px; border-radius: 8px; border: 0; background: rgba(118,118,128,.12); color: #1D1D1F; font-weight: 600; font-size: 13px; }
+.lds-copy:hover { background: rgba(118,118,128,.2); }
+.lds-copy.ok { background: rgba(10,193,142,.10); color: #067A59; }
+.lds-open { margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; height: 50px; border-radius: 12px; background: #1D1D1F; color: #fff !important; font-weight: 600; text-decoration: none; font-size: 17px; }
+.lds-open:hover { background: #000; }
+.lds-direct { margin-top: 14px; font-size: 12px; color: #6E6E73; line-height: 16px; display: flex; gap: 8px; text-align: left; align-items: flex-start; }
+.lds-direct svg { flex: none; margin-top: 0; color: #067A59; }
+.lds-noaddr { margin-top: 16px; padding: 14px; border-radius: 14px; background: #FBFBFD; box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); color: #424245; font-size: 13px; }
 
 /* loading / error states for /s/:slug */
-.lds-state { min-height: 100vh; display: grid; place-items: center; background: #0B0F15; color: #EAF0F7; font-family: "Plus Jakarta Sans", system-ui, sans-serif; text-align: center; padding: 24px; }
-.lds-state h1 { font-family: Sora, sans-serif; font-size: 26px; letter-spacing: -0.02em; margin: 18px 0 8px; }
-.lds-state p { color: #9DAABD; margin: 0 0 22px; }
-.lds-state a { display: inline-flex; height: 44px; align-items: center; padding: 0 18px; border-radius: 12px; background: #0AC18E; color: #062A1F; font-weight: 800; text-decoration: none; }
-.lds-spin { width: 38px; height: 38px; border-radius: 50%; border: 3px solid #263243; border-top-color: #0AC18E; animation: lds-spin .8s linear infinite; margin: 0 auto; }
+.lds-state { min-height: 100vh; display: grid; place-items: center; background: #F5F5F7; color: #1D1D1F; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Helvetica Neue", Arial, sans-serif; text-align: center; padding: 24px; letter-spacing: -0.016em; -webkit-font-smoothing: antialiased; }
+.lds-state h1 { font-size: 28px; line-height: 32px; font-weight: 600; margin: 18px 0 8px; }
+.lds-state p { color: #6E6E73; margin: 0 0 24px; font-size: 17px; }
+.lds-state code { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 15px; }
+.lds-state a { display: inline-flex; height: 44px; align-items: center; padding: 0 18px; border-radius: 12px; background: #1D1D1F; color: #fff; font-weight: 600; text-decoration: none; }
+.lds-spin { width: 28px; height: 28px; border-radius: 50%; border: 2px solid rgba(118,118,128,.16); border-top-color: #424245; animation: lds-spin .8s linear infinite; margin: 0 auto; }
 @keyframes lds-spin { to { transform: rotate(360deg); } }
 
 /* narrow (phone, or the phone preview inside the pack) */
 @container lds (max-width: 720px) {
-  .lds .lds-wrap { padding: 0 18px; }
-  .lds-nav { height: 60px; }
+  .lds .lds-wrap { padding: 0 20px; }
+  .lds-nav { height: 52px; }
   .lds-brand { font-size: 17px; gap: 10px; }
   .lds-navlinks a.hide-sm { display: none; }
-  .lds-pill { height: 34px; padding: 0 14px; font-size: 13px; }
-  .lds-hero { grid-template-columns: 1fr; gap: 22px; padding: 6px 0 36px; }
+  .lds-hero { grid-template-columns: 1fr; gap: 24px; padding: 20px 0 48px; }
   .lds-visual { order: -1; aspect-ratio: 16 / 10; border-radius: 20px; }
   .lds-visual .f1 { display: none; }
   .lds-visual .f2 { right: 4%; top: 6%; padding: 8px 12px; }
   .lds-visual .lds-bigicon svg { width: 96px; height: 96px; }
-  .lds-h1 { font-size: 31px; margin: 14px 0 12px !important; }
-  .lds-sub { font-size: 15.5px; }
-  .lds-ctas { margin-top: 20px; gap: 10px; }
-  .lds-cta { width: 100%; height: 52px; font-size: 15.5px; }
-  .lds-offer { width: 100%; justify-content: center; font-size: 13px; }
+  .lds-h1 { font-size: 32px; line-height: 36px; margin: 10px 0 12px !important; }
+  .lds-sub { font-size: 17px; line-height: 25px; }
+  .lds-ctas { margin-top: 24px; gap: 12px; }
+  .lds-cta { width: 100%; }
+  .lds-offer { width: 100%; font-size: 13px; }
   .lds-trust { margin-top: 16px; font-size: 12px; gap: 6px 14px; }
-  .lds-features { grid-template-columns: 1fr; gap: 10px; padding-bottom: 36px; }
-  .lds-feature { display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 16px; }
-  .lds-feature .n { margin: 0; flex: none; width: 36px; height: 36px; }
-  .lds-feature h3 { font-size: 15px; }
-  .lds-band { grid-template-columns: 1fr; padding: 26px 22px; border-radius: 22px; gap: 18px; }
-  .lds-how { padding: 44px 0 36px; }
-  .lds-steps { grid-template-columns: 1fr; gap: 10px; }
-  .lds-step { min-height: 0; padding: 16px 16px 16px 62px; }
-  .lds-step::before { left: 16px; top: 16px; }
+  .lds-features { grid-template-columns: 1fr; gap: 10px; padding-bottom: 40px; }
+  .lds-feature { flex-direction: row; align-items: center; gap: 14px; padding: 16px; border-radius: 16px; }
+  .lds-feature .n { width: 36px; height: 36px; }
+  .lds-feature h3 { font-size: 15px; line-height: 20px; }
+  .lds-band { grid-template-columns: 1fr; padding: 28px 22px; border-radius: 22px; gap: 18px; }
+  .lds-how { padding: 48px 0 40px; }
+  .lds-steps { grid-template-columns: 1fr; gap: 20px; }
+  .lds-step { padding: 4px 0 0 52px; min-height: 36px; }
   .lds-foot .lds-wrap { flex-direction: column; justify-content: center; height: auto; padding-top: 18px; padding-bottom: 22px; gap: 10px; }
 }
 @media (max-width: 560px) {
   .lds-sheet:not(.contained) { align-items: flex-end; padding: 0; }
-  .lds-sheet:not(.contained) .lds-sheet-card { max-width: none; border-radius: 24px 24px 0 0; padding: 18px 18px calc(18px + env(safe-area-inset-bottom)); }
+  .lds-sheet:not(.contained) .lds-sheet-card { max-width: none; border-radius: 20px 20px 0 0; padding: 20px 20px calc(20px + env(safe-area-inset-bottom)); }
 }
 @media (prefers-reduced-motion: reduce) {
   .lds *, .lds-sheet, .lds-sheet-card { transition: none !important; animation: none !important; }
 }
-.lds-direct.lds-demo { color: #8a5a00; background: #fff6dc; border: 1px solid #f5d27a; padding: 9px 11px; border-radius: 10px; }
-.lds-direct.lds-demo svg { color: #c98a00; }
-.lds-band .lds-was { margin-top: 8px !important; font-size: 17px; font-weight: 700; opacity: .7; position: relative; z-index: 1; }
+.lds-direct.lds-demo { color: #424245; background: rgba(255, 159, 10, .10); padding: 10px 12px; border-radius: 12px; }
+.lds-direct.lds-demo svg { color: #B25E00; }
+.lds-band .lds-was { margin-top: 6px !important; font-size: 17px; color: var(--b-muted); }
 .lds-band .lds-was + p { margin-top: 6px !important; }

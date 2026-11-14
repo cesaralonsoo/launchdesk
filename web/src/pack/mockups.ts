@@ -24,7 +24,7 @@ function storefront(logo: Logo | undefined, p: Palette | undefined, name: string
     <rect x="48" y="40" width="276" height="206" fill="${facade}"/>
     <rect x="64" y="54" width="244" height="40" rx="8" fill="${c.bg}"/>
     ${logoAt(logo, p, name, 70, 57, 34)}
-    <text x="112" y="82" font-family="Sora, sans-serif" font-weight="800" font-size="${fs.toFixed(1)}" fill="${c.ink}" letter-spacing="-.5">${nm}</text>
+    <text x="112" y="82" font-family="-apple-system, BlinkMacSystemFont, Inter, Helvetica Neue, Arial, sans-serif" font-weight="800" font-size="${fs.toFixed(1)}" fill="${c.ink}" letter-spacing="-.5">${nm}</text>
     <rect x="54" y="100" width="264" height="6" fill="${mix(facade, "#000", 0.25)}"/>
     ${awn}
     <rect x="64" y="146" width="140" height="100" fill="${mix(c.extra, "#8A949C", 0.55)}"/>
@@ -53,7 +53,7 @@ function laptop(logo: Logo | undefined, p: Palette | undefined, name: string, he
     else lines.push(w);
   }
   if (lines.length > 3) { lines.length = 3; lines[2] = lines[2].replace(/\s*\S*$/, "") + "…"; }
-  const heads = lines.map((t, i) => `<text x="108" y="${104 + i * 16}" font-family="Sora, sans-serif" font-size="12.5" font-weight="800" fill="${c.ink}">${esc(t)}</text>`).join("");
+  const heads = lines.map((t, i) => `<text x="108" y="${104 + i * 16}" font-family="-apple-system, BlinkMacSystemFont, Inter, Helvetica Neue, Arial, sans-serif" font-size="12.5" font-weight="800" fill="${c.ink}">${esc(t)}</text>`).join("");
   const yb = 104 + lines.length * 16;
   return `<svg viewBox="0 0 520 300" role="img" aria-label="${nm} website mockup">
     <defs><linearGradient id="lpbg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E9EEF3"/><stop offset="1" stop-color="#D3DAE2"/></linearGradient>
@@ -64,7 +64,7 @@ function laptop(logo: Logo | undefined, p: Palette | undefined, name: string, he
     <rect x="94" y="50" width="312" height="192" rx="4" fill="${c.bg}"/>
     <path d="M60 252h380l-18 14H78z" fill="#AEB7C2"/><rect x="60" y="248" width="380" height="6" rx="3" fill="#C8D0D9"/>
     ${logoAt(logo, p, name, 104, 58, 18)}
-    <text x="126" y="71" font-family="Sora, sans-serif" font-size="10" font-weight="800" fill="${c.ink}">${nm}</text>
+    <text x="126" y="71" font-family="-apple-system, BlinkMacSystemFont, Inter, Helvetica Neue, Arial, sans-serif" font-size="10" font-weight="800" fill="${c.ink}">${nm}</text>
     <rect x="356" y="60" width="40" height="13" rx="6.5" fill="none" stroke="${c.ink}" stroke-width="1"/>
     ${heads}
     <rect x="108" y="${yb}" width="120" height="5" rx="2.5" fill="${mix(c.ink, c.bg, 0.6)}"/><rect x="108" y="${yb + 10}" width="96" height="5" rx="2.5" fill="${mix(c.ink, c.bg, 0.6)}"/>
@@ -92,10 +92,10 @@ export function businessCard(logo: Logo | undefined, p: Palette | undefined, nam
       ${logoAt(logo, p, name, 96, 64, 50)}</g>
     <rect x="128" y="62" width="170" height="100" rx="8" fill="${c.bg}" style="filter:drop-shadow(0 8px 10px rgba(0,0,0,.3))"/>
     ${logoAt(logo, p, name, 142, 76, 30)}
-    <text x="180" y="93" font-family="Sora, sans-serif" font-size="13" font-weight="800" fill="${c.ink}">${nm}</text>
-    <text x="142" y="128" font-family="Plus Jakarta Sans, sans-serif" font-size="8.5" font-weight="700" fill="${c.ink}">Founder</text>
-    <text x="142" y="141" font-family="Plus Jakarta Sans, sans-serif" font-size="7.5" fill="${mix(c.ink, c.bg, 0.4)}">${esc(handle)}</text>
-    <text x="142" y="152" font-family="Plus Jakarta Sans, sans-serif" font-size="7.5" fill="${mix(c.ink, c.bg, 0.4)}">${esc(tagline).slice(0, 40)}</text>
+    <text x="180" y="93" font-family="-apple-system, BlinkMacSystemFont, Inter, Helvetica Neue, Arial, sans-serif" font-size="13" font-weight="800" fill="${c.ink}">${nm}</text>
+    <text x="142" y="128" font-family="-apple-system, BlinkMacSystemFont, Inter, Helvetica Neue, Arial, sans-serif" font-size="8.5" font-weight="700" fill="${c.ink}">Founder</text>
+    <text x="142" y="141" font-family="-apple-system, BlinkMacSystemFont, Inter, Helvetica Neue, Arial, sans-serif" font-size="7.5" fill="${mix(c.ink, c.bg, 0.4)}">${esc(handle)}</text>
+    <text x="142" y="152" font-family="-apple-system, BlinkMacSystemFont, Inter, Helvetica Neue, Arial, sans-serif" font-size="7.5" fill="${mix(c.ink, c.bg, 0.4)}">${esc(tagline).slice(0, 40)}</text>
     <rect x="284" y="70" width="6" height="84" rx="3" fill="${c.accent}"/>
   </svg>`;
 }
@@ -109,9 +109,9 @@ export function socialProfile(logo: Logo | undefined, p: Palette | undefined, na
     <rect x="70" y="14" width="120" height="190" rx="16" fill="#fff" stroke="#E1E5EA"/>
     <circle cx="96" cy="46" r="17" fill="${c.bg}" stroke="${c.accent}" stroke-width="2"/>
     ${logoAt(logo, p, name, 82, 32, 28)}
-    <text x="120" y="42" font-family="Sora, sans-serif" font-size="9" font-weight="800" fill="#12161C">${esc(handle).slice(0, 16)}</text>
+    <text x="120" y="42" font-family="-apple-system, BlinkMacSystemFont, Inter, Helvetica Neue, Arial, sans-serif" font-size="9" font-weight="800" fill="#12161C">${esc(handle).slice(0, 16)}</text>
     <rect x="120" y="48" width="44" height="4" rx="2" fill="#D5DAE0"/>
-    <rect x="80" y="70" width="100" height="14" rx="5" fill="#12161C"/><text x="130" y="80" text-anchor="middle" font-family="Plus Jakarta Sans, sans-serif" font-size="7.5" font-weight="700" fill="#fff">Follow</text>
+    <rect x="80" y="70" width="100" height="14" rx="5" fill="#12161C"/><text x="130" y="80" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, Inter, Helvetica Neue, Arial, sans-serif" font-size="7.5" font-weight="700" fill="#fff">Follow</text>
     ${tiles.map((t, i) => `<rect x="${80 + (i % 3) * 34}" y="${92 + Math.floor(i / 3) * 34}" width="32" height="32" rx="3" fill="${t}"/>`).join("")}
     ${iconGroup(logo?.icon ?? "spark", c.bg, 88, 100, 16, c.accent)}
     ${iconGroup(logo?.icon ?? "spark", c.onPrimary, 156, 134, 16, c.primary)}

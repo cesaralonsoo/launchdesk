@@ -12,7 +12,7 @@ export { renderLogo, renderIcon, renderLogoTile } from "./logo";
 export type { TabId } from "./tabs";
 
 const STYLE_ID = "ld-pack-css";
-const FONTS = "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap";
+const FONTS = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap";
 
 function ensureCss(): void {
   ensureSiteCss();
@@ -23,7 +23,7 @@ function ensureCss(): void {
     document.head.appendChild(s);
   }
   const links = [...document.querySelectorAll<HTMLLinkElement>("link[rel=stylesheet]")];
-  if (!links.some((l) => /JetBrains/.test(l.href))) {
+  if (!links.some((l) => /family=Inter/.test(l.href))) {
     const l = document.createElement("link");
     l.rel = "stylesheet";
     l.href = FONTS;
@@ -58,26 +58,27 @@ type State = {
   ro?: ResizeObserver;
 };
 let S: State | null = null;
+const EXT = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 16 16 8M9.5 8H16v6.5"/></svg>`;
 
 function headerHtml(p: Project): string {
   const b = brandOf(p);
   const stage2 = !!p.payments.build;
   const allDone = !!p.results.pip;
   const s1Done = !!(p.results.mia && p.results.leo && p.results.sam);
-  const kicker = allDone ? "Delivered · Stage 1 + 2" : stage2 ? "In progress · Stage 2" : s1Done ? "Delivered · Stage 1" : "In progress · Stage 1";
+  const kicker = allDone ? "Delivered · Stages 1 and 2" : stage2 ? "In progress · Stage 2" : s1Done ? "Delivered · Stage 1" : "In progress · Stage 1";
   const title = allDone ? "Your startup pack is ready" : s1Done && !stage2 ? "Your Stage 1 report" : "Your startup pack";
   const one = p.results.mia?.one_liner || b.tagline || p.idea;
   const tile = p.results.nova
     ? renderLogoTile(b.logo, b.option?.palette, b.name, 64)
-    : `<span class="ld-logotile" style="width:64px;height:64px;border-radius:16px;background:linear-gradient(140deg,#1B2431,#0E141C);display:grid;place-items:center;font-family:Sora,sans-serif;font-weight:800;font-size:26px;color:#0FD9A0">${esc((b.name[0] || "L").toUpperCase())}</span>`;
+    : `<span class="ld-logotile" style="width:64px;height:64px;border-radius:16px;background:#1D1D1F;display:grid;place-items:center;font-family:var(--font-display);font-weight:600;font-size:26px;color:#fff">${esc((b.name[0] || "L").toUpperCase())}</span>`;
   return `${tile}
     <div class="ldp-headtxt">
       <div class="ldp-kicker${allDone || (s1Done && !stage2) ? "" : " wip"}">${esc(kicker)}</div>
       <h2 class="ldp-title" id="ldp-title">${esc(title)}</h2>
       <p class="ldp-sub"><b>${esc(b.name)}</b> · ${esc(one)}</p>
-      ${p.results.pip ? `<a class="ldp-livechip" href="/s/${esc(p.results.pip.slug)}" target="_blank" rel="noopener"><i></i>Live at /s/${esc(p.results.pip.slug)} ↗</a>` : ""}
+      ${p.results.pip ? `<a class="ldp-livechip" href="/s/${esc(p.results.pip.slug)}" target="_blank" rel="noopener"><i></i>Live at /s/${esc(p.results.pip.slug)}${EXT}</a>` : ""}
     </div>
-    <button class="ldp-x" type="button" data-close aria-label="Close pack"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>`;
+    <button class="ldp-x" type="button" data-close aria-label="Close pack"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7 7l10 10M17 7 7 17"/></svg></button>`;
 }
 
 function tabsHtml(p: Project, active: TabId): string {
@@ -92,7 +93,7 @@ function tabsHtml(p: Project, active: TabId): string {
 function liveBtn(p: Project): string {
   const slug = p.results.pip?.slug;
   if (!slug) return "";
-  return `<a class="ldp-btn primary" href="/s/${esc(slug)}" target="_blank" rel="noopener">Open live site ↗</a>`;
+  return `<a class="ldp-btn primary" href="/s/${esc(slug)}" target="_blank" rel="noopener">Open live site${EXT}</a>`;
 }
 
 function footNote(p: Project): string {
@@ -246,7 +247,7 @@ export function openPack(project: Project, tab?: string): void {
       <footer class="ldp-foot">
         <div class="note"><i></i><span>${esc(footNote(project))}</span></div>
         <button class="ldp-newlink" type="button" data-new>Start a new idea</button>
-        <button class="ldp-btn" type="button" data-download><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10.5l5 5 5-5M5 19.5h14"/></svg>Download pack</button>
+        <button class="ldp-btn" type="button" data-download><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10.5l5 5 5-5M5 19.5h14"/></svg>Download pack</button>
         <span data-live>${liveBtn(project)}</span>
       </footer>
       <div class="ldp-toast" role="status" aria-live="polite"></div>

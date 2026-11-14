@@ -99,7 +99,7 @@ export function renderLogo(logo: Logo | undefined, palette: Palette | undefined,
   const shape = logo?.shape ?? "emblem";
   const nm = String(name || "Brand").trim();
   const id = `lg${++uid}`;
-  const font = `font-family="Sora, 'Plus Jakarta Sans', system-ui, sans-serif"`;
+  const font = `font-family="-apple-system, BlinkMacSystemFont, Inter, 'Helvetica Neue', Arial, sans-serif"`;
   let body = "";
 
   if (shape === "monogram") {

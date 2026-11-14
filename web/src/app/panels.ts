@@ -4,7 +4,7 @@ import { esc, h, svg } from "./dom";
 import { logoSvg } from "./logo";
 import { deptStatus } from "./state";
 import { TEAM, WORK_ORDER } from "./team";
-import { avatar, extIcon, ring, statusPill, verdictPill } from "./ui";
+import { avatar, extIcon, iconSvg, ring, statusPill, verdictPill } from "./ui";
 
 const skel = (lines = 3, widths = [92, 78, 64, 86]) =>
   h("div", { class: "skel-block", "aria-hidden": "true" }, Array.from({ length: lines }, (_, i) => h("div", { class: "skel", style: `width:${widths[i % widths.length]}%` })));
@@ -42,13 +42,13 @@ function mia(p: Project, working: boolean) {
     const tasks = r?.weeks.filter((x) => x.dept === d && x.week === w) ?? [];
     if (!r) {
       if (d === "mia" && w === 1)
-        return h("div", { class: "wk-cell" }, h("span", { class: "wk-chip live", style: `--c:${TEAM.mia.color}` }, "Brief & plan", h("small", null, working ? "Today · now" : "Today")));
-      return h("div", { class: "wk-cell" }, SKETCH[d].includes(w) ? h("span", { class: "wk-chip ghost", style: `--c:${TEAM[d].color};${stagger(n++, 0.22)}`, "aria-hidden": "true" }) : null);
+        return h("div", { class: "wk-cell" }, h("span", { class: "wk-chip live" }, "Brief & plan", h("small", null, working ? "Today, now" : "Today")));
+      return h("div", { class: "wk-cell" }, SKETCH[d].includes(w) ? h("span", { class: "wk-chip ghost", style: stagger(n++, 0.22), "aria-hidden": "true" }) : null);
     }
     return h(
       "div",
       { class: "wk-cell" },
-      tasks.map((t) => h("span", { class: "wk-chip", style: `--c:${TEAM[d].color};${stagger(n++, 0.04)}`, title: t.task }, t.task)),
+      tasks.map((t) => h("span", { class: "wk-chip", style: stagger(n++, 0.04), title: t.task }, t.task)),
     );
   };
   const grid = h(
@@ -56,10 +56,10 @@ function mia(p: Project, working: boolean) {
     { class: "wk-grid", role: "table", "aria-label": "4-week plan" },
     h("div", { class: "wk-h", role: "row" }, h("span", null), [1, 2, 3, 4].map((w) => h("span", { role: "columnheader" }, `Week ${w}`))),
     WORK_ORDER.map((d) =>
-      h("div", { class: "wk-row", role: "row" }, h("span", { class: "wk-d", role: "rowheader" }, h("span", { class: "dot", style: `--c:${TEAM[d].color}` }), TEAM[d].name), [1, 2, 3, 4].map((w) => cell(d, w))),
+      h("div", { class: "wk-row", role: "row" }, h("span", { class: "wk-d", role: "rowheader" }, avatar(d, "sm"), TEAM[d].name), [1, 2, 3, 4].map((w) => cell(d, w))),
     ),
   );
-  return [section("Project brief", r ? null : "writing…", brief), section("4-week plan", "one row per department", grid)];
+  return [section("Project brief", r ? null : "Writing…", brief), section("4-week plan", "One row per department", grid)];
 }
 
 // ---------- Leo ----------
@@ -71,11 +71,11 @@ export function positioningMap(leo: LeoOpportunity, w = 280, hgt = 210) {
   const comps = leo.competitors
     .map(
       (c, i) =>
-        `<g><circle cx="${x(c.price)}" cy="${y(c.differentiation)}" r="5" fill="#3B82F6" opacity=".85"/><text x="${x(c.price) + 8}" y="${y(c.differentiation) + 4}" font-size="10.5" fill="var(--muted)">${esc(c.name.length > 16 ? c.name.slice(0, 15) + "…" : c.name)}</text><title>${i + 1}. ${esc(c.name)}</title></g>`,
+        `<g><circle cx="${x(c.price)}" cy="${y(c.differentiation)}" r="4.5" fill="var(--ink-2)"/><text x="${x(c.price) + 8}" y="${y(c.differentiation) + 4}" font-size="10.5" fill="var(--muted)">${esc(c.name.length > 16 ? c.name.slice(0, 15) + "…" : c.name)}</text><title>${i + 1}. ${esc(c.name)}</title></g>`,
     )
     .join("");
   return svg(
-    `<svg class="posmap" viewBox="0 0 ${w} ${hgt}" role="img" aria-label="Positioning map: price versus differentiation"><rect x="${pad}" y="${pad}" width="${w - pad * 2}" height="${hgt - pad * 2}" rx="8" fill="var(--bg2)" stroke="var(--line)"/><line x1="${w / 2}" y1="${pad}" x2="${w / 2}" y2="${hgt - pad}" stroke="var(--line)" stroke-dasharray="3 4"/><line x1="${pad}" y1="${hgt / 2}" x2="${w - pad}" y2="${hgt / 2}" stroke="var(--line)" stroke-dasharray="3 4"/><text x="${w / 2}" y="${hgt - 6}" text-anchor="middle" font-size="9" fill="var(--dim)">PRICE  low → high</text><text x="10" y="${hgt / 2}" font-size="9" fill="var(--dim)" transform="rotate(-90 10 ${hgt / 2})" text-anchor="middle">DIFFERENTIATION</text>${comps}<g><circle cx="${x(leo.you.price)}" cy="${y(leo.you.differentiation)}" r="9" fill="var(--bch)" opacity=".22"/><circle cx="${x(leo.you.price)}" cy="${y(leo.you.differentiation)}" r="5.5" fill="var(--bch)"/><text x="${x(leo.you.price) + 10}" y="${y(leo.you.differentiation) - 6}" font-size="10" font-weight="700" fill="var(--bch2)">You</text></g></svg>`,
+    `<svg class="posmap" viewBox="0 0 ${w} ${hgt}" role="img" aria-label="Positioning map: price versus differentiation"><rect x="${pad}" y="${pad}" width="${w - pad * 2}" height="${hgt - pad * 2}" rx="10" fill="var(--surface-2)" stroke="var(--line)"/><line x1="${w / 2}" y1="${pad}" x2="${w / 2}" y2="${hgt - pad}" stroke="var(--line-2)" stroke-dasharray="2 4"/><line x1="${pad}" y1="${hgt / 2}" x2="${w - pad}" y2="${hgt / 2}" stroke="var(--line-2)" stroke-dasharray="2 4"/><text x="${w / 2}" y="${hgt - 6}" text-anchor="middle" font-size="10" fill="var(--faint)">Price: low to high</text><text x="12" y="${hgt / 2}" font-size="10" fill="var(--faint)" transform="rotate(-90 12 ${hgt / 2})" text-anchor="middle">Differentiation</text>${comps}<g><circle cx="${x(leo.you.price)}" cy="${y(leo.you.differentiation)}" r="9" fill="var(--bch)" opacity=".18"/><circle cx="${x(leo.you.price)}" cy="${y(leo.you.differentiation)}" r="5.5" fill="var(--bch)"/><text x="${x(leo.you.price) + 10}" y="${y(leo.you.differentiation) - 6}" font-size="10.5" font-weight="600" fill="var(--bch-ink)">You</text></g></svg>`,
   );
 }
 
@@ -86,7 +86,7 @@ function leo(p: Project, working: boolean) {
     return [
       section(
         "Competitor map",
-        working ? "scanning…" : null,
+        working ? "Scanning…" : null,
         h(
           "div",
           { class: "scan" },
@@ -150,7 +150,7 @@ function chartSkeleton(w = 520, hgt = 150) {
   const grid = [0, 0.5, 1].map((k) => `<line class="sk-grid" x1="${pl}" x2="${w - pr}" y1="${pt + k * ih}" y2="${pt + k * ih}"/>`).join("");
   const labels = Array.from({ length: 12 }, (_, i) => (i % 2 === 0 || i === 11 ? `<text class="sk-t" x="${X(i).toFixed(1)}" y="${hgt - 5}" text-anchor="middle">M${i + 1}</text>` : "")).join("");
   return svg(
-    `<svg class="chart chart-skel" viewBox="0 0 ${w} ${hgt}" aria-hidden="true"><defs><linearGradient id="skg" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".09"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>${grid}${cols}<line class="sk-ax" x1="${pl}" x2="${pl}" y1="${pt}" y2="${pt + ih}"/><line class="sk-ax" x1="${pl}" x2="${w - pr}" y1="${pt + ih}" y2="${pt + ih}"/><path class="sk-line rev" d="${rev}"/><path class="sk-line cost" d="${cost}"/>${labels}<rect class="sk-sweep" x="${pl - 120}" y="${pt}" width="120" height="${ih}" fill="url(#skg)"/></svg>`,
+    `<svg class="chart chart-skel" viewBox="0 0 ${w} ${hgt}" aria-hidden="true">${grid}${cols}<line class="sk-ax" x1="${pl}" x2="${pl}" y1="${pt}" y2="${pt + ih}"/><line class="sk-ax" x1="${pl}" x2="${w - pr}" y1="${pt + ih}" y2="${pt + ih}"/><path class="sk-line rev" d="${rev}"/><path class="sk-line cost" d="${cost}"/>${labels}<rect class="sk-sweep" x="${pl - 60}" y="${pt}" width="60" height="${ih}" rx="4"/></svg>`,
   );
 }
 
@@ -169,11 +169,11 @@ export function revenueChart(sam: SamModel, w = 520, hgt = 150) {
   const bi = ms.findIndex((m) => m.month === be);
   const beMark =
     bi >= 0
-      ? `<line x1="${X(bi)}" y1="6" x2="${X(bi)}" y2="${hgt - pb}" stroke="var(--gold)" stroke-dasharray="3 3"/><rect x="${Math.min(w - 76, X(bi) + 4)}" y="4" width="72" height="16" rx="8" fill="rgba(245,197,66,.16)"/><text x="${Math.min(w - 76, X(bi) + 4) + 36}" y="15.5" font-size="9.5" font-weight="700" text-anchor="middle" fill="var(--gold)">Break-even M${be}</text>`
+      ? `<line x1="${X(bi)}" y1="6" x2="${X(bi)}" y2="${hgt - pb}" stroke="var(--ink)" stroke-width="1" stroke-dasharray="2 3"/><rect x="${Math.min(w - 84, X(bi) + 4)}" y="4" width="80" height="17" rx="8.5" fill="var(--ink)"/><text x="${Math.min(w - 84, X(bi) + 4) + 40}" y="15.8" font-size="10" font-weight="600" text-anchor="middle" fill="#fff">Break-even M${be}</text>`
       : "";
-  const labels = ms.map((m, i) => (i % 2 === 0 || i === ms.length - 1 ? `<text x="${X(i)}" y="${hgt - 4}" font-size="9" text-anchor="middle" fill="var(--dim)">M${m.month}</text>` : "")).join("");
+  const labels = ms.map((m, i) => (i % 2 === 0 || i === ms.length - 1 ? `<text x="${X(i)}" y="${hgt - 4}" font-size="10" text-anchor="middle" fill="var(--faint)">M${m.month}</text>` : "")).join("");
   return svg(
-    `<svg class="chart" viewBox="0 0 ${w} ${hgt}" role="img" aria-label="12-month projection: revenue versus costs${bi >= 0 ? `, break-even in month ${be}` : ""}"><defs><linearGradient id="rv" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#0AC18E" stop-opacity=".35"/><stop offset="1" stop-color="#0AC18E" stop-opacity="0"/></linearGradient></defs><path d="${area}" fill="url(#rv)"/><path d="${line("costs")}" fill="none" stroke="var(--danger)" stroke-width="2" stroke-dasharray="5 4"/><path d="${line("revenue")}" fill="none" stroke="var(--bch)" stroke-width="2.4"/>${beMark}${labels}</svg>`,
+    `<svg class="chart" viewBox="0 0 ${w} ${hgt}" role="img" aria-label="12-month projection: revenue versus costs${bi >= 0 ? `, break-even in month ${be}` : ""}"><path d="${area}" fill="var(--bch-fill)"/><path d="${line("costs")}" fill="none" stroke="var(--faint)" stroke-width="1.75" stroke-dasharray="4 4"/><path d="${line("revenue")}" fill="none" stroke="var(--bch)" stroke-width="2"/>${beMark}${labels}</svg>`,
   );
 }
 
@@ -190,7 +190,7 @@ function sam(p: Project, working: boolean) {
       ),
       section(
         "12-month projection",
-        working ? "calculating…" : null,
+        working ? "Calculating…" : null,
         chartSkeleton(),
         h("div", { class: "legend skel-legend" }, h("span", { class: "lg rev" }, "Revenue"), h("span", { class: "lg cost" }, "Costs")),
       ),
@@ -205,7 +205,7 @@ function sam(p: Project, working: boolean) {
     ),
     section(
       "12-month projection",
-      "estimate",
+      "Estimate",
       revenueChart(r),
       h("div", { class: "legend" }, h("span", { class: "lg rev" }, "Revenue"), h("span", { class: "lg cost" }, "Costs")),
     ),
@@ -221,7 +221,7 @@ function nova(p: Project, working: boolean) {
     return [
       section(
         "Name options",
-        working ? "brainstorming…" : null,
+        working ? "Brainstorming…" : null,
         h(
           "div",
           { class: "names" },
@@ -241,7 +241,7 @@ function nova(p: Project, working: boolean) {
   return [
     section(
       "Name options",
-      "you pick · first is recommended",
+      "You pick. The first is recommended",
       h(
         "div",
         { class: "names" },
@@ -250,7 +250,7 @@ function nova(p: Project, working: boolean) {
             "div",
             { class: `name-card ${i === r.chosen ? "chosen" : ""}` },
             i === r.chosen ? h("span", { class: "tag bch" }, "Recommended") : null,
-            h("div", { class: "nm", style: `font-family:${esc(r.typography.headline)},Sora,sans-serif` }, n.name),
+            h("div", { class: "nm", style: `font-family:${esc(r.typography.headline)},var(--font-display)` }, n.name),
             h("div", { class: "nm-tag" }, n.tagline),
             h("div", { class: "swatches" }, n.palette.map((c) => h("span", { class: "sw", style: `background:${c.hex}`, title: `${c.name} ${c.hex}` }))),
             h("p", { class: "muted small" }, n.why),
@@ -271,7 +271,7 @@ function dex(p: Project, working: boolean) {
     return [
       section(
         "Logo concepts",
-        working ? "sketching…" : null,
+        working ? "Sketching…" : null,
         h(
           "div",
           { class: "logos" },
@@ -285,7 +285,7 @@ function dex(p: Project, working: boolean) {
                     `<svg class="logo-sketch" viewBox="0 0 64 64" aria-hidden="true">${i === 0 ? '<circle cx="32" cy="32" r="28" class="ls-o"/>' : '<rect x="5" y="5" width="54" height="54" rx="14" class="ls-o"/>'}</svg>`,
                   ),
               h("b", null, label),
-              h("small", { class: "muted drawing" }, working ? "drawing…" : "queued"),
+              h("small", { class: "muted drawing" }, working ? "Drawing…" : "Queued"),
             ),
           ),
         ),
@@ -328,8 +328,8 @@ function dex(p: Project, working: boolean) {
 
 // ---------- Rae ----------
 
-const CH_COLOR: Record<RaeLaunch["posts"][number]["channel"], string> = {
-  IG: "#C13584", TT: "#25B6C9", LI: "#3B82F6", X: "#64748B", Mail: "#F59E0B", ALL: "#0AC18E",
+const CH_NAME: Record<RaeLaunch["posts"][number]["channel"], string> = {
+  IG: "Instagram", TT: "TikTok", LI: "LinkedIn", X: "X", Mail: "Email", ALL: "All channels",
 };
 
 export function launchCalendar(r: RaeLaunch) {
@@ -347,7 +347,7 @@ export function launchCalendar(r: RaeLaunch) {
         "div",
         { class: `cal-cell ${posts.length ? "has" : ""} ${day === 1 ? "first" : ""}` },
         h("span", { class: "cal-d" }, label),
-        posts.slice(0, 2).map((x) => h("span", { class: "cal-chip", style: `--c:${CH_COLOR[x.channel] ?? "#64748B"}`, title: `${x.channel} · ${x.title}` }, h("b", null, x.channel), " ", x.title)),
+        posts.slice(0, 2).map((x) => h("span", { class: "cal-chip", title: `${CH_NAME[x.channel] ?? x.channel} · ${x.title}` }, h("b", null, x.channel), " ", x.title)),
       ),
     );
   }
@@ -369,10 +369,9 @@ const fmtPostDate = (d: string) => {
 function rae(p: Project, working: boolean) {
   const r = p.results.rae;
   if (!r) {
-    // Real dates from tomorrow; coloured channel chips drop in while Rae writes the posts.
+    // Real dates from tomorrow; placeholder chips drop in while Rae writes the posts.
     const start = new Date(Date.now() + 86400000);
     const offset = (start.getDay() + 6) % 7;
-    const ch = ["IG", "TT", "LI", "Mail", "IG", "X", "ALL"] as const;
     const cells: Node[] = [];
     for (let i = 0; i < offset; i++) cells.push(h("div", { class: "cal-cell empty", "aria-hidden": "true" }));
     let k = 0;
@@ -385,34 +384,33 @@ function rae(p: Project, working: boolean) {
           "div",
           { class: `cal-cell${day === 1 ? " first" : ""}` },
           h("span", { class: "cal-d" }, label),
-          has ? h("span", { class: "cal-chip drop", style: `--c:${CH_COLOR[ch[k % ch.length]]};${stagger(k++, 0.16)}`, "aria-hidden": "true" }) : null,
+          has ? h("span", { class: "cal-chip drop", style: stagger(k++, 0.16), "aria-hidden": "true" }) : null,
         ),
       );
     }
     return [
       section(
         "Launch calendar",
-        working ? "planning…" : null,
+        working ? "Planning…" : null,
         h("div", { class: "cal cal-compact" }, ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => h("div", { class: "cal-wd" }, d)), cells),
       ),
       section(
         "First 3 posts",
-        working ? "writing…" : null,
+        working ? "Writing…" : null,
         h("div", { class: "posts" }, [0, 1, 2].map((i) => h("article", { class: "post skel-post" }, h("div", { class: "post-img" }), bar(90, i * 0.2), bar(70, i * 0.2 + 0.1)))),
       ),
     ];
   }
   const pal = p.results.nova?.names[p.results.nova.chosen]?.palette;
-  const g1 = pal?.[0]?.hex ?? "#14B8A6";
-  const g2 = pal?.[1]?.hex ?? "#0B0F15";
+  const g1 = pal?.[0]?.hex ?? "#1D1D1F";
   return [
     h(
       "div",
       { class: "rae-grid" },
-      section("Launch calendar", `${r.posts.length} posts · 30 days`, h("div", { class: "cal-compact-wrap" }, launchCalendar(r))),
+      section("Launch calendar", `${r.posts.length} posts over 30 days`, h("div", { class: "cal-compact-wrap" }, launchCalendar(r))),
       section(
         "First 3 posts",
-        "ready to publish",
+        "Ready to publish",
         h(
           "div",
           { class: "posts" },
@@ -421,7 +419,7 @@ function rae(p: Project, working: boolean) {
               "article",
               { class: "post" },
               h("div", { class: "post-h" }, h("span", { class: "post-av", style: `background:${g1}` }), h("b", null, r.handle.startsWith("@") ? r.handle : "@" + r.handle)),
-              h("div", { class: "post-img", style: `background:linear-gradient(150deg,${g1},${g2})` }, h("small", null, x.kind), h("b", null, x.title)),
+              h("div", { class: "post-img", style: `background:${g1}` }, h("small", null, x.kind), h("b", null, x.title)),
               h("p", null, x.text),
               h("small", { class: "muted" }, `${x.channel} · ${fmtPostDate(x.date)}`),
             ),
@@ -440,7 +438,7 @@ function pip(p: Project, working: boolean) {
     return [
       section(
         "Landing page",
-        working ? "deploying…" : null,
+        working ? "Deploying…" : null,
         h(
           "div",
           { class: "deploy" },
@@ -458,15 +456,15 @@ function pip(p: Project, working: boolean) {
     h(
       "div",
       { class: "live-card" },
-      h("div", { class: "live-dot", "aria-hidden": "true" }),
+      h("span", { class: "live-ok", "aria-hidden": "true", html: iconSvg("check", 16, 2) }),
       h(
         "div",
         null,
-        h("b", null, "Live today · pre-orders open"),
+        h("b", null, "Live today. Pre-orders open"),
         h("div", { class: "mono small" }, location.host + "/s/" + r.slug),
         h("p", { class: "muted small" }, "Customers pay with Bitcoin Cash straight to your wallet. LaunchDesk never holds your customers' money."),
       ),
-      h("a", { class: "btn primary sm", href: url, target: "_blank", rel: "noopener" }, "Open page ", extIcon()),
+      h("a", { class: "btn sm", href: url, target: "_blank", rel: "noopener" }, "Open page", extIcon()),
     ),
   ];
 }
@@ -499,9 +497,9 @@ export function deptPanelBody(p: Project, d: WorkDept, onRetry: () => void) {
         { class: "callout danger dp-err", role: "alert" },
         h("b", null, `${t.name} couldn't finish ${t.snag}`),
         h("p", null, "Retry is free: you already paid for this stage."),
-        h("button", { type: "button", class: "btn sm danger", onclick: onRetry }, `Retry ${t.name}`),
+        h("button", { type: "button", class: "btn sm", onclick: onRetry }, `Retry ${t.name}`),
       ),
-      section("What " + t.name + " will deliver", null, h("ul", { class: "will-list" }, WILL[d].map((x) => h("li", null, h("span", { class: "dot", style: `--c:${t.color}` }), x)))),
+      section("What " + t.name + " will deliver", null, h("ul", { class: "will-list" }, WILL[d].map((x) => h("li", null, h("span", { class: "s-dot" }), x)))),
     );
     return h("div", { class: "dp-body" }, body);
   }
@@ -514,7 +512,7 @@ export function deptPanel(p: Project, d: WorkDept, onClose: () => void, onRetry:
   const t = TEAM[d];
   return h(
     "div",
-    { class: `dp dp-${d}`, style: `--c:${t.color}`, role: "region", "aria-labelledby": `dp-h-${d}`, "data-dept": d },
+    { class: `dp dp-${d}`, role: "region", "aria-labelledby": `dp-h-${d}`, "data-dept": d },
     h(
       "header",
       { class: "dp-head" },
@@ -537,9 +535,9 @@ export function deptPanel(p: Project, d: WorkDept, onClose: () => void, onRetry:
           (e.currentTarget as HTMLElement).setAttribute("aria-expanded", String(!c));
           (e.currentTarget as HTMLElement).setAttribute("aria-label", `${c ? "Expand" : "Collapse"} ${t.name}'s panel`);
         },
-        html: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg>',
+        html: iconSvg("chevronUp", 16),
       }),
-      h("button", { type: "button", class: "icon-btn", "aria-label": `Close ${t.name}'s panel`, onclick: onClose, html: "&times;" }),
+      h("button", { type: "button", class: "icon-btn", "aria-label": `Close ${t.name}'s panel`, onclick: onClose, html: iconSvg("close", 16) }),
     ),
     deptPanelBody(p, d, onRetry),
   );

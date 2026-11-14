@@ -3,7 +3,7 @@ import { esc } from "../pack/util";
 
 /** Crisp QR code as an SVG string (quiet zone included). Optional centre badge (SVG markup in a 100×100 box). */
 export function qrSvg(text: string, opts: { size?: number; fg?: string; bg?: string; badge?: string; label?: string } = {}): string {
-  const { size = 220, fg = "#0B0F15", bg = "#ffffff", badge, label = "QR code" } = opts;
+  const { size = 220, fg = "#1D1D1F", bg = "#ffffff", badge, label = "QR code" } = opts;
   const qr = qrcode(0, badge ? "H" : "M");
   qr.addData(text);
   qr.make();
@@ -38,9 +38,11 @@ export const BCH_BADGE =
   `<g transform="rotate(-14 50 50)" fill="#fff"><path fill-rule="evenodd" d="M38 26h17.5c8.6 0 13.5 4.3 13.5 10.6 0 4.6-2.6 7.6-6.4 8.8 4.9 1 8.2 4.5 8.2 9.7 0 7.2-5.5 12-14.7 12H38zm10 8.4v10.3h6.3c3.7 0 5.6-1.9 5.6-5.2s-1.9-5.1-5.6-5.1zm0 18v11.2h7.4c4.1 0 6.3-2 6.3-5.6s-2.2-5.6-6.3-5.6z"/>` +
   `<rect x="44" y="18" width="5" height="10" rx="1.5"/><rect x="53" y="18" width="5" height="10" rx="1.5"/><rect x="44" y="65" width="5" height="10" rx="1.5"/><rect x="53" y="65" width="5" height="10" rx="1.5"/></g>`;
 
-/** BCH mark. `onGreen` draws a dark disc so it stays visible on the green pay buttons. */
+/** BCH mark. `onGreen` (any coloured button) draws a monochrome outline coin in currentColor. */
 export function bchMark(size = 18, onGreen = false): string {
-  const badge = onGreen ? BCH_BADGE.replace('fill="#0AC18E"', 'fill="#062A1F"').replace('fill="#fff"', 'fill="#0FD9A0"') : BCH_BADGE;
+  const badge = onGreen
+    ? BCH_BADGE.replace('<circle cx="50" cy="50" r="48" fill="#0AC18E"/>', '<circle cx="50" cy="50" r="44" fill="none" stroke="currentColor" stroke-width="8"/>').replace('fill="#fff"', 'fill="currentColor"')
+    : BCH_BADGE;
   return `<svg width="${size}" height="${size}" viewBox="0 0 100 100" aria-hidden="true">${badge}</svg>`;
 }
 

@@ -7,12 +7,12 @@ import { closeButton, copyText, openModal, type ModalHandle } from "./modal";
 import { play } from "./sound";
 import { app, fmtBch, fmtSats, fmtUsd } from "./state";
 import { STAGE_INFO, TEAM } from "./team";
+import { iconSvg } from "./ui";
 
 /** Phones and tablets: nobody can scan their own screen, so the deep link comes first. */
 const isHandheld = () => matchMedia("(pointer: coarse)").matches || innerWidth < 768;
 
-const walletIcon =
-  '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H18v4"/><path d="M4 7.5V17a2 2 0 0 0 2 2h14V9H6.5A2.5 2.5 0 0 1 4 7.5z"/><circle cx="16" cy="14" r="1.2" fill="currentColor"/></svg>';
+const walletIcon = iconSvg("wallet", 18);
 
 /** The pairing block: WizardConnect QR + "Open wallet app" deep link, ordered for the device. */
 function pairingBlock(intro: string) {
@@ -44,7 +44,7 @@ function pairingBlock(intro: string) {
         "a",
         { class: "btn primary block lg wallet-cta", href: uri, "data-autofocus": "" },
         h("span", { class: "wc-ico", "aria-hidden": "true", html: walletIcon }),
-        h("span", null, h("b", null, "Open wallet app"), h("small", null, "Selene, Cashonize or Paytaca · WizardConnect")),
+        h("span", null, h("b", null, "Open wallet app"), h("small", null, "Selene, Cashonize or Paytaca, via WizardConnect")),
       ),
       toggle,
       qrBox,
@@ -67,7 +67,7 @@ function pairingBlock(intro: string) {
     ),
     h(
       "a",
-      { class: "btn ghost block wallet-alt", href: uri },
+      { class: "btn block wallet-alt", href: uri },
       h("span", { class: "wc-ico sm", "aria-hidden": "true", html: walletIcon }),
       "Wallet on this computer? Open it",
     ),
@@ -82,7 +82,7 @@ export function openConnect() {
     h(
       "div",
       { class: "modal-head" },
-      h("div", null, h("div", { class: "kicker bch" }, "Connect wallet"), h("h2", { class: "modal-title" }, "Pay in cents with Bitcoin Cash")),
+      h("div", null, h("div", { class: "kicker" }, "Connect wallet"), h("h2", { class: "modal-title" }, "Pay in cents with Bitcoin Cash")),
       closeButton(m.close),
     ),
     h("div", { class: "modal-body" }, pairingBlock("Pair once. Every stage is then a one-tap approval in your wallet. LaunchDesk never holds your keys.")),
@@ -139,7 +139,7 @@ export function openPay(project: Project, stage: Stage): Promise<Project | null>
       ? h("button", { type: "button", class: "link tiny dev-link", onclick: () => void payDev() }, "Run without paying (local test)")
       : null;
   const howLine = sample
-    ? h("ol", { class: "pay-how", "aria-label": "What happens next" }, h("li", null, h("i", null, "1"), `${first.name} starts · sample data`))
+    ? h("ol", { class: "pay-how", "aria-label": "What happens next" }, h("li", null, h("i", null, "1"), `${first.name} starts with sample data`))
     : h(
         "ol",
         { class: "pay-how", "aria-label": "How paying works" },
@@ -155,8 +155,8 @@ export function openPay(project: Project, stage: Stage): Promise<Project | null>
       h(
         "div",
         null,
-        h("div", { class: "kicker bch" }, `Stage ${info.n} · ${info.title}`),
-        h("div", { class: "pay-price" }, fmtUsd(cents), sample ? h("span", { class: "demo-pill" }, "Demo") : null),
+        h("div", { class: "kicker" }, `Stage ${info.n} · ${info.title}`),
+        h("div", { class: "pay-price" }, h("span", { class: "num" }, fmtUsd(cents)), sample ? h("span", { class: "demo-pill" }, "Demo") : null),
         satsLine,
         howLine,
       ),
@@ -167,7 +167,7 @@ export function openPay(project: Project, stage: Stage): Promise<Project | null>
       "div",
       { class: "modal-foot" },
       stage === "build"
-        ? h("p", { class: "pay-founder" }, h("b", null, "Your connected wallet becomes your shop's checkout. "), "Customers' pre-orders go straight to it. LaunchDesk never holds that money.")
+        ? h("p", { class: "pay-founder" }, h("b", null, "Your wallet becomes your shop's checkout. "), "Customers' pre-orders go straight to it. LaunchDesk never holds that money.")
         : null,
       h("p", { class: "pay-gets" }, info.gets),
       devLink,
@@ -189,7 +189,7 @@ export function openPay(project: Project, stage: Stage): Promise<Project | null>
           "div",
           { class: "callout-btns" },
           h("button", { type: "button", class: "btn sm primary", onclick: primary[1], "data-autofocus": "" }, primary[0]),
-          secondary ? h("button", { type: "button", class: "btn sm ghost", onclick: secondary[1] }, secondary[0]) : null,
+          secondary ? h("button", { type: "button", class: "btn sm", onclick: secondary[1] }, secondary[0]) : null,
         ),
       ),
     );
@@ -226,7 +226,7 @@ export function openPay(project: Project, stage: Stage): Promise<Project | null>
         h(
           "li",
           { class: i < ai ? "done" : i === ai ? "active" : "" },
-          h("span", { class: "ps-dot", "aria-hidden": "true" }, i < ai ? "✓" : String(i + 1)),
+          i < ai ? h("span", { class: "ps-dot", "aria-hidden": "true", html: iconSvg("check", 12, 2.2) }) : h("span", { class: "ps-dot", "aria-hidden": "true" }, String(i + 1)),
           h("span", null, label[s]),
           i === ai ? h("span", { class: "spinner", "aria-hidden": "true" }) : null,
         ),
@@ -245,7 +245,7 @@ export function openPay(project: Project, stage: Stage): Promise<Project | null>
             : [sample ? "Started · sample data" : "Started · local test", sample ? "Nothing was charged. Results are sample data." : "Local test recorded · no payment sent."]
           : active === "check"
             ? ["Payment sent", "Checking it on Bitcoin Cash mainnet…"]
-            : ["Paid · thank you", "Recorded on Bitcoin Cash mainnet."];
+            : ["Paid. Thank you", "Recorded on Bitcoin Cash mainnet."];
     // Once the wallet has signed, closing the dialog would hide a payment that is already on its way.
     m.lock(active !== "approve");
     main.replaceChildren(
@@ -365,7 +365,7 @@ export function openPay(project: Project, stage: Stage): Promise<Project | null>
         h(
           "div",
           { class: "sample-run" },
-          h("p", { class: "info-line" }, h("span", { class: "info-i", "aria-hidden": "true" }, "i"), "Demo server: no AI key, so nothing is charged and results are sample data."),
+          h("p", { class: "info-line" }, h("span", { class: "info-i", "aria-hidden": "true", html: iconSvg("info", 16) }), "Demo server: no AI key, so nothing is charged and results are sample data."),
           run ?? h("p", { class: "muted small" }, "Payments are switched off on this server."),
         ),
       );
