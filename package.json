@@ -1,0 +1,34 @@
+{
+  "name": "launchdesk",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n web,api \"vite\" \"tsx watch server/index.ts\"",
+    "build": "vite build && tsc -p server/tsconfig.json",
+    "start": "node dist/server/index.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p server/tsconfig.json --noEmit",
+    "test": "tsx test/payment.test.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "1.8.0",
+    "@bitauth/libauth": "3.1.0-next.8",
+    "@hono/node-server": "2.1.8",
+    "@libsql/client": "0.18.0",
+    "@wizardconnect/core": "0.2.10",
+    "@wizardconnect/dapp": "0.2.7",
+    "hono": "4.13.18",
+    "qrcode-generator": "1.4.4"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "concurrently": "10.0.7",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2",
+    "vite": "8.3.8"
+  }
+}

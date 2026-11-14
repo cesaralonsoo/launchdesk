@@ -1,0 +1,110 @@
+import {
+  binToHex,
+  binToUtf8,
+  cashAddressToLockingBytecode,
+  decodeTransaction,
+  hashTransaction,
+  hexToBin,
+} from "@bitauth/libauth";
+import { config } from "./config.js";
+
+/** One short-lived JSON-RPC call to a Fulcrum server, with failover. */
+export async function electrum<T = unknown>(method: string, params: unknown[]): Promise<T> {
+  let lastErr: unknown;
+  for (const url of config.electrumServers) {
+    try {
+      return await callOnce<T>(url, method, params);
+    } catch (e) {
+      lastErr = e;
+      // An RPC error from the server is final (for example a rejected broadcast): don't retry elsewhere.
+      if (e instanceof RpcError) throw e;
+      console.warn(`[electrum] ${url} ${method}:`, (e as Error).message);
+    }
+  }
+  throw lastErr;
+}
+
+export class RpcError extends Error {}
+
+function callOnce<T>(url: string, method: string, params: unknown[]): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const ws = new WebSocket(url);
+    const timer = setTimeout(() => {
+      ws.close();
+      reject(new Error("timeout"));
+    }, 10_000);
+    const done = (fn: () => void) => {
+      clearTimeout(timer);
+      ws.close();
+      fn();
+    };
+    ws.onopen = () => ws.send(JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }));
+    ws.onerror = () => done(() => reject(new Error("socket error")));
+    ws.onmessage = (ev) => {
+      const msg = JSON.parse(String(ev.data));
+      if (msg.id !== 1) return;
+      if (msg.error) done(() => reject(new RpcError(msg.error.message ?? JSON.stringify(msg.error))));
+      else done(() => resolve(msg.result as T));
+    };
+  });
+}
+
+/** The OP_RETURN tag that binds a payment to one project and stage. */
+export const paymentTag = (projectId: string, stage: string) => `LD1:${projectId}:${stage}`;
+
+export type CheckedPayment = { txid: string; paidSats: number };
+
+/**
+ * Decode a signed transaction and check, without trusting the browser:
+ * - it pays at least `minSats` to the merchant address;
+ * - it carries an OP_RETURN with exactly `tag`.
+ */
+export function checkPaymentTx(txHex: string, minSats: number, tag: string): CheckedPayment {
+  if (!/^[0-9a-f]+$/i.test(txHex) || txHex.length > 200_000) throw new Error("Invalid transaction");
+  const bin = hexToBin(txHex);
+  const tx = decodeTransaction(bin);
+  if (typeof tx === "string") throw new Error("Invalid transaction: " + tx);
+
+  const merchant = cashAddressToLockingBytecode(config.merchantAddress);
+  if (typeof merchant === "string") throw new Error("Server misconfigured: MERCHANT_ADDRESS");
+  const merchantHex = binToHex(merchant.bytecode);
+
+  let paidSats = 0;
+  let tagged = false;
+  for (const out of tx.outputs) {
+    const hex = binToHex(out.lockingBytecode);
+    if (hex === merchantHex && !out.token) paidSats += Number(out.valueSatoshis);
+    if (out.lockingBytecode[0] === 0x6a && readOpReturnText(out.lockingBytecode) === tag) tagged = true;
+  }
+  if (!tagged) throw new Error("The payment is not tagged for this order");
+  if (paidSats < minSats) throw new Error(`Payment too small: ${paidSats} < ${minSats} sats`);
+  return { txid: hashTransaction(bin), paidSats };
+}
+
+/** Reads `OP_RETURN <push>` and returns the pushed bytes as text. */
+function readOpReturnText(script: Uint8Array): string | null {
+  let i = 1;
+  const op = script[i++];
+  let len: number;
+  if (op === undefined) return null;
+  if (op >= 0x01 && op <= 0x4b) len = op;
+  else if (op === 0x4c) len = script[i++] ?? -1;
+  else return null;
+  if (len < 0 || i + len !== script.length) return null;
+  return binToUtf8(script.slice(i, i + len));
+}
+
+/** Broadcasts; if the network already has the tx, that's fine too. */
+export async function broadcast(txHex: string, txid: string) {
+  try {
+    await electrum<string>("blockchain.transaction.broadcast", [txHex]);
+  } catch (e) {
+    if (!(e instanceof RpcError)) throw e;
+    // "already in mempool / known" -> confirm it exists, else fail.
+    try {
+      await electrum("blockchain.transaction.get", [txid, false]);
+    } catch {
+      throw new Error("Broadcast rejected: " + e.message);
+    }
+  }
+}
