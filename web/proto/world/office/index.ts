@@ -5,7 +5,8 @@
 // v7:
 //   - floor plan r0 r1 r2 r3 / lobby nova dex launch. Research rooms are furnished for the analyst who sits there
 //     (competition = wall of competitor cards, market = money board, viability = SWOT whiteboard, …), built lazily
-//     per role and cached, so setRoster() swaps a room's set without rebuilding the floor.
+//     per role and cached, so setRoster() swaps a room's set without rebuilding the floor. Every room's decor is a
+//     theme in ./rooms/ (one file per theme, registry rooms/index.ts, preview rooms.html — see rooms/README.md).
 //   - the v5 characters are back (cast.ts), one per actor: founder (CEO desk), 3–5 analysts, the four builders.
 //   - pixel-art direction (style.ts): nearest-filtered low-res textures, crisp edges, voxel plants, cel-shaded figures.
 //   - the lobby wall carries the project's own company sign (draft = taped kraft card, brand = backlit pixel sign).
@@ -23,7 +24,7 @@ import { CubeBurst, Papers } from "./fx";
 import { bake, Builder, hexInto, lookFromAtmosphere, makeLook, Registry, type RoomMix } from "./kit";
 import { FLOOR_ROOMS, floorSpot, HALF_X, HALF_Z, LEGACY_OF, LEGACY_ROOM, ROOM_BY_ID, ROOM_D, ROOM_W, ROOMS, SLAB_PAD, toRoot, type RoomDef } from "./layout";
 import { drawLobbySign, PixelCanvas } from "./pixel";
-import { furnish, type RoomSet } from "./props";
+import { furnishRoom, type RoomDecor, type RoomSet } from "./rooms/index";
 import { buildRoomShell, buildSharedShell, EXT_H } from "./shell";
 import { isPixel, resolveStyle, setStyle, style as currentStyle, type OfficeStyle } from "./style";
 import { disposeTextures } from "./textures";
@@ -95,7 +96,7 @@ export function envProbe(R: Registry): THREE.Mesh {
 interface Slot {
   def: RoomDef;
   holder: THREE.Group; // rise scaling (boom reveal)
-  variants: Map<string, { g: THREE.Group; spinners: THREE.Object3D[] }>;
+  variants: Map<string, { g: THREE.Group; decors: RoomDecor[] }>;
   active: string;
   mix: RoomMix;
   target: RoomMix;
@@ -145,12 +146,12 @@ export function createOfficeModel(opts: OfficeOptions): OfficeModelExt {
     const g = buildRoomShell(R, q, r, key, color);
     const B = new Builder(q);
     B.group.position.set(r.cx, 0, r.cz);
-    const f = furnish({ R, B, room: key, color }, r, B.group, set);
+    const decors = furnishRoom({ R, B, room: key, color }, r, B.group, set, q);
     g.add(B.group);
     const baked = bake(g, R);
     baked.name = `set:${key}`;
     mixes.set(key, slot.mix);
-    slot.variants.set(key, { g: baked, spinners: f.spinners });
+    slot.variants.set(key, { g: baked, decors });
     return slot.variants.get(key)!;
   }
   function activate(slot: Slot, key: string, set: RoomSet, color: string) {
@@ -160,7 +161,14 @@ export function createOfficeModel(opts: OfficeOptions): OfficeModelExt {
     slot.holder.add(v.g);
     slot.active = key;
     R.resolve(look, mixes, key);
+    nightOf(v.decors);
   }
+  /** Decor hook: 0 = full day … 1 = night with the lamps on. */
+  const nightLevel = () => clamp01(Math.max(look.dark, look.lamps * 0.85));
+  const nightOf = (decors: RoomDecor[]) => {
+    const n = nightLevel();
+    for (const d of decors) d.applyNight?.(n);
+  };
 
   // ── actors
   const actors = new Map<ActorId, Actor>();
@@ -397,6 +405,7 @@ export function createOfficeModel(opts: OfficeOptions): OfficeModelExt {
     R.resolve(look, mixes);
     syncLights();
     syncSignGlow();
+    for (const s of slots.values()) nightOf(s.variants.get(s.active)?.decors ?? []);
   }
 
   // ── legacy mapping (v5/v6 world): mia/leo/sam = roster 0/1/2
@@ -498,7 +507,7 @@ export function createOfficeModel(opts: OfficeOptions): OfficeModelExt {
         }
         busy = a.fig.update(dt, t, still) || busy;
       }
-      if (!still) for (const s of slots.values()) for (const sp of s.variants.get(s.active)?.spinners ?? []) sp.rotation.y += dt * 0.35;
+      if (!still) for (const s of slots.values()) for (const d of s.variants.get(s.active)?.decors ?? []) d.update?.(dt, t);
       busy = burst.update(dt) || busy;
       busy = papers.update(dt) || busy;
       return busy;

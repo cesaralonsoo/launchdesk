@@ -376,14 +376,15 @@ function resolveEntry(e: Entry, L: Look, mix?: RoomMix) {
       break;
     case "accentWall": {
       // one identity surface per room: the dept colour, muted and a little lighter (tasteful, never neon)
-      const strong = desat(tmpB.copy(accent), 0.42).lerp(WHITE, 0.18);
-      c.copy(L.s.wall).lerp(strong, Math.min(1, 1.05 * acc));
+      // v7 polish: closer to the v5 identity walls (saturated, still soft) so each room is a colour block
+      const strong = desat(tmpB.copy(accent), 0.2).lerp(WHITE, 0.2);
+      c.copy(L.s.wall).lerp(strong, Math.min(1, 1.0 * acc));
       break;
     }
     case "rug": {
       // a deeper woven tone of the dept colour on a natural wool base
-      const tone = desat(tmpB.copy(accent), 0.42).multiplyScalar(0.92);
-      c.copy(RUG_BASE).lerp(tone, Math.min(1, 0.85 * acc));
+      const tone = desat(tmpB.copy(accent), 0.24).lerp(WHITE, 0.08);
+      c.copy(RUG_BASE).lerp(tone, Math.min(1, 0.9 * acc));
       break;
     }
     case "accent":
