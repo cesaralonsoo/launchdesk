@@ -32,6 +32,19 @@ const P: Record<string, string> = {
   alert: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5.5"/><path d="M12 16.2h.01"/>',
   transfer: '<path d="M5 9h13M14.5 5.5 18 9l-3.5 3.5M19 15H6M9.5 11.5 6 15l3.5 3.5"/>',
   lock: '<rect x="5.5" y="10.5" width="13" height="9.5" rx="2.2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/>',
+  // v4 action + status icons (D8: actions and status only, never people)
+  copy: '<rect x="8.5" y="8.5" width="11" height="11" rx="2.2"/><path d="M15.5 8.5V6.2a1.7 1.7 0 0 0-1.7-1.7H6.2a1.7 1.7 0 0 0-1.7 1.7v7.6a1.7 1.7 0 0 0 1.7 1.7h2.3"/>',
+  download: '<path d="M12 4.5v10.5M7.5 10.5 12 15l4.5-4.5"/><path d="M5 19.5h14"/>',
+  share: '<path d="M12 15V4.5M8 8.5l4-4 4 4"/><path d="M7.5 11.5H6.2a1.7 1.7 0 0 0-1.7 1.7v5.1a1.7 1.7 0 0 0 1.7 1.7h11.6a1.7 1.7 0 0 0 1.7-1.7v-5.1a1.7 1.7 0 0 0-1.7-1.7h-1.3"/>',
+  more: '<circle cx="6" cy="12" r=".9" fill="currentColor"/><circle cx="12" cy="12" r=".9" fill="currentColor"/><circle cx="18" cy="12" r=".9" fill="currentColor"/>',
+  menu: '<path d="M4.5 8h15M4.5 16h15"/>',
+  chevronRight: '<path d="m9.5 6.5 5.5 5.5-5.5 5.5"/>',
+  arrowUp: '<path d="M12 19V5.5M6.5 11 12 5.5 17.5 11"/>',
+  warn: '<path d="M10.3 4.6 3.2 17.2A2 2 0 0 0 5 20.2h14a2 2 0 0 0 1.8-3L13.7 4.6a2 2 0 0 0-3.4 0z"/><path d="M12 9.5v4.5"/><path d="M12 17.1h.01"/>',
+  shield: '<path d="M12 3.5 5 6.2v5.3c0 4.3 3 7.7 7 9 4-1.3 7-4.7 7-9V6.2z"/><path d="m8.8 12.2 2.2 2.2 4.2-4.4"/>',
+  bars: '<path d="M5 19.5v-6M10 19.5v-10M15 19.5v-7.5M20 19.5V5"/>',
+  vote: '<path d="M5 13.5h14v6H5z"/><path d="m8.5 9.5 2.5 2.5 5-5.5"/>',
+  doc: '<path d="M6.5 3.5h7.5l4 4v13h-11.5z"/><path d="M13.5 3.5v4.5h4.5M9.5 12.5h5M9.5 16h5"/>',
 };
 
 export type IconName = keyof typeof P | DeptId;
@@ -46,9 +59,40 @@ export const icon = (name: string, size = 16, cls = "ico") => h("span", { class:
 export const BCH_SVG = (size = 16) => `<svg class="bch-mark" viewBox="0 0 100 100" width="${size}" height="${size}" aria-hidden="true">${BCH_BADGE}</svg>`;
 export const bchMark = (size = 16) => h("span", { class: "bch-ico", "aria-hidden": "true", html: BCH_SVG(size) });
 
-/** Department identity: a monochrome line icon in a neutral circle. */
-export const avatar = (id: DeptId | "you", size: "sm" | "md" | "lg" = "sm") =>
-  h("span", { class: `av av-${size}`, "aria-hidden": "true", title: id === "you" ? "You" : TEAM[id].name, html: iconSvg(id, size === "lg" ? 18 : size === "md" ? 16 : 13) });
+/** D5 department colours (fallbacks until styles.css defines --d-*). Only for dot, avatar tint, working ring, split bar. */
+export const DEPT_COLOR: Record<DeptId, string> = {
+  mia: "#8B7CF6", leo: "#3B82F6", sam: "#F59E0B", nova: "#EC4899", dex: "#F97362", rae: "#14B8A6", pip: "#94A3B8", lobby: "#0AC18E",
+};
+export type AvatarSize = 28 | 32 | 40 | 56;
+
+const LEGACY_SIZE = { sm: 24, md: 28, lg: 36 } as const;
+
+/**
+ * D9 avatar (owner WS1, signature frozen): monogram circle, 600 weight at 45% of size, dept tint
+ * (12% fill + letter in the dept colour darkened with black), optional 2px working ring that breathes
+ * (styles.css `.avatar`). People are never icons (D8): the legacy sizes "sm" | "md" | "lg" now render the
+ * same monogram at 24 / 28 / 36 px so v3 layouts keep their spacing.
+ */
+export function avatar(id: DeptId | "you", size: AvatarSize | "sm" | "md" | "lg" = "sm", opts: { working?: boolean } = {}): HTMLElement {
+  const name = id === "you" ? "You" : TEAM[id].name;
+  const px = typeof size === "string" ? LEGACY_SIZE[size] : size;
+  const c = id === "you" ? "var(--ink-2)" : `var(--d-${id}, ${DEPT_COLOR[id]})`;
+  return h(
+    "span",
+    {
+      class: `avatar${typeof size === "string" ? ` av-${size}` : ""}${opts.working ? " is-working" : ""}`,
+      "aria-hidden": "true",
+      title: name,
+      "data-dept": id,
+      style: `--av:${px}px;--c:${c}`,
+    },
+    name.charAt(0).toUpperCase(),
+  );
+}
+
+/** Overlapping avatar group (L8): 28px, −6px overlap, white separation ring. */
+export const avatarGroup = (ids: Array<DeptId | "you">, size: AvatarSize = 28) =>
+  h("span", { class: "avatar-group", "aria-hidden": "true" }, ids.map((id) => avatar(id, size)));
 
 const VERDICT: Record<LeoOpportunity["verdict"], { label: string; cls: string }> = {
   go: { label: "Go", cls: "go" },

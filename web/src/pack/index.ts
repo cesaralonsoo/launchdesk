@@ -1,18 +1,40 @@
-// Startup pack modal: openPack(project, tab?) / closePack().
-import type { Project, SiteData } from "../types";
-import { ensureSiteCss, SITE_CSS, wireLanding } from "../site/landing";
+// Startup pack: a full-screen document with a side rail (spec-v4 L37–L39, R10–R23, F5, F8, M12). Owner: WS4.
+// openPack(project, {section, readOnly, banner}) / closePack() / isPackOpen() / buildPackHtml() (contracts-v4.md).
+import { api } from "../api";
+import { countPreorders } from "../site";
+import { ensureSiteCss, wireLanding } from "../site/landing";
 import { copyText } from "../site/qr";
-import { wireCharts } from "./charts";
-import { renderLogoTile } from "./logo";
+import { normalize, type Preorders, type Project, type WorkDept } from "../types";
+import { renderMark } from "./logo";
 import packCss from "./pack.css?inline";
-import { brandOf, ICON, renderTab, siteDataOf, TABS, tabState, type TabId } from "./tabs";
-import { esc, usd } from "./util";
+import { brandOf, ICON, renderDocument, renderSection, SECTIONS, sectionState, siteDataOf, type PackSection, type RenderCtx } from "./tabs";
+import { brandColors, contrast, esc, fontsHref, fontStack, loadFonts, usd } from "./util";
 
-export { renderLogo, renderIcon, renderLogoTile } from "./logo";
+export { renderLogo, renderIcon, renderLogoTile, renderMark, renderWordmark } from "./logo";
+export { sparkline, cashChart, scoreRing, positioningMap } from "./charts";
+export { loadFonts } from "./util";
 export type { TabId } from "./tabs";
+export type { PackSection } from "./tabs";
+export { normalize } from "../types";
+
+/** The 8 pack sections of the rail (spec-v4 L38), in order. */
+export const PACK_SECTIONS: readonly PackSection[] = SECTIONS.map((s) => s.id);
+/** Department → the pack section that shows its work (tiles, Now card "Open in your pack →", stepper). */
+export const DEPT_SECTION: Record<WorkDept, PackSection> = {
+  mia: "plan", leo: "market", sam: "numbers", nova: "brand", dex: "brand", rae: "launch", pip: "website",
+};
+export type PackOpenOpts = {
+  /** Section to scroll to. Default: Summary. */
+  section?: PackSection;
+  /** L39: shared report or example pack. Hides pay/build/share actions; Download only. */
+  readOnly?: boolean;
+  /** L39: 40px banner on top. "example" = "Example pack, made for $0.30 · Start yours"; "share" = "Shared report, read only". */
+  banner?: "example" | "share" | null;
+};
 
 const STYLE_ID = "ld-pack-css";
-const FONTS = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap";
+const UI_FONTS = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap";
+const CHECKS_KEY = (id: string) => `launchdesk-pack-checks:${id}`;
 
 function ensureCss(): void {
   ensureSiteCss();
@@ -22,122 +44,464 @@ function ensureCss(): void {
     s.textContent = packCss;
     document.head.appendChild(s);
   }
-  const links = [...document.querySelectorAll<HTMLLinkElement>("link[rel=stylesheet]")];
-  if (!links.some((l) => /family=Inter/.test(l.href))) {
-    const l = document.createElement("link");
-    l.rel = "stylesheet";
-    l.href = FONTS;
-    document.head.appendChild(l);
-  }
 }
 
-/** Accepts tab ids, labels, live-output tile names and department ids. */
-function normalizeTab(tab: string | undefined): TabId | null {
+/** Accepts v4 section ids plus v3 tab ids, labels, tile names and department ids. */
+function toSection(tab: string | undefined): PackSection | null {
   if (!tab) return null;
   const t = tab.toLowerCase().trim().replace(/[\s_-]+/g, " ");
-  const map: Record<string, TabId> = {
-    opportunity: "opportunity", leo: "opportunity", score: "opportunity", market: "opportunity",
-    plan: "plan", mia: "plan", brief: "plan",
-    model: "model", "business model": "model", sam: "model", numbers: "model", finance: "model",
-    brand: "brand", name: "brand", logo: "brand", nova: "brand", identity: "brand",
-    landing: "landing", "landing page": "landing", dex: "landing", pip: "landing", site: "landing", live: "landing",
+  const map: Record<string, PackSection> = {
+    summary: "summary", memo: "summary", report: "summary",
+    market: "market", opportunity: "market", leo: "market", score: "market", research: "market",
+    plan: "plan", mia: "plan", brief: "plan", checklist: "plan",
+    numbers: "numbers", model: "numbers", "business model": "numbers", sam: "numbers", finance: "numbers",
+    brand: "brand", name: "brand", logo: "brand", nova: "brand", dex: "brand", identity: "brand",
+    website: "website", landing: "website", "landing page": "website", pip: "website", site: "website", live: "website",
     launch: "launch", rae: "launch", calendar: "launch",
     receipt: "receipt", payments: "receipt", lobby: "receipt",
   };
   return map[t] ?? null;
 }
 
+const readChecks = (id: string): Record<string, boolean> => {
+  try {
+    return JSON.parse(localStorage.getItem(CHECKS_KEY(id)) || "{}") as Record<string, boolean>;
+  } catch {
+    return {};
+  }
+};
+const writeChecks = (id: string, v: Record<string, boolean>) => {
+  try {
+    localStorage.setItem(CHECKS_KEY(id), JSON.stringify(v));
+  } catch {
+    /* private mode: the ticks just don't persist */
+  }
+};
+const reducedMotion = () => {
+  try {
+    return matchMedia("(prefers-reduced-motion: reduce)").matches;
+  } catch {
+    return false;
+  }
+};
+
 type State = {
   project: Project;
-  tab: TabId;
+  opts: PackOpenOpts;
   overlay: HTMLElement;
-  body: HTMLElement;
-  site: { founderAddress?: string; bchUsd?: number; loading?: boolean };
+  scroller: HTMLElement;
+  doc: HTMLElement;
+  active: PackSection;
+  site: { founderAddress?: string; bchUsd?: number; loading?: boolean; demo?: boolean };
+  preorders: Preorders | null;
+  checks: Record<string, boolean>;
   cleanups: Array<() => void>;
   lastFocus: Element | null;
   ro?: ResizeObserver;
+  spyLock: number;
 };
 let S: State | null = null;
-const EXT = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 16 16 8M9.5 8H16v6.5"/></svg>`;
 
-function headerHtml(p: Project): string {
+const readOnlyOf = (p: Project, o: PackOpenOpts) => !!(o.readOnly || p.example || o.banner);
+const bannerOf = (p: Project, o: PackOpenOpts) => o.banner ?? (p.example ? "example" : null);
+
+function ctxOf(st: State): RenderCtx {
+  return {
+    ...st.site,
+    origin: location.origin,
+    readOnly: readOnlyOf(st.project, st.opts),
+    checks: st.checks,
+    preorders: st.preorders,
+  };
+}
+
+// ---------- markup ----------
+
+function nameColor(p: Project): string {
+  const c = brandColors(brandOf(p).option?.palette);
+  return contrast(c.primary, "#ffffff") >= 3 ? c.primary : "#1D1D1F";
+}
+
+function logoHtml(p: Project, size: number): string {
   const b = brandOf(p);
-  const stage2 = !!p.payments.build;
-  const allDone = !!p.results.pip;
-  const s1Done = !!(p.results.mia && p.results.leo && p.results.sam);
-  const kicker = allDone ? "Delivered · Stages 1 and 2" : stage2 ? "In progress · Stage 2" : s1Done ? "Delivered · Stage 1" : "In progress · Stage 1";
-  const title = allDone ? "Your startup pack is ready" : s1Done && !stage2 ? "Your Stage 1 report" : "Your startup pack";
-  const one = p.results.mia?.one_liner || b.tagline || p.idea;
-  const tile = p.results.nova
-    ? renderLogoTile(b.logo, b.option?.palette, b.name, 64)
-    : `<span class="ld-logotile" style="width:64px;height:64px;border-radius:16px;background:#1D1D1F;display:grid;place-items:center;font-family:var(--font-display);font-weight:600;font-size:26px;color:#fff">${esc((b.name[0] || "L").toUpperCase())}</span>`;
-  return `${tile}
-    <div class="ldp-headtxt">
-      <div class="ldp-kicker${allDone || (s1Done && !stage2) ? "" : " wip"}">${esc(kicker)}</div>
-      <h2 class="ldp-title" id="ldp-title">${esc(title)}</h2>
-      <p class="ldp-sub"><b>${esc(b.name)}</b> · ${esc(one)}</p>
-      ${p.results.pip ? `<a class="ldp-livechip" href="/s/${esc(p.results.pip.slug)}" target="_blank" rel="noopener"><i></i>Live at /s/${esc(p.results.pip.slug)}${EXT}</a>` : ""}
-    </div>
-    <button class="ldp-x" type="button" data-close aria-label="Close pack"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7 7l10 10M17 7 7 17"/></svg></button>`;
+  if (p.results.nova) return renderMark(b.logo, b.option?.palette, b.name, size, b.fonts);
+  return `<span class="ld-mark ldp-mono" style="width:${size}px;height:${size}px;border-radius:${Math.round(size * 0.26)}px;font-size:${Math.round(size * 0.42)}px">${esc((b.name[0] || "L").toUpperCase())}</span>`;
 }
 
-function tabsHtml(p: Project, active: TabId): string {
-  return TABS.map((t) => {
-    const st = tabState(p, t.id);
-    const locked = st === "locked";
-    return `<button class="ldp-tab${locked ? " locked" : ""}" role="tab" type="button" data-tab="${t.id}" aria-selected="${t.id === active}" style="--c:${t.color}"><i></i>${esc(t.label)}${locked ? ICON.lock : ""}</button>`;
-  }).join("");
-}
-
-/** The most impressive result first: the live site taking BCH pre-orders. */
-function liveBtn(p: Project): string {
+function actionsHtml(p: Project, ro: boolean, compact = false): string {
   const slug = p.results.pip?.slug;
-  if (!slug) return "";
-  return `<a class="ldp-btn primary" href="/s/${esc(slug)}" target="_blank" rel="noopener">Open live site${EXT}</a>`;
+  return `${slug ? `<a class="ldp-btn ${compact ? "sm" : ""}" href="/s/${esc(slug)}" target="_blank" rel="noopener">Open site${ICON.ext}</a>` : ""}
+    ${ro ? "" : `<button class="ldp-btn ${compact ? "sm" : ""}" type="button" data-share>Share</button>`}
+    <div class="ldp-menuwrap"><button class="ldp-iconbtn lg" type="button" data-menu="dl" aria-haspopup="menu" aria-label="Download" title="Download">${ICON.download}</button>
+      <div class="ldp-menu" role="menu" data-menu-for="dl" hidden><button role="menuitem" type="button" data-pdf>Download PDF</button><button role="menuitem" type="button" data-html>Download HTML</button></div></div>`;
 }
 
-function footNote(p: Project): string {
-  const paid = (["validate", "build"] as const).filter((s) => p.payments[s]);
-  const realStages = paid.filter((s) => !p.payments[s]!.txid.startsWith("dev-"));
-  const cents = realStages.reduce((a, s) => a + (p.payments[s]!.cents || 0), 0);
-  const real = realStages.length;
-  if (!paid.length) return "AI estimates are labelled as estimates";
-  if (!real) return "Local test · no on-chain payments · AI estimates are labelled";
-  return `${real} on-chain payment${real === 1 ? "" : "s"} · ${usd(cents)} total · AI estimates are labelled`;
+function headHtml(p: Project, ro: boolean): string {
+  const b = brandOf(p);
+  const one = b.tagline || p.results.mia?.one_liner || p.idea;
+  const font = p.results.nova ? `font-family:${esc(fontStack(b.fonts.display))};` : "";
+  return `${logoHtml(p, 64)}
+    <div class="ldp-headtxt"><h1 class="ldp-name" id="ldp-name" style="${font}color:${nameColor(p)}">${esc(b.name)}</h1><p class="ldp-tag">${esc(one)}</p></div>
+    <div class="ldp-actions">${actionsHtml(p, ro)}</div>`;
 }
 
-function renderBody(): void {
+function railHtml(p: Project, active: PackSection, buildCents: number): string {
+  let rows = "";
+  for (const s of SECTIONS) {
+    const st = sectionState(p, s.id);
+    if (s.id === "brand") rows += `<div class="ldp-railgrp">Build${p.payments.build || p.example ? "" : ` · ${usd(buildCents)}`}</div>`;
+    const locked = st === "locked";
+    rows += `<button class="ldp-rrow-btn${locked ? " locked" : ""}" type="button" role="tab" id="ldp-tab-${s.id}" aria-controls="ldp-s-${s.id}" aria-selected="${s.id === active}" tabindex="${s.id === active ? 0 : -1}" data-goto="${s.id}"><span>${s.label}</span>${locked ? ICON.lock : st === "working" ? `<i class="wk"></i>` : ""}</button>`;
+  }
+  return `<span class="ldp-ind" aria-hidden="true"></span>${rows}`;
+}
+
+function mfootHtml(p: Project, ro: boolean, buildCents: number): string {
+  const slug = p.results.pip?.slug;
+  const primary = slug
+    ? `<a class="ldp-btn primary" href="/s/${esc(slug)}" target="_blank" rel="noopener">Open your site</a>`
+    : !ro && p.results.sam && !p.payments.build
+      ? `<button class="ldp-btn primary" type="button" data-build>Build it · ${usd(buildCents)}</button>`
+      : `<span></span>`;
+  return `${ro ? `<span></span>` : `<button class="ldp-iconbtn lg" type="button" data-share aria-label="Share">${ICON.share}</button>`}<button class="ldp-iconbtn lg" type="button" data-pdf aria-label="Download PDF">${ICON.download}</button>${primary}`;
+}
+
+const bannerHtml = (kind: "example" | "share" | null) =>
+  kind === "example"
+    ? `<div class="ldp-banner">Example pack, made for $0.30<span>·</span><button type="button" data-new>Start yours</button></div>`
+    : kind === "share"
+      ? `<div class="ldp-banner">Shared report, read only</div>`
+      : "";
+
+// ---------- behaviour ----------
+
+function toast(msg: string): void {
+  const el = S?.overlay.querySelector<HTMLElement>(".ldp-toast");
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add("on");
+  clearTimeout(Number(el.dataset.t));
+  el.dataset.t = String(setTimeout(() => el.classList.remove("on"), 2200));
+}
+
+function setActive(id: PackSection, fromSpy = false): void {
   if (!S) return;
-  const { project: p, tab, body } = S;
-  S.cleanups.splice(0).forEach((f) => f());
-  S.ro?.disconnect();
-  body.innerHTML = `<div class="ldp-panel" role="tabpanel" aria-labelledby="ldp-tab-${tab}">${renderTab(p, tab, { ...S.site, origin: location.origin })}</div>`;
-  body.scrollTop = 0;
-  wireCharts(body);
-  if (tab === "landing") wireLandingPreviews(body);
+  S.active = id;
+  const rail = S.overlay.querySelector<HTMLElement>(".ldp-rail");
+  const btns = [...(rail?.querySelectorAll<HTMLElement>("[role=tab]") ?? [])];
+  btns.forEach((b) => {
+    const on = b.dataset.goto === id;
+    b.setAttribute("aria-selected", String(on));
+    b.tabIndex = on ? 0 : -1;
+  });
+  const cur = btns.find((b) => b.dataset.goto === id);
+  const ind = rail?.querySelector<HTMLElement>(".ldp-ind");
+  if (cur && ind) ind.style.transform = `translateY(${cur.offsetTop}px)`;
+  const i = SECTIONS.findIndex((s) => s.id === id);
+  const m = S.overlay.querySelector<HTMLElement>(".ldp-mnav .lbl");
+  if (m) m.innerHTML = `<b>${SECTIONS[i]!.label}</b>${ICON.chevron}<span>${i + 1} of ${SECTIONS.length}</span>`;
+  if (!fromSpy) return;
 }
 
-function currentSite(): SiteData | null {
-  return S ? siteDataOf(S.project, S.site) : null;
+/** Top of `el` in the scroller's content coordinates (offsetTop is relative to .ldp, not the scroller). */
+function topIn(el: HTMLElement): number {
+  const sc = S!.scroller;
+  return el.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop;
 }
 
-function wireLandingPreviews(body: HTMLElement): void {
+function goTo(id: PackSection, smooth = true): void {
   if (!S) return;
-  const data = currentSite();
-  const phone = body.querySelector<HTMLElement>("[data-phone]");
-  const host = body.querySelector<HTMLElement>("[data-phone-host]");
-  if (data && phone && host) S.cleanups.push(wireLanding(phone, data, host));
-  const desk = body.querySelector<HTMLElement>("[data-desk]");
-  if (desk?.parentElement) {
-    const box = desk.parentElement;
-    const fit = () => {
-      const z = Math.max(0.2, box.clientWidth / 1280);
-      desk.style.zoom = String(z);
-      box.style.height = `${Math.round(700 * z)}px`;
+  let el = S.doc.querySelector<HTMLElement>(`#ldp-s-${id}`);
+  if (!el) return;
+  // Locked Build group: Brand, Website and Launch all land on the one locked block.
+  if (el.dataset.alias) el = S.doc.querySelector<HTMLElement>(`#ldp-s-${el.dataset.alias}`) ?? el;
+  // Summary always lands at the very top (full header, no half-cut title). Other sections land with
+  // their heading 24px under the sticky bar.
+  // The section hairline lands exactly on the sticky bar's own bottom border (56px desktop compact bar,
+  // 44px phone nav), so no orphan line shows under the bar and the heading sits a section gap below it.
+  const top = id === "summary" ? 0 : topIn(el) - (innerWidth >= 1100 ? 56 : 44) + 1;
+  // Long smooth scrolls pass other sections: keep the clicked one until the scroll ends (scrollend, or 1.6s).
+  S.spyLock = Date.now() + (smooth ? 1600 : 50);
+  S.scroller.scrollTo({ top: Math.max(0, top), behavior: smooth && !reducedMotion() ? "smooth" : "auto" });
+  setActive(id);
+}
+
+function onScroll(): void {
+  if (!S) return;
+  const y = S.scroller.scrollTop;
+  // The compact bar takes over as soon as the 40px title would start to clip (no half-cut header).
+  S.overlay.classList.toggle("scrolled", y > 28);
+  if (Date.now() < S.spyLock) return;
+  const line = y + (innerWidth >= 1100 ? 96 : 128);
+  let cur: PackSection = "summary";
+  for (const s of SECTIONS) {
+    const el = S.doc.querySelector<HTMLElement>(`#ldp-s-${s.id}`);
+    if (el && !el.dataset.alias && topIn(el) <= line) cur = s.id;
+  }
+  if (S.scroller.scrollTop + S.scroller.clientHeight >= S.scroller.scrollHeight - 4) cur = "receipt";
+  if (cur !== S.active) setActive(cur, true);
+}
+
+function closeMenus(except?: Element | null): void {
+  S?.overlay.querySelectorAll<HTMLElement>(".ldp-menu, .ldp-msheet").forEach((m) => {
+    if (m !== except) m.hidden = true;
+  });
+}
+
+function fitPreviews(): void {
+  if (!S) return;
+  S.doc.querySelectorAll<HTMLElement>("[data-fit]").forEach((box) => {
+    const real = Number(box.dataset.fit) || 1280;
+    const inner = box.firstElementChild as HTMLElement | null;
+    if (!inner) return;
+    const z = box.clientWidth / real;
+    inner.style.transform = `scale(${z})`;
+    box.style.height = `${Math.round(inner.offsetHeight * z)}px`;
+  });
+  S.doc.querySelectorAll<HTMLElement>(".ldp-stage.ig").forEach((st) => {
+    const inner = st.querySelector<HTMLElement>(".ldp-scale");
+    if (!inner) return;
+    const z = Math.min(1, (st.clientWidth - 24) / 375);
+    inner.style.transform = `scale(${z})`;
+    st.style.height = `${Math.round(inner.offsetHeight * z) + 32}px`;
+  });
+}
+
+function wireDoc(): void {
+  if (!S) return;
+  const st = S;
+  st.cleanups.splice(0).forEach((f) => f());
+  // live landing previews (phone handles its own pay sheet)
+  const data = siteDataOf(st.project, st.site);
+  const phone = st.doc.querySelector<HTMLElement>("[data-phone]");
+  const host = st.doc.querySelector<HTMLElement>("[data-phone-host]");
+  if (data && phone && host) st.cleanups.push(wireLanding(phone, data, host));
+  const desk = st.doc.querySelector<HTMLElement>("[data-desk]");
+  if (data && desk) st.cleanups.push(wireLanding(desk, data, desk));
+  st.ro?.disconnect();
+  st.ro = new ResizeObserver(() => fitPreviews());
+  st.ro.observe(st.doc);
+  fitPreviews();
+  // pre-orders (F11): null = couldn't check → nothing shown
+  const pip = st.project.results.pip;
+  if (pip && st.site.founderAddress && st.preorders === null) {
+    const id = st.project.id;
+    void countPreorders(st.site.founderAddress, pip.live_at).then((po) => {
+      if (!S || S.project.id !== id || !po) return;
+      S.preorders = po;
+      const box = S.doc.querySelector<HTMLElement>("[data-preorders]");
+      if (box) box.innerHTML = renderPreorders(po, S.project);
+    });
+  }
+}
+
+function renderPreorders(po: Preorders, p: Project): string {
+  // tiny indirection so the section renderer stays the single source of truth
+  const tmp = document.createElement("div");
+  tmp.innerHTML = renderSection({ ...p }, "website", { ...ctxOf(S!), preorders: po });
+  return tmp.querySelector("[data-preorders]")?.innerHTML ?? "";
+}
+
+function renderAll(keepScroll = true): void {
+  if (!S) return;
+  const st = S;
+  const y = st.scroller.scrollTop;
+  const p = st.project;
+  const ro = readOnlyOf(p, st.opts);
+  const cents = 20;
+  st.overlay.querySelector(".ldp-head")!.innerHTML = headHtml(p, ro);
+  st.overlay.querySelector(".ldp-compact .in")!.innerHTML = `${logoHtml(p, 28)}<b style="${p.results.nova ? `font-family:${esc(fontStack(brandOf(p).fonts.display))};` : ""}">${esc(brandOf(p).name)}</b><div class="ldp-actions">${actionsHtml(p, ro, true)}</div>`;
+  st.overlay.querySelector(".ldp-rail")!.innerHTML = railHtml(p, st.active, cents);
+  st.overlay.querySelector(".ldp-mfoot")!.innerHTML = mfootHtml(p, ro, cents);
+  st.overlay.querySelector(".ldp-msheet")!.innerHTML = SECTIONS.map((s, i) => `<button type="button" data-goto="${s.id}">${i + 1}. ${s.label}${sectionState(p, s.id) === "locked" ? ICON.lock : ""}</button>`).join("");
+  st.doc.innerHTML = renderDocument(p, { ...ctxOf(st), buildCents: cents });
+  if (p.results.nova) loadFonts(brandOf(p).fonts);
+  wireDoc();
+  if (keepScroll) st.scroller.scrollTop = y;
+  requestAnimationFrame(() => setActive(st.active));
+}
+
+async function share(): Promise<void> {
+  if (!S) return;
+  const p = S.project;
+  let id = p.share_id ?? null;
+  if (!id) {
+    try {
+      id = (await api.share(p.id)).shareId;
+      if (S) S.project.share_id = id;
+    } catch (e) {
+      toast((e as Error).message || "Sharing isn't available right now.");
+      return;
+    }
+  }
+  const url = `${location.origin}/r/${id}`;
+  const nav = navigator as Navigator & { share?: (d: ShareData) => Promise<void> };
+  if (nav.share && matchMedia("(pointer: coarse)").matches) {
+    try {
+      await nav.share({ title: `${brandOf(p).name} · LaunchDesk report`, url });
+      return;
+    } catch {
+      /* cancelled: fall back to copy */
+    }
+  }
+  toast((await copyText(url)) ? "Link copied. Anyone with it can read, not edit." : url);
+}
+
+/** R23: print the document (or one section) from a hidden iframe with the A4 print sheet. */
+function printDoc(only?: PackSection): void {
+  if (!S) return;
+  const html = buildPackHtml(S.project, S.site, { print: true, only });
+  const f = document.createElement("iframe");
+  f.setAttribute("aria-hidden", "true");
+  f.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden";
+  document.body.appendChild(f);
+  f.onload = () => {
+    const w = f.contentWindow;
+    if (!w) return;
+    const go = () => {
+      w.focus();
+      w.print();
+      setTimeout(() => f.remove(), 60_000);
     };
-    fit();
-    S.ro = new ResizeObserver(fit);
-    S.ro.observe(box);
+    // give brand fonts a moment, never block on them
+    const fonts = (w.document as Document & { fonts?: FontFaceSet }).fonts;
+    if (fonts?.ready) void Promise.race([fonts.ready, new Promise((r) => setTimeout(r, 1500))]).then(go);
+    else setTimeout(go, 300);
+  };
+  f.srcdoc = html;
+}
+
+function downloadHtml(): void {
+  if (!S) return;
+  const html = buildPackHtml(S.project, S.site);
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${slugify(brandOf(S.project).name)}-launchdesk-pack.html`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+async function onClick(e: MouseEvent): Promise<void> {
+  if (!S) return;
+  const t = e.target as HTMLElement;
+  const st = S;
+  if (t === st.overlay || t.closest("[data-close]")) return closePack();
+  const menuBtn = t.closest<HTMLElement>("[data-menu]");
+  if (menuBtn) {
+    const m = menuBtn.parentElement?.querySelector<HTMLElement>(".ldp-menu");
+    closeMenus(m);
+    if (m) m.hidden = !m.hidden;
+    return;
+  }
+  const mn = t.closest<HTMLElement>("[data-mnav]");
+  if (mn) {
+    const sh = st.overlay.querySelector<HTMLElement>(".ldp-msheet");
+    closeMenus(sh);
+    if (sh) sh.hidden = !sh.hidden;
+    return;
+  }
+  if (!t.closest(".ldp-menu")) closeMenus();
+  const go = t.closest<HTMLElement>("[data-goto]");
+  if (go) {
+    e.preventDefault();
+    closeMenus();
+    return goTo(go.dataset.goto as PackSection);
+  }
+  if (t.closest("[data-pdf]")) return closeMenus(), printDoc();
+  if (t.closest("[data-print]")) return printDoc("receipt");
+  if (t.closest("[data-html]")) return closeMenus(), downloadHtml(), toast("Pack downloaded");
+  if (t.closest("[data-share]")) return void share();
+  if (t.closest("[data-new]")) {
+    closePack();
+    navigateHome();
+    return;
+  }
+  if (t.closest("[data-build]")) {
+    const ev = new CustomEvent("launchdesk:build", { cancelable: true, detail: { id: st.project.id } });
+    closePack();
+    window.dispatchEvent(ev);
+    return;
+  }
+  const view = t.closest<HTMLElement>("[data-view]");
+  if (view) {
+    const seg = view.parentElement!;
+    seg.querySelectorAll("[data-view]").forEach((b) => b.setAttribute("aria-selected", String(b === view)));
+    seg.classList.toggle("r", view.dataset.view === "cal");
+    seg.nextElementSibling?.setAttribute("data-launch", view.dataset.view === "cal" ? "cal" : "list");
+    return;
+  }
+  const cp = t.closest<HTMLElement>("[data-copy]");
+  if (cp) {
+    e.preventDefault();
+    const ok = await copyText(cp.dataset.copy || "");
+    const label = cp.dataset.label;
+    if (label && !cp.classList.contains("ldp-sw") && !cp.classList.contains("ldp-opt")) {
+      cp.textContent = ok ? "Copied" : "Copy failed";
+      setTimeout(() => (cp.textContent = label), 1200);
+    } else if (cp.classList.contains("ldp-sw")) {
+      const code = cp.querySelector("code");
+      if (code) {
+        code.textContent = ok ? "Copied" : "Copy failed";
+        setTimeout(() => (code.textContent = (cp.dataset.copy || "").toUpperCase()), 1200);
+      }
+    } else toast(ok ? "Copied" : "Copy failed");
+  }
+}
+
+function onChange(e: Event): void {
+  if (!S) return;
+  const t = e.target as HTMLInputElement;
+  const key = t.dataset?.check;
+  if (!key) return;
+  S.checks[key] = t.checked;
+  if (!t.checked) delete S.checks[key];
+  writeChecks(S.project.id, S.checks);
+  const meta = S.doc.querySelector<HTMLElement>("[data-plan-count]");
+  if (meta) {
+    const total = Number(meta.dataset.planCount) || 0;
+    const done = Array.from({ length: total }, (_, i) => S!.checks[`t-${i}`]).filter(Boolean).length;
+    meta.textContent = `${done} of ${total} done`;
+  }
+}
+
+function onKey(e: KeyboardEvent): void {
+  if (!S) return;
+  if (e.key === "Escape") {
+    if (S.overlay.querySelector(".lds-sheet")) return; // the landing pay sheet handles its own Escape
+    const open = [...S.overlay.querySelectorAll<HTMLElement>(".ldp-menu, .ldp-msheet")].some((m) => !m.hidden);
+    e.preventDefault();
+    if (open) return closeMenus();
+    return closePack();
+  }
+  const t = e.target as HTMLElement;
+  if (t.getAttribute?.("role") === "tab" && t.closest(".ldp-rail")) {
+    const ids = SECTIONS.map((s) => s.id);
+    const i = ids.indexOf(t.dataset.goto as PackSection);
+    let n = -1;
+    if (e.key === "ArrowDown" || e.key === "ArrowRight") n = (i + 1) % ids.length;
+    if (e.key === "ArrowUp" || e.key === "ArrowLeft") n = (i - 1 + ids.length) % ids.length;
+    if (e.key === "Home") n = 0;
+    if (e.key === "End") n = ids.length - 1;
+    if (n >= 0) {
+      e.preventDefault();
+      goTo(ids[n]!);
+      S.overlay.querySelector<HTMLElement>(`#ldp-tab-${ids[n]}`)?.focus();
+    }
+  }
+  if (e.key === "Tab") {
+    const f = [...S.overlay.querySelectorAll<HTMLElement>("button:not([disabled]), a[href], input, summary, [tabindex]:not([tabindex='-1'])")].filter((x) => x.offsetParent !== null && !x.closest("[hidden]"));
+    if (!f.length) return;
+    if (e.shiftKey && document.activeElement === f[0]) {
+      e.preventDefault();
+      f[f.length - 1]!.focus();
+    } else if (!e.shiftKey && document.activeElement === f[f.length - 1]) {
+      e.preventDefault();
+      f[0]!.focus();
+    }
   }
 }
 
@@ -148,140 +512,92 @@ async function loadSite(p: Project): Promise<void> {
   try {
     const r = await fetch(`/api/sites/${encodeURIComponent(slug)}`, { headers: { accept: "application/json" } });
     if (!r.ok) throw new Error(String(r.status));
-    const d = (await r.json()) as Partial<SiteData>;
+    const d = (await r.json()) as { founderAddress?: string; bchUsd?: number; demo?: boolean };
     if (!S || S.project.id !== p.id) return;
-    S.site = { founderAddress: d.founderAddress || "", bchUsd: Number(d.bchUsd) || 0, loading: false };
+    // A demo page sits on LaunchDesk's own address: never show it as "your wallet" or offer a QR to it.
+    S.site = d.demo ? { founderAddress: "", bchUsd: Number(d.bchUsd) || 0, loading: false, demo: true } : { founderAddress: d.founderAddress || "", bchUsd: Number(d.bchUsd) || 0, loading: false };
   } catch {
     if (!S || S.project.id !== p.id) return;
     S.site.loading = false;
   }
-  if (S.tab === "landing" || S.tab === "receipt") renderBody();
+  renderAll();
 }
 
-function toast(msg: string): void {
-  const el = S?.overlay.querySelector<HTMLElement>(".ldp-toast");
-  if (!el) return;
-  el.textContent = msg;
-  el.classList.add("on");
-  clearTimeout(Number(el.dataset.t));
-  el.dataset.t = String(setTimeout(() => el.classList.remove("on"), 1600));
-}
-
-/** Scrolls the tab strip (never the page) so the active tab sits in the middle, and updates the edge fades. */
-function centerTab(smooth = false): void {
-  if (!S) return;
-  const bar = S.overlay.querySelector<HTMLElement>(".ldp-tabs");
-  const tab = bar?.querySelector<HTMLElement>('.ldp-tab[aria-selected="true"]');
-  if (!bar || !tab) return;
-  if (bar.scrollWidth > bar.clientWidth + 2) {
-    const left = tab.offsetLeft - (bar.clientWidth - tab.offsetWidth) / 2;
-    bar.scrollTo({ left: Math.max(0, left), behavior: smooth ? "smooth" : "auto" });
-  }
-  fadeTabs(bar);
-}
-function fadeTabs(bar: HTMLElement): void {
-  const max = bar.scrollWidth - bar.clientWidth;
-  bar.classList.toggle("fade-l", max > 2 && bar.scrollLeft > 4);
-  bar.classList.toggle("fade-r", max > 2 && bar.scrollLeft < max - 4);
-}
-
-function setTab(id: TabId): void {
-  if (!S || S.tab === id) return;
-  S.tab = id;
-  S.overlay.querySelectorAll<HTMLElement>(".ldp-tab").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === id)));
-  centerTab(true);
-  renderBody();
-}
-
-function onKey(e: KeyboardEvent): void {
-  if (!S) return;
-  if (e.key === "Escape") {
-    if (S.overlay.querySelector(".lds-sheet")) return; // the landing sheet handles its own Escape
-    e.preventDefault();
-    closePack();
-    return;
-  }
-  const t = e.target as HTMLElement;
-  if ((e.key === "ArrowRight" || e.key === "ArrowLeft") && t.classList.contains("ldp-tab")) {
-    const ids = TABS.map((x) => x.id);
-    const i = ids.indexOf(S.tab);
-    const next = ids[(i + (e.key === "ArrowRight" ? 1 : ids.length - 1)) % ids.length];
-    setTab(next);
-    S.overlay.querySelector<HTMLElement>(`.ldp-tab[data-tab="${next}"]`)?.focus();
-  }
-  if (e.key === "Tab") {
-    const f = [...S.overlay.querySelectorAll<HTMLElement>("button, a[href], [tabindex]:not([tabindex='-1'])")].filter((x) => x.offsetParent !== null);
-    if (!f.length) return;
-    if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
-    else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
-  }
-}
-
-/** Open the pack modal for a project. `tab` accepts a tab id, label, tile name or department id. */
-export function openPack(project: Project, tab?: string): void {
+/** Open the pack for a project, scrolled to `section` (default Summary). Called again while open, it refreshes in place. */
+export function openPack(project: Project, opts: PackOpenOpts = {}): void {
   ensureCss();
-  const wanted = normalizeTab(tab);
+  normalize(project);
+  const wanted = toSection(opts.section);
   if (S) {
-    // already open: refresh in place (e.g. new results arrived while polling)
-    const sameProject = S.project.id === project.id;
+    const same = S.project.id === project.id;
     S.project = project;
-    S.overlay.querySelector(".ldp-head")!.innerHTML = headerHtml(project);
-    S.overlay.querySelector(".ldp-tabs")!.innerHTML = tabsHtml(project, wanted ?? S.tab);
-    requestAnimationFrame(() => centerTab(true));
-    S.overlay.querySelector(".ldp-foot .note span")!.textContent = footNote(project);
-    S.overlay.querySelector(".ldp-foot [data-live]")!.innerHTML = liveBtn(project);
-    if (!sameProject) S.site = {};
-    S.tab = wanted ?? S.tab;
-    renderBody();
-    if (!sameProject || !S.site.founderAddress) void loadSite(project);
+    S.opts = { ...S.opts, ...opts };
+    if (!same) {
+      S.site = {};
+      S.preorders = null;
+      S.checks = readChecks(project.id);
+    }
+    renderAll(same);
+    if (wanted) requestAnimationFrame(() => goTo(wanted, same));
+    if (!same || (!S.site.founderAddress && !S.site.demo)) void loadSite(project);
     return;
   }
-  const first = wanted ?? (TABS.find((t) => tabState(project, t.id) === "ready" && t.id !== "receipt")?.id ?? "receipt");
+  if (!document.querySelector(`link[href="${UI_FONTS}"]`) && ![...document.querySelectorAll<HTMLLinkElement>("link[rel=stylesheet]")].some((l) => /family=Inter/.test(l.href))) {
+    const l = document.createElement("link");
+    l.rel = "stylesheet";
+    l.href = UI_FONTS;
+    document.head.appendChild(l);
+  }
   const overlay = document.createElement("div");
   overlay.className = "ldp-overlay";
   overlay.innerHTML = `
-    <div class="ldp" role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="ldp-title">
-      <header class="ldp-head">${headerHtml(project)}</header>
-      <nav class="ldp-tabs" role="tablist" aria-label="Pack sections">${tabsHtml(project, first)}</nav>
-      <div class="ldp-body"></div>
-      <footer class="ldp-foot">
-        <div class="note"><i></i><span>${esc(footNote(project))}</span></div>
-        <button class="ldp-newlink" type="button" data-new>Start a new idea</button>
-        <button class="ldp-btn" type="button" data-download><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10.5l5 5 5-5M5 19.5h14"/></svg>Download pack</button>
-        <span data-live>${liveBtn(project)}</span>
-      </footer>
+    <div class="ldp" role="dialog" aria-modal="true" aria-labelledby="ldp-name" tabindex="-1">
+      ${bannerHtml(bannerOf(project, opts))}
+      <div class="ldp-topbtns"><div class="ldp-menuwrap"><button class="ldp-iconbtn" type="button" data-menu="more" aria-haspopup="menu" aria-label="More">${ICON.more}</button>
+        <div class="ldp-menu" role="menu" hidden><button role="menuitem" type="button" data-new>Start a new idea</button><button role="menuitem" type="button" data-html>Download HTML</button></div></div>
+        <button class="ldp-iconbtn" type="button" data-close aria-label="Close pack">${ICON.close}</button></div>
+      <div class="ldp-compact" aria-hidden="true"><div class="in"></div></div>
+      <div class="ldp-scroller">
+        <header class="ldp-head"></header>
+        <div class="ldp-mnav"><button type="button" data-mnav class="lbl" aria-label="Sections"></button></div>
+        <div class="ldp-msheet" hidden></div>
+        <div class="ldp-main">
+          <nav class="ldp-rail" role="tablist" aria-orientation="vertical" aria-label="Pack sections"></nav>
+          <article class="ldp-doc"></article>
+        </div>
+      </div>
+      <footer class="ldp-mfoot"></footer>
       <div class="ldp-toast" role="status" aria-live="polite"></div>
     </div>`;
   document.body.appendChild(overlay);
   const prevOverflow = document.body.style.overflow;
   document.body.style.overflow = "hidden";
-  S = {
-    project, tab: first, overlay, body: overlay.querySelector(".ldp-body")!, site: {}, cleanups: [], lastFocus: document.activeElement,
-  };
   overlay.dataset.prevOverflow = prevOverflow;
-
-  overlay.addEventListener("click", async (e) => {
-    const t = e.target as HTMLElement;
-    if (t === overlay || t.closest("[data-close]")) return closePack();
-    const tb = t.closest<HTMLElement>("[data-tab]");
-    if (tb) return setTab(tb.dataset.tab as TabId);
-    if (t.closest("[data-download]")) { downloadPack(); toast("Pack downloaded"); return; }
-    if (t.closest("[data-new]")) { closePack(); navigateHome(); return; }
-    const cp = t.closest<HTMLElement>("[data-copy]");
-    if (cp) {
-      const ok = await copyText(cp.dataset.copy || "");
-      if (cp.classList.contains("ldp-copy")) {
-        cp.textContent = ok ? "Copied" : "Copy failed";
-        cp.classList.toggle("ok", ok);
-        setTimeout(() => { cp.textContent = "Copy text"; cp.classList.remove("ok"); }, 1500);
-      } else toast(ok ? `Copied ${cp.dataset.copy}` : "Copy failed");
-    }
+  S = {
+    project,
+    opts,
+    overlay,
+    scroller: overlay.querySelector(".ldp-scroller")!,
+    doc: overlay.querySelector(".ldp-doc")!,
+    active: wanted ?? "summary",
+    site: {},
+    preorders: null,
+    checks: readChecks(project.id),
+    cleanups: [],
+    lastFocus: document.activeElement,
+    spyLock: 0,
+  };
+  overlay.addEventListener("click", (e) => void onClick(e));
+  overlay.addEventListener("change", onChange);
+  S.scroller.addEventListener("scroll", onScroll, { passive: true });
+  S.scroller.addEventListener("scrollend", () => {
+    if (!S) return;
+    S.spyLock = 0;
+    onScroll();
   });
   document.addEventListener("keydown", onKey);
-  const bar = overlay.querySelector<HTMLElement>(".ldp-tabs")!;
-  bar.addEventListener("scroll", () => fadeTabs(bar), { passive: true });
-  renderBody();
-  requestAnimationFrame(() => centerTab());
+  renderAll(false);
+  if (wanted && wanted !== "summary") requestAnimationFrame(() => goTo(wanted, false));
   requestAnimationFrame(() => {
     overlay.classList.add("in");
     overlay.querySelector<HTMLElement>(".ldp")?.focus({ preventScroll: true });
@@ -298,7 +614,8 @@ export function closePack(): void {
   document.body.style.overflow = overlay.dataset.prevOverflow ?? "";
   S = null;
   overlay.classList.remove("in");
-  setTimeout(() => overlay.remove(), 220);
+  overlay.classList.add("out");
+  setTimeout(() => overlay.remove(), reducedMotion() ? 0 : 260);
   if (lastFocus instanceof HTMLElement) lastFocus.focus({ preventScroll: true });
 }
 
@@ -315,44 +632,40 @@ function navigateHome(): void {
   if (window.dispatchEvent(ev)) location.assign("/");
 }
 
-// ---------- download ----------
-
 function slugify(s: string): string {
   return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "project";
 }
 
-/** Builds a self-contained HTML document with every section of the pack. */
-export function buildPackHtml(p: Project, site: { founderAddress?: string; bchUsd?: number } = {}): string {
+// ---------- download / print ----------
+
+/**
+ * A self-contained HTML document with every ready section (download, PDF). `print` adds the A4 sheet with a
+ * cover page; `only` limits it to one section (Print receipt).
+ */
+export function buildPackHtml(p: Project, site: { founderAddress?: string; bchUsd?: number } = {}, opts: { print?: boolean; only?: PackSection } = {}): string {
+  normalize(p);
   const b = brandOf(p);
   const origin = typeof location !== "undefined" ? location.origin : "";
-  const sections = TABS.filter((t) => tabState(p, t.id) === "ready").map((t) =>
-    `<section class="ldp-docsec"><h2 class="ldp-doch" style="--c:${t.color}"><i></i>${esc(t.label)}</h2>${renderTab(p, t.id, { ...site, origin })}</section>`,
-  ).join("");
-  const generated = new Date().toUTCString();
+  const ctx: RenderCtx = { ...site, origin, doc: true, readOnly: true };
+  const ids = SECTIONS.filter((s) => (opts.only ? s.id === opts.only : sectionState(p, s.id) === "ready")).map((s) => s.id);
+  const body = ids.map((id) => `<section class="ldp-s" id="ldp-s-${id}">${renderSection(p, id, ctx)}</section>`).join("");
+  const leo = p.results.leo;
+  const date = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+  const cover = opts.print && !opts.only
+    ? `<div class="ldp-cover">${logoHtml(p, 72)}<h1 style="${p.results.nova ? `font-family:${esc(fontStack(b.fonts.display))};` : ""}color:${nameColor(p)}">${esc(b.name)}</h1><p>${esc(p.results.mia?.one_liner || b.tagline || p.idea)}</p>${leo ? `<p class="sc"><b>${leo.score.toFixed(1)}/10</b> ${leo.verdict === "go" ? "Go" : leo.verdict === "pivot" ? "Pivot" : "No-go"}</p>` : ""}<p class="dt">${esc(date)}</p></div>`
+    : "";
+  const fonts = p.results.nova ? `<link rel="stylesheet" href="${fontsHref(b.fonts)}">` : "";
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${esc(b.name)} — Startup pack · LaunchDesk</title>
-<link rel="stylesheet" href="${FONTS}">
-<style>${packCss}\n${SITE_CSS}\n.ldp--doc .ldp-zoom-desk{zoom:.62}.ldp--doc .ldp-desk{height:400px}.ldp-panel{animation:none}</style>
-</head><body class="ldp-docbody">
+<title>${esc(b.name)} · Startup pack · LaunchDesk</title>
+<link rel="stylesheet" href="${UI_FONTS}">${fonts}
+<style>${packCss}</style>
+</head><body class="ldp-docbody${opts.print ? " print" : ""}">
 <div class="ldp ldp--doc">
-  <header class="ldp-head">${headerHtml(p)}</header>
-  <div class="ldp-body">${sections}</div>
-  <div class="ldp-docfoot"><span>Generated with LaunchDesk · ${esc(generated)}</span><span>Only stage payments are on-chain; department budgets are internal. AI estimates are labelled.</span></div>
+  ${cover}
+  ${opts.only ? "" : `<header class="ldp-head">${logoHtml(p, 64)}<div class="ldp-headtxt"><h1 class="ldp-name" style="${p.results.nova ? `font-family:${esc(fontStack(b.fonts.display))};` : ""}color:${nameColor(p)}">${esc(b.name)}</h1><p class="ldp-tag">${esc(b.tagline || p.results.mia?.one_liner || p.idea)}</p></div></header>`}
+  <article class="ldp-doc">${body}</article>
+  <footer class="ldp-docfoot">Made with LaunchDesk · ${esc(date)}. Estimates are labelled. Only stage payments are on-chain.</footer>
 </div>
 </body></html>`;
-}
-
-function downloadPack(): void {
-  if (!S) return;
-  const html = buildPackHtml(S.project, S.site);
-  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${slugify(brandOf(S.project).name)}-launchdesk-pack.html`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 4000);
 }

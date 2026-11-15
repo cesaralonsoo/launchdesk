@@ -66,7 +66,7 @@ assert.deepEqual(cfg.json.prices, config.priceCents);
 assert.equal(cfg.json.bchUsd, 460);
 assert.equal(cfg.json.mockAi, true);
 
-assert.deepEqual((await call("GET", "/api/stats")).json, { ideas: 0, payments: 0, launched: 0 });
+assert.deepEqual((await call("GET", "/api/stats")).json, { ideas: 0, payments: 0, launched: 0, medianMs: { validate: null, build: null } });
 assert.equal((await call("POST", "/api/projects", { idea: "short" })).status, 400);
 assert.equal((await call("GET", "/api/projects/nope")).status, 404);
 assert.equal((await call("GET", "/api/nothing")).status, 404);
@@ -201,9 +201,9 @@ assert.equal((await call("POST", `/api/projects/${third}/pay`, { stage: "build",
 assert.equal((await exec("SELECT founder_address FROM projects WHERE id = ?", [third])).rows[0]!.founder_address, null);
 
 // stats are real: dev payments never count
-assert.deepEqual((await call("GET", "/api/stats")).json, { ideas: 0, payments: 0, launched: 0 });
+assert.deepEqual((await call("GET", "/api/stats")).json, { ideas: 0, payments: 0, launched: 0, medianMs: { validate: null, build: null } });
 await exec("UPDATE payments SET txid = 'f'||substr(txid, 5) WHERE project_id = ?", [id]);
-assert.deepEqual((await call("GET", "/api/stats")).json, { ideas: 1, payments: 2, launched: 1 });
+assert.deepEqual((await call("GET", "/api/stats")).json, { ideas: 1, payments: 2, launched: 1, medianMs: { validate: null, build: null } });
 
 rmSync(dir, { recursive: true, force: true });
 console.log("mock flow: all passed");

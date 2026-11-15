@@ -1,7 +1,12 @@
 // Tiny Electrum/Fulcrum JSON-RPC client over WebSocket, with failover.
 const SERVERS = ["wss://bch.imaginary.cash:50004", "wss://fulcrum.pat.mn:50004", "wss://electroncash.dk:50004"];
 
-export type Electrum = { call<T = any>(method: string, params: unknown[]): Promise<T>; close(): void };
+export type Electrum = {
+  call<T = any>(method: string, params: unknown[]): Promise<T>;
+  close(): void;
+  /** Server push notifications (e.g. `blockchain.address.subscribe` status changes). Returns an unsubscribe. */
+  onNotify(cb: (method: string, params: unknown[]) => void): () => void;
+};
 
 const CALL_MS = 10_000;
 
@@ -10,6 +15,7 @@ function open(url: string): Promise<Electrum> {
     const ws = new WebSocket(url);
     let id = 0;
     const pending = new Map<number, { ok: (v: any) => void; ko: (e: Error) => void }>();
+    const notify = new Set<(method: string, params: unknown[]) => void>();
     const close = () => {
       if (ws.readyState < 2) ws.close();
     };
@@ -27,7 +33,16 @@ function open(url: string): Promise<Electrum> {
       pending.clear();
     };
     ws.onmessage = (e) => {
-      const m = JSON.parse(e.data as string);
+      let m: any;
+      try {
+        m = JSON.parse(e.data as string);
+      } catch {
+        return;
+      }
+      if (m.id == null && typeof m.method === "string") {
+        notify.forEach((cb) => cb(m.method, Array.isArray(m.params) ? m.params : []));
+        return;
+      }
       const p = m.id != null && pending.get(m.id);
       if (!p) return;
       pending.delete(m.id);
@@ -51,7 +66,11 @@ function open(url: string): Promise<Electrum> {
             if (ws.readyState !== 1) return pending.get(i)!.ko(new Error("connection closed"));
             ws.send(JSON.stringify({ jsonrpc: "2.0", id: i, method, params }));
           }),
-        close,
+        close: () => {
+          notify.clear();
+          close();
+        },
+        onNotify: (cb) => (notify.add(cb), () => notify.delete(cb)),
       });
     };
   });

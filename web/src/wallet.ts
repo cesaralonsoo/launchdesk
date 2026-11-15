@@ -73,6 +73,32 @@ export function pair(): { uri: string; qrSvg: string } {
   return pending;
 }
 
+/**
+ * F9: drops an unfinished pairing (the dialog was closed before a wallet connected). Without this the relay
+ * keeps waiting and logs "Key exchange timed out" minutes later. A connected or reconnecting wallet is kept.
+ */
+export function cancelPairing() {
+  if (state !== "pairing") return;
+  relay?.cleanup();
+  relay = null;
+  pending = null;
+  setState("idle");
+}
+
+/** Seconds a pairing code stays useful before "New code" (the relay's key exchange gives up after that). */
+export const PAIRING_TTL_S = 120;
+
+/** Forces a fresh pairing code ("New code"). */
+export function newPairing(): { uri: string; qrSvg: string } {
+  if (state === "pairing") {
+    relay?.cleanup();
+    relay = null;
+    pending = null;
+    setState("idle");
+  }
+  return pair();
+}
+
 export async function disconnect() {
   await mgr.sendDisconnect("bye").catch(() => {});
   mgr.clearStoredSession();

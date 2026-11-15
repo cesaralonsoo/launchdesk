@@ -1,6 +1,6 @@
 import { createClient, type InValue } from "@libsql/client";
 import { config } from "./config.js";
-import { STAGE_DEPTS, type DeptResults, type DeptStatus, type Project, type Stage, type WorkDept } from "./types.js";
+import { STAGE_DEPTS, normalize, type DeptResults, type DeptStatus, type Project, type Stage, type WorkDept } from "./types.js";
 
 export const db = createClient({ url: config.databaseUrl, authToken: config.databaseToken });
 
@@ -51,6 +51,14 @@ export async function migrate() {
   await addColumn("projects", "slug", "TEXT");
   await addColumn("payments", "cents", "INTEGER NOT NULL DEFAULT 0");
   await db.execute("CREATE UNIQUE INDEX IF NOT EXISTS projects_slug ON projects(slug) WHERE slug IS NOT NULL");
+  // v4 (contracts-v4.md §5): additive only, existing rows keep working.
+  await addColumn("projects", "owner_hash", "TEXT"); // F3: sha256 of the owner key; NULL = legacy, open
+  await addColumn("projects", "share_id", "TEXT"); // F5: read-only link id
+  await addColumn("projects", "example", "INTEGER NOT NULL DEFAULT 0"); // F2: read-only seed
+  await addColumn("quotes", "bch_usd", "REAL"); // F10/R22: rate used for the quote
+  await addColumn("quotes", "qr_sats", "INTEGER"); // F10: unique amount for the plain QR (BIP21) path
+  await addColumn("jobs", "attempts", "INTEGER NOT NULL DEFAULT 0"); // R18
+  await db.execute("CREATE UNIQUE INDEX IF NOT EXISTS projects_share ON projects(share_id) WHERE share_id IS NOT NULL");
 }
 
 async function addColumn(table: string, column: string, type: string) {
@@ -62,10 +70,19 @@ export async function exec(sql: string, args: InValue[] = []) {
   return db.execute({ sql, args });
 }
 
-export type ProjectRow = { id: string; idea: string; created_at: number; founder_address: string | null; slug: string | null };
+export type ProjectRow = {
+  id: string;
+  idea: string;
+  created_at: number;
+  founder_address: string | null;
+  slug: string | null;
+  owner_hash: string | null;
+  share_id: string | null;
+  example: boolean;
+};
 
 export async function getProjectRow(id: string): Promise<ProjectRow | null> {
-  const r = await exec("SELECT id, idea, created_at, founder_address, slug FROM projects WHERE id = ?", [id]);
+  const r = await exec("SELECT id, idea, created_at, founder_address, slug, owner_hash, share_id, example FROM projects WHERE id = ?", [id]);
   const row = r.rows[0];
   if (!row) return null;
   return {
@@ -74,6 +91,9 @@ export async function getProjectRow(id: string): Promise<ProjectRow | null> {
     created_at: Number(row.created_at),
     founder_address: row.founder_address == null ? null : String(row.founder_address),
     slug: row.slug == null ? null : String(row.slug),
+    owner_hash: row.owner_hash == null ? null : String(row.owner_hash),
+    share_id: row.share_id == null ? null : String(row.share_id),
+    example: Number(row.example ?? 0) === 1,
   };
 }
 
@@ -88,7 +108,7 @@ export async function getProject(id: string): Promise<Project | null> {
   if (!row) return null;
   const [pays, jobs] = await Promise.all([
     exec("SELECT stage, txid, sats, cents, created_at FROM payments WHERE project_id = ?", [id]),
-    exec("SELECT dept, stage, status, json, model, error, queued_at, finished_at FROM jobs WHERE project_id = ?", [id]),
+    exec("SELECT dept, stage, status, json, model, error, queued_at, finished_at, attempts FROM jobs WHERE project_id = ?", [id]),
   ]);
 
   const project: Project = {
@@ -101,6 +121,8 @@ export async function getProject(id: string): Promise<Project | null> {
     timings: {},
     models: {},
   };
+  if (row.share_id) project.share_id = row.share_id;
+  if (row.example) project.example = true;
   for (const p of pays.rows) {
     project.payments[String(p.stage) as Stage] = {
       txid: String(p.txid),
@@ -117,6 +139,9 @@ export async function getProject(id: string): Promise<Project | null> {
     if (j.model) project.models[dept] = String(j.model);
     if (j.status === "done" && j.json) (project.results as Record<string, unknown>)[dept] = JSON.parse(String(j.json));
     if (j.status === "error" && !project.error) project.error = String(j.error ?? "Something went wrong");
+    if (j.status === "error") (project.errors ??= {})[dept] = humanError(dept);
+    const tries = Number(j.attempts ?? 0);
+    if (tries > 0) (project.attempts ??= {})[dept] = tries;
   }
   for (const stage of Object.keys(STAGE_DEPTS) as Stage[]) {
     const js = rows.filter((j) => j.stage === stage);
@@ -125,8 +150,13 @@ export async function getProject(id: string): Promise<Project | null> {
     const allDone = js.length === STAGE_DEPTS[stage].length && js.every((j) => j.status === "done");
     project.timings[stage] = allDone ? { started, finished: Math.max(...js.map((j) => Number(j.finished_at))) } : { started };
   }
-  return project;
+  // v3 rows keep working: upgrade old result shapes on read (additive, nothing is rewritten in the DB).
+  return normalize(project);
 }
+
+const NAMES: Record<WorkDept, string> = { mia: "Mia", leo: "Leo", sam: "Sam", nova: "Nova", dex: "Dex", rae: "Rae", pip: "Pip" };
+/** R18: the human message shown in the Now card and team row (the raw error stays in the jobs table). */
+const humanError = (d: WorkDept) => `${NAMES[d]} hit a snag.`;
 
 export const stageDone = (p: Project, stage: Stage) => STAGE_DEPTS[stage].every((d) => p.status[d] === "done");
 export type { DeptResults };

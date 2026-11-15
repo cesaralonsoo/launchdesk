@@ -15,6 +15,10 @@ export type FocusOpts = {
   with?: DeptId[];
 };
 
+/**
+ * What the 3D scene (scene.ts) and the 2D fallback implement. Kept as-is so the scene file stays untouched.
+ * App code uses `Office` from office/index.ts (= LiveOffice below), which adds the v4 money API.
+ */
 export interface Office {
   readonly mode: "3d" | "2d";
   focus(room: DeptId | "overview", opts?: FocusOpts): void;
@@ -42,4 +46,22 @@ export interface Office {
   setOccluders(fn: () => Rect[]): void;
   /** Projected centre of a room in office px (used by visual checks). */
   roomCenter(id: DeptId): { x: number; y: number };
+}
+
+/**
+ * v4 additions (spec-v4 L26, M7). Owner: WS2. Frozen signatures (contracts-v4.md).
+ * createOffice() returns this; index.ts adds default implementations on top of any Office.
+ */
+export interface LiveOffice extends Office {
+  /**
+   * A 10px BCH-green coin travels between two rooms' projected centres (700ms ease-in-out, 6px arc).
+   * Internal moves show the coin only (no amount text). Resolves on arrival. 2D: simple fade.
+   * Reduced motion: resolves immediately without drawing.
+   */
+  coin(from: DeptId, to: DeptId): Promise<void>;
+  /**
+   * A 28px coin flies from a viewport rect (e.g. the pay sheet's check) to a room (520ms ease-in-out,
+   * −24px arc at 50%). Used by pay.ts after a real payment: `office.coinFromRect(rect, "lobby")`.
+   */
+  coinFromRect(rect: DOMRect, to: DeptId): Promise<void>;
 }

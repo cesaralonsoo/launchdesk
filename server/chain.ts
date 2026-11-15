@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import {
   binToHex,
   binToUtf8,
@@ -107,4 +108,48 @@ export async function broadcast(txHex: string, txid: string) {
       throw new Error("Broadcast rejected: " + e.message);
     }
   }
+}
+
+type VerboseTx = {
+  txid: string;
+  time?: number;
+  blocktime?: number;
+  vout: Array<{ value: number | string; scriptPubKey?: { hex?: string; addresses?: string[] } }>;
+};
+
+/**
+ * F10: finds a recent transaction paying exactly `sats` to the merchant address (the plain QR path,
+ * which has no OP_RETURN tag: the unique 1–999 sat suffix of the quote is the match). Looks at the
+ * mempool and the last confirmed entries only. Returns null when nothing matches yet.
+ */
+export async function findQrPayment(sats: number, since: number): Promise<{ txid: string; sats: number } | null> {
+  const lock = cashAddressToLockingBytecode(config.merchantAddress);
+  if (typeof lock === "string") throw new Error("Server misconfigured: MERCHANT_ADDRESS");
+  const merchantHex = binToHex(lock.bytecode);
+  const scripthash = binToHex(sha256Rev(lock.bytecode));
+  const [mempool, history] = await Promise.all([
+    electrum<Array<{ tx_hash: string }>>("blockchain.scripthash.get_mempool", [scripthash]).catch(() => []),
+    electrum<Array<{ tx_hash: string; height: number }>>("blockchain.scripthash.get_history", [scripthash]).catch(() => []),
+  ]);
+  const candidates = [...mempool.map((m) => m.tx_hash), ...history.slice(-12).reverse().map((h) => h.tx_hash)];
+  const seen = new Set<string>();
+  for (const txid of candidates) {
+    if (seen.has(txid)) continue;
+    seen.add(txid);
+    const tx = await electrum<VerboseTx>("blockchain.transaction.get", [txid, true]).catch(() => null);
+    if (!tx) continue;
+    const t = tx.blocktime ?? tx.time;
+    // Confirmed long before the quote existed: not this payment.
+    if (t && t * 1000 < since - 10 * 60_000) continue;
+    const paid = tx.vout
+      .filter((o) => o.scriptPubKey?.hex === merchantHex)
+      .reduce((n, o) => n + Math.round(Number(o.value) * 1e8), 0);
+    if (paid === sats) return { txid, sats: paid };
+  }
+  return null;
+}
+
+/** Electrum script hash: sha256 of the locking script, byte-reversed. */
+function sha256Rev(script: Uint8Array): Uint8Array {
+  return Uint8Array.from(createHash("sha256").update(script).digest()).reverse();
 }

@@ -7,8 +7,6 @@
   -webkit-user-select: none;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Helvetica Neue", Arial, sans-serif;
   background: transparent;
-  --lo-ink: #0f1722;
-  --lo-panel: rgba(17, 23, 33, 0.9);
 }
 .lo-canvas {
   position: absolute;
@@ -42,247 +40,97 @@
   z-index: 4;
 }
 
-/* ---------- room labels ---------- */
-.lo-label {
-  pointer-events: auto;
-  cursor: pointer;
-  z-index: 1;
-}
-.lo-label > div:first-child,
-.lo-label.is-open {
-  margin: 0;
-}
-.lo-label .lo-l1 {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  transform: translate(-50%, -50%);
-  padding: 5px 11px 5px 9px;
-  border-radius: 999px;
-  background: var(--lo-panel);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
-  color: #eaf0f7;
-  font-size: 11px;
-  line-height: 1;
+/* ---------- room labels (L23) and result pins (L24): one white overlay language ---------- */
+.lo-label { pointer-events: auto; cursor: pointer; z-index: 1; transition: opacity var(--dur-1, 160ms) var(--ease-out, ease); }
+.lo-box {
+  position: absolute; left: 0; top: 0;
+  transform: translate(-50%, calc(-100% + 13px));
+  display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end;
+  min-height: 26px; padding: 0 10px 0 8px; border-radius: 13px; overflow: hidden;
+  background: #fff; color: var(--ink, #1D1D1F);
+  box-shadow: var(--shadow-2, 0 0 0 1px rgba(0,0,0,.04), 0 4px 16px rgba(0,0,0,.06));
+  font: 400 13px/18px var(--font, -apple-system, BlinkMacSystemFont, "Inter", sans-serif); letter-spacing: -0.01em;
   white-space: nowrap;
-  backdrop-filter: blur(6px);
-  transition: border-color 0.25s, box-shadow 0.25s;
 }
-.lo-label b {
-  font-weight: 800;
-  letter-spacing: 0.08em;
-}
-.lo-label span {
-  color: #9daabd;
-  font-weight: 600;
-  letter-spacing: 0;
-}
-.lo-label:hover .lo-l1 {
-  border-color: color-mix(in srgb, var(--c) 70%, transparent);
-}
-.lo-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--c);
-  box-shadow: 0 0 8px var(--c);
-  flex: none;
-  position: relative;
-}
+.lo-row { display: flex; align-items: center; gap: 6px; height: 26px; flex: none; }
+.lo-row b { font-weight: 600; color: var(--ink, #1D1D1F); }
+.lo-role { color: var(--muted, #6E6E73); display: none; margin-left: -3px; }
+.lo-label.is-hover .lo-role, .lo-label.is-open .lo-role, .lo-label.is-working .lo-role, .lo-label.is-error .lo-role, .lo-label:focus-visible .lo-role { display: inline; }
+.lo-dot { position: relative; width: 8px; height: 8px; border-radius: 50%; background: var(--c); flex: none; transition: background-color var(--dur-2, 220ms) var(--ease-out, ease); }
+.lo-label.is-working .lo-dot { background: var(--focus, #0071E3); }
 .lo-label.is-working .lo-dot::after {
-  content: "";
-  position: absolute;
-  inset: -4px;
-  border-radius: 50%;
-  border: 2px solid var(--c);
-  animation: lo-ping 1.3s ease-out infinite;
+  content: ""; position: absolute; inset: 0; border-radius: 50%;
+  animation: lo-ping 1.2s var(--ease-out, ease-out) infinite;
 }
-.lo-check {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #0ac18e;
-  color: #04261b;
-  font-style: normal;
-  font-size: 9px;
-  font-weight: 900;
-  display: grid;
-  place-items: center;
-  flex: none;
+.lo-dot.lo-err { background: var(--danger, #FF3B30); }
+.lo-check { display: inline-flex; width: 12px; height: 12px; flex: none; margin: 0 -2px 0 -2px; }
+.lo-check svg { display: block; }
+.lo-label.is-error .lo-role { color: var(--danger-ink, #D70015); }
+/* pin = label expanded upward with a value line */
+.lo-label.is-pin .lo-box { border-radius: 12px; padding-bottom: 5px; }
+.lo-val {
+  font: 600 15px/20px var(--font, -apple-system, BlinkMacSystemFont, "Inter", sans-serif); letter-spacing: -0.016em;
+  font-variant-numeric: tabular-nums; color: var(--ink, #1D1D1F); padding-left: 1px;
 }
-.lo-label.is-open .lo-l1 {
-  border-color: color-mix(in srgb, var(--c) 55%, transparent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 16%, transparent), 0 10px 26px rgba(0, 0, 0, 0.4);
-  padding: 7px 13px 7px 10px;
-  font-size: 12px;
-}
-.lo-label .lo-l2 {
-  position: absolute;
-  left: 0;
-  top: 15px;
-  transform: translateX(-50%);
-  white-space: nowrap;
-  padding: 4px 10px;
-  border-radius: 8px;
-  background: var(--lo-panel);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: #eaf0f7;
-  font-size: 11px;
-  font-weight: 600;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
-}
-.lo-label.is-working .lo-l2::before {
-  content: "";
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  margin-right: 6px;
-  vertical-align: -1px;
-  border-radius: 50%;
-  border: 2px solid color-mix(in srgb, var(--c) 35%, transparent);
-  border-top-color: var(--c);
-  animation: lo-spin 0.8s linear infinite;
-}
-
-/* ---------- result pins ---------- */
-.lo-pin {
-  z-index: 3;
-  filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.35));
-  animation: lo-pop 0.45s cubic-bezier(0.2, 1.4, 0.4, 1) both;
-}
-.lo-pin-in {
-  position: relative;
-  transform: translate(-50%, -100%) translateY(-10px);
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 7px 13px 7px 7px;
-  border-radius: 13px;
-  background: #fbfcfe;
-  border: 2px solid var(--c);
-  white-space: nowrap;
-}
-.lo-pin-in::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  bottom: -7px;
-  width: 11px;
-  height: 11px;
-  background: #fbfcfe;
-  border-right: 2px solid var(--c);
-  border-bottom: 2px solid var(--c);
-  transform: translateX(-50%) rotate(45deg);
-  border-bottom-right-radius: 3px;
-}
-.lo-pin-ic {
-  width: 30px;
-  height: 30px;
-  border-radius: 9px;
-  background: var(--c);
-  color: #fff;
-  display: grid;
-  place-items: center;
-  font: 800 12px/1 "Sora", "Plus Jakarta Sans", system-ui, sans-serif;
-  letter-spacing: 0.02em;
-  flex: none;
-  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.15);
-}
-.lo-pin-tx {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.lo-pin-tx small {
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #6b778a;
-}
-.lo-pin-tx b {
-  font: 800 15px/1.1 "Sora", "Plus Jakarta Sans", system-ui, sans-serif;
-  color: var(--lo-ink);
-  letter-spacing: -0.01em;
-}
+.lo-label.is-pin .lo-row { height: 24px; }
+.lo-label.is-pin .lo-row b { font-weight: 600; color: var(--ink, #1D1D1F); }
+.lo-label.is-pin .lo-role { display: none; }
+/* collision fallback: a dot that expands on hover */
+.lo-label.is-dot .lo-box { width: 12px; min-height: 12px; height: 12px; padding: 0; border-radius: 50%; transform: translate(-50%, -50%); background: var(--c); box-shadow: 0 0 0 2px #fff, var(--shadow-2, 0 4px 16px rgba(0,0,0,.06)); }
+.lo-label.is-dot .lo-box > * { display: none; }
+.lo-label.is-dot.is-done .lo-box { background: var(--bch, #0AC18E); }
+/* phone-width office (L21/L25): smaller pills, other rooms are markers */
+.lo-overlay.is-compact .lo-box { min-height: 22px; border-radius: 11px; padding: 0 8px 0 7px; font-size: 12px; line-height: 16px; transform: translate(-50%, calc(-100% + 11px)); }
+.lo-overlay.is-compact .lo-row { height: 22px; gap: 5px; }
+.lo-overlay.is-compact .lo-label.is-pin .lo-box { border-radius: 11px; padding-bottom: 4px; }
+.lo-overlay.is-compact .lo-label.is-pin .lo-row { height: 20px; }
+.lo-overlay.is-compact .lo-val { font-size: 14px; line-height: 18px; }
+.lo-overlay.is-compact .lo-label.is-dot .lo-box { width: 9px; height: 9px; min-height: 9px; padding: 0; border-radius: 50%; transform: translate(-50%, -50%); }
+.lo-leader { width: 1px; background: var(--line-2, rgba(0,0,0,.14)); opacity: 0; pointer-events: none; }
+.lo-leader.on { opacity: 1; }
 
 .lo-pin.is-off, .lo-label.is-off { visibility: hidden; }
+.lo-label.is-hidden { opacity: 0; pointer-events: none; }
 
-/* ---------- money chips ---------- */
-.lo-chip {
-  z-index: 4;
-}
+/* ---------- transient chip (L26): one at a time, white, ink text ---------- */
+.lo-chip { z-index: 4; pointer-events: none; }
 .lo-chip span {
-  display: inline-block;
-  transform: translate(-50%, -100%);
-  padding: 6px 12px;
-  border-radius: 999px;
-  font: 800 12px/1 "Plus Jakarta Sans", system-ui, sans-serif;
-  white-space: nowrap;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
-  animation: lo-rise 2.7s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+  display: inline-flex; align-items: center; gap: 6px; transform: translate(-50%, -100%);
+  height: 28px; padding: 0 12px; border-radius: 14px; background: #fff; color: var(--ink, #1D1D1F);
+  font: 600 13px/1 var(--font, -apple-system, BlinkMacSystemFont, "Inter", sans-serif); font-variant-numeric: tabular-nums; white-space: nowrap;
+  box-shadow: var(--shadow-2, 0 0 0 1px rgba(0,0,0,.04), 0 4px 16px rgba(0,0,0,.06));
+  animation: lo-chip-in var(--dur-2, 220ms) var(--ease-out, ease-out) both;
 }
-.lo-chip-gold span {
-  background: linear-gradient(180deg, #ffd866, #f5c542);
-  color: #3a2a00;
-  border: 1px solid #ffe28a;
-}
-.lo-chip-bch span {
-  background: linear-gradient(180deg, #19dba4, #0ac18e);
-  color: #022a1e;
-  border: 1px solid #5ff0c4;
-}
-.lo-chip-dept span {
-  background: var(--c);
-  color: #fff;
-}
+.lo-chip.is-out span { animation: lo-chip-out 160ms var(--ease-in, ease-in) forwards; }
+.lo-chip-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--bch, #0AC18E); }
+@keyframes lo-chip-in { from { opacity: 0; transform: translate(-50%, calc(-100% + 6px)); } }
+@keyframes lo-chip-out { to { opacity: 0; transform: translate(-50%, calc(-100% - 6px)); } }
 
-/* ---------- speech bubbles ---------- */
-.lo-bubble { z-index: 5; }
-.lo-bubble.is-out { opacity: 0; transition: opacity 0.25s; }
+/* ---------- speech bubbles (click a character) ---------- */
+.lo-bubble { z-index: 5; pointer-events: none; }
+.lo-bubble.is-out { opacity: 0; transition: opacity 0.16s var(--ease-in, ease-in); }
 .lo-bubble-in {
-  position: relative;
-  transform: translate(-50%, -100%) translateY(-14px);
-  width: max-content;
-  max-width: 236px;
-  padding: 9px 13px 10px;
-  border-radius: 14px;
-  background: #fbfcfe;
-  color: #263243;
-  font-size: 12.5px;
-  line-height: 1.42;
-  font-weight: 600;
-  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.4), 0 0 0 2px color-mix(in srgb, var(--c) 60%, transparent);
-  animation: lo-pop 0.35s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+  position: relative; transform: translate(-50%, -100%) translateY(-14px); width: max-content; max-width: 240px;
+  padding: 10px 14px 11px; border-radius: 14px; background: #fff; color: var(--ink-2, #424245);
+  font: 400 13px/18px var(--font, -apple-system, BlinkMacSystemFont, "Inter", sans-serif); letter-spacing: -0.01em;
+  box-shadow: var(--shadow-3, 0 0 0 1px rgba(0,0,0,.05), 0 24px 60px rgba(0,0,0,.14));
+  animation: lo-bubble-in var(--dur-3, 300ms) var(--ease-out, ease-out) both;
 }
 .lo-bubble-in::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  bottom: -6px;
-  width: 12px;
-  height: 12px;
-  background: #fbfcfe;
-  transform: translateX(-50%) rotate(45deg);
-  border-bottom-right-radius: 3px;
+  content: ""; position: absolute; left: 50%; bottom: -5px; width: 10px; height: 10px; background: #fff;
+  transform: translateX(-50%) rotate(45deg); border-bottom-right-radius: 2px;
 }
-.lo-bubble-in b { color: var(--c); font-weight: 800; margin-right: 2px; }
+.lo-bubble-in b { color: var(--ink, #1D1D1F); font-weight: 600; margin-right: 2px; }
+@keyframes lo-bubble-in { from { opacity: 0; transform: translate(-50%, -100%) translateY(-8px); } }
 
 /* ---------- zzz ---------- */
 .lo-zzz i {
-  position: absolute;
-  font: 800 14px/1 "Sora", system-ui, sans-serif;
-  font-style: normal;
-  color: #5b6b82;
-  -webkit-text-stroke: 3px #ffffff;
-  paint-order: stroke fill;
-  text-shadow: 0 2px 8px rgba(15, 23, 34, 0.25);
-  opacity: 0;
-  animation: lo-z 2.4s ease-out infinite;
+  position: absolute; font: 600 13px/1 var(--font, -apple-system, BlinkMacSystemFont, "Inter", sans-serif); font-style: normal;
+  color: var(--faint, #76767B); -webkit-text-stroke: 3px #fff; paint-order: stroke fill; opacity: 0;
+  animation: lo-z 2.4s var(--ease-out, ease-out) infinite;
 }
-.lo-zzz i:nth-child(2) { animation-delay: 0.8s; font-size: 17px; }
-.lo-zzz i:nth-child(3) { animation-delay: 1.6s; font-size: 21px; }
+.lo-zzz i:nth-child(2) { animation-delay: 0.8s; font-size: 15px; }
+.lo-zzz i:nth-child(3) { animation-delay: 1.6s; font-size: 18px; }
 
 @keyframes lo-z {
   0% { transform: translate(0, 0) scale(0.6); opacity: 0; }
@@ -290,37 +138,15 @@
   100% { transform: translate(22px, -40px) scale(1); opacity: 0; }
 }
 @keyframes lo-ping {
-  0% { transform: scale(0.6); opacity: 0.9; }
-  100% { transform: scale(2.2); opacity: 0; }
+  0% { box-shadow: 0 0 0 0 rgba(0, 113, 227, 0.45); }
+  100% { box-shadow: 0 0 0 6px rgba(0, 113, 227, 0); }
 }
 @keyframes lo-spin { to { transform: rotate(360deg); } }
-@keyframes lo-pop {
-  0% { opacity: 0; scale: 0.7; }
-  100% { opacity: 1; scale: 1; }
-}
-@keyframes lo-rise {
-  0% { transform: translate(-50%, -60%) scale(0.7); opacity: 0; }
-  12% { transform: translate(-50%, -100%) scale(1.05); opacity: 1; }
-  20% { transform: translate(-50%, -100%) scale(1); }
-  75% { opacity: 1; }
-  100% { transform: translate(-50%, calc(-100% - 46px)); opacity: 0; }
-}
 
-/* small containers */
-.lo-sm .lo-label .lo-l1 { font-size: 10px; padding: 4px 9px 4px 7px; gap: 6px; }
-.lo-sm .lo-pin-in { padding: 5px 10px 5px 5px; gap: 7px; border-radius: 11px; }
-.lo-sm .lo-pin-ic { width: 24px; height: 24px; border-radius: 7px; font-size: 10px; }
-.lo-sm .lo-pin-tx b { font-size: 12.5px; }
-.lo-sm .lo-pin-tx small { font-size: 8px; }
-.lo-xs .lo-label .lo-l1 { font-size: 9px; padding: 3px 7px 3px 6px; gap: 5px; }
-.lo-xs .lo-label .lo-l1 span { display: none; }
-.lo-xs .lo-dot { width: 6px; height: 6px; }
-.lo-xs .lo-pin-in { padding: 4px 9px 4px 4px; gap: 6px; border-width: 1.5px; }
-.lo-xs .lo-pin-ic { width: 20px; height: 20px; border-radius: 6px; font-size: 9px; }
-.lo-xs .lo-pin-tx small { display: none; }
-.lo-xs .lo-pin-tx b { font-size: 11.5px; }
-.lo-xs .lo-pin-in::after { width: 8px; height: 8px; bottom: -5px; }
-.lo-xs .lo-chip span { font-size: 10.5px; padding: 5px 9px; }
+@media (prefers-reduced-motion: reduce) {
+  .lo-label.is-working .lo-dot::after, .lo-zzz { animation: none; display: none; }
+  .lo-chip span, .lo-bubble-in { animation-duration: 150ms; animation-timing-function: linear; }
+}
 
 /* ================= 2D fallback ================= */
 .lo-2d .lo-stage {
@@ -439,7 +265,7 @@
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
   display: grid;
   place-items: center;
-  font: 800 13px/1 "Sora", system-ui, sans-serif;
+  font: 700 13px/1 var(--font, -apple-system, BlinkMacSystemFont, "Inter", sans-serif);
   box-sizing: border-box;
   transition: transform 0.2s;
 }
@@ -459,38 +285,7 @@
 @keyframes lo-bob { to { transform: translateY(-4px); } }
 @keyframes lo-cheer { 50% { transform: translateY(-12px) scale(1.1); } }
 
-/* ---------- collisions, compact pins, errors ---------- */
-.lo-label, .lo-pin { transition: opacity 0.2s ease; }
-.lo-label.is-hidden, .lo-pin.is-hidden { opacity: 0; pointer-events: none; }
-.lo-pin.is-capped { display: none; }
-/* Phones: avatar + value only, 28 px tall */
-.lo-compact .lo-pin-in { padding: 3px 9px 3px 3px; gap: 6px; border-radius: 10px; border-width: 1.5px; }
-.lo-compact .lo-pin-ic { width: 22px; height: 22px; border-radius: 7px; font-size: 9px; }
-.lo-compact .lo-pin-tx small { display: none; }
-.lo-compact .lo-pin-tx b { font-size: 11.5px; }
-.lo-compact .lo-pin-in::after { width: 8px; height: 8px; bottom: -5px; border-width: 1.5px; }
-.lo-label.is-error .lo-l1 {
-  border-color: rgba(255, 122, 107, 0.75);
-  background: rgba(58, 20, 20, 0.92);
-  box-shadow: 0 0 0 3px rgba(255, 122, 107, 0.22), 0 10px 26px rgba(0, 0, 0, 0.4);
-}
-.lo-label.is-error b { color: #ffb4a9; }
-.lo-label.is-error .lo-l2 { border-color: rgba(255, 122, 107, 0.5); color: #ffd0c9; }
-.lo-label.is-error .lo-l2::before { display: none; }
-.lo-bang {
-  width: 15px; height: 15px; border-radius: 50%; background: #ff7a6b; color: #2a0b07;
-  font: 900 10px/15px "Sora", system-ui, sans-serif; font-style: normal; text-align: center; flex: none;
-}
-.lo-alert { z-index: 5; pointer-events: none; }
-.lo-alert span {
-  display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%;
-  transform: translate(-50%, -100%) translateY(-6px);
-  background: #ff7a6b; color: #2a0b07; border: 2px solid #fff;
-  font: 900 15px/1 "Sora", system-ui, sans-serif;
-  box-shadow: 0 6px 16px rgba(255, 122, 107, 0.45);
-  animation: lo-alert 1.2s ease-in-out infinite;
-}
-@keyframes lo-alert { 50% { transform: translate(-50%, -100%) translateY(-11px); } }
+.lo-av { cursor: pointer; }
 
 /* ---------- 2D fallback polish ---------- */
 .lo-2d .lo-room {
@@ -509,19 +304,4 @@
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(0, 0, 0, 0.08);
 }
-.lo-2d .lo-label .lo-l1 { transform: translate(-50%, -50%); }
 
-/* ---------- pins: logo avatar, collapsed dots ---------- */
-.lo-pin-ic.lo-pin-logo { background: #fff; padding: 0; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(15, 23, 34, 0.08); }
-.lo-pin-ic.lo-pin-logo svg { width: 100%; height: 100%; display: block; }
-.lo-pin.is-dot .lo-pin-in { padding: 3px; gap: 0; border-radius: 50%; }
-.lo-pin.is-dot .lo-pin-tx { display: none; }
-.lo-pin.is-dot .lo-pin-ic { width: 20px; height: 20px; border-radius: 50%; font-size: 9px; }
-.lo-pin.is-dot .lo-pin-in::after { width: 7px; height: 7px; bottom: -4px; border-width: 1.5px; }
-.lo-compact .lo-pin { pointer-events: auto; cursor: pointer; }
-
-/* Phones: name chips only. The status chip and the panel already say what the room is doing. */
-@media (max-width: 767px) {
-  .lo-label .lo-l2 { display: none; }
-  .lo-label.is-open .lo-l1 span { display: none; }
-}

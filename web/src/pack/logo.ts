@@ -142,3 +142,41 @@ export function renderLogoTile(logo: Logo | undefined, palette: Palette | undefi
   const r = Math.round(size * 0.24);
   return `<span class="ld-logotile" style="width:${size}px;height:${size}px;border-radius:${r}px;background:${bg}">${renderLogo(logo, palette, name, Math.round(size * 0.86))}</span>`;
 }
+
+// ---------- R12: wordmark-first logos ----------
+
+import type { FontPair, Wordmark } from "../types";
+import { DEFAULT_WORDMARK } from "../types";
+import { fontStack } from "./util";
+
+const applyCase = (s: string, c: Wordmark["case"]) => (c === "lower" ? s.toLowerCase() : c === "upper" ? s.toUpperCase() : s);
+
+/** The brand mark alone (icon or monogram) on a rounded tile in the brand primary. Size in px. */
+export function renderMark(logo: Logo | undefined, palette: Palette | undefined, name: string, size: number, fonts?: FontPair): string {
+  const c = brandColors(palette);
+  const wm = logo?.wordmark ?? DEFAULT_WORDMARK;
+  const r = Math.round(size * 0.26);
+  const on = contrast(c.primary, c.bg) >= 3 ? c.bg : c.onPrimary;
+  const mono = wm.mark === "monogram" || logo?.shape === "monogram";
+  const inner = mono
+    ? `<span style="font-family:${esc(fontStack(fonts?.display))};font-weight:${wm.weight};font-size:${Math.round(size * (((logo?.monogram || name[0] || "A").length > 1) ? 0.4 : 0.52))}px;line-height:1;letter-spacing:-0.02em;color:${on}">${esc((logo?.monogram || name[0] || "A").slice(0, 2).toUpperCase())}</span>`
+    : renderIcon(logo?.icon ?? "spark", on, Math.round(size * 0.56), c.primary);
+  return `<span class="ld-mark" style="width:${size}px;height:${size}px;border-radius:${r}px;background:${c.primary};display:inline-grid;place-items:center;flex:none">${inner}</span>`;
+}
+
+/**
+ * R12: the name set as a wordmark in the brand display font with Dex's weight, tracking and case, plus an
+ * optional mark (icon or monogram) left of it or above it. `size` is the cap size of the name in px.
+ */
+export function renderWordmark(logo: Logo | undefined, palette: Palette | undefined, name: string, size: number, fonts?: FontPair, opts: { color?: string } = {}): string {
+  const c = brandColors(palette);
+  const wm = logo?.wordmark ?? DEFAULT_WORDMARK;
+  const color = opts.color ?? c.ink;
+  const text = applyCase(String(name || "Brand").trim(), wm.case);
+  const markSize = Math.round(size * (wm.placement === "above" ? 1.5 : 1.15));
+  let mark = "";
+  if (wm.mark === "icon") mark = renderIcon(logo?.icon ?? "spark", c.accent, markSize, c.bg);
+  else if (wm.mark === "monogram") mark = renderMark(logo, palette, name, markSize, fonts);
+  const above = wm.placement === "above";
+  return `<span class="ld-wordmark" style="display:inline-flex;${above ? "flex-direction:column;" : ""}align-items:center;gap:${Math.round(size * (above ? 0.3 : 0.32))}px;color:${color}">${mark}<span style="font-family:${esc(fontStack(fonts?.display))};font-weight:${wm.weight};font-size:${size}px;line-height:1.05;letter-spacing:${wm.letter_spacing_em}em;white-space:nowrap">${esc(text)}</span></span>`;
+}

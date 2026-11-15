@@ -1,76 +1,205 @@
+// Header (L1, L2): mark + wordmark, 4-step text stepper, "My projects", quiet wallet button, overflow menu.
+// Owner: WS1. The hackathon strip moved to the footer (footer.ts, L3); `strip()` stays as a shim so callers
+// that still mount it at the top get the footer at the bottom instead.
 import { disconnect, onWallet, receiveAddress, walletName, walletState } from "../wallet";
 import { h } from "./dom";
-import { copyText } from "./modal";
+import { mountFooter, LINKS } from "./footer";
+import { MARK_SVG } from "./logo";
+import { closeButton, openModal } from "./modal";
 import { openConnect } from "./pay";
+import { list as listProjects, onChange as onProjects } from "./projects";
+import { openMyProjects } from "./projects-ui";
 import { onSound, play, setSound, soundOn } from "./sound";
-import { shortAddr, type Step } from "./state";
-import { extIcon, icon, iconSvg } from "./ui";
+import { app, shortAddr, type Step } from "./state";
+import { avatarGroup, icon, iconSvg } from "./ui";
 
-// Hackathon links. Leave SLIDES empty to hide the link.
-const LINKS = {
-  slides: "",
-  source: "https://github.com/cesaralonsoo/LaunchDesk",
-  vote: "bitcoincash:zp9d679zvayvudj65nd9zlgezvjplr8g3v7hftqmju",
-};
+/** Legacy export (v3 tile). The v4 mark is `MARK_SVG()` in logo.ts. */
+export const LOGO_SVG = MARK_SVG(28);
 
-/** LaunchDesk mark: an ink tile with a white rocket line drawing. */
-export const LOGO_SVG =
-  '<svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="#1D1D1F"/><g fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M32 13c5.6 5 7.4 12 5.6 20.5H26.4C24.6 25 26.4 18 32 13z"/><path d="M26.4 33.5 21.5 40h6M37.6 33.5 42.5 40h-6M29 45.5h6"/></g><circle cx="32" cy="24.5" r="2.6" fill="#0AC18E"/></svg>';
-
-export function strip() {
-  const details = h("div", { class: "strip-more", id: "strip-more" });
-  const vote = h(
-    "span",
-    { class: "strip-vote" },
-    "Vote ",
-    h("code", { title: LINKS.vote }, shortAddr(LINKS.vote)),
-    h("button", { type: "button", class: "strip-copy", "aria-label": "Copy vote address", onclick: () => copyText(LINKS.vote, "Vote address copied") }, "Copy"),
-  );
-  const items = [
-    LINKS.slides ? h("a", { href: LINKS.slides, target: "_blank", rel: "noopener" }, "Slides ", extIcon()) : null,
-    h("a", { href: LINKS.source, target: "_blank", rel: "noopener" }, "Source code ", extIcon()),
-    vote,
-    h("span", { class: "strip-note" }, "All code written during BLAZE, 14–22 Nov 2026"),
-  ];
-  details.append(...items.filter((x): x is HTMLElement => !!x));
-  const toggle = h("button", { type: "button", class: "strip-toggle", "aria-expanded": "false", "aria-controls": "strip-more" }, "Details");
-  const bar = h(
-    "div",
-    { class: "strip", role: "complementary", "aria-label": "Hackathon information" },
-    h("div", { class: "strip-in" }, h("span", { class: "strip-badge" }, "BCH BLAZE 2026", h("span", { class: "strip-sub" }, " · Mainnet track")), details, toggle),
-  );
-  toggle.addEventListener("click", () => {
-    const open = bar.classList.toggle("open");
-    toggle.setAttribute("aria-expanded", String(open));
-    toggle.textContent = open ? "Close" : "Details";
-  });
-  return bar;
+/**
+ * v3 called this to mount the hackathon strip above the header. In v4 the strip lives in the page footer:
+ * this returns an empty placeholder and mounts the footer at the end of the same parent once it is in the DOM.
+ */
+export function strip(): HTMLElement {
+  const shim = h("div", { class: "strip-shim", hidden: true });
+  queueMicrotask(() => mountFooter(shim.parentElement ?? document.body));
+  return shim;
 }
 
-const STEPS = ["Plan", "Validate", "Gate", "Build", "Launch"];
+/** The 4 v4 steps. */
+export const STEPS = ["Validate", "Decide", "Build", "Live"] as const;
+export type StepName = (typeof STEPS)[number];
+/** The pack section each done step opens. */
+const STEP_SECTION = ["summary", "summary", "brand", "website"] as const;
+
+/** v3 Step (1 Plan · 2 Validate · 3 Gate · 4 Build · 5 Launch) → v4 step index 0..3. */
+const fromLegacy = (s: Step): number => (s <= 2 ? 0 : s === 3 ? 1 : s === 4 ? 2 : 3);
+
+function openStepSection(i: number) {
+  const p = app.project;
+  if (!p) return;
+  play("open");
+  void import("../pack")
+    .then((m) => m.openPack(p, { section: STEP_SECTION[i] }))
+    .catch(() => undefined);
+}
+
+/** "How it works" (overflow menu): the whole product in three rows. */
+export function openHowItWorks() {
+  const m = openModal({ label: "How it works", className: "how-modal" });
+  const price = (s: "validate" | "build") => `$${((app.config?.prices[s] ?? (s === "validate" ? 10 : 20)) / 100).toFixed(2)}`;
+  const row = (n: string, title: string, sub: string, right: Node | string | null) =>
+    h("li", { class: "hiw-row" }, h("span", { class: "hiw-n", "aria-hidden": "true" }, n), h("div", { class: "hiw-m" }, h("b", null, title), h("p", null, sub)), right);
+  m.body.append(
+    h("div", { class: "modal-head" }, h("h2", { class: "modal-title" }, "How it works"), closeButton(m.close)),
+    h(
+      "div",
+      { class: "modal-body" },
+      h(
+        "ol",
+        { class: "hiw" },
+        row("1", `Validate · ${price("validate")}`, "Mia writes the plan, Leo scores the market and Sam runs the numbers.", avatarGroup(["mia", "leo", "sam"])),
+        row("2", "Decide", "Read the report. Stop there and keep it, or continue.", null),
+        row("3", `Build · ${price("build")}`, "Nova names it, Dex designs it, Rae plans the launch and Pip puts a page live that takes Bitcoin Cash pre-orders.", avatarGroup(["nova", "dex", "rae", "pip"])),
+      ),
+      h("p", { class: "hiw-foot" }, "You pay from your own wallet. LaunchDesk never holds your keys."),
+    ),
+  );
+}
+
+type MenuItem = { label: string; cls?: string; run?: () => void; href?: string; ext?: boolean; check?: () => boolean; right?: () => string };
+
+/** Small popover menu with arrow-key navigation, Esc and outside click to close, focus returned. */
+function popMenu(anchor: HTMLElement, items: () => MenuItem[]) {
+  const el = h("div", { class: "pop-menu", role: "menu", hidden: true });
+  const close = (focus = true) => {
+    if (el.hidden) return;
+    el.hidden = true;
+    anchor.setAttribute("aria-expanded", "false");
+    if (focus) anchor.focus();
+  };
+  const open = () => {
+    el.replaceChildren(
+      ...items().map((it) => {
+        const inner = [h("span", { class: "pm-l" }, it.label)];
+        if (it.check) inner.push(h("span", { class: `pm-switch${it.check() ? " on" : ""}`, "aria-hidden": "true" }, h("i")));
+        else if (it.right) inner.push(h("span", { class: "pm-r" }, it.right()));
+        else if (it.ext) inner.push(h("span", { class: "pm-r", html: iconSvg("ext", 14, 1.6) }));
+        const attrs = {
+          class: `pm-item${it.cls ? ` ${it.cls}` : ""}`,
+          role: it.check ? "menuitemcheckbox" : "menuitem",
+          "aria-checked": it.check ? String(it.check()) : null,
+          tabindex: "-1",
+        };
+        if (it.href)
+          return h("a", { ...attrs, href: it.href, target: it.ext ? "_blank" : null, rel: it.ext ? "noopener" : null, onclick: () => close(false) }, inner);
+        return h(
+          "button",
+          {
+            ...attrs,
+            type: "button",
+            onclick: () => {
+              if (it.check) {
+                it.run?.();
+                const on = it.check();
+                const b = el.querySelector<HTMLElement>(`.${it.cls}`);
+                b?.setAttribute("aria-checked", String(on));
+                b?.querySelector(".pm-switch")?.classList.toggle("on", on);
+                return;
+              }
+              close(true); // focus goes back to ⋯ first, so a dialog opened by the item returns focus there
+              it.run?.();
+            },
+          },
+          inner,
+        );
+      }),
+    );
+    el.hidden = false;
+    anchor.setAttribute("aria-expanded", "true");
+    el.querySelector<HTMLElement>(".pm-item")?.focus();
+  };
+  anchor.setAttribute("aria-haspopup", "menu");
+  anchor.setAttribute("aria-expanded", "false");
+  anchor.addEventListener("click", () => {
+    play("tap");
+    if (el.hidden) open();
+    else close();
+  });
+  el.addEventListener("keydown", (e) => {
+    const all = [...el.querySelectorAll<HTMLElement>(".pm-item")];
+    const i = all.indexOf(document.activeElement as HTMLElement);
+    if (e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
+      close();
+    } else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      const n = all.length;
+      all[(i + (e.key === "ArrowDown" ? 1 : n - 1) + n) % n]?.focus();
+    } else if (e.key === "Home" || e.key === "End") {
+      e.preventDefault();
+      all[e.key === "Home" ? 0 : all.length - 1]?.focus();
+    } else if (e.key === "Tab") close(false);
+  });
+  document.addEventListener("click", (e) => {
+    if (!el.hidden && !el.contains(e.target as Node) && !anchor.contains(e.target as Node)) close(false);
+  });
+  return { el, close };
+}
 
 export function header(onHome: () => void) {
+  // ---------- stepper (L1): persistent nodes so the connectors can animate ----------
   const stepper = h("ol", { class: "stepper", "aria-label": "Progress" });
+  const stepEls = STEPS.map((label, i) => {
+    const btn = h(
+      "button",
+      { type: "button", class: "st-b", disabled: true, onclick: () => openStepSection(i) },
+      h("span", { class: "st-ok", "aria-hidden": "true", html: iconSvg("check", 12, 2.2) }),
+      h("span", { class: "st-l" }, label),
+      h("span", { class: "sr-only st-sr" }),
+    );
+    const li = h("li", { class: "st todo" }, i > 0 ? h("span", { class: "st-c", "aria-hidden": "true" }, h("i")) : null, btn);
+    stepper.append(li);
+    return { li, btn };
+  });
   const compact = h("div", { class: "stepper-compact", "aria-hidden": "true" });
-  const walletBtn = h("button", { type: "button", class: "btn sm wallet-btn" });
-  const soundBtn = h("button", { type: "button", class: "icon-btn sound-btn" });
-  const menu = h("div", { class: "wallet-menu", hidden: true, role: "menu" });
+
+  // ---------- right side ----------
+  const projBtn = h("button", { type: "button", class: "hdr-txt hdr-projects", hidden: true });
+  const walletBtn = h("button", { type: "button", class: "hdr-txt wallet-btn" });
+  const walletMenu = h("div", { class: "pop-menu wallet-menu", hidden: true, role: "menu" });
+  const moreBtn = h("button", { type: "button", class: "icon-btn ghost hdr-more", "aria-label": "More", title: "More", html: iconSvg("more", 20, 1.5) });
+
+  const projCount = () => listProjects().length;
+  const renderProjects = () => {
+    const n = projCount();
+    projBtn.hidden = n === 0;
+    projBtn.replaceChildren(h("span", null, "My projects"), h("span", { class: "hdr-count num" }, String(n)));
+    projBtn.setAttribute("aria-label", `My projects, ${n}`);
+  };
+  projBtn.addEventListener("click", () => {
+    play("tap");
+    openMyProjects(projBtn);
+  });
+  onProjects(renderProjects);
+  window.addEventListener("storage", (e) => e.key === "launchdesk-projects" && renderProjects());
+  renderProjects();
 
   const renderWallet = () => {
     const s = walletState();
     walletBtn.replaceChildren();
     if (s === "ready") {
+      walletBtn.classList.add("is-on");
       walletBtn.append(h("span", { class: "live-dot", "aria-hidden": "true" }), h("span", { class: "wb-name" }, walletName()));
       walletBtn.setAttribute("aria-label", `Wallet connected: ${walletName()}. Open wallet menu`);
       walletBtn.setAttribute("aria-haspopup", "menu");
     } else {
+      walletBtn.classList.remove("is-on");
       walletBtn.removeAttribute("aria-haspopup");
-      walletBtn.removeAttribute("aria-label");
-      walletBtn.append(
-        icon("wallet", 16, "wb-ico"),
-        h("span", { class: "wb-name" }, s === "connecting" ? "Connecting…" : h("span", null, "Connect", h("span", { class: "wb-long" }, " wallet"))),
-      );
-      menu.hidden = true;
+      walletBtn.setAttribute("aria-label", s === "connecting" ? "Connecting wallet" : "Connect wallet");
+      walletBtn.append(icon("wallet", 18, "ico wb-ico"), h("span", { class: "wb-name" }, s === "connecting" ? "Connecting…" : "Connect wallet"));
+      walletMenu.hidden = true;
     }
   };
   walletBtn.addEventListener("click", () => {
@@ -82,46 +211,54 @@ export function header(onHome: () => void) {
     } catch {
       /* not ready */
     }
-    menu.replaceChildren(
+    walletMenu.replaceChildren(
       h("div", { class: "wm-h" }, h("b", null, walletName()), h("small", { class: "mono" }, addr ? shortAddr(addr) : "Connected")),
       h(
         "button",
         {
           type: "button",
           role: "menuitem",
-          class: "wm-item",
+          class: "pm-item wm-item",
           onclick: () => {
-            menu.hidden = true;
+            walletMenu.hidden = true;
             void disconnect();
           },
         },
         "Disconnect",
       ),
     );
-    menu.hidden = !menu.hidden;
-    if (!menu.hidden) menu.querySelector<HTMLElement>("button")?.focus();
+    walletMenu.hidden = !walletMenu.hidden;
+    if (!walletMenu.hidden) walletMenu.querySelector<HTMLElement>("button")?.focus();
   });
   document.addEventListener("click", (e) => {
-    if (!menu.hidden && !menu.contains(e.target as Node) && e.target !== walletBtn && !walletBtn.contains(e.target as Node)) menu.hidden = true;
+    if (!walletMenu.hidden && !walletMenu.contains(e.target as Node) && !walletBtn.contains(e.target as Node)) walletMenu.hidden = true;
   });
-  menu.addEventListener("keydown", (e) => {
+  walletMenu.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
-      menu.hidden = true;
+      walletMenu.hidden = true;
       walletBtn.focus();
     }
   });
   onWallet(renderWallet);
   renderWallet();
 
-  const renderSound = (on: boolean) => {
-    soundBtn.setAttribute("aria-pressed", String(on));
-    soundBtn.setAttribute("aria-label", on ? "Sound on. Turn sound off" : "Sound off. Turn sound on");
-    soundBtn.innerHTML = iconSvg(on ? "soundOn" : "soundOff", 16);
-    soundBtn.title = on ? "Sound on" : "Sound off";
-  };
-  soundBtn.addEventListener("click", () => setSound(!soundOn()));
-  onSound(renderSound);
-  renderSound(soundOn());
+  const more = popMenu(moreBtn, () => {
+    const n = projCount();
+    const items: MenuItem[] = [];
+    if (n > 0) items.push({ label: "My projects", cls: "mn-projects mobile-only", right: () => String(n), run: () => openMyProjects(null) });
+    items.push(
+      { label: "Sound", cls: "mn-sound", check: soundOn, run: () => setSound(!soundOn()) },
+      { label: "How it works", cls: "mn-how", run: openHowItWorks },
+      { label: "Source code", href: LINKS.source, ext: true },
+      { label: "Terms and privacy", href: "/legal.html" },
+    );
+    return items;
+  });
+  onSound(() => {
+    const b = more.el.querySelector(".mn-sound");
+    b?.setAttribute("aria-checked", String(soundOn()));
+    b?.querySelector(".pm-switch")?.classList.toggle("on", soundOn());
+  });
 
   const brand = h(
     "a",
@@ -134,8 +271,8 @@ export function header(onHome: () => void) {
         onHome();
       },
     },
-    h("span", { class: "brand-logo", html: LOGO_SVG }),
-    h("span", { class: "brand-txt" }, h("b", null, "LaunchDesk"), h("small", null, "Your AI startup team, paid in cents")),
+    h("span", { class: "brand-mark", html: MARK_SVG(18) }),
+    h("span", { class: "brand-word" }, "LaunchDesk"),
   );
 
   const el = h(
@@ -143,25 +280,34 @@ export function header(onHome: () => void) {
     { class: "hdr" },
     brand,
     h("nav", { class: "hdr-mid", "aria-label": "Steps" }, stepper, compact),
-    h("div", { class: "hdr-right" }, h("div", { class: "wallet-wrap" }, walletBtn, menu), soundBtn),
+    h(
+      "div",
+      { class: "hdr-right" },
+      projBtn,
+      h("div", { class: "pop-wrap" }, walletBtn, walletMenu),
+      h("div", { class: "pop-wrap" }, moreBtn, more.el),
+    ),
   );
 
-  const setStep = (step: Step) => {
-    stepper.replaceChildren(
-      ...STEPS.map((label, i) => {
-        const n = i + 1;
-        const st = n < step ? "done" : n === step ? "current" : "todo";
-        return h(
-          "li",
-          { class: `st ${st}`, "aria-current": st === "current" ? "step" : null },
-          st === "done" ? h("span", { class: "st-n", "aria-hidden": "true", html: iconSvg("check", 12, 2.2) }) : h("span", { class: "st-n", "aria-hidden": "true" }, String(n)),
-          h("span", { class: "st-l" }, label),
-          h("span", { class: "sr-only" }, st === "done" ? " (done)" : ""),
-        );
-      }),
-    );
-    compact.replaceChildren(h("span", null, `Step ${step} of 5`), h("b", null, STEPS[step - 1]));
+  /** Shows step `cur` (0..3) as current; earlier steps are done (clickable), later ones are future. */
+  const setStepIndex = (cur: number) => {
+    stepEls.forEach(({ li, btn }, i) => {
+      const st = i < cur ? "done" : i === cur ? "current" : "todo";
+      li.className = `st ${st}`;
+      li.querySelector(".st-c")?.classList.toggle("on", i <= cur);
+      btn.disabled = st !== "done";
+      if (st === "current") btn.setAttribute("aria-current", "step");
+      else btn.removeAttribute("aria-current");
+      btn.title = st === "done" ? `Open ${STEPS[i] === "Live" ? "your site section" : "this part of your pack"}` : "";
+      btn.querySelector(".st-sr")!.textContent = st === "done" ? ", done" : st === "current" ? ", current step" : "";
+    });
+    compact.textContent = `Step ${cur + 1} of 4 · ${STEPS[cur]}`;
   };
-  setStep(1);
-  return { el, setStep };
+
+  /** v3-compatible: takes the legacy 1..5 Step from state.ts and maps it onto Validate · Decide · Build · Live. */
+  const setStep = (step: Step) => setStepIndex(fromLegacy(step));
+  /** v4: set the step by name. */
+  const setStage = (name: StepName) => setStepIndex(STEPS.indexOf(name));
+  setStepIndex(0);
+  return { el, setStep, setStage };
 }

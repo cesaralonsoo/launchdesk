@@ -1,11 +1,13 @@
-import { DEPT_IDS, DEPT_INITIAL, ROOM, toneColor, type AgentState, type ChipTone, type DeptId, type PinSpec } from "./layout";
+// Office overlay (spec-v4 L23–L27): one white label language over the 3D/2D office.
+// A room label is a 26px white pill; a result "pin" is the same label expanded upward with a value line.
+// Labels never overlap (collision pass each frame). One transient chip at a time. Confetti is one burst.
+// The public methods are what scene.ts and fallback2d.ts call; their signatures stay as they were.
+import { DEPT_IDS, ROOM, type AgentState, type ChipTone, type DeptId, type PinSpec } from "./layout";
+import { DELIVERABLE } from "../app/team";
 
 export type P3 = { x: number; y: number; z: number };
 export type Rect = { x: number; y: number; w: number; h: number };
 const hits = (a: Rect, b: Rect) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
-/** Narrow offices (phones): only the newest pins at full size, the rest collapse to coloured dots. */
-const COMPACT_W = 600;
-const COMPACT_MAX = 2;
 export type Projector = (p: P3) => { x: number; y: number };
 export type Anchors = {
   label(id: DeptId): P3;
@@ -17,184 +19,274 @@ export type Anchors = {
 const esc = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
-type Transient = { el: HTMLElement; id: DeptId; until: number; offset: number };
+const reducedMotion = () => {
+  try {
+    return matchMedia("(prefers-reduced-motion: reduce)").matches;
+  } catch {
+    return false;
+  }
+};
+const SPRING_SOFT = "linear(0, .22 6%, .55 14%, .8 24%, .94 35%, 1.008 50%, 1.012 62%, 1.003 80%, 1)";
+
+/** Short role shown after the name on hover, focus or while working ("Leo · Market score").
+ *  The same deliverable words as the team list next to the office, so the two never disagree. */
+export const ROLE_SHORT: Record<DeptId, string> = { lobby: "Front desk", ...DELIVERABLE };
+
+const LABEL_H = 26;
+/** Canvas inset for every overlay element (L21). */
+const INSET = 12;
+
+type LabelState = { state: AgentState; note: string | null; open: boolean; flag: boolean; value: string | null };
+type Box = { id: DeptId; ax: number; ay: number; w: number; h: number; x: number; y: number; off: boolean };
 
 export class Overlay {
   readonly el: HTMLDivElement;
   private labels = new Map<DeptId, HTMLDivElement>();
-  private labelState = new Map<DeptId, { state: AgentState; note: string | null; open: boolean; flag: boolean }>();
-  private labelW = new Map<DeptId, number>();
-  private pins = new Map<DeptId, { el: HTMLDivElement; w: number; h: number; dot: boolean; sz: { full?: [number, number]; dot?: [number, number] } }>();
-  private chips: Transient[] = [];
-  private bubbles: Transient[] = [];
+  private leaders = new Map<DeptId, HTMLDivElement>();
+  private st = new Map<DeptId, LabelState>();
+  private size = new Map<DeptId, [number, number]>();
+  private chipQ: Array<{ id: DeptId; text: string; tone: ChipTone }> = [];
+  private chipNow: { el: HTMLElement; id: DeptId; until: number } | null = null;
+  private bubbles: Array<{ el: HTMLElement; id: DeptId; until: number }> = [];
   private zzz = new Map<DeptId, HTMLDivElement>();
-  private alerts = new Map<DeptId, HTMLDivElement>();
-  private pinOrder: DeptId[] = [];
-  private revealed: DeptId | null = null;
-  /** Screen rects covered by other UI (department panel, guide card, controls). */
-  occluders: (() => Rect[]) | null = null;
   private confetti: Confetti;
-  private compactWas: boolean | null = null;
+  private wasCompact = false;
+  /** Screen rects covered by other UI (status pill, controls, coach mark). */
+  occluders: (() => Rect[]) | null = null;
   onLabelClick: ((id: DeptId) => void) | null = null;
 
-  constructor(host: HTMLElement) {
+  constructor(private host: HTMLElement) {
     this.el = document.createElement("div");
     this.el.className = "lo-overlay";
     host.appendChild(this.el);
     this.confetti = new Confetti(host);
     for (const id of DEPT_IDS) {
       const r = ROOM[id];
+      const lead = document.createElement("div");
+      lead.className = "lo-leader";
+      this.el.appendChild(lead);
+      this.leaders.set(id, lead);
       const l = document.createElement("div");
-      l.className = `lo-label lo-${r.row}`;
+      l.className = "lo-label";
+      l.dataset.room = id;
       l.style.setProperty("--c", r.color);
-      l.addEventListener("click", () => {
-        this.revealed = this.revealed === id ? null : id;
-        this.onLabelClick?.(id);
-      });
+      l.tabIndex = -1;
+      l.addEventListener("click", () => this.onLabelClick?.(id));
+      l.addEventListener("pointerenter", () => l.classList.add("is-hover"));
+      l.addEventListener("pointerleave", () => l.classList.remove("is-hover"));
       this.el.appendChild(l);
       this.labels.set(id, l);
-      this.labelState.set(id, { state: id === "pip" ? "sleeping" : "idle", note: null, open: false, flag: false });
-      this.renderLabel(id);
+      this.st.set(id, { state: id === "pip" ? "sleeping" : "idle", note: null, open: false, flag: false, value: null });
+      this.render(id);
     }
   }
 
-  private renderLabel(id: DeptId) {
-    const st = this.labelState.get(id)!;
+  private render(id: DeptId, animate = false) {
+    const s = this.st.get(id)!;
     const r = ROOM[id];
     const l = this.labels.get(id)!;
-    this.labelW.delete(id);
-    const open = st.open || !!st.note;
-    l.classList.toggle("is-open", open);
-    l.classList.toggle("is-working", st.state === "working");
-    l.classList.toggle("is-done", st.state === "done" && !st.flag);
-    l.classList.toggle("is-error", st.flag);
+    const box = l.firstElementChild as HTMLElement | null;
+    const before = animate && box && !reducedMotion() ? box.getBoundingClientRect() : null;
+    this.size.delete(id);
+    l.classList.toggle("is-open", s.open);
+    l.classList.toggle("is-working", s.state === "working" && !s.flag);
+    l.classList.toggle("is-done", s.state === "done" && !s.flag);
+    l.classList.toggle("is-error", s.flag);
+    l.classList.toggle("is-pin", !!s.value);
     l.setAttribute("role", "button");
-    l.setAttribute("aria-label", st.flag ? `${r.name}: needs a retry. Retry ${r.name}` : `${r.name} · ${r.role}`);
-    const mark = st.flag ? `<i class="lo-bang">!</i>` : st.state === "done" ? `<i class="lo-check">✓</i>` : `<i class="lo-dot"></i>`;
-    l.innerHTML = open
-      ? `<div class="lo-l1">${mark}<b>${r.label}</b><span>${esc(r.role)}</span></div>${st.note ? `<div class="lo-l2">${esc(st.note)}</div>` : ""}`
-      : `<div class="lo-l1">${mark}<b>${r.label}</b></div>`;
-  }
-
-  setAgentState(id: DeptId, s: AgentState) {
-    const st = this.labelState.get(id)!;
-    if (st.state === s) return;
-    st.state = s;
-    this.renderLabel(id);
-  }
-  note(id: DeptId, text: string | null) {
-    this.labelState.get(id)!.note = text;
-    this.renderLabel(id);
-  }
-  /** Red "needs retry" state for a department. */
-  flag(id: DeptId, on: boolean) {
-    const st = this.labelState.get(id)!;
-    if (st.flag === on) return;
-    st.flag = on;
-    this.renderLabel(id);
-    const a = this.alerts.get(id);
-    if (on && !a) {
-      const el = document.createElement("div");
-      el.className = "lo-alert";
-      el.innerHTML = "<span>!</span>";
-      this.el.appendChild(el);
-      this.alerts.set(id, el);
-    } else if (!on && a) {
-      a.remove();
-      this.alerts.delete(id);
-    }
-  }
-  openLabel(id: DeptId | null) {
-    for (const d of DEPT_IDS) {
-      const st = this.labelState.get(d)!;
-      const want = d === id;
-      if (st.open !== want) {
-        st.open = want;
-        this.renderLabel(d);
+    l.setAttribute("aria-label", s.flag ? `${r.name} hit a snag` : `${r.name}, ${ROLE_SHORT[id]}${s.value ? `: ${s.value}` : ""}`);
+    const mark = s.flag
+      ? `<i class="lo-dot lo-err"></i>`
+      : s.state === "done"
+        ? `<i class="lo-check"><svg viewBox="0 0 12 12" width="12" height="12"><circle cx="6" cy="6" r="6" fill="#0AC18E"/><path d="M3.4 6.2l1.8 1.7 3.4-3.6" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></i>`
+        : `<i class="lo-dot"></i>`;
+    const role = s.flag ? "Hit a snag" : ROLE_SHORT[id];
+    l.innerHTML =
+      // One structure for every pin: line 1 the mark and the name, line 2 the value ("Leo" / "7.8 · Go").
+      `<div class="lo-box">` +
+      `<div class="lo-row">${mark}<b>${esc(r.name)}</b><span class="lo-role"> · ${esc(role)}</span></div>` +
+      (s.value ? `<div class="lo-val">${esc(s.value)}</div>` : "") +
+      `</div>`;
+    if (before) {
+      const nb = l.firstElementChild as HTMLElement;
+      const after = nb.getBoundingClientRect();
+      if (Math.abs(after.width - before.width) > 1 || Math.abs(after.height - before.height) > 1) {
+        // L24: width/height morph from the old pill, 320ms spring-soft, the value line fades in
+        nb.animate([{ width: `${before.width}px`, height: `${before.height}px` }, { width: `${after.width}px`, height: `${after.height}px` }], { duration: 320, easing: SPRING_SOFT });
+        nb.querySelector(".lo-val")?.animate([{ opacity: 0, transform: "translateY(4px)" }, { opacity: 1, transform: "none" }], { duration: 220, delay: 100, easing: "cubic-bezier(.22,1,.36,1)", fill: "backwards" });
       }
     }
   }
 
-  pin(id: DeptId, p: PinSpec) {
-    this.pins.get(id)?.el.remove();
-    const r = ROOM[id];
-    const c = toneColor(p.tone, r.color);
-    const el = document.createElement("div");
-    el.className = "lo-pin";
-    el.style.setProperty("--c", c);
-    const icon = p.icon ?? (p.tone === "go" ? "GO" : DEPT_INITIAL[id]);
-    // iconHtml is markup we generate ourselves (the brand logo SVG), never user text.
-    const ic = p.iconHtml ? `<span class="lo-pin-ic lo-pin-logo">${p.iconHtml}</span>` : `<span class="lo-pin-ic">${esc(icon)}</span>`;
-    el.innerHTML = `<div class="lo-pin-in">${ic}<span class="lo-pin-tx"><small>${esc(p.kicker)}</small><b>${esc(p.value)}</b></span></div>`;
-    el.setAttribute("title", `${p.kicker}: ${p.value}`);
-    // A collapsed dot expands to the full pin when tapped.
-    el.addEventListener("click", () => {
-      this.revealed = this.revealed === id ? null : id;
-    });
-    this.el.appendChild(el);
-    this.pins.set(id, { el, w: 0, h: 0, dot: false, sz: {} });
-    this.pinOrder = this.pinOrder.filter((x) => x !== id).concat(id);
+  setAgentState(id: DeptId, s: AgentState) {
+    const st = this.st.get(id)!;
+    if (st.state === s) return;
+    const wasDone = st.state === "done";
+    st.state = s;
+    this.render(id, true);
+    if (s === "done" && !wasDone && !reducedMotion()) {
+      const svg = this.labels.get(id)!.querySelector<SVGPathElement>(".lo-check path");
+      if (svg) {
+        svg.style.strokeDasharray = "14";
+        svg.animate([{ strokeDashoffset: 14 }, { strokeDashoffset: 0 }], { duration: 240, easing: "cubic-bezier(.22,1,.36,1)", fill: "both" });
+      }
+    }
   }
-  clearPins() {
-    this.pins.forEach((p) => p.el.remove());
-    this.pins.clear();
-    this.pinOrder = [];
-    this.revealed = null;
+  /** v3 second line under the label. v4 keeps the label to one line (the Now card carries the detail). */
+  note(id: DeptId, text: string | null) {
+    this.st.get(id)!.note = text;
+  }
+  /** Red "hit a snag" state. */
+  flag(id: DeptId, on: boolean) {
+    const st = this.st.get(id)!;
+    if (st.flag === on) return;
+    st.flag = on;
+    this.render(id);
+  }
+  openLabel(id: DeptId | null) {
+    for (const d of DEPT_IDS) {
+      const st = this.st.get(d)!;
+      const want = d === id;
+      if (st.open !== want) {
+        st.open = want;
+        this.render(d);
+      }
+    }
   }
 
-  chip(id: DeptId, text: string, tone: ChipTone = "gold") {
-    const el = document.createElement("div");
-    el.className = `lo-chip lo-chip-${tone}`;
-    if (tone === "dept") el.style.setProperty("--c", ROOM[id].color);
-    el.innerHTML = `<span>${esc(text)}</span>`;
-    this.el.appendChild(el);
-    const offset = this.chips.filter((c) => c.id === id).length * 30;
-    this.chips.push({ el, id, until: performance.now() + 2700, offset });
+  /** L24: the room's label expands upward with a value line ("7.8 · Go"). Kicker and icon are not shown. */
+  pin(id: DeptId, p: PinSpec) {
+    const st = this.st.get(id)!;
+    const v = p.value || null;
+    if (st.value === v) return;
+    st.value = v;
+    this.render(id, true);
+  }
+  clearPins() {
+    for (const id of DEPT_IDS) {
+      const st = this.st.get(id)!;
+      if (st.value) {
+        st.value = null;
+        this.render(id, true);
+      }
+    }
+  }
+
+  /**
+   * L26: at most one transient chip in the whole office, FIFO, 1800ms life, white with ink text.
+   * The tone is kept for API parity; v4 chips all look the same.
+   */
+  chip(id: DeptId, text: string, tone: ChipTone = "bch") {
+    this.chipQ.push({ id, text, tone });
+    if (this.chipQ.length > 3) this.chipQ.shift();
   }
 
   bubble(id: DeptId, text: string) {
-    for (const b of this.bubbles.filter((b) => b.id === id)) b.until = 0;
+    for (const b of this.bubbles) if (b.id === id) b.until = 0;
     const el = document.createElement("div");
     el.className = "lo-bubble";
     el.style.setProperty("--c", ROOM[id].color);
-    el.innerHTML = `<div class="lo-bubble-in"><b>${ROOM[id].name}</b> ${esc(text)}</div>`;
+    el.innerHTML = `<div class="lo-bubble-in"><b>${esc(ROOM[id].name)}</b> ${esc(text)}</div>`;
     this.el.appendChild(el);
-    this.bubbles.push({ el, id, until: performance.now() + 4200, offset: 0 });
+    this.bubbles.push({ el, id, until: performance.now() + 4200 });
   }
 
   celebrate() {
-    this.confetti.burst();
+    if (reducedMotion()) return;
+    const brand = getComputedStyle(this.host).getPropertyValue("--lo-brand").trim();
+    this.confetti.burst(brand || "#1D1D1F");
   }
-  /** Something on the overlay is animating (chips rising, speech bubbles, confetti). */
+  /** Something on the overlay is animating (chips, speech bubbles, confetti). */
   get busy() {
-    return this.chips.length > 0 || this.bubbles.length > 0 || this.confetti.active;
+    return !!this.chipNow || this.chipQ.length > 0 || this.bubbles.length > 0 || this.confetti.active;
   }
 
   update(project: Projector, a: Anchors, sleeping: (id: DeptId) => boolean, width: number, height: number) {
     const now = performance.now();
-    const place = (el: HTMLElement, p: { x: number; y: number }, dy = 0) => {
-      el.style.transform = `translate3d(${Math.round(p.x)}px, ${Math.round(p.y + dy)}px, 0)`;
+    const place = (el: HTMLElement, x: number, y: number) => {
+      el.style.transform = `translate3d(${Math.round(x)}px, ${Math.round(y)}px, 0)`;
     };
     const occ = this.occluders?.() ?? [];
-    const covered = (r: Rect) => occ.some((o) => hits(r, o));
-    const compact = width < COMPACT_W;
-    this.el.classList.toggle("lo-compact", compact);
+    const anyWorking = [...this.st.values()].some((s) => s.state === "working");
+    // Phone-width office (L21/L25): only the working room, an error, a pin or a tapped label gets the
+    // full pill; every other room is an 8px marker so the small office stays the hero.
+    const compact = width < 560;
+    this.el.classList.toggle("is-compact", compact);
+    const labelH = compact ? 22 : LABEL_H;
+    if (compact !== this.wasCompact) {
+      this.wasCompact = compact;
+      this.size.clear();
+    }
+
+    // ---- labels: measure, then a collision pass in screen space (L25) ----
+    const boxes: Box[] = [];
     for (const id of DEPT_IDS) {
-      const lab = this.labels.get(id)!;
-      const ls = project(a.label(id));
-      place(lab, ls);
-      // Hide a label that would be cut by the office edge (a half label like "BY" looks broken).
-      const half = (this.labelW.get(id) ?? 60) / 2;
-      lab.classList.toggle("is-off", ls.x - half < 2 || ls.x + half > width - 2 || ls.y < 28 || ls.y > height + 4);
-      // Fade labels that would sit under the department panel, the guide card or the controls.
-      const st = this.labelState.get(id)!;
-      const lh = st.open || st.note ? 46 : 26;
-      lab.classList.toggle("is-hidden", covered({ x: ls.x - half, y: ls.y - 13, w: half * 2, h: lh }));
-      const al = this.alerts.get(id);
-      if (al) place(al, project(a.head(id)));
-      // zzz
+      const l = this.labels.get(id)!;
+      let sz = this.size.get(id);
+      if (!sz) {
+        const b = l.firstElementChild as HTMLElement;
+        // Measure the full pill even while it is shown as a dot, so it expands to the right size.
+        const asDot = l.classList.contains("is-dot");
+        if (asDot) l.classList.remove("is-dot");
+        sz = [b.offsetWidth || 60, b.offsetHeight || labelH];
+        if (asDot) l.classList.add("is-dot");
+        this.size.set(id, sz);
+      }
+      const p = project(a.label(id));
+      const [w, hh] = sz;
+      // The anchor is the centre of the bottom row; a pin grows upward from it.
+      const off = p.x < -w || p.x > width + w || p.y < -20 || p.y > height + 20;
+      const x = Math.min(Math.max(p.x, INSET + w / 2), width - INSET - w / 2);
+      const top = p.y - labelH / 2 - (hh - labelH);
+      // Clamp every label inside the canvas with the 12px inset on all four sides (L21).
+      const y = Math.min(Math.max(INSET, top), Math.max(INSET, height - INSET - hh));
+      boxes.push({ id, ax: p.x, ay: p.y, w, h: hh, x, y, off });
+    }
+    boxes.sort((m, n) => m.y - n.y);
+    const placed: Rect[] = [];
+    for (const b of boxes) {
+      const l = this.labels.get(b.id)!;
+      const lead = this.leaders.get(b.id)!;
+      l.classList.toggle("is-off", b.off);
+      if (b.off) {
+        lead.classList.remove("on");
+        continue;
+      }
+      const y0 = b.y;
+      let r: Rect = { x: b.x - b.w / 2, y: b.y, w: b.w, h: b.h };
+      let moved = 0;
+      while (placed.some((o) => hits(r, o)) && moved < 24) {
+        moved += 4;
+        r = { ...r, y: y0 + moved };
+      }
+      const ls = this.st.get(b.id)!;
+      const focal = ls.state === "working" || ls.flag || !!ls.value || ls.open || l.classList.contains("is-hover");
+      const clash = placed.some((o) => hits(r, o));
+      const dot = (compact && !focal) || (clash && !l.classList.contains("is-hover") && !ls.open);
+      l.classList.toggle("is-dot", dot);
+      if (dot) {
+        const dy = Math.min(Math.max(INSET, y0 + b.h - labelH / 2 - 6), height - INSET - 12);
+        r = { x: b.x - 6, y: dy, w: 12, h: 12 };
+        moved = 0;
+      } else if (clash) moved = 0;
+      // labels under the status pill or the controls fade out
+      l.classList.toggle("is-hidden", occ.some((o) => hits(r, o)));
+      placed.push(r);
+      // translate to the name-row centre
+      const cy = dot ? r.y + 6 : r.y + b.h - labelH / 2;
+      place(l, b.x, cy);
+      if (moved > 0 && !dot) {
+        const len = moved;
+        lead.style.height = `${len}px`;
+        place(lead, b.ax, b.ay);
+        lead.classList.add("on");
+      } else lead.classList.remove("on");
+    }
+
+    // ---- zzz (Pip asleep). Hidden while someone works: one infinite animation at a time. ----
+    for (const id of DEPT_IDS) {
       const z = this.zzz.get(id);
-      if (sleeping(id)) {
+      if (sleeping(id) && !anyWorking) {
         let el = z;
         if (!el) {
           el = document.createElement("div");
@@ -203,23 +295,34 @@ export class Overlay {
           this.el.appendChild(el);
           this.zzz.set(id, el);
         }
-        place(el, project(a.head(id)));
+        const p = project(a.head(id));
+        place(el, p.x, p.y);
       } else if (z) {
         z.remove();
         this.zzz.delete(id);
       }
     }
 
-    this.layoutPins(project, a, occ, compact, width, height);
+    // ---- one transient chip at a time ----
+    if (this.chipNow && now > this.chipNow.until) {
+      const old = this.chipNow.el;
+      old.classList.add("is-out");
+      setTimeout(() => old.remove(), 200);
+      this.chipNow = null;
+    }
+    if (!this.chipNow && this.chipQ.length) {
+      const c = this.chipQ.shift()!;
+      const el = document.createElement("div");
+      el.className = "lo-chip";
+      el.innerHTML = `<span>${c.tone === "bch" ? '<i class="lo-chip-dot"></i>' : ""}${esc(c.text)}</span>`;
+      this.el.appendChild(el);
+      this.chipNow = { el, id: c.id, until: now + 1800 };
+    }
+    if (this.chipNow) {
+      const p = project(a.chip(this.chipNow.id));
+      place(this.chipNow.el, Math.min(Math.max(p.x, 80), width - 80), Math.max(p.y, 40));
+    }
 
-    this.chips = this.chips.filter((c) => {
-      if (now > c.until) {
-        c.el.remove();
-        return false;
-      }
-      place(c.el, project(a.chip(c.id)), -c.offset);
-      return true;
-    });
     this.bubbles = this.bubbles.filter((b) => {
       if (now > b.until) {
         b.el.classList.add("is-out");
@@ -229,90 +332,9 @@ export class Overlay {
         }
       }
       const p = project(a.head(b.id));
-      place(b.el, { x: Math.min(Math.max(p.x, 120), width - 120), y: Math.max(p.y, 70) });
+      place(b.el, Math.min(Math.max(p.x, 130), width - 130), Math.max(p.y, 80));
       return true;
     });
-  }
-
-  /**
-   * Result pins: projected over their room, then a 2D pass keeps them readable. Newest first: each pin
-   * tries a few nearby spots that clear the room labels, the pins already placed and the UI on top of
-   * the office (status chip, guide card, department panel). A pin with no free spot collapses to a dot;
-   * a pin under the panel is hidden.
-   */
-  private layoutPins(project: Projector, a: Anchors, occ: Rect[], compact: boolean, width: number, height: number) {
-    if (!this.pins.size) return;
-    if (this.compactWas !== compact) {
-      this.compactWas = compact;
-      this.pins.forEach((p) => (p.sz = {})); // sizes change with the compact style
-    }
-    const labelBoxes: Rect[] = [];
-    for (const id of DEPT_IDS) {
-      const l = this.labels.get(id)!;
-      if (l.classList.contains("is-off") || l.classList.contains("is-hidden")) continue;
-      const s = project(a.label(id));
-      let lw = this.labelW.get(id) ?? 0;
-      if (!lw) {
-        lw = (l.firstElementChild as HTMLElement | null)?.offsetWidth ?? 0;
-        this.labelW.set(id, lw);
-      }
-      const st = this.labelState.get(id)!;
-      labelBoxes.push({ x: s.x - lw / 2 - 3, y: s.y - 13, w: lw + 6, h: st.note ? 46 : 26 });
-    }
-    const full = compact ? new Set(this.pinOrder.slice(-COMPACT_MAX)) : null;
-    if (full && this.revealed && this.pins.has(this.revealed)) full.add(this.revealed);
-    const placed: Rect[] = [];
-    const free = (r: Rect, extra: Rect[]) =>
-      r.x >= 4 && r.x + r.w <= width - 4 && r.y >= 4 && r.y + r.h <= height - 4 && !extra.some((o) => hits(r, o)) && !placed.some((o) => hits(r, o));
-    // newest pin first: it gets the best spot
-    for (const id of [...this.pinOrder].reverse()) {
-      const p = this.pins.get(id);
-      if (!p) continue;
-      const anchor = project(a.pin(id));
-      const off = anchor.x < -20 || anchor.x > width + 20 || anchor.y < -20 || anchor.y > height + 60;
-      p.el.classList.toggle("is-off", off);
-      if (off) continue;
-      const setMode = (dot: boolean) => {
-        let sz = dot ? p.sz.dot : p.sz.full;
-        if (!sz) {
-          // measured once per mode (and again when the compact style changes)
-          p.el.classList.toggle("is-dot", dot);
-          sz = [p.el.offsetWidth || (dot ? 26 : 120), (p.el.offsetHeight || (dot ? 26 : 44)) + 10];
-          if (dot) p.sz.dot = sz;
-          else p.sz.full = sz;
-        }
-        p.dot = dot;
-        [p.w, p.h] = sz;
-      };
-      const tryPlace = (dot: boolean) => {
-        setMode(dot);
-        const step = p.h + 6;
-        const tries: Array<[number, number]> = [[0, 0], [0, -step], [0, step], [p.w * 0.6, 0], [-p.w * 0.6, 0], [0, -step * 2], [p.w * 0.6, -step], [-p.w * 0.6, -step]];
-        for (const [dx, dy] of tries) {
-          const x = Math.min(Math.max(anchor.x + dx, p.w / 2 + 6), width - p.w / 2 - 6);
-          const y = anchor.y + dy;
-          const box = { x: x - p.w / 2, y: y - p.h, w: p.w, h: p.h };
-          if (free(box, [...labelBoxes, ...occ])) return { x, y, box };
-        }
-        return null;
-      };
-      let spot = !full || full.has(id) ? tryPlace(false) : null;
-      if (!spot) spot = tryPlace(true);
-      p.el.classList.toggle("is-dot", p.dot);
-      if (!spot) {
-        // No clean spot: a dot at the anchor, unless it would sit under the panel or another overlay.
-        const x = Math.min(Math.max(anchor.x, 16), width - 16);
-        const box = { x: x - p.w / 2, y: anchor.y - p.h, w: p.w, h: p.h };
-        const covered = occ.some((o) => hits(box, o));
-        p.el.classList.toggle("is-hidden", covered);
-        if (!covered) placed.push(box);
-        p.el.style.transform = `translate3d(${Math.round(x)}px, ${Math.round(anchor.y)}px, 0)`;
-        continue;
-      }
-      p.el.classList.remove("is-hidden");
-      placed.push(spot.box);
-      p.el.style.transform = `translate3d(${Math.round(spot.x)}px, ${Math.round(spot.y)}px, 0)`;
-    }
   }
 
   dispose() {
@@ -321,10 +343,24 @@ export class Overlay {
   }
 }
 
+/**
+ * M8 t600: labels turn done-green in work order (90ms stagger): the check crossfades in and the label
+ * breathes 1 → 1.04 → 1 over 300ms. No-op under reduced motion.
+ */
+export function pulseLabels(host: HTMLElement, ids: DeptId[], stagger = 90): void {
+  if (reducedMotion()) return;
+  ids.forEach((id, i) => {
+    const box = host.querySelector<HTMLElement>(`.lo-label[data-room="${id}"] .lo-box`);
+    box?.animate([{ transform: "scale(1)" }, { transform: "scale(1.04)", offset: 0.45 }, { transform: "scale(1)" }], { duration: 300, delay: i * stagger, easing: SPRING_SOFT });
+    host.querySelector<HTMLElement>(`.lo-label[data-room="${id}"] .lo-check`)?.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, delay: i * stagger, fill: "backwards" });
+  });
+}
+
+/** L27: one burst from top-centre, 70–90 particles, BCH green + white + the brand primary, 1.8s life. */
 class Confetti {
   private c: HTMLCanvasElement;
   private g: CanvasRenderingContext2D;
-  private parts: Array<{ x: number; y: number; vx: number; vy: number; r: number; vr: number; w: number; h: number; c: string; life: number }> = [];
+  private parts: Array<{ x: number; y: number; vx: number; vy: number; r: number; vr: number; w: number; h: number; c: string; life: number; edge: boolean }> = [];
   private raf = 0;
   private last = 0;
 
@@ -335,30 +371,24 @@ class Confetti {
     this.g = this.c.getContext("2d")!;
   }
 
-  burst() {
+  burst(brand: string) {
     const rect = this.c.getBoundingClientRect();
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     this.c.width = Math.max(1, rect.width * dpr);
     this.c.height = Math.max(1, rect.height * dpr);
     this.g.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const cols = ["#8B7CF6", "#3B82F6", "#F59E0B", "#EC4899", "#F97362", "#14B8A6", "#0AC18E", "#F5C542", "#FFFFFF"];
-    const n = Math.round(Math.min(260, rect.width * 0.26));
+    const cols = ["#0AC18E", "#FFFFFF", brand];
+    const n = 70 + Math.floor(Math.random() * 21);
     for (let i = 0; i < n; i++) {
-      const rain = i % 3 !== 0;
-      const fromLeft = i % 2 === 0;
-      this.parts.push(rain
-        ? {
-            x: Math.random() * rect.width, y: -20 - Math.random() * rect.height * 0.5,
-            vx: (Math.random() - 0.5) * 60, vy: 60 + Math.random() * 120,
-            r: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 10,
-            w: 5 + Math.random() * 4, h: 8 + Math.random() * 7, c: cols[i % cols.length]!, life: 4.5 + Math.random() * 1.5,
-          }
-        : {
-            x: fromLeft ? -10 : rect.width + 10, y: rect.height * (0.55 + Math.random() * 0.2),
-            vx: (fromLeft ? 1 : -1) * (260 + Math.random() * 380), vy: -(380 + Math.random() * 420),
-            r: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 12,
-            w: 5 + Math.random() * 4, h: 8 + Math.random() * 7, c: cols[i % cols.length]!, life: 3.8 + Math.random() * 1.2,
-          });
+      const a = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 0.9;
+      const sp = 380 + Math.random() * 420;
+      const c = cols[i % cols.length]!;
+      this.parts.push({
+        x: rect.width / 2 + (Math.random() - 0.5) * 40, y: -6,
+        vx: Math.cos(a) * sp * 0.9, vy: Math.abs(Math.sin(a)) * sp * 0.35 + 60,
+        r: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 10,
+        w: 5 + Math.random() * 3, h: 8 + Math.random() * 5, c, life: 1.8, edge: c.toUpperCase() === "#FFFFFF",
+      });
     }
     if (!this.raf) {
       this.last = performance.now();
@@ -373,20 +403,24 @@ class Confetti {
     this.g.clearRect(0, 0, width, height);
     this.parts = this.parts.filter((p) => {
       p.life -= dt;
-      p.vy += 520 * dt;
-      p.vx *= 1 - dt * 1.2;
-      p.vy = Math.min(p.vy, 160 + Math.sin(p.r * 3) * 40);
-      p.x += p.vx * dt + Math.sin(now / 300 + p.w) * 0.6;
+      p.vy += 900 * dt;
+      p.vx *= 1 - dt * 1.4;
+      p.x += p.vx * dt;
       p.y += p.vy * dt;
       p.r += p.vr * dt;
       if (p.life <= 0 || p.y > height + 20) return false;
       this.g.save();
-      this.g.globalAlpha = Math.min(1, p.life);
+      this.g.globalAlpha = Math.min(1, p.life / 0.4);
       this.g.translate(p.x, p.y);
       this.g.rotate(p.r);
       this.g.scale(1, Math.cos(p.r * 2.3));
       this.g.fillStyle = p.c;
       this.g.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      if (p.edge) {
+        this.g.strokeStyle = "rgba(0,0,0,.14)";
+        this.g.lineWidth = 1;
+        this.g.strokeRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      }
       this.g.restore();
       return true;
     });

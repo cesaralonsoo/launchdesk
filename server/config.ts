@@ -32,6 +32,19 @@ export const config = {
   fixedBchUsd: env.BCH_USD_FIXED ? Number(env.BCH_USD_FIXED) : null,
   // Local testing only: lets you run the flow without paying. Ignored in production and on non-local hosts.
   devSkipPayment: env.DEV_SKIP_PAYMENT === "1" && env.NODE_ENV !== "production",
+  /** L3: show the "Built for BCH BLAZE 2026" footer strip. HACKATHON=0 hides it. */
+  hackathon: env.HACKATHON !== "0",
+  /** F1: the 3 home chips (full sentences). In mock mode these are the only accepted ideas (WS3 enforces). */
+  sampleIdeas: [
+    "A specialty coffee kiosk at a Barcelona metro exit, €3 flat whites for commuters",
+    "A dog-walking app for busy Madrid professionals, €12 a walk",
+    "An online shop for restored vintage road bikes, around €450 each",
+  ],
+  /**
+   * F3: when "1", pay and run also refuse requests without X-Owner-Key for projects that have an owner key.
+   * Off by default until every client sends the header; retry, skip and share always require it.
+   */
+  ownerKeyStrict: env.OWNER_KEY_STRICT === "1",
   electrumServers: (env.ELECTRUM_SERVERS || "wss://bch.imaginary.cash:50004,wss://fulcrum.pat.mn:50004,wss://electroncash.dk:50004")
     .split(",")
     .map((s) => s.trim())

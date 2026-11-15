@@ -88,6 +88,46 @@ export const STAGE_INFO: Record<Stage, { n: 1 | 2; label: string; title: string;
   },
 };
 
+// ---------- v4 run copy (spec-v4 §6). Strings live with their owner (WS2). ----------
+
+/** Team list deliverable ("Leo · Market score"). */
+export const DELIVERABLE: Record<WorkDept, string> = {
+  mia: "Plan", leo: "Market score", sam: "Numbers", nova: "Name and brand", dex: "Logo and page", rae: "Launch plan", pip: "Live site",
+};
+/** Shelf tile titles. */
+export const TILE_TITLE: Record<WorkDept, string> = {
+  mia: "Plan", leo: "Market score", sam: "Numbers", nova: "Name", dex: "Logo", rae: "Launch", pip: "Website",
+};
+/** Status pill / Now card header while a department works. */
+export const DOING: Record<WorkDept, string> = {
+  mia: "Mia is writing your brief",
+  leo: "Leo is sizing up the competition",
+  sam: "Sam is running the numbers",
+  nova: "Nova is naming your business",
+  dex: "Dex is drawing your logo",
+  rae: "Rae is planning your launch",
+  pip: "Pip is putting your site live",
+};
+/** Work log lines (always true). Leo's search line depends on whether web search ran. */
+export function workLog(d: WorkDept, opts: { searched?: boolean; slug?: string | null } = {}): string[] {
+  switch (d) {
+    case "mia":
+      return ["Reading your idea", "Writing the brief", "Splitting it into 4 weeks", "Picking your first 3 tasks"];
+    case "leo":
+      return ["Reading Mia's brief", opts.searched ? "Searching the web for competitors" : "Listing likely competitors", "Scoring 5 signals", "Writing the verdict"];
+    case "sam":
+      return ["Setting a price", "Estimating start-up costs", "Projecting 12 months", "Finding break-even"];
+    case "nova":
+      return ["Brainstorming names", "Shortlisting 3", "Building palettes", "Writing taglines"];
+    case "dex":
+      return ["Sketching 3 logos", "Setting the wordmark", "Writing your landing page"];
+    case "rae":
+      return ["Choosing channels", "Planning 30 days", "Writing your first 3 posts"];
+    case "pip":
+      return [opts.slug ? `Reserving /s/${opts.slug}` : "Reserving your page address", "Publishing your page", "Connecting pre-orders to your wallet"];
+  }
+}
+
 export const EXAMPLES = [
   "A specialty coffee kiosk for commuters in Barcelona",
   "Neighbour-to-neighbour camping gear rental",

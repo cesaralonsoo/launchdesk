@@ -41,3 +41,10 @@ export function logoSvg(logo: Logo, palette: Palette | undefined, size = 64, nam
   }
   return `<svg viewBox="0 0 64 64" width="${size}" height="${size}" role="img" aria-label="${label}"><circle cx="32" cy="32" r="30" fill="${primary}"/><circle cx="32" cy="32" r="24.5" fill="none" stroke="${accent}" stroke-width="1.6" opacity=".8"/><g transform="translate(16.4 16.4) scale(1.3)" fill="none" stroke="${bg}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="${path}"/></g></svg>`;
 }
+
+/**
+ * D13 LaunchDesk mark: a desk edge with an upward chevron above it, 2px ink strokes on an 18px grid.
+ * `currentColor` so it follows the text colour; used in the header, the page footer and the favicon.
+ */
+export const MARK_SVG = (size = 18) =>
+  `<svg class="ld-mark" viewBox="0 0 18 18" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9.5 9 5.5l4 4"/><path d="M2 14h14"/><path d="M4.5 14v2M13.5 14v2"/></svg>`;

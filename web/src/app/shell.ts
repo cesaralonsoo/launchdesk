@@ -1,81 +1,91 @@
-import { api } from "../api";
-import type { DeptId, Project, Stage, WorkDept } from "../types";
+// App shell: layout, routing, polling, and the run story (spec-v4 §2.3, §2.4, §2.7, M1, M8). Owner: WS2.
+// app.project is the server truth; everything on screen renders the director's view (what the user has seen).
+import "./run.css";
+import { api, ApiError } from "../api";
+import type { DeptId, Preorders, Project, Stage, WorkDept } from "../types";
 import { STAGE_DEPTS } from "../types";
 import { resume } from "../wallet";
-import { h, reducedMotion } from "./dom";
+import type { Office, Rect } from "../office";
+import type { PackSection } from "../pack";
+import { renderMark } from "../pack/logo";
+import { countPreorders } from "../site/preorders";
+import { director, currentBeat, isSkipping, type Beat } from "./director";
+import { h } from "./dom";
 import { openGate } from "./gate";
 import { header, strip } from "./header";
-import { closeAllModals, toast } from "./modal";
-import { createOffice, type Office, type Rect } from "../office";
-import { liveOutput, PACK_TAB } from "./output";
-import { closePack, isPackOpen, openPack } from "../pack";
-import { deptPanel, refreshDeptPanel } from "./panels";
+import { closeAllModals, copyText, toast } from "./modal";
+import { reduced, textSwap } from "./motion";
+import { brandOf, doneText, ensureFont, fontStack, nameOf, nowCard, snagText, teamList } from "./now";
+import { liveOutput } from "./output";
 import { openPay } from "./pay";
+import { projects } from "./projects";
 import { sideColumn } from "./side";
-import { play } from "./sound";
-import { app, deptStatus, fmtSats, isDevTx, needsPolling, phaseOf, setStopped, stageDone, stageSats, stepOf, type Phase } from "./state";
-import { logoSvg } from "./logo";
+import { play, type Sfx } from "./sound";
+import { app, isDevTx, needsPolling, phaseOf, provisionalTitle, setStopped, stageDone, stepOf, type Phase } from "./state";
+import { DOING, TEAM, WORK_ORDER } from "./team";
 import { iconSvg } from "./ui";
-import { STAGE_INFO, TEAM, WORK_ORDER } from "./team";
 
 const POLL_MS = 1500;
-/** While a department needs a retry, keep an eye on the server (a restart or another tab may fix it). */
 const ERROR_POLL_MS = 6500;
-/** A department the user opened stays on screen this long before the director switches to the next one. */
-const USER_PANEL_MS = 5000;
-const READY = "Office open · 7 specialists ready";
-/** A delivered panel stays on screen at least this long before the next department takes over. */
-const PANEL_HOLD_MS = 2600;
-/** ...but only this long when the next department is already working on the server. */
-const PANEL_HANDOFF_MS = 1200;
-/** The finale (confetti, pins, payout banner) plays this long before the pack opens. */
-const FINALE_MS = 3600;
-
-const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, reducedMotion() ? Math.min(ms, 120) : ms));
-/** Never let an animation stall the director. */
-const capped = (p: Promise<void> | undefined, ms = 3000) => Promise.race([p ?? Promise.resolve(), sleep(ms)]);
+const DEPT_SECTION: Record<WorkDept, PackSection> = { mia: "plan", leo: "market", sam: "numbers", nova: "brand", dex: "brand", rae: "launch", pip: "website" };
+const stageOf = (d: WorkDept): Stage => (STAGE_DEPTS.validate.includes(d) ? "validate" : "build");
 const coarse = () => matchMedia("(pointer: coarse)").matches;
+const store = {
+  get(k: string) {
+    try {
+      return localStorage.getItem(k);
+    } catch {
+      return null;
+    }
+  },
+  set(k: string, v: string) {
+    try {
+      localStorage.setItem(k, v);
+    } catch {
+      /* storage unavailable */
+    }
+  },
+};
 
-function pinFor(p: Project, d: WorkDept): { kicker: string; value: string; iconHtml?: string } | null {
+/** F8: what the director announces when a department delivers. */
+function announce(p: Project, d: WorkDept): string {
   const r = p.results;
   switch (d) {
     case "mia":
-      return r.mia ? { kicker: "Project plan", value: `4 weeks · ${new Set(r.mia.weeks.map((w) => w.dept)).size} depts` } : null;
+      return `Mia finished: a plan with ${r.mia?.checklist.length ?? 0} tasks.`;
     case "leo":
-      return r.leo ? { kicker: "Opportunity", value: `${r.leo.score.toFixed(1)}/10 ${r.leo.verdict.toUpperCase()}` } : null;
+      return `Leo finished: market score ${r.leo?.score.toFixed(1)} out of 10, ${r.leo?.verdict === "no-go" ? "no-go" : r.leo?.verdict}.`;
     case "sam":
-      return r.sam ? { kicker: "Break-even", value: `Month ${r.sam.break_even.month}` } : null;
-    case "nova": {
-      const n = r.nova?.names[r.nova.chosen];
-      return n ? { kicker: "Brand name", value: n.name } : null;
-    }
-    case "dex": {
-      if (!r.dex) return null;
-      const n = r.nova?.names[r.nova.chosen];
-      const l = r.dex.logos[0];
-      return { kicker: `Logo · ${l.shape}`, value: n?.name ?? "Logo", iconHtml: logoSvg(l, n?.palette, 24, n?.name) };
-    }
+      return `Sam finished: about ${r.sam?.cash_needed.display} to get started.`;
+    case "nova":
+      return `Nova finished: meet ${brandOf(p)?.name}.`;
+    case "dex":
+      return "Dex finished: logo and landing page ready.";
     case "rae":
-      return r.rae ? { kicker: "Launch", value: `${r.rae.posts.length} posts · 30 days` } : null;
+      return `Rae finished: ${r.rae?.posts.length ?? 0} posts scheduled.`;
     case "pip":
-      return r.pip ? { kicker: "Landing page", value: "Live · pre-orders" } : null;
+      return `Pip finished: ${nameOf(p)} is live.`;
   }
 }
 
-/** The finale banner stays until the user has opened the finished pack once (per project, survives reloads). */
-const seenKey = (id: string) => `launchdesk-pack-seen-${id}`;
-function packSeen(id: string) {
-  try {
-    return localStorage.getItem(seenKey(id)) === "1";
-  } catch {
-    return true;
-  }
-}
-function markPackSeen(id: string) {
-  try {
-    localStorage.setItem(seenKey(id), "1");
-  } catch {
-    /* storage unavailable */
+/** L24: the second line of an expanded label. */
+function pinValue(p: Project, d: WorkDept): string | null {
+  const r = p.results;
+  switch (d) {
+    case "mia":
+      return r.mia ? `${r.mia.checklist.length} tasks` : null;
+    case "leo":
+      return r.leo ? `${r.leo.score.toFixed(1)} · ${r.leo.verdict === "go" ? "Go" : r.leo.verdict === "pivot" ? "Pivot" : "No-go"}` : null;
+    case "sam":
+      return r.sam ? `${r.sam.cash_needed.display} to start` : null;
+    case "nova":
+      return brandOf(p)?.name ?? null;
+    case "dex":
+      return r.dex ? "3 logos" : null;
+    case "rae":
+      return r.rae ? `${r.rae.posts.length} posts` : null;
+    case "pip":
+      return r.pip ? "Live" : null;
   }
 }
 
@@ -83,80 +93,82 @@ export function mountApp(root: HTMLElement) {
   // ---------- layout ----------
   const hdr = header(() => go("/"));
   const officeHost = h("div", { class: "office-host" });
-  const statusPill = h("div", { class: "ov-status", role: "status", "aria-live": "polite" });
-  const guideText = h("p", { id: "guide-text" });
-  const guideToggle = h("button", { type: "button", class: "guide-h", "aria-expanded": "true", "aria-controls": "guide-text" }, h("span", null, "What's happening"), h("span", { class: "chev", "aria-hidden": "true", html: iconSvg("chevronDown", 14) }));
-  const guide = h("div", { class: "ov-guide" }, guideToggle, guideText);
-  guideToggle.addEventListener("click", () => {
-    const c = guide.classList.toggle("collapsed");
-    guideToggle.setAttribute("aria-expanded", String(!c));
-  });
-  // Phones: the same narration as a one-line strip under the office.
-  const stripText = h("span", { class: "gs-t" });
-  const guideStrip = h(
-    "button",
-    {
-      type: "button",
-      class: "guide-strip",
-      "aria-expanded": "false",
-      onclick: () => guideStrip.setAttribute("aria-expanded", String(guideStrip.classList.toggle("open"))),
-    },
-    h("span", { class: "gs-k" }, "What's happening"),
-    stripText,
-    h("span", { class: "chev", "aria-hidden": "true", html: iconSvg("chevronDown", 14) }),
-  );
+  const pillText = h("span", { class: "pill-t" });
+  const pillSkip = h("button", { type: "button", class: "pill-skip", hidden: true, onclick: () => director.skip() }, "Skip animation");
+  const statusPill = h("div", { class: "ov-status run-pill", role: "status" }, h("span", { class: "sdot", "aria-hidden": "true" }), pillText, pillSkip);
+  const statusText = h("span", { "aria-hidden": "true" });
+  const statusSkip = h("button", { type: "button", class: "rs-skip", hidden: true, onclick: () => director.skip() }, "Skip animation");
+  const statusLine = h("p", { class: "run-status-m", hidden: true }, statusText, statusSkip);
+  const runBar = h("div", { class: "run-bar", "aria-hidden": "true" });
   const ctrl = (label: string, icon: string, fn: () => void) => h("button", { type: "button", class: "zbtn", "aria-label": label, title: label, onclick: () => (play("tap"), fn()), html: icon });
   const zoomGroup = h(
     "div",
-    { class: "zoom", role: "group", "aria-label": "Office view" },
+    { class: "zoom run-zoom", role: "group", "aria-label": "Office view" },
     ctrl("Zoom out", iconSvg("minus", 16), () => office?.zoom(-1)),
     ctrl("Zoom in", iconSvg("plus", 16), () => office?.zoom(1)),
     ctrl("Fit the whole office", iconSvg("fit", 16), () => office?.fit()),
   );
-  const controls = h("div", { class: "ov-controls" }, zoomGroup, h("span", { class: "hint" }, coarse() ? "Tap anyone to say hi" : "Click anyone to say hi"));
-  const banner = h("div", { class: "ov-banner", "aria-live": "polite" });
-  const officePanel = h("div", { class: "office", role: "region", "aria-label": "The LaunchDesk office" }, officeHost, statusPill, banner, guide, controls);
-  const panelSlot = h("div", { class: "dp-slot" });
-  const out = liveOutput((d) => openPackSafe(PACK_TAB[d]));
-  const officeWrap = h("div", { class: "office-wrap" }, officePanel, panelSlot);
-  // Phones, home screen: the next step is always one tap away.
-  const homeBar = h(
-    "div",
-    { class: "home-bar", role: "region", "aria-label": "Start" },
-    h(
-      "button",
-      {
-        type: "button",
-        class: "btn primary lg block hb-btn",
-        onclick: () => {
-          const ta = document.getElementById("idea") as HTMLTextAreaElement | null;
-          if (!ta) return;
-          if (ta.value.trim().length >= 15) return void ta.form?.requestSubmit();
-          ta.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "center" });
-          ta.focus({ preventScroll: true });
-        },
-      },
-      h("span", { "data-hb-label": "" }, "Validate my idea"),
-    ),
-    h("small", { "data-hb-sub": "" }, "Paid in BCH"),
-  );
+  const coach = coachMark();
+  const finaleSlot = h("div", { class: "finale-slot" });
+  /** True while the launch card is up: the Now card goes quiet and the pill steps back (one focal thing). */
+  let launchOpen = false;
+  const clearFinale = () => {
+    finaleSlot.replaceChildren();
+    if (!launchOpen) return;
+    launchOpen = false;
+    document.body.classList.remove("has-launch");
+    render();
+  };
+  const officePanel = h("div", { class: "office run-office", role: "region", "aria-label": "The LaunchDesk office" }, officeHost, runBar, statusPill, zoomGroup, coach.el, finaleSlot);
+  const officeWrap = h("div", { class: "office-wrap" }, officePanel);
+  const liveRegion = h("div", { class: "sr-only", "aria-live": "polite", role: "status" });
+
+  const shelf = liveOutput((d) => void openPackSafe(DEPT_SECTION[d]));
   const side = sideColumn({
     start,
     pay: (s) => void pay(s),
     gate: () => void gate(),
-    pack: (tab) => openPackSafe(tab),
-    retry: () => void retry(),
+    pack: (tab) => void openPackSafe(tab as PackSection | undefined),
+    retry: () => void retry(null),
     newIdea: () => go("/"),
-    agenda: (d) => showPanel(d, true),
+    agenda: (d) => void openPackSafe(DEPT_SECTION[d]),
   });
+  const now = nowCard({
+    pay: (s) => void pay(s),
+    gate: () => void gate(),
+    pack: (s) => void openPackSafe(s as PackSection | undefined),
+    retry: (d) => void retry(d),
+    skipDept: (d) => void skipDept(d),
+    skipAnimation: () => director.skip(),
+    site: () => {
+      const slug = view?.results.pip?.slug;
+      if (slug) window.open(`/s/${slug}`, "_blank", "noopener");
+    },
+  });
+  const team = teamList({ open: (d) => void openPackSafe(DEPT_SECTION[d]), gate: () => void gate() });
+  const projTitle = h("h1", { class: "rc-title", id: "proj-title" });
+  const savedChip = h(
+    "button",
+    {
+      type: "button",
+      class: "rc-saved",
+      hidden: true,
+      onclick: () => {
+        void copyText(location.href, "Private link copied. Anyone with it can continue this project.");
+      },
+    },
+    "Saved · Copy link",
+  );
+  const newIdea = h("button", { type: "button", class: "link rc-new", onclick: () => go("/") }, "Start a new idea");
+  const runCol = h("aside", { class: "run-col", "aria-label": "Your run", hidden: true }, h("div", { class: "rc-head" }, projTitle, savedChip), now.el, team.el, newIdea);
   root.replaceChildren(
     strip(),
     hdr.el,
-    h("main", { class: "layout", id: "main" }, h("div", { class: "left" }, officeWrap, guideStrip, out.el), side.el),
-    homeBar,
+    h("main", { class: "layout", id: "main" }, h("div", { class: "left" }, officeWrap, statusLine, shelf.el), side.el, runCol),
+    liveRegion,
   );
 
-  // ---------- office ----------
+  // ---------- office (lazy: three.js loads on first use, F13) ----------
   let office: Office | null = null;
   const rel = (el: Element | null): Rect | null => {
     if (!el || !(el as HTMLElement).offsetParent) return null;
@@ -165,452 +177,489 @@ export function mountApp(root: HTMLElement) {
     if (!r.width || !r.height) return null;
     return { x: r.left - o.left, y: r.top - o.top, w: r.width, h: r.height };
   };
-  /** Everything drawn over the office: labels and pins under these fade out. */
-  const occluders = (): Rect[] =>
-    [rel(panelSlot.querySelector(".dp")), rel(guide), rel(zoomGroup), rel(controls.querySelector(".hint")), rel(statusPill), rel(banner.firstElementChild)].filter((x): x is Rect => !!x);
+  const occluders = (): Rect[] => [rel(statusPill), rel(zoomGroup), rel(coach.el.firstElementChild), rel(finaleSlot.firstElementChild)].filter((x): x is Rect => !!x);
 
-  function mountOffice(mode?: "2d") {
+  async function mountOffice(mode?: "2d") {
     try {
-      office = createOffice(officeHost, mode ? { mode } : {});
+      const mod = await import("../office");
+      office = mod.createOffice(officeHost, mode ? { mode } : {});
+      officePanel.classList.add("is-ready");
       office.onAgentClick((id) => {
         play("tap");
-        const p = app.project;
+        coach.dismiss();
+        const p = view;
         if (id === "lobby" || !p) return;
-        const st = deptStatus(p, id);
-        if (st === "error") return void retry();
-        if (st === "working" || st === "done") showPanel(id, true);
+        const st = p.status[id];
+        if (st === "error") return void retry(id);
       });
       office.setOccluders(occluders);
-      // A GL context that never comes back (backgrounded phone tab): swap in the 2D floor plan.
       (office as Office & { onLost?: (() => void) | null }).onLost = () => {
         office?.dispose();
-        mountOffice("2d");
-        if (app.project) restore(app.project);
+        void mountOffice("2d");
       };
-      if (import.meta.env.DEV) (window as unknown as { __ld: unknown }).__ld = { office: () => office, free: () => freeRect() };
+      if (import.meta.env.DEV || location.search.includes("ld-debug")) (window as unknown as { __ld: unknown }).__ld = { office: () => office, director, panel: officePanel };
+      syncOffice(view, true);
     } catch (e) {
       console.error("[office]", e);
       officeHost.append(h("div", { class: "office-fail" }, "The office could not be drawn on this device."));
     }
   }
-  mountOffice();
+  void mountOffice();
 
-  // ---------- department panel ----------
-  let panelDept: WorkDept | null = null;
-  let panelKey = "";
-  /** When the user last opened a panel themselves: the director doesn't snatch it away right after. */
-  let userPanelAt = 0;
-  /** The department the director is currently showing: the status pill and the guide follow it, not the server. */
-  let shownDept: WorkDept | null = null;
-  function showPanel(d: WorkDept | null, user = false) {
-    const changed = d !== panelDept;
-    panelDept = d;
-    if (changed) panelKey = "";
-    if (user) userPanelAt = d ? Date.now() : 0;
-    renderPanel();
-    if (d && user) {
-      play("open");
-      if (deptStatus(app.project!, d) !== "scheduled") focus(d);
-    }
-  }
-  /** Director: show a department unless the user just opened another one. */
-  function directorShow(d: WorkDept) {
-    shownDept = d;
-    if (panelDept !== d && panelDept && Date.now() - userPanelAt < USER_PANEL_MS) return false;
-    showPanel(d);
-    if (app.project) overlays(phaseOf(app.project));
-    return true;
-  }
-  function renderPanel() {
-    const p = app.project;
-    if (!p || !panelDept) {
-      panelSlot.replaceChildren();
-      panelSlot.classList.remove("on");
-      return;
-    }
-    const key = `${panelDept}|${deptStatus(p, panelDept)}|${p.results[panelDept] ? 1 : 0}`;
-    if (key === panelKey) return;
-    panelKey = key;
-    const cur = panelSlot.querySelector<HTMLElement>(".dp");
-    if (cur && cur.dataset.dept === panelDept) {
-      refreshDeptPanel(cur, p, panelDept, () => void retry());
-    } else {
-      panelSlot.replaceChildren(deptPanel(p, panelDept, () => showPanel(null), () => void retry()));
-    }
-    panelSlot.classList.add("on");
-  }
-  // The panel and the "Click anyone to say hi" hint never compete for the same space.
-  new MutationObserver(() => officeWrap.classList.toggle("has-panel", panelSlot.classList.contains("on"))).observe(panelSlot, { attributes: true, attributeFilter: ["class"] });
-
-  // ---------- camera framing ----------
+  // ---------- camera ----------
+  let focused: DeptId | "overview" = "overview";
   const desktop = () => innerWidth >= 1100;
-  /** The part of the office not covered by the department panel (office px). */
+  /**
+   * L14: the working room at ~1.35× the overview zoom, centred. The scene fits a room into the `free` rect,
+   * so a centred rect at 44.5% of the card gives 1.35× (measured: zoom ≈ 3.24·s − 0.09 at 16:10).
+   * Phones get a little more (≈ 1.5×) so the characters stay readable.
+   */
   function freeRect(): Rect | undefined {
-    const dp = panelSlot.querySelector(".dp");
-    if (!dp || !desktop()) return undefined;
-    const o = officePanel.getBoundingClientRect();
-    const r = dp.getBoundingClientRect();
-    const top = 56; // status pill
-    // The guide card (bottom-left) is a safe area too: rooms are framed above it.
-    const g = guide.getBoundingClientRect();
-    const bottom = g.height ? o.bottom - g.top + 12 : 70;
-    // The panel is docked on the right: frame the room in what is left, 24 px from every edge.
-    return { x: 24, y: top, w: r.left - o.left - 48, h: o.height - top - bottom };
+    const w = officePanel.clientWidth;
+    const hh = officePanel.clientHeight;
+    if (!w || !hh) return undefined;
+    const s = desktop() ? 0.445 : 0.55;
+    return { x: (w * (1 - s)) / 2, y: (hh * (1 - s)) / 2 + (desktop() ? 12 : 0), w: w * s, h: hh * s };
   }
-  let focused: { room: DeptId | "overview"; with?: DeptId[] } = { room: "overview" };
-  const focus = (room: DeptId | "overview", withRooms?: DeptId[], ms?: number) => {
-    focused = { room, with: withRooms };
-    office?.focus(room, { ms: reducedMotion() ? 0 : ms, free: room === "overview" ? undefined : freeRect(), with: withRooms });
-  };
-  // The panel grows when results replace placeholders: keep the room framed beside it.
-  let lastPanelBox = "";
-  new ResizeObserver(() => {
-    const dp = panelSlot.querySelector(".dp");
-    const box = dp ? `${Math.round(dp.clientWidth / 24)}x${Math.round(dp.clientHeight / 24)}` : "";
-    if (box === lastPanelBox) return;
-    lastPanelBox = box;
-    if (focused.room !== "overview") focus(focused.room, focused.with, 600);
-  }).observe(panelSlot);
+  function focus(room: DeptId | "overview", ms?: number) {
+    if (!office) return void (focused = room);
+    let t = ms;
+    if (t === undefined && room !== "overview" && focused !== "overview") {
+      // 700–1100ms by distance (M1 handover)
+      const a = office.roomCenter(focused);
+      const b = office.roomCenter(room);
+      const w = officePanel.clientWidth || 1;
+      t = 700 + 400 * Math.min(1, Math.hypot(a.x - b.x, a.y - b.y) / w);
+    }
+    focused = room;
+    if (reduced()) {
+      // M2: no camera travel; a 180ms opacity dip hides the cut
+      officeHost.animate([{ opacity: 1 }, { opacity: 0.85 }, { opacity: 1 }], { duration: 180 });
+      t = 0;
+    }
+    office.focus(room, { ms: t ?? 900, free: room === "overview" ? undefined : freeRect() });
+  }
 
-  // ---------- overlays ----------
-  function overlays(ph: Phase) {
-    let text = READY;
-    let tone = "ok";
-    let g = "Type your idea or pick an example. Stage 1 (validate) costs 10 cents in Bitcoin Cash.";
+  /** Puts the office in the state of `p` with no motion (load, restore, office mounted late). */
+  function syncOffice(p: Project | null, hard = false) {
+    if (!office) return;
+    if (hard) office.clearPins();
+    for (const d of ["lobby", ...WORK_ORDER] as DeptId[]) {
+      if (d === "lobby") continue;
+      const s = p?.status[d];
+      office.setState(d, s === "done" ? "done" : s === "working" ? "working" : d === "pip" ? "sleeping" : "idle");
+      office.flag(d, s === "error");
+      office.note(d, null);
+    }
+    if (!p) return focus("overview", 0);
+    const ph = phaseOf(p);
+    if (ph.kind === "done" && hard) finalePins(p);
+    const active = WORK_ORDER.find((d) => p.status[d] === "working" || p.status[d] === "error");
+    if (hard) focus(active ?? "overview", 0);
+  }
+  function finalePins(p: Project) {
+    // On a phone-width office three value pins crowd each other; only the live site gets one.
+    const narrow = officeHost.clientWidth < 560;
+    for (const d of (narrow ? ["pip"] : ["leo", "sam", "pip"]) as WorkDept[]) {
+      const v = pinValue(p, d);
+      if (v) office?.pin(d, { kicker: "", value: v });
+    }
+  }
+
+  // ---------- sound (M14: at most one per 600ms) ----------
+  let lastSound = 0;
+  const sound = (s: Sfx) => {
+    const t = performance.now();
+    if (t - lastSound < 600) return;
+    lastSound = t;
+    play(s);
+  };
+
+  // ---------- status pill (L19, L18, F12) ----------
+  let connection: "ok" | "reconnecting" | "offline" = "ok";
+  function pillFor(p: Project | null, beat: Beat | null): { text: string; tone: string } {
+    if (connection === "offline") return { text: "Offline. We'll resume when you're back.", tone: "err" };
+    if (connection === "reconnecting") return { text: "Reconnecting…", tone: "wait" };
+    if (!p) return { text: "Your team is in. What are we building?", tone: "ok" };
+    const ph = phaseOf(p);
+    if (beat) {
+      const st = p.status[beat.dept];
+      if (st === "error") return { text: snagText(beat.dept), tone: "err" };
+      if (beat.phase === "reveal" || beat.phase === "hold") return { text: doneText(p, beat.dept), tone: "ok" };
+      return { text: DOING[beat.dept] + eta(p, beat.dept), tone: "busy" };
+    }
     switch (ph.kind) {
       case "unpaid":
-        text = "Waiting for your payment";
-        tone = "wait";
-        g = `Approve the ${STAGE_INFO[ph.stage].label} payment in your wallet. The team starts the moment it lands on Bitcoin Cash.`;
-        break;
-      case "working": {
-        // Follow what the office shows (the director lingers on a delivery), never contradict the panel.
-        const d = shownDept && ph.stage === (STAGE_DEPTS.validate.includes(shownDept) ? "validate" : "build") ? shownDept : ph.dept;
-        const st = d && app.project ? deptStatus(app.project, d) : null;
-        if (d && st === "done") {
-          const next = ph.dept && ph.dept !== d ? TEAM[ph.dept].name : null;
-          text = next ? `${TEAM[d].name} delivered · handing over to ${next}` : `${TEAM[d].name} delivered`;
-          g = TEAM[d].guide;
-        } else if (d) {
-          text = TEAM[d].working;
-          g = TEAM[d].guide;
-        } else {
-          text = "Payment received · the team is getting started";
-          g = "Your payment landed in the lobby. Mia takes the stage budget and briefs the team.";
-        }
-        tone = "busy";
-        break;
-      }
+        return { text: "Waiting for your payment", tone: "wait" };
       case "gate":
-        text = "Your turn: go or stop";
-        tone = "wait";
-        g = "Stage 1 is done. Read the report and decide: build it for $0.20, or stop here and keep the report.";
-        break;
+        return { text: "Your call. Build it?", tone: "wait" };
       case "stopped":
-        text = "Report kept · office on standby";
-        g = "You stopped after validation and kept the report. Nothing else is charged. You can still continue later.";
-        break;
-      case "done": {
-        const name = app.project?.results.nova?.names[app.project.results.nova.chosen]?.name;
-        const fresh = !!app.project && !packSeen(app.project.id);
-        text = fresh && name ? `${name} is live. Open the pack` : "Your startup pack is ready";
-        tone = fresh ? "live" : "ok";
-        g = "Your startup pack is ready. Open any tile below to read it, or download the whole pack.";
-        break;
+        return { text: "Report saved. Build any time.", tone: "ok" };
+      case "done":
+        return { text: `${nameOf(p)} is live`, tone: "live" };
+      case "error":
+        return ph.dept ? { text: snagText(ph.dept), tone: "err" } : { text: "We couldn't finish", tone: "err" };
+      case "working": {
+        const d = ph.dept;
+        return d ? { text: DOING[d], tone: "busy" } : { text: "Your team is getting started", tone: "busy" };
       }
-      case "error": {
-        const who = ph.dept ? TEAM[ph.dept] : null;
-        text = who ? `${who.name} hit a snag. Retry ${who.name}` : "The team hit a snag. Retry";
-        tone = "err";
-        g = who
-          ? `${who.name} couldn't finish ${who.snag}. ${coarse() ? "Tap" : "Click"} ${who.name}'s room or Retry: it's free, you already paid for this stage.`
-          : "Something went wrong. Retry is free: you already paid for this stage.";
-        break;
-      }
+      default:
+        return { text: "Your team is in. What are we building?", tone: "ok" };
     }
-    statusPill.className = `ov-status t-${tone}`;
-    if (tone === "live") {
-      statusPill.replaceChildren(
-        h("button", { type: "button", class: "ov-live", onclick: () => openPackSafe() }, h("span", { class: "sdot", "aria-hidden": "true" }), h("span", null, text)),
-      );
-    } else statusPill.replaceChildren(h("span", { class: "sdot", "aria-hidden": "true" }), h("span", null, text));
-    guideText.textContent = g;
-    stripText.textContent = g;
   }
-
-  function render() {
-    const p = app.project;
+  /** L18 copy for the phone status line: "Validating · Leo, 2 of 3". Empty when nothing is running. */
+  function progressLine(p: Project | null, beat: Beat | null): string {
+    if (!p) return "";
+    if (connection !== "ok") return pillFor(p, beat).text;
     const ph = phaseOf(p);
-    hdr.setStep(stepOf(ph));
-    document.body.classList.toggle("is-home", !p);
-    const price = app.config ? `$${(app.config.prices.validate / 100).toFixed(2)}` : "$0.10";
-    const price2 = app.config ? `$${(app.config.prices.build / 100).toFixed(2)}` : "$0.20";
-    homeBar.querySelector("[data-hb-label]")!.textContent = `Validate my idea · ${price}`;
-    homeBar.querySelector("[data-hb-sub]")!.textContent = `Paid in Bitcoin Cash · ${price2} more to launch`;
-    overlays(ph);
-    out.render(p);
-    side.render(p);
-    renderPanel();
+    const d = beat?.dept ?? (ph.kind === "working" ? ph.dept : null);
+    if (!d) return "";
+    const s = stageOf(d);
+    const ds = STAGE_DEPTS[s];
+    const live = beat ? beat.phase === "handover" || beat.phase === "working" : true;
+    return `${s === "validate" ? "Validating" : "Building"} · ${TEAM[d].name}, ${ds.indexOf(d) + 1} of ${ds.length}${live ? eta(p, d) : ""}`;
+  }
+  /** "about 25 s left", only when /api/stats has a real median (≥ 5 runs). */
+  function eta(p: Project, d: WorkDept): string {
+    const s = stageOf(d);
+    const med = app.stats?.medianMs?.[s];
+    const started = p.timings[s]?.started;
+    if (!med || !started) return "";
+    const left = Math.round((med - (Date.now() - started)) / 5000) * 5;
+    return left >= 5 ? ` · about ${left} s left` : "";
   }
 
-  // ---------- director: turns project changes into office animation ----------
-  let queue: Promise<void> = Promise.resolve();
-  let epoch = 0;
-  let pending = 0;
-  let wake: (() => void) | null = null;
-  const enqueue = (fn: () => Promise<void> | void) => {
-    const my = epoch;
-    pending++;
-    wake?.();
-    queue = queue
-      .then(() => {
-        pending--;
-        return my === epoch ? fn() : undefined;
-      })
-      .catch((e) => console.error("[director]", e));
-  };
-  /** Lingers on a result, but hands over early (after `min`) as soon as something newer happens. */
-  const dwell = async (ms: number, min = PANEL_HOLD_MS) => {
-    if (pending > 0) return sleep(PANEL_HANDOFF_MS);
-    await sleep(min);
-    if (pending > 0) return;
-    await Promise.race([sleep(ms - min), new Promise<void>((r) => (wake = r))]);
-    wake = null;
-  };
-  const gateShown = new Set<string>();
-  const packShown = new Set<string>();
-
-  function showBanner(kicker: string, value: string, sub: string) {
-    banner.replaceChildren(h("div", { class: "ovb" }, h("small", null, kicker), h("b", null, value), h("span", null, sub)));
-    banner.classList.add("on");
-  }
-  const hideBanner = () => {
-    banner.classList.remove("on");
-    banner.replaceChildren();
-  };
-
-  function resetOffice() {
-    epoch++;
-    queue = Promise.resolve();
-    hideBanner();
-    if (!office) return;
-    office.clearPins();
-    shownDept = null;
-    for (const d of ["lobby", ...WORK_ORDER] as DeptId[]) {
-      office.setState(d, d === "pip" ? "sleeping" : "idle");
-      office.note(d, null);
-      office.flag(d, false);
+  // ---------- run bar (L18) ----------
+  let barStage: Stage | null = null;
+  let barRaf = 0;
+  const segStart = new Map<WorkDept, number>();
+  function renderBar(p: Project | null) {
+    const ph = p ? phaseOf(p) : null;
+    const stage: Stage | null = ph && (ph.kind === "working" || ph.kind === "error") ? ph.stage : null;
+    officePanel.classList.toggle("has-bar", !!stage);
+    if (!stage || !p) {
+      cancelAnimationFrame(barRaf);
+      barRaf = 0;
+      barStage = null;
+      return;
     }
-    focus("overview");
-  }
-
-  function markError(d: WorkDept) {
-    office?.setState(d, "idle");
-    office?.flag(d, true);
-    office?.note(d, `Needs a retry · ${coarse() ? "tap" : "click"} to retry`);
-  }
-
-  /** Puts the office in the state of `p` without replaying animations (page load / restore). */
-  function restore(p: Project) {
-    resetOffice();
-    if (!office) return;
-    let active: WorkDept | null = null;
-    for (const d of WORK_ORDER) {
-      const s = deptStatus(p, d);
-      if (s === "done") {
-        office.setState(d, "done");
-        const pin = pinFor(p, d);
-        if (pin) office.pin(d, { ...pin, tone: TEAM[d].color });
-      } else if (s === "working") {
-        office.setState(d, "working");
-        office.note(d, TEAM[d].busy);
-        active = d;
-      } else if (s === "error") {
-        markError(d);
-        active = d;
-      }
+    if (barStage !== stage) {
+      barStage = stage;
+      segStart.clear();
+      runBar.replaceChildren(...STAGE_DEPTS[stage].map((d) => h("span", { class: "rb-seg", "data-dept": d }, h("i"))));
     }
-    const ph = phaseOf(p);
-    if (!active && ph.kind === "working" && ph.stage === "validate") active = "mia";
-    if (active) {
-      shownDept = active;
-      showPanel(active);
-      focus(active);
-    }
-  }
-
-  function diff(prev: Project, next: Project) {
-    for (const s of ["validate", "build"] as Stage[]) {
-      const pay = next.payments[s];
-      if (pay && !prev.payments[s]) {
-        enqueue(async () => {
-          const budget = stageSats(next, s);
-          play("coin");
-          // Stage 1: Mia's panel opens right away with her brief and an empty plan.
-          if (s === "validate") directorShow("mia");
-          focus("lobby", ["mia"]);
-          office?.chip("lobby", pay.sats > 0 ? `Payment received · ${fmtSats(pay.sats)} sats` : "Stage started · local test", pay.sats > 0 ? "bch" : "gold");
-          await sleep(900);
-          office?.setState("mia", "walking");
-          await capped(office?.walk("mia", "lobby"));
-          office?.chip(
-            "lobby",
-            budget > 0 && pay.sats > 0 ? `Lobby → Mia · ${fmtSats(budget)} sats · internal` : budget > 0 ? `Lobby → Mia · ≈ ${fmtSats(budget)} sats · simulated` : `Stage ${STAGE_INFO[s].n} budget → Mia · internal`,
-            "gold",
-          );
-          await sleep(600);
-          const back = capped(office?.walk("mia", "mia")).then(() => {
-            const st = deptStatus(app.project ?? next, "mia");
-            office?.setState("mia", st === "working" ? "working" : st === "done" ? "done" : "idle");
-          });
-          // Stage 1: Mia is the first to work, so wait for her to sit down. Stage 2: Nova starts while Mia walks back.
-          if (s === "validate") {
-            await back;
-            if (deptStatus(app.project ?? next, "mia") !== "done") focus("mia");
-          }
-        });
-      }
-    }
-    for (const d of WORK_ORDER) {
-      const a = deptStatus(prev, d);
-      const b = deptStatus(next, d);
-      if (a === b) continue;
-      if (a === "error") office?.flag(d, false);
-      if (b === "working") {
-        enqueue(async () => {
-          office?.flag(d, false);
-          office?.setState(d, "working");
-          office?.note(d, TEAM[d].busy);
-          if (directorShow(d)) focus(d);
-          play("start");
-          await sleep(500);
-        });
-      } else if (b === "done") {
-        enqueue(async () => {
-          office?.setState(d, "done");
-          office?.note(d, null);
-          const cur = app.project ?? next;
-          const shown = directorShow(d);
-          if (shown && focused.room !== d) focus(d);
-          const pin = pinFor(cur, d);
-          if (pin) office?.pin(d, { ...pin, tone: TEAM[d].color });
-          const s = STAGE_DEPTS.validate.includes(d) ? "validate" : "build";
-          const share = Math.floor(stageSats(cur, s) / STAGE_DEPTS[s].length);
-          const sim = !!cur.payments[s] && isDevTx(cur.payments[s]!.txid);
-          // Money between departments is bookkeeping inside the office: always labelled as internal (or simulated).
-          office?.chip(
-            d,
-            d !== "mia" && share > 0 ? (sim ? `Mia → ${TEAM[d].name} · ≈ ${fmtSats(share)} sats · simulated` : `Mia → ${TEAM[d].name} · +${fmtSats(share)} sats · internal`) : "Delivered",
-            "dept",
-          );
-          play("done");
-          // Keep the delivered work on screen before the next department takes over.
-          await dwell(d === "pip" ? PANEL_HOLD_MS : 4000);
-        });
-      } else if (b === "error") {
-        enqueue(async () => {
-          markError(d);
-          shownDept = d;
-          showPanel(d);
-          focus(d);
-        });
-      }
-    }
-    if (stageDone(next, "validate") && !stageDone(prev, "validate")) {
-      enqueue(async () => {
-        void refreshStats();
-        await sleep(600);
-        shownDept = null;
-        showPanel(null);
-        focus("overview");
-        await sleep(900);
-        if (app.project?.id === next.id && phaseOf(app.project).kind === "gate") void gate();
+    const med = app.stats?.medianMs?.[stage];
+    const expected = (med ? med / STAGE_DEPTS[stage].length : stage === "validate" ? 7000 : 5500) + (stage === "validate" ? 2400 : 1800);
+    const frame = () => {
+      const v = view;
+      if (!v || barStage !== stage) return;
+      let anyLive = false;
+      runBar.querySelectorAll<HTMLElement>(".rb-seg").forEach((seg) => {
+        const d = seg.dataset.dept as WorkDept;
+        const st = v.status[d];
+        let k = 0;
+        if (st === "done") k = 1;
+        else if (st === "working" || st === "error") {
+          if (!segStart.has(d)) segStart.set(d, performance.now());
+          const t = performance.now() - segStart.get(d)!;
+          k = 0.9 * (1 - Math.exp(-t / (expected / 2)));
+          anyLive = true;
+        }
+        (seg.firstElementChild as HTMLElement).style.transform = `scaleX(${k.toFixed(4)})`;
+        seg.classList.toggle("is-done", st === "done");
       });
-    }
-    if (stageDone(next, "build") && !stageDone(prev, "build")) {
-      enqueue(() => finale(next));
-    }
+      barRaf = anyLive ? requestAnimationFrame(frame) : 0;
+    };
+    cancelAnimationFrame(barRaf);
+    barRaf = requestAnimationFrame(frame);
   }
 
-  /** Launch finale: overview, confetti, the pins pop in one by one, the team payout banner. */
+  // ---------- render (always the director's view) ----------
+  let view: Project | null = null;
+  let preorders: Preorders | null = null;
+  let lastPill = "";
+  let pillFor_id: string | null = null;
+  function render() {
+    const p = view;
+    const beat = currentBeat();
+    const ph: Phase = phaseOf(p);
+    // While a beat (e.g. Sam's hold) is still on screen, the step stays where the story is.
+    const stepPh: Phase = beat && ph.kind === "gate" ? { kind: "working", stage: "validate" } as Phase : beat && ph.kind === "done" ? { kind: "working", stage: "build" } as Phase : ph;
+    hdr.setStep(stepOf(stepPh));
+    document.body.classList.toggle("is-home", !p);
+    document.body.classList.toggle("is-run", !!p && (ph.kind === "working" || ph.kind === "error" || ph.kind === "unpaid"));
+    side.el.hidden = !!p;
+    runCol.hidden = !p;
+    if (!p) side.render(null);
+    // pill
+    const pill = pillFor(p, beat);
+    statusPill.className = `ov-status run-pill t-${pill.tone}`;
+    if (pill.text !== lastPill) {
+      lastPill = pill.text;
+      // A newly opened project shows its state at once; only changes within a project animate.
+      const opened = (p?.id ?? null) !== pillFor_id;
+      pillFor_id = p?.id ?? null;
+      if (!pillText.textContent || opened) {
+        pillText.textContent = pill.text;
+        textSwap(pillText, pill.text); // replaces any swap still queued from the previous screen
+      } else textSwap(pillText, pill.text);
+    }
+    // Phones: the line under the office carries progress, never the Now card's sentence again.
+    const mline = progressLine(p, beat);
+    if (statusText.textContent !== mline) statusText.textContent = mline;
+    statusLine.hidden = !mline;
+    const runs = Number(store.get("launchdesk-runs") || "0");
+    const showSkip = !!beat && runs >= 1 && p?.status[beat.dept] !== "error" && !isSkipping() && STAGE_DEPTS[stageOf(beat.dept)][0] !== beat.dept && (beat.phase === "handover" || beat.phase === "working");
+    pillSkip.hidden = !showSkip;
+    statusSkip.hidden = !showSkip;
+    // right column
+    if (p) {
+      const title = p.results.mia?.title || provisionalTitle(p.idea);
+      if (projTitle.textContent !== title) {
+        if (projTitle.textContent) textSwap(projTitle, title);
+        else projTitle.textContent = title;
+      }
+      projTitle.title = p.idea;
+      savedChip.hidden = !p.payments.validate || !!p.example || location.pathname.startsWith("/r/");
+    }
+    now.update(p, beat, { showSkip, launchOpen });
+    team.update(p, beat);
+    shelf.render(p, { preorders });
+    renderBar(p);
+    // F7: progress beyond the page
+    if (p) {
+      if (beat && (ph.kind === "working" || ph.kind === "error")) {
+        const ds = STAGE_DEPTS[stageOf(beat.dept)];
+        document.title = `(${ds.indexOf(beat.dept) + 1}/${ds.length}) ${DOING[beat.dept]} · LaunchDesk`;
+      } else if (ph.kind === "gate") document.title = "Report ready · LaunchDesk";
+      else if (ph.kind === "done") document.title = `${nameOf(p)} is live · LaunchDesk`;
+      else document.title = `${p.results.mia?.title ?? "Your project"} · LaunchDesk`;
+    } else document.title = "LaunchDesk · Your startup team, for pennies";
+    // F4: keep "My projects" fresh (never for shared or example projects)
+    if (p && !p.example && !location.pathname.startsWith("/r/")) projects.upsert(p);
+  }
+
+  // ---------- director hooks ----------
+  let payCoin: Promise<void> | null = null;
+  let finaleFor: string | null = null;
+  const gateShown = new Set<string>();
+
+  function onView(v: Project) {
+    view = v;
+    // error flags follow the view
+    if (office) for (const d of WORK_ORDER) office.flag(d, v.status[d] === "error");
+    render();
+  }
+
+  function onBeat(b: Beat, v: Project) {
+    const d = b.dept;
+    coach.dismiss();
+    switch (b.phase) {
+      case "handover": {
+        office?.clearPins();
+        const ds = STAGE_DEPTS[stageOf(d)];
+        const i = ds.indexOf(d);
+        const from: DeptId = i === 0 ? "lobby" : ds[i - 1]!;
+        const coinNow = () => {
+          if (isSkipping()) return;
+          void office?.coin(from, d);
+        };
+        if (i === 0 && payCoin) void payCoin.then(coinNow);
+        else coinNow();
+        payCoin = null;
+        office?.setState(d, "working");
+        focus(d);
+        break;
+      }
+      case "working":
+        office?.setState(d, "working");
+        if (focused !== d) focus(d);
+        break;
+      case "reveal": {
+        office?.setState(d, "done");
+        const pv = pinValue(v, d);
+        if (pv) office?.pin(d, { kicker: "", value: pv });
+        liveRegion.textContent = announce(v, d);
+        // M14: "done" when the tile's count-up ends
+        if (!isSkipping()) setTimeout(() => sound("done"), 700);
+        if (d === "pip" || d === "sam") {
+          store.set("launchdesk-runs", String(Number(store.get("launchdesk-runs") || "0") + 1));
+        }
+        break;
+      }
+      case "hold":
+        break;
+    }
+    render();
+  }
+
+  function onGate(v: Project) {
+    if (app.project?.id !== v.id) return;
+    setTimeout(() => {
+      focus("overview");
+      // Opens once by itself per project; after that only the user reopens it (Now card, team row).
+      if (view && phaseOf(view).kind === "gate" && !gateShown.has(v.id)) void gate();
+    }, 0);
+  }
+
+  function onFinale(v: Project) {
+    if (finaleFor === v.id) return;
+    finaleFor = v.id;
+    void finale(v);
+  }
+
+  /** M8: 4.2s. Overview, labels turn green in work order, one confetti burst, the launch card rises. */
   async function finale(p: Project) {
-    void refreshStats();
-    await sleep(400);
-    shownDept = null;
-    showPanel(null);
-    focus("overview");
-    await sleep(700);
-    const cur = app.project ?? p;
+    const rm = reduced();
+    const wait = (ms: number) => new Promise((r) => setTimeout(r, rm ? Math.min(ms, 200) : ms));
+    now.el.classList.add("is-collapsing");
     office?.clearPins();
-    if (!reducedMotion()) office?.celebrate();
-    play("celebrate");
-    const total = stageSats(cur, "validate") + stageSats(cur, "build");
-    const sim = Object.values(cur.payments).some((x) => x && isDevTx(x.txid));
-    showBanner(
-      sim ? "Team payout · simulated · local test" : "Team payout · internal · not on-chain",
-      total > 0 ? `${sim ? "≈ " : ""}${fmtSats(total)} sats → 7` : "7 departments paid",
-      sim ? "What the team would share at the stage prices. Nothing was paid in this local test." : "Mia, Leo, Sam, Nova, Dex, Rae and Pip get their share of your two stage payments",
-    );
-    for (const d of WORK_ORDER) {
-      const pin = pinFor(cur, d);
-      if (pin) office?.pin(d, { ...pin, tone: TEAM[d].color });
-      await sleep(220);
+    const brand = brandOf(p);
+    if (brand?.palette[0]) officeHost.style.setProperty("--lo-brand", brand.palette[0].hex);
+    if (office) {
+      if (rm) focus("overview", 0);
+      else {
+        const o = officePanel.getBoundingClientRect();
+        focused = "overview";
+        // Phones have no pill over the canvas: a small even margin keeps the office as large as it can be.
+        const narrow = o.width < 560;
+        const inset = narrow
+          ? { top: 16, bottom: 12, left: 12, right: 12 }
+          : { top: 60 + o.height * 0.02, bottom: 20 + o.height * 0.02, left: 16 + o.width * 0.02, right: Math.min(408, o.width * 0.42) };
+        office.focus("overview", { ms: 1100, inset });
+      }
     }
-    await sleep(FINALE_MS - WORK_ORDER.length * 220);
-    hideBanner();
-    if (app.project?.id === p.id && !packShown.has(p.id)) {
-      packShown.add(p.id);
-      openPackSafe(undefined, true);
+    await wait(600);
+    const mod = await import("../office");
+    mod.pulseLabels(officeHost, WORK_ORDER);
+    finalePins(p);
+    await wait(700);
+    if (!rm) {
+      office?.celebrate();
+      sound("celebrate");
     }
-    render();
+    await wait(200);
+    now.el.classList.remove("is-collapsing");
+    if (view?.id === p.id) launchCard(view);
+    void refreshStats();
   }
 
-  function setProject(p: Project | null, opts: { restore?: boolean } = {}) {
-    const prev = app.project;
-    app.project = p;
-    if (!p) {
-      resetOffice();
-      showPanel(null);
-    } else if (opts.restore || !prev || prev.id !== p.id) {
-      restore(p);
-    } else {
-      diff(prev, p);
-    }
+  /** L36: the launch card, centred over the office (bottom sheet on phones). No auto-open of the pack. */
+  function launchCard(p: Project) {
+    const b = brandOf(p);
+    const name = nameOf(p);
+    const slug = p.results.pip?.slug;
+    const url = slug ? `${location.origin}/s/${slug}` : "";
+    ensureFont(p.results.nova?.typography.display);
+    const close = () => {
+      const c = finaleSlot.firstElementChild as HTMLElement | null;
+      if (!c) return;
+      if (rmOrGone(c)) return void clearFinale();
+      c.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateY(8px) scale(.98)" }], { duration: 180, easing: "cubic-bezier(.55,0,1,.45)", fill: "forwards" }).finished.then(() => clearFinale(), () => clearFinale());
+    };
+    const rmOrGone = (c: HTMLElement) => reduced() || !c.isConnected;
+    const card = h(
+      "div",
+      { class: "launch sheet", role: "dialog", "aria-modal": "false", "aria-labelledby": "launch-t" },
+      h("button", { type: "button", class: "icon-btn ghost launch-x", "aria-label": "Close", onclick: close, html: iconSvg("close", 16) }),
+      h("div", { class: "launch-logo", html: renderMark(p.results.dex?.logos[0], b?.palette, name, 56, p.results.nova?.typography) }),
+      h("h2", { id: "launch-t", class: "launch-t", style: `font-family:${fontStack(p.results.nova?.typography.display)}` }, `${name} is live`),
+      b ? h("p", { class: "launch-tag" }, b.tagline) : null,
+      url
+        ? h(
+            "div",
+            { class: "launch-url" },
+            h("span", { class: "mono" }, `${location.host}/s/${slug}`),
+            h("button", { type: "button", class: "rn-ib", "aria-label": "Copy link", onclick: () => void copyText(url, "Link copied"), html: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5"/><path d="M15.5 8.5V6.5a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2"/></svg>` }),
+          )
+        : null,
+      h("button", { type: "button", class: "btn primary lg block", onclick: () => (close(), void openPackSafe("summary")) }, "Open your startup pack"),
+      slug ? h("a", { class: "btn block", href: `/s/${slug}`, target: "_blank", rel: "noopener" }, "Visit your site ↗") : null,
+    );
+    finaleSlot.replaceChildren(card);
+    launchOpen = true;
+    document.body.classList.add("has-launch");
     render();
+    if (!reduced()) {
+      card.animate([{ opacity: 0, transform: "translateY(24px)" }, { opacity: 1, transform: "none" }], { duration: 420, easing: "linear(0, .22 6%, .55 14%, .8 24%, .94 35%, 1.008 50%, 1.012 62%, 1.003 80%, 1)", fill: "backwards" });
+      card.querySelector(".launch-logo")?.animate([{ transform: "scale(.9)" }, { transform: "none" }], { duration: 420, easing: "cubic-bezier(.22,1,.36,1)" });
+    }
+    (card.querySelector(".btn.primary") as HTMLElement | null)?.focus({ preventScroll: true });
+  }
+
+  function startStory(p: Project, opts: { fastForward?: boolean } = {}) {
+    clearFinale();
+    director.start(p, { onView, onBeat, onGate, onFinale }, opts);
+    syncOffice(view, true);
   }
 
   // ---------- polling ----------
   let timer: number | undefined;
-  /** Each poll loop has a token; starting a new one (new project, retry) silently retires the old one. */
   let pollId = 0;
   let failures = 0;
-  /** After a retry, keep polling for a while even if the first answer still shows the old error. */
   let graceUntil = 0;
   async function poll(my: number) {
     clearTimeout(timer);
     const id = app.project?.id;
     if (!id || my !== pollId) return;
+    if (!navigator.onLine) {
+      setConnection("offline");
+      return;
+    }
     try {
       const p = await api.get(id);
       if (my !== pollId) return;
       failures = 0;
-      if (app.project?.id === id) setProject(p);
+      setConnection("ok");
+      if (app.project?.id === id) {
+        app.project = p;
+        director.push(p);
+      }
     } catch {
       if (my !== pollId) return;
       failures++;
-      if (failures === 3) toast("Connection is shaky. Still trying…", "err");
+      if (failures >= 3) setConnection("reconnecting");
     }
     if (my !== pollId || app.project?.id !== id) return;
     const ph = phaseOf(app.project);
     const fast = needsPolling(ph) || Date.now() < graceUntil;
-    if (fast) timer = window.setTimeout(() => void poll(my), failures ? Math.min(8000, POLL_MS * (failures + 1)) : POLL_MS);
-    else if (ph.kind === "error") timer = window.setTimeout(() => void poll(my), ERROR_POLL_MS);
+    // F12: exponential backoff after failures (1.5s → 3s → 6s … 30s)
+    const back = failures ? Math.min(30_000, POLL_MS * 2 ** failures) : POLL_MS;
+    if (fast) timer = window.setTimeout(() => void poll(my), back);
+    else if (ph.kind === "error") timer = window.setTimeout(() => void poll(my), Math.max(ERROR_POLL_MS, back));
   }
   const ensurePolling = () => {
     const my = ++pollId;
     clearTimeout(timer);
     void poll(my);
   };
+  function setConnection(c: typeof connection) {
+    if (connection === c) return;
+    connection = c;
+    render();
+  }
+  addEventListener("offline", () => setConnection("offline"));
+  addEventListener("online", () => {
+    setConnection("ok");
+    if (app.project) ensurePolling();
+  });
+
+  let preKey = "";
+  async function refreshPreorders(p: Project | null) {
+    const pip = p?.results.pip;
+    if (!p || !pip) return;
+    const k = `${p.id}|${pip.slug}`;
+    if (preKey === k) return;
+    preKey = k;
+    try {
+      const site = await api.site(pip.slug);
+      if (!site.founderAddress || site.demo) return;
+      preorders = await countPreorders(site.founderAddress, pip.live_at);
+      if (view?.id === p!.id) render();
+    } catch {
+      preorders = null;
+    }
+  }
 
   async function refreshStats() {
     try {
@@ -623,21 +672,39 @@ export function mountApp(root: HTMLElement) {
 
   // ---------- actions ----------
   async function start(idea: string) {
-    const { id } = await api.create(idea);
-    const p = await api.get(id);
-    history.pushState(null, "", `/p/${id}`);
-    setProject(p, { restore: true });
+    const created = await api.create(idea);
+    if (created.ownerKey) {
+      // F3: the key comes back once; keep it before anything else
+      const p0 = { id: created.id, idea, created_at: Date.now(), payments: {}, status: {}, results: {}, timings: {}, models: {} } as Project;
+      projects.upsert(p0, { ownerKey: created.ownerKey });
+    }
+    const p = await api.get(created.id);
+    history.pushState(null, "", `/p/${created.id}`);
+    setProject(p, { fastForward: true });
     play("tap");
     void pay("validate");
+  }
+
+  function setProject(p: Project | null, opts: { fastForward?: boolean } = {}) {
+    app.project = p;
+    preorders = null;
+    preKey = "";
+    if (!p) {
+      director.stop();
+      view = null;
+      clearFinale();
+      syncOffice(null, true);
+      render();
+      return;
+    }
+    startStory(p, opts);
+    void refreshPreorders(p);
   }
 
   async function pay(stage: Stage) {
     const p = app.project;
     if (!p) return;
-    if (p.payments[stage]) {
-      ensurePolling();
-      return;
-    }
+    if (p.payments[stage]) return ensurePolling();
     const paid = await openPay(p, stage);
     if (app.project?.id !== p.id) return;
     if (!paid) {
@@ -645,7 +712,8 @@ export function mountApp(root: HTMLElement) {
       try {
         const fresh = await api.get(p.id);
         if (app.project?.id === p.id && fresh.payments[stage]) {
-          setProject(fresh);
+          app.project = fresh;
+          director.push(fresh);
           void api.run(p.id, stage).catch(() => {});
           ensurePolling();
         }
@@ -655,19 +723,36 @@ export function mountApp(root: HTMLElement) {
       return;
     }
     if (stage === "build") setStopped(p.id, false);
-    // Phones: the paid stage plays out in the office at the top of the page.
-    if (innerWidth < 1100) window.scrollTo({ top: 0, behavior: reducedMotion() ? "auto" : "smooth" });
-    setProject(paid);
+    if (!desktop()) window.scrollTo({ top: 0, behavior: reduced() ? "auto" : "smooth" });
+    // M7 hand-off: the coin flies from the sheet's check to the lobby, then the lobby shows "+$0.10 paid".
+    const pay0 = paid.project.payments[stage];
+    const real = !!pay0 && !isDevTx(pay0.txid) && pay0.sats > 0;
+    focus("lobby", 600);
+    if (paid.fromRect && office) {
+      payCoin = office.coinFromRect(paid.fromRect, "lobby").then(() => {
+        if (real) office?.chip("lobby", `+$${(pay0!.cents / 100).toFixed(2)} paid`, "bch");
+        sound("coin");
+      });
+    } else if (real) office?.chip("lobby", `+$${(pay0!.cents / 100).toFixed(2)} paid`, "bch");
+    app.project = paid.project;
+    director.push(paid.project);
     void refreshStats();
     ensurePolling();
   }
 
   async function gate() {
     const p = app.project;
-    if (!p || !stageDone(p, "validate") || p.payments.build) return;
+    const v = view;
+    if (!p || !v || !stageDone(v, "validate") || p.payments.build) return;
+    if (gateShown.has(`${p.id}|open`)) return;
     gateShown.add(p.id);
-    showPanel(null);
-    const choice = await openGate(p);
+    gateShown.add(`${p.id}|open`);
+    let choice: Awaited<ReturnType<typeof openGate>> = null;
+    try {
+      choice = await openGate(v);
+    } finally {
+      gateShown.delete(`${p.id}|open`);
+    }
     if (app.project?.id !== p.id) return;
     if (choice === "approve") {
       setStopped(p.id, false);
@@ -676,19 +761,39 @@ export function mountApp(root: HTMLElement) {
     } else if (choice === "stop") {
       setStopped(p.id, true);
       render();
-      toast("Report kept. Nothing else is charged.", "ok");
-    }
+      toast("Report saved. Nothing else is charged.", "ok");
+    } else if (choice === "pivot") {
+      const idea = p.results.leo?.pivot?.idea;
+      go("/");
+      if (idea)
+        requestAnimationFrame(() => {
+          const ta = document.getElementById("idea") as HTMLTextAreaElement | null;
+          if (!ta) return;
+          ta.value = idea;
+          ta.dispatchEvent(new Event("input", { bubbles: true }));
+          ta.focus();
+          ta.setSelectionRange(idea.length, idea.length);
+        });
+    } else render();
   }
 
-  async function retry() {
+  /** R18: free, idempotent retry of one department (falls back to re-running the stage on older servers). */
+  async function retry(d: WorkDept | null) {
     const p = app.project;
     if (!p) return;
     const ph = phaseOf(p);
-    if (ph.kind !== "error") return;
-    graceUntil = Date.now() + 10_000;
+    const stage: Stage = d ? stageOf(d) : ph.kind === "error" || ph.kind === "working" ? ph.stage : "validate";
+    graceUntil = Date.now() + 12_000;
     try {
-      await api.run(p.id, ph.stage);
-      toast(ph.dept ? `${TEAM[ph.dept].name} is on it again` : "Running it again…", "info");
+      if (d) {
+        try {
+          await api.retry(p.id, d);
+        } catch (e) {
+          if (e instanceof ApiError && (e.status === 501 || e.status === 404)) await api.run(p.id, stage);
+          else throw e;
+        }
+      } else await api.run(p.id, stage);
+      toast(d ? `${TEAM[d].name} is on it again` : "Running it again…", "info");
     } catch (e) {
       toast((e as Error).message, "err");
     }
@@ -696,17 +801,26 @@ export function mountApp(root: HTMLElement) {
     ensurePolling();
   }
 
-  /** `auto`: the finale opened it. The "is live" banner stays until the user opens the pack themselves. */
-  function openPackSafe(tab?: string, auto = false) {
+  async function skipDept(d: WorkDept) {
     const p = app.project;
     if (!p) return;
-    play("open");
-    if (!auto && phaseOf(p).kind === "done" && !packSeen(p.id)) {
-      markPackSeen(p.id);
-      requestAnimationFrame(() => overlays(phaseOf(app.project)));
-    }
     try {
-      openPack(p, tab);
+      await api.skip(p.id, d);
+      graceUntil = Date.now() + 12_000;
+      ensurePolling();
+    } catch (e) {
+      toast(e instanceof ApiError && e.status === 501 ? "Skipping isn't available on this server yet. Try again, free." : (e as Error).message, "err");
+    }
+  }
+
+  let packMod: typeof import("../pack") | null = null;
+  async function openPackSafe(section?: PackSection, opts: { readOnly?: boolean; banner?: "example" | "share" | null; project?: Project } = {}) {
+    const p = opts.project ?? view ?? app.project;
+    if (!p) return;
+    play("open");
+    try {
+      packMod ??= await import("../pack");
+      packMod.openPack(p, { section, readOnly: opts.readOnly, banner: opts.banner });
     } catch (e) {
       console.error("[pack]", e);
       toast("Could not open the pack.", "err");
@@ -718,24 +832,27 @@ export function mountApp(root: HTMLElement) {
   async function load(path: string) {
     const seq = ++loadSeq;
     clearTimeout(timer);
-    pollId++; // retire any poll loop of the previous screen
-    // Back / Forward: nothing from the previous screen may stay on top.
-    if (isPackOpen()) closePack();
+    pollId++;
+    if (packMod?.isPackOpen()) packMod.closePack();
     closeAllModals();
+    setRobots(path.startsWith("/r/"));
+    const share = path.match(/^\/r\/([\w-]+)/);
     const m = path.match(/^\/p\/([\w-]+)/);
-    if (!m) {
+    if (!m && !share) {
       setProject(null);
-      document.title = "LaunchDesk — Your startup team, for pennies";
       return;
     }
     try {
-      const p = await api.get(m[1]);
-      if (seq !== loadSeq) return; // a newer Back / Forward won
-      setProject(p, { restore: true });
-      document.title = `${p.results.mia?.title ?? "Your project"} · LaunchDesk`;
+      const p = share ? await api.shared(share[1]!) : await api.get(m![1]!);
+      if (seq !== loadSeq) return;
+      setProject(p, { fastForward: true });
       const ph = phaseOf(p);
+      if (share || p.example) {
+        // F5 / F2: a read-only document over the finished office
+        void openPackSafe("summary", { readOnly: true, banner: share ? "share" : "example", project: p });
+        return;
+      }
       if (ph.kind === "working") {
-        // Idempotent: makes sure the server is working on a paid stage after a reload.
         void api.run(p.id, ph.stage).catch(() => {});
         ensurePolling();
       } else if (ph.kind === "gate" && !gateShown.has(p.id)) {
@@ -745,9 +862,12 @@ export function mountApp(root: HTMLElement) {
       }
     } catch (e) {
       if (seq !== loadSeq) return;
-      toast((e as Error).message || "Project not found", "err");
-      history.replaceState(null, "", "/");
+      // F12: unknown link → a calm card in the side column
       setProject(null);
+      if (e instanceof ApiError && e.status === 404) {
+        side.el.hidden = false;
+        side.renderNotFound();
+      } else toast((e as Error).message || "Project not found", "err");
     }
   }
   function go(path: string) {
@@ -755,7 +875,17 @@ export function mountApp(root: HTMLElement) {
     void load(path);
   }
   window.addEventListener("popstate", () => void load(location.pathname));
-  // "Start a new idea" inside the pack modal: route in place instead of reloading.
+  // The pack's "Build it · $0.20" button (stage 1 packs): open the gate's build payment for that project.
+  window.addEventListener("launchdesk:build", (e) => {
+    const id = (e as CustomEvent<{ id?: string }>).detail?.id;
+    const p = app.project;
+    if (!p || p.id !== id || p.example || location.pathname.startsWith("/r/")) return;
+    e.preventDefault();
+    if (p.payments.build) return;
+    setStopped(p.id, false);
+    render();
+    void pay("build");
+  });
   window.addEventListener("launchdesk:new-idea", (e) => {
     e.preventDefault();
     go("/");
@@ -768,13 +898,11 @@ export function mountApp(root: HTMLElement) {
   const loadConfig = async (again: boolean) => {
     try {
       app.config = await api.config();
-      // Update prices and the BCH rate in place: never rebuild the form the user may be typing in.
       side.refreshConfig();
-      out.render(app.project);
-      // The server answers instantly from its price cache; ask again once it has a fresh price.
+      render();
       if (again && !app.config.bchUsd) setTimeout(() => void loadConfig(false), 6000);
     } catch {
-      toast("Cannot reach the LaunchDesk server.", "err");
+      /* side.ts shows the offline card and retries (F12) */
     }
   };
   void loadConfig(true);
@@ -783,4 +911,64 @@ export function mountApp(root: HTMLElement) {
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden && app.project && (needsPolling(phaseOf(app.project)) || phaseOf(app.project).kind === "error")) ensurePolling();
   });
+  // The camera keeps the working room framed when the office card changes size.
+  new ResizeObserver(() => {
+    if (office && focused !== "overview") office.focus(focused, { ms: 0, free: freeRect() });
+  }).observe(officePanel);
+}
+
+/** F5: shared reports are not for search engines. */
+function setRobots(on: boolean) {
+  let m = document.querySelector<HTMLMetaElement>('meta[name="robots"][data-ld]');
+  if (on && !m) {
+    m = h("meta", { name: "robots", content: "noindex", "data-ld": "" });
+    document.head.append(m);
+  } else if (!on) m?.remove();
+}
+
+/** L22: one-time coach mark on the first visit (dismissed with "Got it", remembered). */
+function coachMark() {
+  const KEY = "launchdesk-coach";
+  let seen = false;
+  try {
+    seen = localStorage.getItem(KEY) === "1";
+    // A returning visitor with projects already knows the office: the coach mark retires itself.
+    if (!seen && projects.list().length > 0) {
+      seen = true;
+      localStorage.setItem(KEY, "1");
+    }
+  } catch {
+    seen = true;
+  }
+  const el = h("div", { class: "coach-slot" });
+  const dismiss = () => {
+    if (seen) return;
+    seen = true;
+    try {
+      localStorage.setItem(KEY, "1");
+    } catch {
+      /* fine */
+    }
+    const c = el.firstElementChild as HTMLElement | null;
+    if (!c) return;
+    if (reduced()) return void el.replaceChildren();
+    c.animate([{ opacity: 1 }, { opacity: 0, transform: "translateY(4px)" }], { duration: 160, easing: "cubic-bezier(.55,0,1,.45)", fill: "forwards" }).finished.then(() => el.replaceChildren(), () => el.replaceChildren());
+  };
+  if (!seen) {
+    el.append(
+      h(
+        "div",
+        { class: "coach", role: "note" },
+        h(
+          "ol",
+          null,
+          h("li", null, "This is your team. Each room is a specialist."),
+          h("li", null, "Pay $0.10 and watch them check your idea."),
+          h("li", null, "You decide if they build it."),
+        ),
+        h("button", { type: "button", class: "btn sm", onclick: dismiss }, "Got it"),
+      ),
+    );
+  }
+  return { el, dismiss };
 }

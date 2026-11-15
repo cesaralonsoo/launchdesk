@@ -112,3 +112,39 @@ export function parseDay(iso: string): Date {
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? new Date() : d;
 }
+
+// ---------- brand fonts (R11) ----------
+
+import type { FontPair } from "../types";
+
+/** The Google Fonts stylesheet URL for a brand pair (one request, wght 400;600;700, display=swap). */
+export function fontsHref(pair: FontPair): string {
+  const fam = [...new Set([pair.display, pair.body].filter(Boolean))]
+    .map((f) => `family=${encodeURIComponent(f).replace(/%20/g, "+")}:wght@400;600;700`)
+    .join("&");
+  return `https://fonts.googleapis.com/css2?${fam}&display=swap`;
+}
+
+/**
+ * R11: injects one Google Fonts <link> for a brand pair (idempotent). Used by the pack Brand section, the
+ * deliverable tile, the finale launch card and the public site. Falls back silently to the system stack offline.
+ */
+export function loadFonts(pair: FontPair | null | undefined): void {
+  if (!pair || typeof document === "undefined") return;
+  const href = fontsHref(pair);
+  const id = "ld-font-" + href.replace(/[^a-z0-9]/gi, "").slice(-60);
+  if (document.getElementById(id)) return;
+  const l = document.createElement("link");
+  l.id = id;
+  l.rel = "stylesheet";
+  l.href = href;
+  document.head.appendChild(l);
+}
+
+/** CSS font-family value for a brand face with a sensible fallback (serif faces fall back to a serif). */
+export function fontStack(family: string | undefined, role: "display" | "body" = "display"): string {
+  const f = (family || "").replace(/["\\]/g, "");
+  const serif = /serif|fraunces|caslon|baskerville|playfair|lora|garamond|crimson|newsreader|literata|gloock|young serif/i.test(f) && !/sans/i.test(f);
+  const fb = serif ? `Georgia, "Times New Roman", serif` : `-apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", Arial, sans-serif`;
+  return f ? `"${f}", ${fb}` : role === "display" ? fb : fb;
+}

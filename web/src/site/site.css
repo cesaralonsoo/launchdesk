@@ -1,165 +1,247 @@
-/* Generated landing page. Scoped under .lds. Apple-like layout on white; the founder's brand colour (from Nova)
-   is the only accent: --b-primary / --b-on-primary / --b-accent / --b-soft come from the palette inline. */
+/* Generated public page (/s/:slug). Owner: WS3 (spec-v4 L41–L43, M13, F11, F12).
+   Brand-first: the page wears the founder's palette (from Nova) and fonts (R11). The QR sheet stays neutral white:
+   it is where money moves, so it looks like LaunchDesk's own trusted surface. Scoped under .lds / .lds-sheet / .lds-state. */
+
+/* Motion tokens (spec-v4 §4.1, same values as styles.css), scoped so the page works standalone and in exports. */
+.lds, .lds-sheet, .lds-state {
+  --dur-instant: 100ms; --dur-1: 160ms; --dur-2: 220ms; --dur-3: 300ms; --dur-4: 420ms; --dur-5: 800ms;
+  --ease-out: cubic-bezier(.22,1,.36,1); --ease-in: cubic-bezier(.55,0,1,.45); --ease-in-out: cubic-bezier(.65,0,.35,1);
+  --ease-sheet: cubic-bezier(.32,.72,0,1);
+  --spring-soft: linear(0, .22 6%, .55 14%, .8 24%, .94 35%, 1.008 50%, 1.012 62%, 1.003 80%, 1);
+}
+
 .lds {
   container-type: inline-size;
   container-name: lds;
   position: relative;
+  overflow-x: clip;
   background: var(--b-bg);
   color: var(--b-ink);
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--b-body, -apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", Arial, sans-serif);
   font-size: 17px;
   line-height: 25px;
-  letter-spacing: -0.022em;
+  letter-spacing: -0.011em;
   -webkit-font-smoothing: antialiased;
   text-align: left;
 }
 .lds *, .lds *::before, .lds *::after { box-sizing: border-box; }
-.lds h1, .lds h2, .lds h3, .lds p { margin: 0; }
-.lds h1, .lds h2, .lds h3 { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Helvetica Neue", Arial, sans-serif; font-weight: 600; }
+:where(.lds) :where(h1, h2, h3, p, ol, ul) { margin: 0; padding: 0; }
+.lds .lds-h1, .lds .lds-h2 { font-family: var(--b-display); font-weight: 600; }
 .lds a { color: inherit; }
 :where(.lds button) { font: inherit; cursor: pointer; letter-spacing: inherit; }
-.lds :where(a, button):focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(0, 113, 227, .25), 0 0 0 1px #0071E3; }
+.lds :where(a, button, summary):focus-visible { outline: 2px solid var(--b-primary); outline-offset: 3px; border-radius: 6px; }
 .lds .lds-wrap { max-width: 1080px; margin: 0 auto; padding: 0 40px; }
 
-/* nav */
-.lds-nav { display: flex; align-items: center; justify-content: space-between; height: 64px; border-bottom: 1px solid var(--b-line); }
-.lds-brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 17px; text-decoration: none; }
-.lds-brand .ld-logotile { box-shadow: 0 0 0 1px var(--b-line); }
-.lds-navlinks { display: flex; align-items: center; gap: 24px; font-size: 13px; color: var(--b-muted); }
-.lds-navlinks a { text-decoration: none; }
-.lds-navlinks a:hover { color: var(--b-ink); }
-.lds-pill { display: inline-flex; align-items: center; height: 30px; padding: 0 14px; border-radius: 999px; border: 0; background: var(--b-fill); color: var(--b-ink); font-weight: 500; font-size: 13px; }
-.lds-pill:hover { background: var(--b-fill-2); }
+/* ---------- hero (L41) ---------- */
+.lds-hero { padding: 96px 0 88px; text-align: center; }
+.lds-hero-in { max-width: 800px; display: flex; flex-direction: column; align-items: center; }
+.lds-logo { margin-bottom: 48px; min-height: 40px; display: flex; justify-content: center; }
+.lds-h1 { font-size: 64px; line-height: 64px; letter-spacing: -0.03em; max-width: 720px; text-wrap: balance; }
+.lds-sub { margin-top: 24px; max-width: 600px; font-size: 21px; line-height: 30px; opacity: .7; text-wrap: pretty; }
+.lds-cta-wrap { margin-top: 40px; display: flex; flex-direction: column; align-items: center; }
+.lds-cta {
+  display: inline-flex; align-items: center; justify-content: center; height: 52px; padding: 0 28px; border: 0; border-radius: 26px;
+  background: var(--b-primary); color: var(--b-on-primary); font-family: var(--b-body); font-weight: 600; font-size: 17px; letter-spacing: -0.011em;
+  transition: transform var(--dur-instant) var(--ease-out), filter var(--dur-1) var(--ease-out);
+}
+@media (pointer: fine) { .lds-cta:hover { filter: brightness(1.12) saturate(1.05); } }
+.lds-cta:active { transform: scale(.97); transition-duration: var(--dur-instant); }
+.lds-cta-note { margin-top: 14px; font-size: 13px; line-height: 18px; color: var(--b-muted); }
 
-/* hero: big headline, short subhead, one CTA */
-.lds-hero { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 56px; align-items: center; padding: 72px 0 80px; }
-.lds-eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; line-height: 20px; font-weight: 500; color: var(--b-accent-ink); }
-.lds-eyebrow i { width: 7px; height: 7px; border-radius: 50%; background: #0AC18E; }
-.lds-h1 { font-size: clamp(40px, 5.2cqi, 56px); line-height: 1.07; letter-spacing: -0.015em; margin: 14px 0 16px !important; text-wrap: balance; }
-.lds-sub { font-size: 21px; line-height: 1.38; letter-spacing: 0.01em; color: var(--b-muted); max-width: 30em; text-wrap: pretty; }
-.lds-ctas { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 32px; }
-.lds-cta { display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 50px; padding: 0 24px; border: 0; border-radius: 12px; background: var(--b-primary); color: var(--b-on-primary); font-weight: 600; font-size: 17px; transition: transform .2s cubic-bezier(.25,.1,.25,1), filter .2s cubic-bezier(.25,.1,.25,1); }
-.lds-cta:hover { filter: brightness(.92); }
-.lds-cta:active { transform: scale(.98); }
-.lds-cta svg { flex: none; }
-.lds-offer { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; color: var(--b-muted); }
-.lds-offer svg { color: var(--b-muted); }
-.lds-trust { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 24px; font-size: 13px; line-height: 18px; color: var(--b-muted); font-variant-numeric: tabular-nums; }
-.lds-trust span { display: inline-flex; align-items: center; gap: 6px; }
-.lds-trust svg { color: #0AC18E; }
+/* ---------- pattern band (L42) ---------- */
+.lds-band { position: relative; height: 240px; overflow: hidden; background: var(--b-accent); }
+.lds-band-tiles {
+  position: absolute; inset: -120px 0 0 -120px; background-image: var(--b-pattern); background-size: 120px 120px;
+  animation: lds-drift 60s linear infinite; will-change: transform;
+}
+@keyframes lds-drift { to { transform: translate(120px, 120px); } }
 
-.lds-visual { position: relative; aspect-ratio: 1 / 0.94; border-radius: 28px; overflow: hidden; background: var(--b-soft); isolation: isolate; }
-.lds-visual .lds-ring { display: none; }
-.lds-visual .lds-bigicon { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); }
-.lds-visual .lds-float { position: absolute; display: flex; align-items: center; gap: 10px; padding: 10px 14px 10px 10px; border-radius: 16px; background: #fff; color: #1D1D1F; box-shadow: 0 0 0 1px rgba(0,0,0,.04), 0 4px 16px rgba(0,0,0,.06); font-size: 13px; font-weight: 600; line-height: 18px; }
-.lds-visual .lds-float small { display: block; font-weight: 400; color: #6E6E73; font-size: 12px; line-height: 16px; }
-.lds-visual .f1 { left: 6%; bottom: 7%; }
-.lds-visual .f2 { right: 6%; top: 7%; padding: 10px 14px; }
-.lds-visual .f2 b { font-size: 21px; line-height: 26px; font-weight: 600; font-variant-numeric: tabular-nums; }
+/* ---------- sections ---------- */
+.lds-sec { padding-top: 96px; transition: opacity var(--dur-3) var(--ease-out), transform var(--dur-3) var(--ease-out); }
+.lds-sec.lds-pre { opacity: 0; transform: translateY(8px); }
+.lds-h2 { font-size: 40px; line-height: 44px; letter-spacing: -0.025em; text-wrap: balance; }
 
-/* features */
-.lds-features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; padding-bottom: 80px; }
-.lds-feature { display: flex; flex-direction: column; gap: 14px; padding: 24px; border-radius: 20px; background: var(--b-tint); }
-.lds-feature .n { display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 12px; background: var(--b-primary); color: var(--b-on-primary); }
-.lds-feature h3 { font-size: 17px; line-height: 22px; letter-spacing: -0.022em; }
+.lds-points { padding-top: 64px; }
+.lds-points-list { list-style: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; }
+.lds-points-list li { padding-top: 16px; border-top: 1px solid var(--b-line); font-size: 17px; line-height: 25px; font-weight: 500; text-wrap: pretty; }
 
-/* offer card */
-.lds-band { border-radius: 28px; background: var(--b-tint); padding: 40px 44px; display: grid; grid-template-columns: 1fr auto; gap: 28px; align-items: center; }
-.lds-band h2 { font-size: clamp(24px, 2.8cqi, 32px); line-height: 1.15; letter-spacing: 0.004em; }
-.lds-band p { margin-top: 8px !important; color: var(--b-muted); font-size: 17px; }
-.lds-band .lds-cta { background: var(--b-ink); color: var(--b-bg); }
+.lds-steps { list-style: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; margin-top: 40px; }
+.lds-steps li { display: flex; flex-direction: column; }
+.lds-step-n { font-family: var(--b-display); font-size: 40px; line-height: 40px; font-weight: 600; color: var(--b-accent); font-variant-numeric: tabular-nums; }
+.lds-steps b { margin-top: 20px; font-size: 17px; line-height: 22px; font-weight: 600; }
+.lds-steps li > span:last-child { margin-top: 6px; font-size: 15px; line-height: 22px; color: var(--b-muted); }
 
-/* how */
-.lds-how { padding: 80px 0 80px; }
-.lds-kicker { font-size: 15px; font-weight: 600; color: var(--b-muted); }
-.lds-how h2 { font-size: clamp(28px, 3cqi, 40px); line-height: 1.1; letter-spacing: -0.01em; margin: 6px 0 32px !important; }
-.lds-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; counter-reset: s; }
-.lds-step { position: relative; padding-top: 52px; }
-.lds-step::before { counter-increment: s; content: counter(s); position: absolute; left: 0; top: 0; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--b-fill); font-weight: 600; font-size: 15px; }
-.lds-step b { display: block; font-size: 17px; font-weight: 600; margin-bottom: 4px; }
-.lds-step span { font-size: 15px; line-height: 21px; color: var(--b-muted); }
+.lds-offer-in { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 40px; padding-top: 40px; border-top: 1px solid var(--b-line); }
+.lds-where { margin-top: 12px; font-size: 15px; line-height: 22px; color: var(--b-muted); }
+.lds-offer-r { display: flex; flex-direction: column; align-items: flex-end; gap: 20px; }
+.lds-price { display: flex; align-items: baseline; gap: 14px; font-variant-numeric: tabular-nums; }
+.lds-price b { font-family: var(--b-display); font-size: 64px; line-height: 64px; font-weight: 600; letter-spacing: -0.03em; }
+.lds-price s { font-size: 15px; line-height: 22px; color: var(--b-muted); }
 
-.lds-foot { border-top: 1px solid var(--b-line); }
-.lds-foot .lds-wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 64px; font-size: 12px; color: var(--b-muted); }
-.lds-made { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; }
-.lds-made:hover { color: var(--b-ink); }
-.lds-made i { width: 18px; height: 18px; border-radius: 5px; background: #1D1D1F; display: grid; place-items: center; }
+.lds-faq-list { margin-top: 32px; max-width: 760px; border-bottom: 1px solid var(--b-line); }
+.lds-faq details { border-top: 1px solid var(--b-line); }
+.lds-faq summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 0; font-size: 17px; line-height: 25px; font-weight: 500; cursor: pointer; list-style: none; }
+.lds-faq summary::-webkit-details-marker { display: none; }
+.lds-faq summary svg { flex: none; color: var(--b-muted); transition: transform var(--dur-2) var(--ease-out); }
+.lds-faq details[open] summary svg { transform: rotate(45deg); }
+.lds-faq details p { padding: 0 40px 20px 0; font-size: 15px; line-height: 22px; color: var(--b-muted); max-width: 640px; }
 
-/* pay sheet: clean QR card */
+.lds-foot { margin-top: 112px; border-top: 1px solid var(--b-line); }
+.lds-foot-in { display: flex; align-items: center; gap: 24px; min-height: 72px; font-size: 13px; line-height: 18px; color: var(--b-muted); }
+.lds-foot-in a { text-decoration: none; }
+.lds-foot-in a:hover { color: var(--b-ink); text-decoration: underline; text-underline-offset: 3px; }
+.lds-foot-in span { margin-right: auto; }
+
+/* L43: demo notice lives out of the hero */
+.lds-demo {
+  position: fixed; left: 16px; bottom: 16px; z-index: 20; display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px;
+  border-radius: 16px; background: #fff; color: #1D1D1F; font: 500 13px/18px -apple-system, BlinkMacSystemFont, "Inter", sans-serif; letter-spacing: -0.01em;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.08);
+}
+.lds-demo::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #FF9F0A; }
+.ldp-screen .lds-demo, .ldp-desk .lds-demo, [data-phone] .lds-demo, [data-desk] .lds-demo { position: absolute; }
+
+/* ---------- QR sheet: neutral, trusted ---------- */
 :where(.lds-sheet button) { font: inherit; cursor: pointer; }
-.lds-sheet { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(0, 0, 0, .28); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); opacity: 0; transition: opacity .28s cubic-bezier(.25,.1,.25,1); font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Helvetica Neue", Arial, sans-serif; letter-spacing: -0.016em; -webkit-font-smoothing: antialiased; }
+.lds-sheet {
+  position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 24px;
+  background: rgba(0, 0, 0, .28); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); opacity: 0;
+  transition: opacity var(--dur-3) var(--ease-out);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Helvetica Neue", Arial, sans-serif; letter-spacing: -0.016em; -webkit-font-smoothing: antialiased;
+  color: #1D1D1F;
+}
 .lds-sheet.in { opacity: 1; }
+.lds-sheet.out { opacity: 0; transition-duration: 180ms; transition-timing-function: var(--ease-in); }
 .lds-sheet.contained { position: absolute; padding: 0; align-items: flex-end; }
-.lds-sheet-card { width: 100%; max-width: 400px; background: #fff; color: #1D1D1F; border-radius: 24px; padding: 24px; box-shadow: 0 0 0 1px rgba(0,0,0,.05), 0 24px 60px rgba(0,0,0,.14); transform: scale(.98); transition: transform .28s cubic-bezier(.2,.8,.2,1); text-align: center; position: relative; }
+.lds-sheet-card {
+  width: 100%; max-width: 380px; background: #fff; border-radius: 24px; padding: 24px; position: relative; text-align: center;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.05), 0 24px 60px rgba(0,0,0,.14);
+  transform: scale(.98); transition: transform var(--dur-3) var(--spring-soft);
+}
 .lds-sheet.in .lds-sheet-card { transform: none; }
-.lds-sheet.contained .lds-sheet-card { border-radius: 20px 20px 0 0; max-width: none; padding: 18px 16px 18px; }
+.lds-sheet.out .lds-sheet-card { transform: scale(.98); transition: transform 180ms var(--ease-in); }
+.lds-sheet.contained .lds-sheet-card { border-radius: 20px 20px 0 0; max-width: none; padding: 18px 16px; }
 .lds-sheet-x { position: absolute; right: 16px; top: 16px; width: 32px; height: 32px; border-radius: 50%; border: 0; background: rgba(118,118,128,.12); color: #424245; display: grid; place-items: center; }
 .lds-sheet-x:hover { background: rgba(118,118,128,.2); }
-.lds-sheet-head { display: flex; align-items: center; gap: 12px; text-align: left; padding-right: 40px; }
-.lds-sheet-head b { display: block; font-size: 17px; line-height: 22px; font-weight: 600; }
-.lds-sheet-head small { display: block; color: #6E6E73; font-size: 13px; line-height: 18px; }
-.lds-amount { margin: 20px 0 4px; display: flex; align-items: baseline; justify-content: center; gap: 10px; font-variant-numeric: tabular-nums; }
-.lds-amount b { font-size: 40px; line-height: 44px; font-weight: 600; letter-spacing: -0.01em; }
-.lds-amount span { font-size: 13px; color: #6E6E73; }
-.lds-qrbox { margin: 14px auto 0; width: fit-content; padding: 12px; border-radius: 20px; background: #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.06); }
-.lds-qrbox svg { display: block; width: 216px; height: 216px; }
-.lds-sheet.contained .lds-qrbox svg { width: 168px; height: 168px; }
-.lds-scan { margin-top: 12px; font-size: 13px; color: #6E6E73; }
-.lds-addr { margin-top: 16px; display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 12px; border-radius: 12px; background: #FBFBFD; box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); text-align: left; }
+.lds-sheet-x:focus-visible, .lds-copy:focus-visible, .lds-open:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(0,113,227,.25), 0 0 0 1px #0071E3; }
+.lds-sheet-head { display: flex; justify-content: center; align-items: center; min-height: 32px; padding: 0 40px; }
+.lds-amount { margin: 20px 0 0; display: flex; flex-direction: column; align-items: center; gap: 2px; font-variant-numeric: tabular-nums; }
+.lds-amount b { font-size: 40px; line-height: 44px; font-weight: 600; letter-spacing: -0.02em; }
+.lds-amount-bch { font: 13px/18px "SF Mono", ui-monospace, Menlo, monospace; color: #6E6E73; letter-spacing: 0; }
+.lds-qrbox { margin: 20px auto 0; width: fit-content; padding: 10px; border-radius: 16px; background: #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.08); }
+.lds-qrbox svg { display: block; width: 200px; height: 200px; }
+.lds-sheet.contained .lds-qrbox svg { width: 160px; height: 160px; }
+.lds-waiting { margin-top: 14px; display: inline-flex; align-items: center; gap: 8px; font-size: 13px; line-height: 18px; color: #6E6E73; }
+.lds-waiting i { width: 6px; height: 6px; border-radius: 50%; background: #0071E3; animation: lds-pulse 1.6s var(--ease-out) infinite; }
+@keyframes lds-pulse { 0% { box-shadow: 0 0 0 0 rgba(0,113,227,.35); } 70%, 100% { box-shadow: 0 0 0 6px rgba(0,113,227,0); } }
+.lds-addr { margin-top: 16px; display: flex; align-items: center; gap: 4px; padding: 4px 4px 4px 12px; border-radius: 12px; background: #FBFBFD; text-align: left; }
 .lds-addr code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 12px; color: #424245; letter-spacing: 0; }
-.lds-copy { flex: none; height: 30px; padding: 0 12px; border-radius: 8px; border: 0; background: rgba(118,118,128,.12); color: #1D1D1F; font-weight: 600; font-size: 13px; }
-.lds-copy:hover { background: rgba(118,118,128,.2); }
-.lds-copy.ok { background: rgba(10,193,142,.10); color: #067A59; }
-.lds-open { margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; height: 50px; border-radius: 12px; background: #1D1D1F; color: #fff !important; font-weight: 600; text-decoration: none; font-size: 17px; }
+.lds-copy { flex: none; width: 32px; height: 32px; border-radius: 8px; border: 0; background: transparent; color: #424245; display: grid; place-items: center; }
+.lds-copy:hover { background: rgba(118,118,128,.12); }
+.lds-copy.ok { color: #067A59; }
+.lds-open { margin-top: 12px; display: flex; align-items: center; justify-content: center; height: 50px; border-radius: 12px; background: #1D1D1F; color: #fff !important; font-weight: 600; text-decoration: none; font-size: 17px; }
 .lds-open:hover { background: #000; }
-.lds-direct { margin-top: 14px; font-size: 12px; color: #6E6E73; line-height: 16px; display: flex; gap: 8px; text-align: left; align-items: flex-start; }
-.lds-direct svg { flex: none; margin-top: 0; color: #067A59; }
-.lds-noaddr { margin-top: 16px; padding: 14px; border-radius: 14px; background: #FBFBFD; box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); color: #424245; font-size: 13px; }
+.lds-direct { margin-top: 14px; font-size: 13px; line-height: 18px; color: #6E6E73; text-wrap: balance; }
+.lds-direct b { color: #1D1D1F; font-weight: 600; }
+.lds-noaddr { margin-top: 20px; font-size: 15px; line-height: 22px; color: #424245; }
 
-/* loading / error states for /s/:slug */
-.lds-state { min-height: 100vh; display: grid; place-items: center; background: #F5F5F7; color: #1D1D1F; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Helvetica Neue", Arial, sans-serif; text-align: center; padding: 24px; letter-spacing: -0.016em; -webkit-font-smoothing: antialiased; }
-.lds-state h1 { font-size: 28px; line-height: 32px; font-weight: 600; margin: 18px 0 8px; }
-.lds-state p { color: #6E6E73; margin: 0 0 24px; font-size: 17px; }
-.lds-state code { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 15px; }
-.lds-state a { display: inline-flex; height: 44px; align-items: center; padding: 0 18px; border-radius: 12px; background: #1D1D1F; color: #fff; font-weight: 600; text-decoration: none; }
-.lds-spin { width: 28px; height: 28px; border-radius: 50%; border: 2px solid rgba(118,118,128,.16); border-top-color: #424245; animation: lds-spin .8s linear infinite; margin: 0 auto; }
+/* F11 success: same ring + check draw as the app's payment beat (M7) */
+.lds-paid { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 24px 0 4px; }
+.lds-ok { display: block; width: 56px; height: 56px; margin-bottom: 12px; }
+.lds-ok svg { display: block; overflow: visible; }
+.lds-ok-ring { stroke: #0AC18E; }
+.lds-ok-fill { fill: #0AC18E; transform-origin: 28px 28px; }
+.lds-paid-t { font-size: 21px; line-height: 26px; font-weight: 600; }
+.lds-paid-amt { font: 13px/18px "SF Mono", ui-monospace, Menlo, monospace; color: #6E6E73; letter-spacing: 0; }
+.lds-paid-tx { margin-top: 8px; font-size: 15px; line-height: 22px; color: #0066CC; text-decoration: none; }
+.lds-paid-tx:hover { text-decoration: underline; }
+
+/* ---------- loading / not found (F12) ---------- */
+.lds-state {
+  min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; background: #F5F5F7; color: #1D1D1F; text-align: center; padding: 24px;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Helvetica Neue", Arial, sans-serif; letter-spacing: -0.016em; -webkit-font-smoothing: antialiased;
+}
+.lds-state-in { max-width: 420px; display: flex; flex-direction: column; align-items: center; }
+.lds-state-mark { display: inline-flex; align-items: center; gap: 8px; font-size: 17px; line-height: 22px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 40px; }
+.lds-state-code { font: 600 13px/18px -apple-system, BlinkMacSystemFont, "Inter", sans-serif; color: #6E6E73; }
+.lds-state h1 { font-size: 28px; line-height: 32px; font-weight: 600; letter-spacing: -0.01em; margin: 8px 0 8px; }
+.lds-state p { color: #6E6E73; margin: 0 0 28px; font-size: 17px; line-height: 25px; text-wrap: balance; }
+.lds-state code { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 15px; color: #1D1D1F; letter-spacing: 0; }
+.lds-state a.lds-state-cta { display: inline-flex; height: 50px; align-items: center; padding: 0 24px; border-radius: 12px; background: #1D1D1F; color: #fff; font-weight: 600; font-size: 17px; text-decoration: none; }
+.lds-state a.lds-state-cta:hover { background: #000; }
+.lds-state a.lds-state-2 { margin-top: 16px; font-size: 15px; color: #0066CC; text-decoration: none; }
+.lds-spin { width: 24px; height: 24px; border-radius: 50%; border: 2px solid rgba(118,118,128,.16); border-top-color: #424245; animation: lds-spin .8s linear infinite; margin: 0 auto; }
 @keyframes lds-spin { to { transform: rotate(360deg); } }
 
-/* narrow (phone, or the phone preview inside the pack) */
+/* ---------- narrow (phone, or the phone preview inside the pack) ---------- */
 @container lds (max-width: 720px) {
   .lds .lds-wrap { padding: 0 20px; }
-  .lds-nav { height: 52px; }
-  .lds-brand { font-size: 17px; gap: 10px; }
-  .lds-navlinks a.hide-sm { display: none; }
-  .lds-hero { grid-template-columns: 1fr; gap: 24px; padding: 20px 0 48px; }
-  .lds-visual { order: -1; aspect-ratio: 16 / 10; border-radius: 20px; }
-  .lds-visual .f1 { display: none; }
-  .lds-visual .f2 { right: 4%; top: 6%; padding: 8px 12px; }
-  .lds-visual .lds-bigicon svg { width: 96px; height: 96px; }
-  .lds-h1 { font-size: 32px; line-height: 36px; margin: 10px 0 12px !important; }
-  .lds-sub { font-size: 17px; line-height: 25px; }
-  .lds-ctas { margin-top: 24px; gap: 12px; }
+  .lds-hero { padding: 56px 0 56px; }
+  .lds-logo { margin-bottom: 36px; }
+  .lds-h1 { font-size: 40px; line-height: 42px; letter-spacing: -0.025em; }
+  .lds-sub { margin-top: 16px; font-size: 17px; line-height: 25px; }
+  .lds-cta-wrap { margin-top: 32px; width: 100%; }
   .lds-cta { width: 100%; }
-  .lds-offer { width: 100%; font-size: 13px; }
-  .lds-trust { margin-top: 16px; font-size: 12px; gap: 6px 14px; }
-  .lds-features { grid-template-columns: 1fr; gap: 10px; padding-bottom: 40px; }
-  .lds-feature { flex-direction: row; align-items: center; gap: 14px; padding: 16px; border-radius: 16px; }
-  .lds-feature .n { width: 36px; height: 36px; }
-  .lds-feature h3 { font-size: 15px; line-height: 20px; }
-  .lds-band { grid-template-columns: 1fr; padding: 28px 22px; border-radius: 22px; gap: 18px; }
-  .lds-how { padding: 48px 0 40px; }
-  .lds-steps { grid-template-columns: 1fr; gap: 20px; }
-  .lds-step { padding: 4px 0 0 52px; min-height: 36px; }
-  .lds-foot .lds-wrap { flex-direction: column; justify-content: center; height: auto; padding-top: 18px; padding-bottom: 22px; gap: 10px; }
+  .lds-band { height: 160px; }
+  .lds-sec { padding-top: 64px; }
+  .lds-points { padding-top: 40px; }
+  .lds-points-list { grid-template-columns: 1fr; gap: 0; }
+  .lds-points-list li { padding: 14px 0; }
+  .lds-h2 { font-size: 28px; line-height: 32px; }
+  .lds-steps { grid-template-columns: 1fr; gap: 28px; margin-top: 28px; }
+  .lds-steps li { display: grid; grid-template-columns: 48px 1fr; column-gap: 8px; }
+  .lds-step-n { grid-row: span 2; font-size: 32px; line-height: 32px; }
+  .lds-steps b { margin-top: 0; }
+  .lds-offer-in { grid-template-columns: 1fr; gap: 24px; padding-top: 32px; }
+  .lds-offer-r { align-items: stretch; }
+  .lds-price b { font-size: 48px; line-height: 48px; }
+  .lds-foot { margin-top: 72px; }
+  .lds-foot-in { flex-wrap: wrap; gap: 8px 20px; padding: 20px 0 72px; }
+  .lds-foot-in span { width: 100%; }
 }
 @media (max-width: 560px) {
   .lds-sheet:not(.contained) { align-items: flex-end; padding: 0; }
-  .lds-sheet:not(.contained) .lds-sheet-card { max-width: none; border-radius: 20px 20px 0 0; padding: 20px 20px calc(20px + env(safe-area-inset-bottom)); }
+  .lds-sheet:not(.contained) .lds-sheet-card { max-width: none; border-radius: 20px 20px 0 0; padding: 20px 20px calc(20px + env(safe-area-inset-bottom)); transform: translateY(100%); transition: transform 380ms var(--ease-sheet); }
+  .lds-sheet.in:not(.contained) .lds-sheet-card { transform: none; }
+  .lds-sheet.out:not(.contained) .lds-sheet-card { transform: translateY(100%); transition: transform 260ms var(--ease-in); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .lds *, .lds-sheet, .lds-sheet-card { transition: none !important; animation: none !important; }
+  .lds *, .lds-sheet, .lds-sheet-card { transition-property: opacity !important; transition-duration: 150ms !important; animation: none !important; }
+  .lds-sheet-card, .lds-sheet.out .lds-sheet-card { transform: none !important; }
+  .lds-band-tiles { animation: none !important; }
 }
-.lds-direct.lds-demo { color: #424245; background: rgba(255, 159, 10, .10); padding: 10px 12px; border-radius: 12px; }
-.lds-direct.lds-demo svg { color: #B25E00; }
-.lds-band .lds-was { margin-top: 6px !important; font-size: 17px; color: var(--b-muted); }
-.lds-band .lds-was + p { margin-top: 6px !important; }
+
+/* ---------- L44: founder-only share bar (neutral, floats over the brand page) ---------- */
+.lds-share {
+  position: fixed; left: 50%; bottom: 16px; z-index: 30; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 4px; height: 48px; padding: 0 6px 0 14px; border-radius: 24px;
+  background: rgba(255, 255, 255, .86); -webkit-backdrop-filter: blur(20px) saturate(180%); backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: 0 0 0 1px rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.10); color: #1D1D1F;
+  font: 400 13px/18px -apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", Arial, sans-serif; letter-spacing: -0.01em; -webkit-font-smoothing: antialiased;
+  animation: lds-share-in 300ms cubic-bezier(.22,1,.36,1) 600ms backwards;
+}
+@keyframes lds-share-in { from { opacity: 0; transform: translate(-50%, 8px); } }
+.lds-share-t { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; margin-right: 8px; white-space: nowrap; }
+.lds-share button {
+  display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px; border: 0; border-radius: 18px; background: transparent;
+  color: #1D1D1F; font: 500 13px/18px inherit; font-family: inherit; cursor: pointer; white-space: nowrap; transition: background 160ms cubic-bezier(.22,1,.36,1);
+}
+.lds-share button[hidden] { display: none; }
+@media (pointer: fine) { .lds-share button:hover { background: rgba(118,118,128,.12); } }
+.lds-share button.ok { color: #067A59; }
+.lds-share button:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(0,113,227,.25), 0 0 0 1px #0071E3; }
+.lds-share .lds-share-x { width: 36px; padding: 0; justify-content: center; color: #6E6E73; }
+.lds.has-founder .lds-demo { bottom: 76px; }
+@media (max-width: 640px) {
+  .lds-share { left: 8px; right: 8px; transform: none; bottom: calc(8px + env(safe-area-inset-bottom)); padding: 0 4px 0 12px; overflow-x: auto; animation-name: lds-share-in-m; }
+  @keyframes lds-share-in-m { from { opacity: 0; transform: translateY(8px); } }
+  .lds-share-t b { display: none; }
+  .lds-share button { padding: 0 10px; }
+  .lds-share button[data-a="post"] span { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .lds-share { animation: none; } }
+
+/* Demo page: a sample QR (plain text, no payment URI) dimmed under a label, never a payable code. */
+.lds-qr-sample { position: relative; }
+.lds-qr-sample svg { opacity: .35; }
+.lds-qr-sample span { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 4px 12px; border-radius: 999px; background: #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06); font-size: 13px; line-height: 18px; font-weight: 600; color: #1D1D1F; }

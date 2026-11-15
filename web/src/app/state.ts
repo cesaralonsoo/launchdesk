@@ -93,7 +93,9 @@ export function stepOf(ph: Phase): Step {
   }
 }
 
-export const readyCount = (p: Project | null) => (p ? WORK_ORDER.filter((d) => deptStatus(p, d) === "done").length : 0);
+/** A department the founder skipped after a snag: stored as done with a placeholder, but nothing was made. */
+export const isSkipped = (p: Project, d: WorkDept) => p.models?.[d] === "skipped";
+export const readyCount = (p: Project | null) => (p ? WORK_ORDER.filter((d) => deptStatus(p, d) === "done" && !isSkipped(p, d)).length : 0);
 
 /** True while the server is (or should be) doing work for a paid stage. */
 export const needsPolling = (ph: Phase) => ph.kind === "working";
