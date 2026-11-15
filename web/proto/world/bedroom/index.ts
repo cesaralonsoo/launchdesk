@@ -12,7 +12,7 @@
 import * as THREE from "three";
 import type { ActorId, ActorState, Analyst, AtmospherePreset, BedroomModel, BedroomSpot, CompanySign, CreateBedroomModel, FindingKind } from "../../contracts";
 import { BEDROOM_FOOTPRINT, BEDROOM_SPOTS } from "../../contracts";
-import { Figure, lookOf, type Spot } from "../office/cast";
+import { Figure, lookOf, setFigureAtmosphere, type Spot } from "../office/cast";
 import { CubeBurst, KIND_TONE, Papers } from "../office/fx";
 import { envProbe } from "../office/index";
 import { bake, Builder, lookFromAtmosphere, makeLook, Registry, type RoomMix } from "../office/kit";
@@ -39,12 +39,14 @@ const ARRIVE_MS = 900;
 const FOUNDER: Spot = { seat: { x: -2.2, z: 0.35, yaw: Math.PI / 2 }, stand: { x: -1.25, z: 1.05, yaw: Math.PI / 3 }, sitIdle: true, face: { x: 0, z: 2 } };
 const FACE_FOUNDER = { x: -2.0, z: 0.35 };
 const yawTo = (x: number, z: number) => Math.atan2(FACE_FOUNDER.x - x, FACE_FOUNDER.z - z);
+// Seats open towards the viewer (three-quarter front), so the analysts' faces read from the room camera.
+const BEANBAG_YAW = -0.5;
 const SPOTS: Record<Exclude<BedroomSpot, "desk">, Spot> = {
-  s0: { seat: { x: 1.42, z: -1.15, yaw: -Math.PI / 2 }, stand: { x: 0.85, z: -0.7, yaw: yawTo(0.85, -0.7) }, sitY: 0.09, sitIdle: true, lap: true, face: FACE_FOUNDER },
-  s1: { seat: { x: 0.45, z: 1.5, yaw: yawTo(0.45, 1.5) }, stand: { x: -0.35, z: 1.05, yaw: yawTo(-0.35, 1.05) }, sitY: -0.08, sitIdle: true, lap: true, face: FACE_FOUNDER },
-  s2: { seat: { x: -0.7, z: -2.08, yaw: yawTo(-0.7, -2.08) * 0.6 }, stand: { x: -0.7, z: -1.6, yaw: yawTo(-0.7, -1.6) }, sitY: 0, sitIdle: true, lap: true, face: FACE_FOUNDER },
+  s0: { seat: { x: 1.98, z: -0.6, yaw: 0.12 }, stand: { x: 1.6, z: -0.05, yaw: yawTo(1.6, -0.05) }, sitY: 0.17, sitIdle: true, lap: true, face: FACE_FOUNDER },
+  s1: { seat: { x: 0.57, z: 1.18, yaw: BEANBAG_YAW }, stand: { x: -0.35, z: 1.05, yaw: yawTo(-0.35, 1.05) }, sitY: -0.08, sitIdle: true, lap: true, face: FACE_FOUNDER },
+  s2: { seat: { x: -0.7, z: -2.08, yaw: 0.1 }, stand: { x: -0.7, z: -1.6, yaw: yawTo(-0.7, -1.6) }, sitY: 0, sitIdle: true, lap: true, face: FACE_FOUNDER },
   s3: { seat: { x: -2.25, z: -1.25, yaw: -Math.PI / 2 }, stand: { x: -2.25, z: -1.25, yaw: -Math.PI / 2 }, standWork: true, face: FACE_FOUNDER },
-  s4: { seat: { x: 2.25, z: 1.55, yaw: yawTo(2.25, 1.55) }, stand: { x: 1.9, z: 1.2, yaw: yawTo(1.9, 1.2) }, sitY: 0, sitIdle: true, lap: true, face: FACE_FOUNDER },
+  s4: { seat: { x: 2.25, z: 1.55, yaw: -0.75 }, stand: { x: 1.9, z: 1.2, yaw: yawTo(1.9, 1.2) }, sitY: 0, sitIdle: true, lap: true, face: FACE_FOUNDER },
 };
 
 interface Actor {
@@ -255,10 +257,10 @@ export const createBedroomModel: CreateBedroomModel = (opts) => {
     B.box(0.18, 0.02, 0.24, fx(c, C.ink, 0.6), [-0.32, 0.732, 0.08], 0, g).rotation.y = 0.25;
   });
   piece("chair", [-2.22, 0, 0.35], Math.PI / 2, "#0AC18E", 0.02, (c, g) => taskChair({ ...c, color: "#5E6B7A" }, g, [0, 0, 0], 0));
-  piece("beanbag", [0.45, 0, 1.55], 0, ACCENT, 0.24, (c, g) => {
+  piece("beanbag", [0.55, 0, 1.2], 0, ACCENT, 0.24, (c, g) => {
     const { B } = c;
     shadowRound(c, 0.6, [0, 0, 0], g, 0.3);
-    const yawB = Math.atan2(-2.6, -1.15);
+    const yawB = BEANBAG_YAW;
     const bb = c.B.sub([0, 0, 0], yawB, g);
     if (isVoxel()) {
       // chunky voxel beanbag: a squashed seat and a slouched back
@@ -495,6 +497,7 @@ export const createBedroomModel: CreateBedroomModel = (opts) => {
     pulse(id: ActorId, kind: FindingKind) {
       const a = actors.get(id);
       if (!a || a.state === "absent") return;
+      a.fig.notice();
       const from = a.fig.handPoint(new THREE.Vector3());
       const idx = stickyN % stickies.length;
       const st = stickies[idx]!;
@@ -508,6 +511,7 @@ export const createBedroomModel: CreateBedroomModel = (opts) => {
     },
     setBoom,
     applyAtmosphere(a: AtmospherePreset) {
+      setFigureAtmosphere(a);
       lookFromAtmosphere(look, a);
       R.resolve(look, mixes);
       syncLights();

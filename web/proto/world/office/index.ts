@@ -18,7 +18,7 @@ import type {
   ActorId, Analyst, AnalystRole, AtmospherePreset, BuildDept, CompanySign, Dept, DeptState, FindingKind, FloorRoom, OfficeModelV7, Quality, Room as LegacyRoom,
 } from "../../contracts";
 import { BUILD_TEAM, ROLE_LIBRARY, ROOM_META } from "../../contracts";
-import { Figure, lookOf, type Spot } from "./cast";
+import { Figure, lookOf, setFigureAtmosphere, type Spot } from "./cast";
 import { CubeBurst, Papers } from "./fx";
 import { bake, Builder, hexInto, lookFromAtmosphere, makeLook, Registry, type RoomMix } from "./kit";
 import { FLOOR_ROOMS, floorSpot, HALF_X, HALF_Z, LEGACY_OF, LEGACY_ROOM, ROOM_BY_ID, ROOM_D, ROOM_W, ROOMS, SLAB_PAD, toRoot, type RoomDef } from "./layout";
@@ -178,6 +178,7 @@ export function createOfficeModel(opts: OfficeOptions): OfficeModelExt {
     }
     if (!a) {
       const fig = new Figure(id, lookOf(id, color), spotOf(room, desk), q);
+      fig.size = 1.1; // a touch bigger on the floor so they read at the overview distance
       root.add(fig.root);
       addPick(fig, id);
       a = { id, fig, room, desk, state: initial, arriveT: -1 };
@@ -391,6 +392,7 @@ export function createOfficeModel(opts: OfficeOptions): OfficeModelExt {
   }
 
   function applyAtmosphere(a: AtmospherePreset) {
+    setFigureAtmosphere(a);
     lookFromAtmosphere(look, a);
     R.resolve(look, mixes);
     syncLights();
@@ -443,6 +445,7 @@ export function createOfficeModel(opts: OfficeOptions): OfficeModelExt {
     pulse(id: ActorId, kind: FindingKind) {
       const a = actors.get(id);
       if (!a || a.state === "absent") return;
+      a.fig.notice();
       const from = a.fig.handPoint(new THREE.Vector3());
       const to = id === "founder" ? new THREE.Vector3(lobby.cx - 2.8, 0.9, lobby.cz - 1.28) : trayLocal.clone();
       papers.fire(from, to, kind);

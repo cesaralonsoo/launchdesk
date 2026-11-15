@@ -431,3 +431,20 @@ César, relayed by the coordinator; overrides parts of §a/§c/§g:
 - **Evidence UI:** one finding card at a time (kind badge, optional hero `display`, text, then the source domain chip, which opens title, URL and access date, or "Estimate · basis"). Below it is one pixel cell per finding: green means sourced, outlined means estimate, and tapping a cell calls `flow.peek(i)`. A counter reads "n findings · m sourced" and turns into "Score unlocked" once `scoreDisplay` would say hero. The report's score counts up only after its factor bars fill.
 - **Steer diffs:** number changes render as `before → after` chips. Changes of type `finding` (or long string values) render as one "New finding / Updated finding" sentence.
 - **Keys (outside the demo):** → / Enter go to the next report page, card or level; ← goes back a report page; Esc closes overlays. In the demo, ← goes back one row.
+
+### v7 notes (integrate, port 5274) — figures
+- César: "La estética me gusta, lo único que quiero que cambies es los muñequitos." Only `world/office/cast.ts` changed: same skeleton, API, states, seats and animation; new geometry. Figures are soft chibis built from rounded blocks (RoundedBoxGeometry): big rounded head, hair as a wrapping shell + fringe, square eyes with a catchlight, rosy cheeks, small mouth; accessories rebuilt in the same language. Smooth MeshStandardMaterial in every style (the 3-band toon ramp is gone). `headPoint` height updated. Nothing else in the world or UI changed.
+
+### v7 notes (WS-CHARACTERS, port 5279) — chibi characters
+- `world/office/cast.ts` rebuilt: cute chibi figures after the original mock-up (big round head ≈44 % of height, glossy two-dot eyes, rosy cheeks, tiny smile, soft bean body in the department colour, stubby limbs, white sneakers). Hair is a cut (`short | bob | spiky`, new optional `FigureLook.cut`) plus the existing accessory; skin/hair tones vary per person.
+- API unchanged (`Figure`, `lookOf`, `CAST`, `FOUNDER_COLOR`, `Spot`, `headPoint`, `handPoint`, `setState`, `setSpot`, `cheer`, `presence`); same height (~1.3 m) and seat/anchor heights, still merged per bone (~12 draw calls per figure).
+- New life: head tilts, dangling-leg kicks when seated, walking rock, squash-and-stretch hops with waving arms, a happy sway when done, the free hand points while presenting/writing on the pinboard, the paper stays upright facing the viewer.
+- Dev-only line-up: `/proto/world/office/lineup.html?row=cast|poses&who=<id>`. Captures in `.notes/proto-v7/chars/`.
+
+## v7 notes (polish, port 5278) — figures only
+- Scope kept to the characters (owner: "lo único que quiero que cambies es los muñequitos"). World, UI, flow and data untouched.
+- `cast.ts`: heads turn towards the camera at rest; workers glance back every few seconds; `Figure.notice()` (called from office/bedroom `pulse`) makes the analyst look up at the viewer when a finding lands. Standing figures twist their shoulders a little.
+- `setFigureAtmosphere(a)` (called from both `applyAtmosphere`): a small night-only emissive lift so faces stay readable in the dark on every skin tone.
+- Trousers derive from the department colour; spiky hair is soft rounded tufts; `lookOf` falls back for unknown ids; `Figure.size` (floor uses 1.1, seat height compensated).
+- Bedroom: seats open towards the viewer (bed-foot seat for s0, beanbag turned and moved slightly back so it isn't under the card, stool and bench yaw). Furniture style unchanged.
+- lineup.html accepts person names (`?who=leo`).
