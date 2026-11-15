@@ -103,12 +103,12 @@ capped at 7.5. Interviews decide." (v6 polish: any signal without a `source_id` 
 
 | id | idea | roster (reveal order) | score | verdict | scale | cap | level | evidence (sourced/total) |
 |---|---|---|---|---|---|---|---|---|
-| pausa | coffee kiosk at a Barcelona metro exit | competition, market, location, viability | 5.5 | pivot | 4.3 | 2 | 0 | 11/13 |
-| forn | sourdough bakery in Gràcia | competition, market, viability | 4.5 | pivot | 2.6 | 1 | 1 | 7/11 |
+| pausa | coffee kiosk at a Barcelona metro exit | competition, market, location, viability | 5.2 | pivot | 4.3 | 2 | 0 | 13/14 |
+| forn | sourdough bakery in Gràcia | competition, market, viability | 4.4 | no-go | 2.6 | 0 | 0 | 7/11 |
 | ronda | Madrid dog-walking app | demand, competition, regulation, viability | 5.0 | pivot | 4.7 | 2 | 2 | 5/10 |
-| tique | Verifactu tickets for market traders | competition, market, regulation, tech, viability | 5.3 | pivot | 8.5 | 3 | 3 | 10/15 |
+| tique | Verifactu tickets for market traders | competition, market, regulation, tech, viability | 5.2 | pivot | 8.5 | 3 | 3 | 9/14 |
 
-All four samples come out as pivot. That is the honest result of the rule, not a choice we made. The bakery is capped at the floor (cap 1), so it never gets a district.
+Three samples come out as pivot and the bakery as no-go (4.4, cap 0, so it never grows past the room). None is a go, because none has a sourced demand test, which the rule requires. That is the honest result of the rule, not a choice we made.
 
 ## Hero element per screen (one thing at a time)
 
@@ -138,7 +138,7 @@ All four samples come out as pivot. That is the honest result of the rule, not a
 
 ## Prepared steers (demo)
 
-- **pausa "office"**: `DEMO_STEER_NOTE`, "Focus on office workers, not tourists, and start as a stand." It reruns location and viability and adds the sourced TMB stands finding. Location goes 7 → 8, viability 4.5 → 5.5, and the score 5.5 → 5.9.
+- **pausa "office"**: `DEMO_STEER_NOTE`, "Focus on office workers, not tourists, and start as a stand." It reruns location and viability and adds the sourced TMB stands finding. Location goes 6 → 7, viability 4 → 5.5, and the score 5.2 → 5.8.
 - **pausa "online"**: "Could we also sell our beans online to regulars?" Digital leverage goes up and scalability moves 4.3 → 4.7. This one is an estimate.
 - **tique "associations"**: "Sell to market associations, not one trader at a time."
 - **Any other note:** an honest no-op with `changes: []` and the ack "Noted. The prototype can't research new evidence for that." The server does the same in MOCK_AI.

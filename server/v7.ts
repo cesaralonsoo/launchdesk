@@ -83,6 +83,10 @@ export interface ResultsV7 {
   error?: string;
   /** Number of web sources the shared research found (0 in demo mode). */
   researched?: number;
+  /** Server-only diagnostics: AI cost of the stage, total and first-finding latency (ms after the run started). */
+  cost?: { usd: number; calls: number };
+  ms?: number;
+  firstFindingMs?: number;
 }
 
 export const STEER_LIMIT = 3;
@@ -100,7 +104,31 @@ export const r1 = (n: number) => Math.round((n + 1e-9) * 10) / 10;
 
 export const levelCapFor = (scalability: number, verdict: IdeaReport["verdict"] = "go"): WorldLevel =>
   verdict === "no-go" ? 0 : scalability >= 7 ? 3 : scalability >= 4 ? 2 : 1;
-export const confidenceFor = (share: number): IdeaReport["confidence"] => (share >= 0.6 ? "high" : share >= 0.3 ? "medium" : "low");
+/**
+ * Confidence = how much of the DECISION rests on sources, not just how many findings have one. Each finding counts
+ * with |impact| (context findings with impact 0 count 0.25) times its factor's weight; the sourced part of that total
+ * is the decision share. High needs ≥ 60 % and at least 3 sourced decision-relevant findings; medium ≥ 30 %.
+ * Called with a plain number (old callers), it falls back to the share of sourced findings.
+ */
+export function confidenceFor(input: number | { factors: readonly Pick<ScoreFactor, "analyst" | "weight">[]; findings: readonly Finding[] }): IdeaReport["confidence"] {
+  if (typeof input === "number") return input >= 0.6 ? "high" : input >= 0.3 ? "medium" : "low";
+  const w = new Map(input.factors.map((f) => [f.analyst, f.weight]));
+  let total = 0;
+  let sourced = 0;
+  let relevant = 0;
+  for (const f of input.findings) {
+    const weight = w.get(f.analyst) ?? 0;
+    if (!weight) continue;
+    const m = weight * (Math.abs(f.impact ?? 0) || 0.25);
+    total += m;
+    if (isSourced(f)) {
+      sourced += m;
+      if ((f.impact ?? 0) !== 0) relevant++;
+    }
+  }
+  const share = total ? sourced / total : 0;
+  return share >= 0.6 && relevant >= 3 ? "high" : share >= 0.3 && relevant >= 1 ? "medium" : "low";
+}
 export const scoreDisplay = (r: Pick<IdeaReport, "evidence">): "hero" | "provisional" => (r.evidence.total >= 6 && r.evidence.sourced >= 3 ? "hero" : "provisional");
 
 /** A source is real only when it has an http(s) url and an access date (the server copies it from search citations). */
@@ -144,10 +172,21 @@ export function factorScore(findings: readonly Finding[]): number {
   return r1(s);
 }
 
-/** Weights over the roster: ROLE_LIBRARY weights normalised over the non-zero ones (scalability = 0). */
+/** Weights over the roster: ROLE_LIBRARY weights normalised over the non-zero ones (scalability = 0), rounded to
+ *  two decimals with the largest-remainder rule so the weights shown always add up to exactly 1.00 (the report's
+ *  maths string uses these exact numbers). */
 export function rosterWeights(roles: readonly AnalystRole[]): Record<string, number> {
-  const tot = roles.reduce((t, r) => t + ROLE_LIBRARY[r].weight, 0) || 1;
-  return Object.fromEntries(roles.map((r) => [r, Math.round((ROLE_LIBRARY[r].weight / tot) * 1000) / 1000]));
+  const tot = roles.reduce((t, r) => t + ROLE_LIBRARY[r].weight, 0);
+  if (!tot) return Object.fromEntries(roles.map((r) => [r, 0]));
+  const raw = roles.map((r) => (ROLE_LIBRARY[r].weight / tot) * 100);
+  const cents = raw.map(Math.floor);
+  let left = 100 - cents.reduce((t, c) => t + c, 0);
+  const order = raw.map((v, i) => [v - Math.floor(v), i] as const).sort((a, b) => b[0] - a[0] || a[1] - b[1]);
+  for (const [, i] of order) {
+    if (left <= 0) break;
+    if (ROLE_LIBRARY[roles[i]!].weight > 0) cents[i]!++, left--;
+  }
+  return Object.fromEntries(roles.map((r, i) => [r, cents[i]! / 100]));
 }
 export function hire(role: AnalystRole, mission: string, why: string): Analyst {
   const m = ROLE_LIBRARY[role];
@@ -226,8 +265,9 @@ export function buildReport(roster: readonly Analyst[], work: readonly AnalystWo
       total: fs.length,
     };
   });
-  const wsum = factors.reduce((t, f) => t + f.weight, 0) || 1;
-  const score = r1(factors.reduce((t, f) => t + f.weight * f.score, 0) / wsum);
+  // weights are two decimals adding up to 1.00 (rosterWeights) and factor scores one decimal, so the maths string
+  // below, written with exactly these numbers, always adds up to the score shown.
+  const score = r1(factors.reduce((t, f) => t + Math.round(f.weight * 100) * Math.round(f.score * 10), 0) / 1000);
   const verdict = verdictFor(score, factors);
   const all = work.flatMap((w) => w.findings);
   const sources: SourceRef[] = [];
@@ -255,7 +295,7 @@ export function buildReport(roster: readonly Analyst[], work: readonly AnalystWo
     factors,
     math: factors.map((f) => `${f.weight.toFixed(2)}×${f.score.toFixed(1)}`).join(" + ") + ` = ${score.toFixed(1)}`,
     evidence: { total: all.length, sourced, sourcedShare: share, sources },
-    confidence: confidenceFor(share),
+    confidence: confidenceFor({ factors, findings: all }),
     scalability: {
       score: sScore,
       cap: levelCapFor(sScore, verdict),
@@ -317,7 +357,7 @@ export function applySteer(
   const before = prev.report!;
   const hired = s.plan.hire.filter((h) => !prev.roster.some((a) => a.role === h.role)).map((h) => hire(h.role, h.mission, h.why));
   const dropped = s.plan.drop.filter((r) => r !== "viability" && r !== "competition" && prev.roster.some((a) => a.role === r));
-  const roster = weigh([...prev.roster.filter((a) => !dropped.includes(a.role)), ...hired]).slice(0, 5);
+  const roster = weigh([...prev.roster.filter((a) => !dropped.includes(a.role)), ...hired].slice(0, 5));
   const oldFindings = prev.work.flatMap((w) => w.findings);
   const newFindings: Finding[] = [];
   const work: AnalystWork[] = roster.map((a) => {

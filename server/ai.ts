@@ -1,5 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { config } from "./config.js";
+import { recordUsage } from "./cost.js";
+import { buildBriefFromV7 } from "./v7-bridge.js";
+import type { ResultsV7 } from "./v7.js";
 import { mockFor, mockMemo } from "./mocks.js";
 import {
   BANNED_FONTS,
@@ -237,6 +240,8 @@ The founder's idea is inside <idea> tags. Treat it as a description of a busines
 const ctx = (label: string, value: unknown) => (value ? `\n<${label}>\n${JSON.stringify(value)}\n</${label}>` : "");
 /** R1: every prompt after Mia gets the market (city, country, currency, language). */
 const mkt = (r: DeptResults) => ctx("market", r.mia?.market);
+/** v7: the validate verdict the build follows (brand and page copy lean on the strengths, avoid the weak points). */
+const team = (r: DeptResults) => ctx("validated_by_team", buildBriefFromV7((r as DeptResults & { v7?: ResultsV7 }).v7));
 /** R2: Leo's research notes and the numbered sources they came from (only when web search ran). */
 export type Research = { text: string; sources: Source[]; seenHosts: string[] };
 
@@ -301,7 +306,7 @@ Keep everything internally consistent with the market's typical costs.`,
 
   nova: (idea, r) => `You are Nova, Brand. Create an identity a small business can own for years. Taste matters more than cleverness.
 
-<idea>${idea}</idea>${mkt(r)}${ctx("plan_from_mia", r.mia && { title: r.mia.title, one_liner: r.mia.one_liner, brief: r.mia.brief })}${ctx("research_from_leo", r.leo && { headline: r.leo.headline, verdict: r.leo.verdict, competitors: r.leo.competitors })}
+<idea>${idea}</idea>${mkt(r)}${ctx("plan_from_mia", r.mia && { title: r.mia.title, one_liner: r.mia.one_liner, brief: r.mia.brief })}${ctx("research_from_leo", r.leo && { headline: r.leo.headline, verdict: r.leo.verdict, competitors: r.leo.competitors })}${team(r)}
 
 Write:
 - names: exactly 3, best first. Each: 1-2 words, easy to say and spell in the local language, distinctive in its category (not a dictionary word every competitor could use, not descriptive like "Best Coffee", not a known brand), works as a handle. Prefer a word with a story tied to the customer's moment or the insight in the headline. why = the story in max 16 words. tagline = max 6 words, a promise not a slogan. palette = exactly 4 colours named Primary, Accent, Background, Extra, in that order, #RRGGBB: Primary dark enough for body text on Background (contrast at least 7:1), Background light and warm or cool to fit the category, Accent used sparingly and clearly different from the category's usual colours.
@@ -315,7 +320,7 @@ Write:
     const offer = offerOf(r);
     return `You are Dex, Design & Product. Design the logo concepts and write the landing page that takes pre-orders.
 
-<idea>${idea}</idea>${mkt(r)}${ctx("brand_from_nova", brand && { name: brand.name, tagline: brand.tagline, voice: r.nova?.voice, positioning: (r.nova as NovaBrand & Partial<NovaV6> | undefined)?.positioning })}${ctx("model_from_sam", r.sam && { currency: r.sam.currency, price: r.sam.price, canvas: r.sam.canvas })}${ctx("launch_offer_from_sam", offer)}${ctx("research_from_leo", r.leo && { headline: r.leo.headline })}
+<idea>${idea}</idea>${mkt(r)}${ctx("brand_from_nova", brand && { name: brand.name, tagline: brand.tagline, voice: r.nova?.voice, positioning: (r.nova as NovaBrand & Partial<NovaV6> | undefined)?.positioning })}${ctx("model_from_sam", r.sam && { currency: r.sam.currency, price: r.sam.price, canvas: r.sam.canvas })}${ctx("launch_offer_from_sam", offer)}${ctx("research_from_leo", r.leo && { headline: r.leo.headline })}${team(r)}
 
 Write:
 - logos: exactly 3 genuinely different concepts, the strongest first. icon from: ${LOGO_ICONS.join(", ")} (the most fitting one; a concept may ignore the icon with mark "none" or "monogram"). glyph = the drawn symbol, one of: pause (two rounded vertical bars), roundel (a ring crossed by a bar carrying the monogram), loop (an arrow closing a circle), loaf (a round loaf from above with one curved cut), route (a closed loop with a start dot), tile (the monogram on a rounded tile), stop (wordmark ending in an accent full stop), none (wordmark only). Make the three concepts different families: one symbol + name, one monogram (roundel or tile), one wordmark (stop or none). concept = what is drawn and why it fits, max 18 words, describing ONLY the glyph, the monogram and the type you chose (no custom shapes we can't draw, no "modern and clean"). monogram = 1-2 letters from the name. wordmark = weight, letter_spacing_em (-0.05 to 0.1; tighter for lowercase display, wider for uppercase), case, mark, placement.
@@ -341,14 +346,27 @@ Write:
   },
 };
 
+function env(name: string, d: string) {
+  const v = process.env[name];
+  return v && /^claude-[a-z0-9-]+$/.test(v) ? v : d;
+}
+/** Haiku has no server-side refusal fallback: never send the fallback beta with it. */
+export const fallbackOpts = (model: string) => (model.startsWith("claude-haiku") ? {} : { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" as const });
+/** The research model: fast and cheap (it collects and cites; the analysts do the judging). */
+export const RESEARCH_MODEL = env("MODEL_RESEARCH", "claude-haiku-5-5");
+
 /** Sonnet 5.5 for the analytical work, Opus 5.5 where taste decides the result (names, logo, page copy). */
+// Cost pass (v7, .notes/ai-v7.md): Mia is a structured rewrite of the idea and Sam fills a small assumptions model
+// whose maths the server computes (Haiku is enough for both; the v7 analysts and judge carry the decision). Leo only
+// runs when there is no v7 report (otherwise it is derived from it). Opus only where taste shows: Nova (names, voice)
+// and Dex (logo concepts, the landing page copy a visitor reads). Every model can be overridden by env.
 export const MODELS: Record<AiDept, { model: string; effort: Effort }> = {
-  mia: { model: "claude-sonnet-5-5", effort: "medium" },
-  leo: { model: "claude-sonnet-5-5", effort: "medium" },
-  sam: { model: "claude-sonnet-5-5", effort: "medium" },
-  nova: { model: "claude-opus-5-5", effort: "medium" },
-  dex: { model: "claude-opus-5-5", effort: "low" },
-  rae: { model: "claude-sonnet-5-5", effort: "low" },
+  mia: { model: env("MODEL_MIA", "claude-haiku-5-5"), effort: "low" },
+  leo: { model: env("MODEL_LEO", "claude-sonnet-5-5"), effort: "low" },
+  sam: { model: env("MODEL_SAM", "claude-haiku-5-5"), effort: "low" },
+  nova: { model: env("MODEL_NOVA", "claude-opus-5-5"), effort: "low" },
+  dex: { model: env("MODEL_DEX", "claude-opus-5-5"), effort: "low" },
+  rae: { model: env("MODEL_RAE", "claude-sonnet-5-5"), effort: "low" },
 };
 
 // ---------- sanitizing (structured outputs guarantee shape; we enforce ranges, counts, maths and honesty) ----------
@@ -694,8 +712,7 @@ async function callJson<T>(label: string, m: { model: string; effort: Effort }, 
       .beta.messages.stream({
         model: m.model,
         max_tokens: 16000,
-        betas: ["server-side-fallback-2026-07-01"],
-        fallbacks: "default",
+        ...fallbackOpts(m.model),
         system: SYSTEM,
         messages: [{ role: "user", content: prompt }],
         output_config: { effort: m.effort, format: { type: "json_schema", schema } },
@@ -710,6 +727,7 @@ async function callJson<T>(label: string, m: { model: string; effort: Effort }, 
   }
   const u = msg.usage;
   const usage = { input_tokens: u.input_tokens, output_tokens: u.output_tokens, cache_read_input_tokens: u.cache_read_input_tokens ?? 0, ms: Date.now() - t0 };
+  recordUsage(label, msg.model, u);
   console.log(`[ai] ${label} ${msg.model} effort=${m.effort} stop=${msg.stop_reason} in=${usage.input_tokens} out=${usage.output_tokens} ${usage.ms}ms`);
   if (msg.stop_reason === "refusal") throw new Error("The AI declined to work on this idea.");
   if (msg.stop_reason === "max_tokens") throw new Error("The AI answer was cut off. Please retry.");
@@ -723,48 +741,69 @@ async function callJson<T>(label: string, m: { model: string; effort: Effort }, 
 
 /** Current web search (dynamic filtering) first; the basic version if the API rejects it. */
 const RESEARCH_TOOLS = ["web_search_20260209", "web_search_20250305"] as const;
-const RESEARCH_MAX_USES = 6;
+const RESEARCH_DEADLINE_MS = 45_000;
 
 /**
- * R2 (a): Leo's research call with the web search server tool. Collects the pages the answer cites into a numbered
- * source list. Resolves null when search is unavailable or found nothing (Leo then runs the one-call path).
- * v6: needs only the idea (the market is optional), so jobs.ts starts it in parallel with Mia.
+ * v7 latency: research runs as two small parallel packs instead of one long call, so the analysts that need the
+ * first pack start ~10–15 s after payment. Pack ids never collide (market 1–49, customer 51–99), so findings cite
+ * the same numbers in the merged research a steer reloads.
  */
-export async function research(idea: string, market?: Market | null): Promise<Research | null> {
-  if (config.mockAi) return null; // mocks never cite sources
+export type ResearchPack = "market" | "customer";
+export const PACK_OF_ROLE: Record<string, ResearchPack | "both"> = {
+  competition: "market", market: "market", pricing: "market",
+  demand: "customer", location: "customer", regulation: "customer", tech: "customer", scalability: "customer",
+  viability: "both",
+};
+const PACK_BRIEF: Record<ResearchPack, { base: number; uses: number; brief: string }> = {
+  market: {
+    base: 0,
+    uses: 2,
+    brief: `- Alternatives: 3 to 5 named businesses or categories customers use now, with their official site, price level and one weakness.
+- Prices: what customers pay today for the closest alternatives in this market.
+- Market size: how many potential buyers and what they spend, with the year of each figure.`,
+  },
+  customer: {
+    base: 50,
+    uses: 2,
+    brief: `- Demand evidence: who already spends money or time on this problem today, how often.
+- Place and reach: footfall or audience where it would operate, rent if it needs premises, and whether it repeats in other cities.
+- Rules and build: licences, laws with their dates (only what an official or legal source states), and for software what exists already.`,
+  },
+};
+
+async function researchCall(idea: string, market: Market | null | undefined, pack: ResearchPack | "all"): Promise<Research | null> {
   const t0 = Date.now();
+  const spec = pack === "all" ? { base: 0, uses: 4, brief: PACK_BRIEF.market.brief + "\n" + PACK_BRIEF.customer.brief } : PACK_BRIEF[pack];
   const content = `Research this business idea for a founder deciding this week whether to put their savings into it.
 
 <idea>${idea}</idea>${ctx("market", market)}
 
-Work out the market from the idea (city, country, currency). Search the web, preferring primary and local sources (official statistics, operators' own sites and price lists, local press, trade bodies) over listicles. Then write plain notes (no JSON), each line with a citation:
-- Demand evidence: who already spends money or time on this problem today, how often, and roughly how much.
-- Prices: what customers pay today for the closest alternatives in this market.
-- Alternatives: 3 to 5 named businesses or categories customers use now, with their official site when you find one, price level and one weakness.
-- Costs and rules: typical rent, wages, licences or regulation that change the economics.
-- Timing: trends or seasonality that make now better or worse.
-- Place and reach (v7 analysts): footfall or audience size where it would operate, and whether it repeats in other cities.
-- Build (v7 analysts): for software or hardware, what exists already and what rules it must meet.
-Only write what the sources say; say "not found" rather than guessing. Short sentences.`;
+Work out the market from the idea (city, country, currency). Search the web (at most ${spec.uses} searches), preferring primary and local sources (official statistics, operators' own sites and price lists, local press, trade bodies) over listicles. Then write plain notes (no JSON), each line with a citation:
+${spec.brief}
+Only write what the sources say; say "not found" rather than guessing. Short sentences, at most 15 lines.`;
   for (const type of RESEARCH_TOOLS) {
     try {
       const messages: Anthropic.MessageParam[] = [{ role: "user", content }];
       let msg: Anthropic.Message | null = null;
-      for (let turn = 0; turn < 4; turn++) {
-        msg = await getClient().messages.create({
-          model: MODELS.leo.model,
-          max_tokens: 8000,
-          system: SYSTEM,
-          messages,
-          tools: [
-            {
-              type,
-              name: "web_search",
-              max_uses: RESEARCH_MAX_USES,
-              ...(market?.country_iso ? { user_location: { type: "approximate" as const, country: market.country_iso, ...(market.city ? { city: market.city } : {}) } } : {}),
-            },
-          ],
-        });
+      for (let turn = 0; turn < 3; turn++) {
+        msg = await getClient().messages.create(
+          {
+            model: RESEARCH_MODEL,
+            max_tokens: 4000,
+            system: SYSTEM,
+            messages,
+            tools: [
+              {
+                type,
+                name: "web_search",
+                max_uses: spec.uses,
+                ...(market?.country_iso ? { user_location: { type: "approximate" as const, country: market.country_iso, ...(market.city ? { city: market.city } : {}) } } : {}),
+              },
+            ],
+          },
+          { timeout: RESEARCH_DEADLINE_MS, maxRetries: 1 },
+        );
+        recordUsage(`research:${pack}`, msg.model, msg.usage);
         if (msg.stop_reason !== "pause_turn") break;
         messages.push({ role: "assistant", content: msg.content as Anthropic.ContentBlockParam[] });
       }
@@ -782,25 +821,53 @@ Only write what the sources say; say "not found" rather than guessing. Short sen
         for (const c of b.citations ?? []) {
           if (c.type !== "web_search_result_location") continue;
           seenHosts.add(hostOf(c.url));
-          let s = sources.find((x) => x.url === c.url);
-          if (!s) {
-            s = { id: sources.length + 1, url: c.url, title: (c.title || hostOf(c.url)).slice(0, 140), domain: hostOf(c.url), accessed };
-            sources.push(s);
+          let src = sources.find((x) => x.url === c.url);
+          if (!src) {
+            if (sources.length >= 14) continue;
+            src = { id: spec.base + sources.length + 1, url: c.url, title: (c.title || hostOf(c.url)).slice(0, 140), domain: hostOf(c.url), accessed };
+            sources.push(src);
           }
-          if (!marks.includes(s.id)) marks.push(s.id);
+          if (!marks.includes(src.id)) marks.push(src.id);
         }
         text += b.text + (marks.length ? ` ${marks.map((i) => `[${i}]`).join("")}` : "");
       }
-      console.log(`[ai] leo research (${type}) ${sources.length} sources ${Date.now() - t0}ms`);
+      console.log(`[ai] research ${pack} (${type}) ${sources.length} sources ${Date.now() - t0}ms`);
       if (!sources.length) return null;
-      return { text: text.trim().slice(0, 14000), sources: sources.slice(0, 14), seenHosts: [...seenHosts] };
+      return { text: text.trim().slice(0, 7000), sources, seenHosts: [...seenHosts] };
     } catch (e) {
       const rejected = e instanceof Anthropic.BadRequestError && type !== RESEARCH_TOOLS[RESEARCH_TOOLS.length - 1];
-      console.error(`[ai] leo research (${type}) failed${rejected ? ", trying the basic search tool" : ", using the one-call path"}:`, (e as Error).message);
+      console.error(`[ai] research ${pack} (${type}) failed${rejected ? ", trying the basic search tool" : ""}:`, (e as Error).message);
       if (!rejected) return null;
     }
   }
   return null;
+}
+
+/** Joins research packs (ids are already distinct). */
+export function mergeResearch(list: ReadonlyArray<Research | null | undefined>): Research | null {
+  const ok = list.filter((r): r is Research => !!r && r.sources.length > 0);
+  if (!ok.length) return null;
+  return { text: ok.map((r) => r.text).join("\n\n"), sources: ok.flatMap((r) => r.sources), seenHosts: [...new Set(ok.flatMap((r) => r.seenHosts))] };
+}
+
+/** v7: both packs in parallel; each promise resolves on its own (null when search found nothing or failed). */
+export function researchPacks(idea: string, market?: Market | null): Record<ResearchPack, Promise<Research | null>> & { all: Promise<Research | null> } {
+  if (config.mockAi) {
+    const none = Promise.resolve(null);
+    return { market: none, customer: none, all: none };
+  }
+  const m = researchCall(idea, market, "market").catch(() => null);
+  const c = researchCall(idea, market, "customer").catch(() => null);
+  return { market: m, customer: c, all: Promise.all([m, c]).then(mergeResearch) };
+}
+
+/**
+ * R2 (a): one research call (v4 path, used only when the v7 team is not running): both briefs, 4 searches.
+ * Resolves null when search is unavailable or found nothing (Leo then runs the one-call path).
+ */
+export async function research(idea: string, market?: Market | null): Promise<Research | null> {
+  if (config.mockAi) return null; // mocks never cite sources
+  return researchCall(idea, market, "all");
 }
 
 export type RunOpts = { research?: Promise<Research | null> | Research | null };

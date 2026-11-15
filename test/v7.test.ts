@@ -75,12 +75,17 @@ function checkResults(r: ResultsV7, label: string) {
   const wf = rep.factors.reduce((t, f) => t + f.weight, 0);
   assert.equal(rep.score, Math.round((total / wf) * 10 + 1e-7) / 10, `${label}: score = Σ weight × factor`);
   assert.ok(rep.math.endsWith(`= ${rep.score.toFixed(1)}`), `${label}: math shows the score`);
+  // the maths string uses exactly the weights and factors shown, and adds up to the score
+  assert.equal(Math.round(wf * 100), 100, `${label}: weights add up to 1.00`);
+  assert.equal(rep.math, rep.factors.map((f) => `${f.weight.toFixed(2)}×${f.score.toFixed(1)}`).join(" + ") + ` = ${rep.score.toFixed(1)}`, `${label}: math = factors`);
+  const shown = rep.factors.reduce((t, f) => t + Number(f.weight.toFixed(2)) * Number(f.score.toFixed(1)), 0);
+  assert.equal(rep.score, Math.round(shown * 10 + 1e-7) / 10, `${label}: the shown products add up to the score`);
   assert.equal(rep.verdict, rep.score < 4.5 ? "no-go" : rep.score < 6.5 || rep.factors.some((f) => f.score <= 3) ? "pivot" : "go", `${label}: verdict band`);
   // evidence + confidence
   assert.equal(rep.evidence.total, all.length);
   assert.equal(rep.evidence.sourced, all.filter(sourced).length);
   assert.deepEqual(new Set(rep.evidence.sources.map((s) => s.url)), new Set(all.filter(sourced).map((f) => f.source!.url)));
-  assert.equal(rep.confidence, v7.confidenceFor(rep.evidence.sourcedShare));
+  assert.equal(rep.confidence, v7.confidenceFor({ factors: rep.factors, findings: all }), `${label}: confidence weighs decision-relevant sourced findings`);
   // scalability → level cap
   const sc = rep.scalability;
   const ws = { Reach: 0.25, Repeatable: 0.2, "Margins at scale": 0.2, "Founder-free": 0.15, "Digital leverage": 0.2 } as Record<string, number>;
@@ -158,7 +163,9 @@ for (const s of Object.values(V7_SAMPLES)) {
 assert.equal(caps.saas, 3, "the SaaS sample scales to a district");
 assert.equal(caps.coffee, 2, "Pausa caps at the building (the district is a ghost)");
 assert.equal(caps.dog, 2);
-assert.equal(caps.bakery, 1, "a neighbourhood bakery never gets more than a floor");
+assert.equal(caps.bakery, 0, "the bakery is a no-go on its evidence: it stays in the room");
+// honest calibration: not every sample is the same verdict
+assert.ok(new Set(Object.values(V7_SAMPLES).map((x) => sampleResults(x).report!.verdict)).size >= 2, "samples cover more than one verdict");
 assert.equal(contracts.scoreDisplay(sampleResults(V7_SAMPLES.coffee).report!), "hero", "the demo has enough sourced evidence for the hero score");
 
 // ── honesty rule on raw findings

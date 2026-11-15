@@ -45,6 +45,8 @@ export const config = {
    * Off by default until every client sends the header; retry, skip and share always require it.
    */
   ownerKeyStrict: env.OWNER_KEY_STRICT === "1",
+  /** Per IP: new projects and CEO notes allowed per 10 minutes (0 = no limit). */
+  rateLimit: { create: int(env.RATE_LIMIT_CREATE, 12), steer: int(env.RATE_LIMIT_STEER, 8), windowMs: 10 * 60_000 },
   electrumServers: (env.ELECTRUM_SERVERS || "wss://bch.imaginary.cash:50004,wss://fulcrum.pat.mn:50004,wss://electroncash.dk:50004")
     .split(",")
     .map((s) => s.trim())
@@ -52,4 +54,8 @@ export const config = {
 };
 
 if (!config.merchantAddress) console.warn("[config] MERCHANT_ADDRESS is not set: payments are disabled");
+/** Production takes real money on mainnet only: a testnet / regtest merchant address switches payments off. */
+export const merchantOnMainnet = (a = config.merchantAddress) => /^(bitcoincash:)?[qp][0-9a-z]{41,}$/.test(a.toLowerCase()) && !/^(bchtest|bchreg):/.test(a.toLowerCase());
+if (config.production && config.merchantAddress && !merchantOnMainnet())
+  console.error("[config] MERCHANT_ADDRESS is not a mainnet bitcoincash: address: payments are disabled in production");
 if (config.mockAi) console.warn("[config] AI is in MOCK mode (no ANTHROPIC_API_KEY or MOCK_AI=1)");

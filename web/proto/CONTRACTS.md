@@ -50,6 +50,11 @@ WS-EXP replaces the LaunchDesk mark completely (`ui/logo.ts`, favicon): drawn on
 ## Gates
 `npx tsc --noEmit -p web/proto`, `npm run typecheck`, `npm run build`, `npm test`. No fabricated statistics, names, quotes or URLs: every `source` is a page actually fetched (url + title + access date); everything else is an estimate. Screenshots at 1440×900 and 390×844.
 
+## Port notes (APP-SHELL)
+- `/` now serves `web/index.html` = the v7 app (`/proto/main.ts`); `/proto.html` stays as an alias (no banner). The v4 bundle lives in `web/classic.html` and only answers `/s/:slug` and `/r/:shareId` (server: `readHtml("classic.html")`; dev: a vite middleware rewrites those paths). Every other path, including `/p/:id`, falls back to the v7 `index.html`; LIVE-FRONTEND may read `/p/:id` from `location.pathname` to open a project.
+- Hackathon banner: `mountBanner(el)` from `web/proto/banner/index.ts` (links in `banner/config.ts`: `SLIDES_URL`, `REPO_URL` are TODO placeholders for César; `EMBER_ADDRESS`). It is **already mounted** by an inline module in `web/index.html` before `main.ts` runs; it is idempotent, so a second call is harmless. It takes 30 px at the top and moves `#world`, `#ui` and `#ui > .ui` down by `--ld-banner-h` (the world re-fits via its ResizeObserver). UI code that measures from `innerHeight` should subtract `var(--ld-banner-h)` (0 when absent) if it needs exact centring.
+- Dev proxy: `VITE_API=http://localhost:<port>` overrides the default API (8790).
+
 ---
 
 # LaunchDesk prototype v5 — contracts
@@ -377,7 +382,7 @@ Append cross-workstream notes here, one subsection per workstream.
 - **Data exports** (`data/index.ts`):
   - `SAMPLE_V7` (title "Metro coffee kiosk", id pausa, level 0).
   - `PROJECTS_V7`, in the order `[pausa, forn, ronda, tique]`.
-  - `DEMO_STEER_NOTE`, which is "Focus on office workers, not tourists, and start as a stand.". The score goes 5.5 → 5.9.
+  - `DEMO_STEER_NOTE`, which is "Focus on office workers, not tourists, and start as a stand.". The score goes 5.2 → 5.8.
   - `preparedSteers(id)` and `mockSteer`.
   - `applySteerToProject`, which shifts the `t` of new findings past the kept ones.
   - `findingsInOrder` and `brandSignOf`.

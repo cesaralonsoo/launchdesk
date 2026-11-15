@@ -31,9 +31,35 @@ npm run dev            # web on :5173, API on :8790
 npm test
 ```
 
+- `/` is the app (web/index.html → `web/proto/main.ts`). `/s/<slug>` (the generated public site) and `/r/<id>` (a shared report) are rendered by `web/classic.html` (`web/src/main.ts`). `/proto.html` is an alias of `/`.
+- Point the dev proxy at another API port with `VITE_API=http://localhost:<port> npx vite`.
+- `DEV_SKIP_PAYMENT=1` lets you run the flow without paying, on localhost only; it is ignored when `NODE_ENV=production`.
+
+## Deploy (Render + Turso)
+
+1. **Turso:** `turso db create launchdesk` then `turso db show launchdesk --url` (`libsql://…`) and `turso db tokens create launchdesk`. The schema is created on boot.
+2. **Render:** New → Blueprint → this repo (`render.yaml`: one Node web service, `npm ci --include=dev && npm run build`, `npm start`, health check `/healthz`).
+3. Fill the secret env vars Render asks for:
+
+| Variable | Value |
+|---|---|
+| `ANTHROPIC_API_KEY` | your Anthropic key (without it the AI runs in mock mode) |
+| `MERCHANT_ADDRESS` | the `bitcoincash:q…` address that receives payments |
+| `DATABASE_URL` | the Turso `libsql://…` URL |
+| `DATABASE_TOKEN` | the Turso token |
+| `PUBLIC_URL` | the public origin, e.g. `https://launchdesk.onrender.com` |
+| `NODE_ENV` | `production` (already set in `render.yaml`) |
+
+Check a production build locally:
+
+```bash
+npm run build
+NODE_ENV=production PORT=8790 DATABASE_URL=file:local.db npm start   # serves /, /s/<slug>, /r/<id>, /healthz
+```
+
 ## Pre-existing work
 
-The idea and a visual sketch existed before the hackathon. No code was reused: all the code in this repository was written during BLAZE 2026 (14–22 Nov 2026).
+The idea and a visual sketch existed before the hackathon; all the code in this repository is new, written during BLAZE 2026.
 
 ## Licence
 

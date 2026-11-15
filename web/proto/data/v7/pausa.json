@@ -13,7 +13,7 @@
     "color": "#3B82F6",
     "mission": "Who already sells commuters coffee near Barcelona metro exits",
     "why": "Commuters already buy coffee somewhere every morning",
-    "weight": 0.294
+    "weight": 0.29
    },
    {
     "id": "market",
@@ -22,7 +22,7 @@
     "color": "#F59E0B",
     "mission": "How much money moves through metro-exit morning coffee",
     "why": "A kiosk lives or dies on daily cups",
-    "weight": 0.235
+    "weight": 0.24
    },
    {
     "id": "location",
@@ -31,7 +31,7 @@
     "color": "#C2410C",
     "mission": "Which station, what rent, and how to get in",
     "why": "A kiosk is only as good as its exit",
-    "weight": 0.176
+    "weight": 0.18
    },
    {
     "id": "viability",
@@ -40,7 +40,7 @@
     "color": "#8B7CF6",
     "mission": "Strengths, weak points and what could kill the kiosk",
     "why": "Every idea gets a viability check",
-    "weight": 0.294
+    "weight": 0.29
    }
   ],
   "work": [
@@ -207,7 +207,7 @@
      },
      {
       "kind": "fact",
-      "text": "TMB tendered a 74 m² station unit at Vall d'Hebron for €8,400 a year.",
+      "text": "TMB tendered a 73.76 m² unit at Vall d'Hebron: €8,400 a year rent plus €900 upkeep.",
       "display": "€8,400 / yr",
       "value": 8400,
       "unit": "€ a year",
@@ -235,9 +235,26 @@
       "id": "location-2",
       "analyst": "location",
       "t": 6600
+     },
+     {
+      "kind": "number",
+      "text": "That unit's weekday counts: 458 entries an hour at 8–9 am; the peak is 2–3 pm (732).",
+      "display": "458 / h",
+      "value": 458,
+      "unit": "entries 8–9 am",
+      "source": {
+       "url": "https://www.tmb.cat/documents/20182/167305/05+Fitxa+T%C3%A8cnica+Vall+d%27Hebron_L5_CAST.pdf/b7b6c0c4-6b6d-4ecc-bc82-1f72d4d9bf35",
+       "title": "Ficha técnica licitación locales comerciales · Vall d'Hebron (L5)",
+       "domain": "tmb.cat",
+       "accessed": "2026-11-15"
+      },
+      "impact": -1,
+      "id": "location-3",
+      "analyst": "location",
+      "t": 9200
      }
     ],
-    "score": 7,
+    "score": 6,
     "headline": "Diagonal has the flow; station units are cheap but tendered."
    },
    {
@@ -275,28 +292,33 @@
      },
      {
       "kind": "risk",
-      "text": "Sales crowd into 7–10 am on weekdays; afternoons may not pay the rent.",
-      "basis": "Typical commuter pattern at exit kiosks",
+      "text": "TMB's counts peak at 2–3 pm, not 8–9 am: a morning-only kiosk misses its busiest hour.",
+      "display": "732 / h at 2 pm",
+      "source": {
+       "url": "https://www.tmb.cat/documents/20182/167305/05+Fitxa+T%C3%A8cnica+Vall+d%27Hebron_L5_CAST.pdf/b7b6c0c4-6b6d-4ecc-bc82-1f72d4d9bf35",
+       "title": "Ficha técnica licitación locales comerciales · Vall d'Hebron (L5)",
+       "domain": "tmb.cat",
+       "accessed": "2026-11-15"
+      },
       "impact": -1,
       "id": "viability-2",
       "analyst": "viability",
-      "t": 6600,
-      "source": null
+      "t": 6600
      }
     ],
-    "score": 4.5,
-    "headline": "Demand is real; margins and morning-only trade are the risk."
+    "score": 4,
+    "headline": "Demand is real; margins and a morning-only plan are the risk."
    }
   ],
   "report": {
-   "score": 5.5,
+   "score": 5.2,
    "verdict": "pivot",
    "verdictLine": "Test it before any lease: the flow is proven, the kiosk economics are not.",
    "factors": [
     {
      "analyst": "competition",
      "label": "Competition",
-     "weight": 0.294,
+     "weight": 0.29,
      "score": 3.5,
      "findings": [
       "competition-0",
@@ -310,7 +332,7 @@
     {
      "analyst": "market",
      "label": "Market",
-     "weight": 0.235,
+     "weight": 0.24,
      "score": 8,
      "findings": [
       "market-0",
@@ -323,35 +345,36 @@
     {
      "analyst": "location",
      "label": "Location",
-     "weight": 0.176,
-     "score": 7,
+     "weight": 0.18,
+     "score": 6,
      "findings": [
       "location-0",
       "location-1",
-      "location-2"
+      "location-2",
+      "location-3"
      ],
-     "sourced": 3,
-     "total": 3
+     "sourced": 4,
+     "total": 4
     },
     {
      "analyst": "viability",
      "label": "Viability",
-     "weight": 0.294,
-     "score": 4.5,
+     "weight": 0.29,
+     "score": 4,
      "findings": [
       "viability-0",
       "viability-1",
       "viability-2"
      ],
-     "sourced": 2,
+     "sourced": 3,
      "total": 3
     }
    ],
-   "math": "0.29×3.5 + 0.23×8.0 + 0.18×7.0 + 0.29×4.5 = 5.5",
+   "math": "0.29×3.5 + 0.24×8.0 + 0.18×6.0 + 0.29×4.0 = 5.2",
    "evidence": {
-    "total": 13,
-    "sourced": 11,
-    "sourcedShare": 0.85,
+    "total": 14,
+    "sourced": 13,
+    "sourcedShare": 0.93,
     "sources": [
      {
       "url": "https://www.worldcoffeeportal.com/news/spains-syra-coffee-seeking-to-reach-100-stores-by-2026/",
@@ -460,7 +483,7 @@
     }
    ],
    "nextSteps": [
-    "Count 7–9 am exits at Diagonal on two weekdays",
+    "Count exits at Diagonal at 8 am and 2 pm on two…",
     "Ask TMB commercial about a temporary stand",
     "Sell from a cart for two mornings at €3"
    ],
@@ -507,7 +530,7 @@
        "accessed": "2026-11-15"
       },
       "impact": 1,
-      "id": "location-3",
+      "id": "location-4",
       "analyst": "location",
       "t": 1400
      },
@@ -527,20 +550,20 @@
      {
       "what": "factor",
       "key": "location",
-      "before": 7,
-      "after": 8,
+      "before": 6,
+      "after": 7,
       "why": "TMB stands give a way in without a tender"
      },
      {
       "what": "factor",
       "key": "viability",
-      "before": 4.5,
+      "before": 4,
       "after": 5.5,
       "why": "No fit-out: less money at risk"
      },
      {
       "what": "finding",
-      "key": "location-3",
+      "key": "location-4",
       "before": null,
       "after": "TMB rents temporary stands in a few high-traffic stations, for months at a time.",
       "why": "New evidence for your focus"
@@ -548,26 +571,26 @@
      {
       "what": "finding",
       "key": "viability-3",
-      "before": "Sales crowd into 7–10 am on weekdays; afternoons may not pay the rent.",
+      "before": "TMB's counts peak at 2–3 pm, not 8–9 am: a morning-only kiosk misses its busiest hour.",
       "after": "A stand skips the fit-out: start-up money drops to a cart and a machine lease.",
       "why": "Replaced with your focus"
      },
      {
       "what": "score",
-      "before": 5.5,
-      "after": 5.9,
-      "why": "Weighted factors now add up to 5.9"
+      "before": 5.2,
+      "after": 5.8,
+      "why": "Weighted factors now add up to 5.8"
      }
     ],
     "report": {
-     "score": 5.9,
+     "score": 5.8,
      "verdict": "pivot",
      "verdictLine": "Closer: a weekday stand at Diagonal tests office demand without a lease.",
      "factors": [
       {
        "analyst": "competition",
        "label": "Competition",
-       "weight": 0.294,
+       "weight": 0.29,
        "score": 3.5,
        "findings": [
         "competition-0",
@@ -581,7 +604,7 @@
       {
        "analyst": "market",
        "label": "Market",
-       "weight": 0.235,
+       "weight": 0.24,
        "score": 8,
        "findings": [
         "market-0",
@@ -594,21 +617,22 @@
       {
        "analyst": "location",
        "label": "Location",
-       "weight": 0.176,
-       "score": 8,
+       "weight": 0.18,
+       "score": 7,
        "findings": [
         "location-0",
         "location-1",
         "location-2",
-        "location-3"
+        "location-3",
+        "location-4"
        ],
-       "sourced": 4,
-       "total": 4
+       "sourced": 5,
+       "total": 5
       },
       {
        "analyst": "viability",
        "label": "Viability",
-       "weight": 0.294,
+       "weight": 0.29,
        "score": 5.5,
        "findings": [
         "viability-0",
@@ -619,11 +643,11 @@
        "total": 3
       }
      ],
-     "math": "0.29×3.5 + 0.23×8.0 + 0.18×8.0 + 0.29×5.5 = 5.9",
+     "math": "0.29×3.5 + 0.24×8.0 + 0.18×7.0 + 0.29×5.5 = 5.8",
      "evidence": {
-      "total": 14,
-      "sourced": 12,
-      "sourcedShare": 0.86,
+      "total": 15,
+      "sourced": 13,
+      "sourcedShare": 0.87,
       "sources": [
        {
         "url": "https://www.worldcoffeeportal.com/news/spains-syra-coffee-seeking-to-reach-100-stores-by-2026/",
@@ -799,20 +823,20 @@
      },
      {
       "what": "score",
-      "before": 5.5,
-      "after": 5.6,
-      "why": "Weighted factors now add up to 5.6"
+      "before": 5.2,
+      "after": 5.3,
+      "why": "Weighted factors now add up to 5.3"
      }
     ],
     "report": {
-     "score": 5.6,
+     "score": 5.3,
      "verdict": "pivot",
      "verdictLine": "Test it before any lease: the flow is proven, the kiosk economics are not.",
      "factors": [
       {
        "analyst": "competition",
        "label": "Competition",
-       "weight": 0.294,
+       "weight": 0.29,
        "score": 3.5,
        "findings": [
         "competition-0",
@@ -826,7 +850,7 @@
       {
        "analyst": "market",
        "label": "Market",
-       "weight": 0.235,
+       "weight": 0.24,
        "score": 8.5,
        "findings": [
         "market-0",
@@ -840,35 +864,36 @@
       {
        "analyst": "location",
        "label": "Location",
-       "weight": 0.176,
-       "score": 7,
+       "weight": 0.18,
+       "score": 6,
        "findings": [
         "location-0",
         "location-1",
-        "location-2"
+        "location-2",
+        "location-3"
        ],
-       "sourced": 3,
-       "total": 3
+       "sourced": 4,
+       "total": 4
       },
       {
        "analyst": "viability",
        "label": "Viability",
-       "weight": 0.294,
-       "score": 4.5,
+       "weight": 0.29,
+       "score": 4,
        "findings": [
         "viability-0",
         "viability-1",
         "viability-2"
        ],
-       "sourced": 2,
+       "sourced": 3,
        "total": 3
       }
      ],
-     "math": "0.29×3.5 + 0.23×8.5 + 0.18×7.0 + 0.29×4.5 = 5.6",
+     "math": "0.29×3.5 + 0.24×8.5 + 0.18×6.0 + 0.29×4.0 = 5.3",
      "evidence": {
-      "total": 14,
-      "sourced": 11,
-      "sourcedShare": 0.79,
+      "total": 15,
+      "sourced": 13,
+      "sourcedShare": 0.87,
       "sources": [
        {
         "url": "https://www.worldcoffeeportal.com/news/spains-syra-coffee-seeking-to-reach-100-stores-by-2026/",
@@ -977,7 +1002,7 @@
       }
      ],
      "nextSteps": [
-      "Count 7–9 am exits at Diagonal on two weekdays",
+      "Count exits at Diagonal at 8 am and 2 pm on two…",
       "Ask TMB commercial about a temporary stand",
       "Sell from a cart for two mornings at €3"
      ],

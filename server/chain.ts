@@ -30,21 +30,33 @@ export class RpcError extends Error {}
 function callOnce<T>(url: string, method: string, params: unknown[]): Promise<T> {
   return new Promise((resolve, reject) => {
     const ws = new WebSocket(url);
-    const timer = setTimeout(() => {
-      ws.close();
-      reject(new Error("timeout"));
-    }, 10_000);
+    let settled = false;
+    // Settle once, detach the handlers, then close: closing a socket that failed to connect fires `error` again,
+    // which used to re-enter done() until the stack overflowed (and crashed the server on a node outage).
     const done = (fn: () => void) => {
+      if (settled) return;
+      settled = true;
       clearTimeout(timer);
-      ws.close();
+      ws.onopen = ws.onerror = ws.onmessage = null;
+      try {
+        ws.close();
+      } catch {
+        /* already closed */
+      }
       fn();
     };
+    const timer = setTimeout(() => done(() => reject(new Error("timeout"))), 10_000);
     ws.onopen = () => ws.send(JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }));
     ws.onerror = () => done(() => reject(new Error("socket error")));
     ws.onmessage = (ev) => {
-      const msg = JSON.parse(String(ev.data));
+      let msg: { id?: number; error?: { message?: string }; result?: unknown };
+      try {
+        msg = JSON.parse(String(ev.data));
+      } catch {
+        return done(() => reject(new Error("bad reply")));
+      }
       if (msg.id !== 1) return;
-      if (msg.error) done(() => reject(new RpcError(msg.error.message ?? JSON.stringify(msg.error))));
+      if (msg.error) done(() => reject(new RpcError(msg.error!.message ?? JSON.stringify(msg.error))));
       else done(() => resolve(msg.result as T));
     };
   });
@@ -61,7 +73,7 @@ export type CheckedPayment = { txid: string; paidSats: number };
  * - it carries an OP_RETURN with exactly `tag`.
  */
 export function checkPaymentTx(txHex: string, minSats: number, tag: string): CheckedPayment {
-  if (!/^[0-9a-f]+$/i.test(txHex) || txHex.length > 200_000) throw new Error("Invalid transaction");
+  if (!/^[0-9a-f]+$/i.test(txHex) || txHex.length > 200_000) throw new Error("Invalid transaction: the wallet sent something we could not read. Please try again.");
   const bin = hexToBin(txHex);
   const tx = decodeTransaction(bin);
   if (typeof tx === "string") throw new Error("Invalid transaction: " + tx);
@@ -77,8 +89,8 @@ export function checkPaymentTx(txHex: string, minSats: number, tag: string): Che
     if (hex === merchantHex && !out.token) paidSats += Number(out.valueSatoshis);
     if (out.lockingBytecode[0] === 0x6a && readOpReturnText(out.lockingBytecode) === tag) tagged = true;
   }
-  if (!tagged) throw new Error("The payment is not tagged for this order");
-  if (paidSats < minSats) throw new Error(`Payment too small: ${paidSats} < ${minSats} sats`);
+  if (!tagged) throw new Error("The payment is not tagged for this order (it misses the LaunchDesk reference). Please pay again from this page.");
+  if (paidSats < minSats) throw new Error(`Payment too small: it sends ${paidSats} sats to LaunchDesk, the price is ${minSats} sats. Nothing was charged.`);
   return { txid: hashTransaction(bin), paidSats };
 }
 

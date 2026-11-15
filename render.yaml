@@ -1,0 +1,32 @@
+# Render Blueprint: one Node web service (API + built web app) backed by Turso (libSQL).
+# Secrets have sync: false, so Render asks for their values when the Blueprint is created; none live in git.
+services:
+  - type: web
+    name: launchdesk
+    runtime: node
+    plan: starter
+    region: frankfurt
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "22"
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: MERCHANT_ADDRESS
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_TOKEN
+        sync: false
+      - key: PUBLIC_URL
+        sync: false
+      # Hackathon banner links (read at build time; a missing one is hidden)
+      - key: VITE_SLIDES_URL
+        sync: false
+      - key: VITE_REPO_URL
+        sync: false

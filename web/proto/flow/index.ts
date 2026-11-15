@@ -15,6 +15,8 @@ import {
 } from "../contracts";
 import { PROJECTS_V7, SAMPLE_V7, mockSteer } from "../data";
 import type { Project } from "../../src/types";
+import { createLiveRun, postSteer, savedShells, shellProject, type LiveRun } from "../live/adapter";
+import { onChange as onSavedChange } from "../../src/app/projects";
 
 export const REPORT_PAGES: readonly ReportPage[] = ["score", "scale", "points", "next"];
 export const STORE_KEY = "launchdesk.proto.projects.v7";
@@ -69,6 +71,15 @@ export interface ProtoFlowV7 extends FlowV7 {
   setTiming(t: Partial<Timing>): void;
   /** Re-show a revealed finding (tap on the evidence counter). */
   peek(i: number): void;
+  /** v7 live: the real run behind the current project (null = a sample / the tour). */
+  readonly live: LiveRun | null;
+  /** Projects of this browser (real runs), newest first; `projects` = these + the sample worlds. */
+  readonly mine: ProjectV7[];
+  isSample(id: string): boolean;
+  /** v7 live: attach a real project. "new" = just created (→ pay1); "open" = from Your offices (→ where it stands). */
+  startLive(p: ProjectV7, mode: "new" | "open"): void;
+  /** Last steer error (live), shown in the steer surface. */
+  readonly steerError: string | null;
 }
 
 const ORDER = FLOW_STEPS_V7;
@@ -135,6 +146,16 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
   let levels = loadLevels();
   let state: FlowStateV7 = { step: "bedroom", projectId: project.id, level: 0 };
   const cbs = new Set<(s: FlowStateV7, p: FlowStateV7) => void>();
+
+  let live: LiveRun | null = null;
+  let mine: ProjectV7[] = savedShells();
+  let steerError: string | null = null;
+  onSavedChange(() => {
+    mine = savedShells();
+    ping();
+  });
+  const isSample = (id: string) => PROJECTS_V7.some((x) => x.id === id);
+  const allProjects = () => [...mine.map((m) => (live && m.id === live.id ? live.project : m)), ...PROJECTS_V7];
 
   let committed: Record<string, number> = {}; // project id → chosen scale path index
   // Scalability caps the world (a neighbourhood bakery never gets a district). Committing to a scale path lifts the cap
@@ -210,6 +231,10 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
   // ───────────────────────────── step players
   async function playHire(tok: number, animate: boolean) {
     if (!animate) return;
+    while (live && !roster.length && !live.error) {
+      await live.next();
+      if (!alive(tok)) return;
+    }
     for (let i = hired; i < roster.length; i++) {
       await wait(i === 0 ? 500 : T.hireEvery);
       if (!alive(tok)) return;
@@ -225,7 +250,13 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
   async function playEvidence(tok: number, animate: boolean) {
     if (!animate) return;
     let cur: AnalystRole | null = revealed > 0 ? findings[revealed - 1]!.analyst : null;
-    while (revealed < findings.length) {
+    // live: findings land while we reveal; when caught up, wait for the next poll until the report exists
+    while (revealed < findings.length || (live && !live.phase1Done && !live.error)) {
+      if (revealed >= findings.length) {
+        await live!.next();
+        if (!alive(tok)) return;
+        continue;
+      }
       const f = findings[revealed]!;
       if (f.analyst !== cur) {
         if (cur) world.setActorState(cur, "done");
@@ -244,6 +275,7 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
     }
     if (cur) world.setActorState(cur, "done");
     ping();
+    if (live?.error || (live && !report)) return;
     await wait(T.reportTail);
     if (!alive(tok) || demo) return;
     enter({ step: "report", page: "score" }, true);
@@ -253,7 +285,16 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
     if (state.phase !== "working" || !animate || opts.hold) return;
     workStart = performance.now();
     world.setActorState(b, "working");
-    await wait(T.buildWork);
+    if (live) {
+      const t0 = performance.now();
+      while (live.buildStatus(b) !== "done" && live.buildStatus(b) !== "error") {
+        await live.next();
+        if (!alive(tok)) return;
+      }
+      // keep the work beat readable even when the result was already there
+      const left = 1800 - (performance.now() - t0);
+      if (left > 0) await wait(left);
+    } else await wait(T.buildWork);
     if (!alive(tok)) return;
     world.setActorState(b, "done");
     if (b === "nova") world.setSign(signFor("build", "nova", "result"));
@@ -335,7 +376,12 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
     if (step === "live" && animate) world.celebrate("live");
   }
 
+  /** Actors that leave the roster (another project, a steer drop) must leave the scene too. */
+  function retire(next: readonly Analyst[]) {
+    for (const a of roster) if (!next.some((x) => x.id === a.id)) world.setActorState(a.id, "absent", { instant: true });
+  }
   function useProject(p: ProjectV7) {
+    retire(p.v7.roster);
     project = p;
     report = p.v7.report;
     roster = p.v7.roster;
@@ -353,7 +399,52 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
     return p.v7.report ? { step: "report", page: "score" } : { step: "idea" };
   }
 
+  async function doSteerLive(note: string) {
+    if (!live) return;
+    const r = live;
+    steerError = null;
+    const text = note.trim().slice(0, 280);
+    steering = { id: "pending", note: text, ack: "Sending your note to the team.", status: "working", rerun: [], hired: [], dropped: [], findings: [], changes: [], report: null, at: new Date().toISOString() };
+    if (state.step !== "steer") set({ step: "steer", page: undefined });
+    else ping();
+    let res: { id: string; ack: string; rerun: AnalystRole[] };
+    try {
+      res = await postSteer(r.id, text);
+    } catch (e) {
+      steering = null;
+      steerError = (e as Error).message || "Your note could not be sent.";
+      return ping();
+    }
+    steering = { ...steering, id: res.id, ack: res.ack, rerun: res.rerun };
+    for (const id of res.rerun) world.setActorState(id, "working");
+    if (res.rerun[0]) void world.focusActor(res.rerun[0], { ms: 800 });
+    ping();
+    r.kick();
+    for (;;) {
+      await r.next(6000);
+      if (live !== r) return;
+      const s = r.project.v7.steers.find((x) => x.id === res.id);
+      if (s && s.status !== "working") {
+        const before = roster;
+        retire(r.project.v7.roster);
+        roster = r.project.v7.roster;
+        if (roster.map((a) => a.id).join() !== before.map((a) => a.id).join()) resnapRoster();
+        findings = [...r.findings];
+        revealed = findings.length;
+        if (r.project.v7.report) report = r.project.v7.report;
+        world.setLevelCap(cap());
+        for (const id of res.rerun) world.setActorState(id, "done");
+        for (const f of s.findings) world.pulse(f.analyst, f.kind);
+        void world.focusActor("overview", { ms: 900 });
+        steering = s.status === "error" ? { ...s, ack: "Your team could not finish that note. Nothing changed." } : s;
+        steers = r.project.v7.steers.filter((x) => x.status !== "working");
+        return ping();
+      }
+    }
+  }
+
   async function doSteer(note: string) {
+    if (live) return doSteerLive(note);
     if (steering?.status === "working" || steers.length >= STEER_LIMIT) return;
     const tok = run;
     const res = mockSteer({ ...project, v7: { ...project.v7, report, steers } }, note.trim().slice(0, 280));
@@ -407,7 +498,14 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
     get demo() { return demo; },
     get reduced() { return reduced; },
     get moving() { return moving; },
-    get projects() { return PROJECTS_V7; },
+    get projects() { return allProjects(); },
+    get live() { return live; },
+    get mine() { return mine; },
+    get steerError() { return steerError; },
+    isSample,
+    startLive(p, mode) {
+      attachLive(p, mode);
+    },
     get chosenPath() { return committed[project.id] ?? null; },
     commitPath(i) {
       committed = { ...committed, [project.id]: i };
@@ -417,7 +515,7 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
       else ping();
     },
     levelOf: (id) => {
-      const p = PROJECTS_V7.find((x) => x.id === id);
+      const p = allProjects().find((x) => x.id === id);
       return Math.max(levels[id] ?? 0, p?.level ?? 0) as WorldLevel;
     },
     goto(s, o) {
@@ -436,8 +534,12 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
     next(a?: FlowActionV7) {
       const s = state.step;
       if (a?.type === "switch-project") {
+        const lp = mine.find((x) => x.id === a.id);
+        if (lp && !demo) return attachLive(lp, "open");
         const p = PROJECTS_V7.find((x) => x.id === a.id);
-        if (!p) return;
+        // a real project this browser has not saved (a /p/:id link): open it from the server
+        if (!p) return demo || !/^[A-Za-z0-9_-]{4,40}$/.test(a.id) ? undefined : attachLive(shellProject(a.id, "", "Your idea"), "open");
+        detachLive();
         cancel();
         useProject(p);
         const home = homeStep(p);
@@ -445,6 +547,7 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
         return enter(home, false);
       }
       if (a?.type === "new-project") {
+        detachLive();
         cancel();
         useProject(SAMPLE_V7);
         paid = 0;
@@ -471,6 +574,7 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
         case "hire":
           return enter({ step: "evidence" }, true);
         case "evidence":
+          if (live && !report) return;
           return enter({ step: "report", page: "score" }, true);
         case "report": {
           if (a?.type === "decide") return decide(a.choice);
@@ -509,7 +613,7 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
         case "district":
           return enter({ step: "end" }, true);
         case "end":
-          if (a?.type === "submit-idea") {
+          if (a?.type === "submit-idea" && !live) {
             useProject(SAMPLE_V7);
             paint0();
             return enter({ step: "pay1" }, true);
@@ -522,6 +626,95 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
       return () => cbs.delete(cb);
     },
   };
+
+  // ───────────────────────────── live (real API) attach / sync
+  let offLive: (() => void) | null = null;
+  function detachLive() {
+    if (live) setPath("/");
+    offLive?.();
+    offLive = null;
+    live?.stop();
+    live = null;
+    steerError = null;
+  }
+  function syncLive(r: LiveRun) {
+    if (live !== r || project.id !== r.id) return;
+    const p = r.project;
+    const before = roster.map((a) => a.id).join();
+    project = p;
+    if (steering?.status === "working") return ping();
+    retire(p.v7.roster);
+    roster = p.v7.roster;
+    findings = [...r.findings];
+    report = p.v7.report;
+    steers = p.v7.steers.filter((x) => x.status !== "working");
+    if (roster.map((a) => a.id).join() !== before) {
+      resnapRoster();
+      if (!after(state.step, "hire")) roster.forEach((a) => world.setActorState(a.id, "absent", { instant: true }));
+    }
+    world.setLevelCap(cap());
+    if (after(state.step, "build")) world.setSign(signFor(state.step, state.builder, state.phase));
+    ping();
+  }
+  /** A live roster change (first poll, a steer hire): re-apply the whole project so the world snaps every new figure to
+   *  the current level (a plain setRoster leaves new floor figures visible above the room at level 0). */
+  function resnapRoster() {
+    void world.setProject({ ...worldProjectOf(project), level: world.worldLevel, roster: [...roster], cap: cap(), capWhy: report?.scalability.why }, { animate: false });
+  }
+  /** Where a real project stands on the server. */
+  function liveHome(r: LiveRun): Partial<FlowStateV7> & { step: FlowStepV7 } {
+    const paid = r.paid;
+    if (!paid.validate) return { step: "pay1" };
+    if (!r.phase1Done) return { step: r.project.v7.roster.length ? "evidence" : "hire" };
+    if (!paid.build) return (levels[r.id] ?? 0) >= 1 ? { step: "floor" } : { step: "report", page: "score" };
+    const b = BUILD_TEAM.find((x) => r.buildStatus(x) !== "done");
+    if (b) return { step: "build", builder: b, phase: "working" };
+    const l = levels[r.id] ?? 1;
+    return l >= 3 ? { step: "district" } : l >= 2 ? { step: "building" } : { step: "live" };
+  }
+  function attachLive(seed: ProjectV7, mode: "new" | "open") {
+    detachLive();
+    cancel();
+    const r = createLiveRun(seed.id, seed);
+    live = r;
+    setPath(`/p/${encodeURIComponent(seed.id)}`);
+    useProject(seed);
+    committed = { ...committed };
+    offLive = r.onUpdate(syncLive);
+    if (mode === "new") {
+      paid = 0;
+      return enter({ step: "pay1" }, true);
+    }
+    // open: snap the room while the first poll lands, then go where the project stands
+    paintProject(0);
+    enter({ step: "bedroom" }, false);
+    const tok = run;
+    void (async () => {
+      while (!r.server && !r.error) {
+        await r.next(8000);
+        if (live !== r || !alive(tok)) return;
+      }
+      if (!r.server) {
+        // not on this server (or gone): back to a fresh idea, never a pay card for a project that does not exist
+        detachLive();
+        useProject(SAMPLE_V7);
+        paint0();
+        return enter({ step: "idea" }, false);
+      }
+      useProject(r.project);
+      const home = liveHome(r);
+      paintProject(worldLevelFor(home.step));
+      enter(home, home.step === "evidence" || home.step === "hire" || home.step === "build");
+    })();
+  }
+  /** The address bar follows the real run (/p/:id survives a reload); samples and the tour live at "/". */
+  function setPath(path: string) {
+    try {
+      if (location.pathname !== path) history.replaceState(history.state, "", path + location.search + location.hash);
+    } catch {
+      /* sandboxed */
+    }
+  }
 
   function decide(c: "grow" | "pivot" | "stop") {
     if (c === "grow") return cap() >= 1 ? enter({ step: "boom" }, true) : undefined;

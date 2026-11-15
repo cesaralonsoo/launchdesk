@@ -12,7 +12,7 @@
     "build": "vite build && tsc -p server/tsconfig.json",
     "start": "node dist/server/index.js",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p server/tsconfig.json --noEmit",
-    "test": "tsx test/payment.test.ts && tsx test/schema.test.ts && tsx test/flow.test.ts"
+    "test": "tsx test/payment.test.ts && tsx test/schema.test.ts && tsx test/flow.test.ts && tsx test/hardening.test.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "1.8.0",

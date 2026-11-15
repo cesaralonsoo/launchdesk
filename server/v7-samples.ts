@@ -103,16 +103,17 @@ const coffee: V7Sample = {
       headline: "Diagonal has the flow; station units are cheap but tendered.",
       findings: [
         { kind: "number", text: "Diagonal had 16.2 million metro users in 2024, the network's second-busiest station.", display: "16.2M", value: 16.2, unit: "M users", source: S.tmbStations, impact: 2 },
-        { kind: "fact", text: "TMB tendered a 74 m² station unit at Vall d'Hebron for €8,400 a year.", display: "€8,400 / yr", value: 8400, unit: "€ a year", source: S.tmbUnit, impact: 1 },
+        { kind: "fact", text: "TMB tendered a 73.76 m² unit at Vall d'Hebron: €8,400 a year rent plus €900 upkeep.", display: "€8,400 / yr", value: 8400, unit: "€ a year", source: S.tmbUnit, impact: 1 },
         { kind: "risk", text: "Station units are let by public tender, so TMB sets the timing, not you.", source: S.tmbUnit, impact: -1 },
+        { kind: "number", text: "That unit's weekday counts: 458 entries an hour at 8–9 am; the peak is 2–3 pm (732).", display: "458 / h", value: 458, unit: "entries 8–9 am", source: S.tmbUnit, impact: -1 },
       ],
     },
     viability: {
-      headline: "Demand is real; margins and morning-only trade are the risk.",
+      headline: "Demand is real; margins and a morning-only plan are the risk.",
       findings: [
         { kind: "strength", text: "Specialty coffee demand has grown since the pandemic, a Barcelona roaster tells Time Out.", source: S.timeoutCoffee, impact: 1 },
         { kind: "risk", text: "Green coffee costs jumped: Time Out reported the New York price up 45% in 2024.", display: "+45%", source: S.timeoutCoffee, impact: -1 },
-        { kind: "risk", text: "Sales crowd into 7–10 am on weekdays; afternoons may not pay the rent.", basis: "Typical commuter pattern at exit kiosks", impact: -1 },
+        { kind: "risk", text: "TMB's counts peak at 2–3 pm, not 8–9 am: a morning-only kiosk misses its busiest hour.", display: "732 / h at 2 pm", source: S.tmbUnit, impact: -1 },
       ],
     },
   },
@@ -134,7 +135,7 @@ const coffee: V7Sample = {
       { text: "Coffee costs are volatile; the 2024 spike squeezed margins.", finding: "viability-1" },
       { text: "Station units come by tender, on TMB's calendar.", finding: "location-2" },
     ],
-    nextSteps: ["Count 7–9 am exits at Diagonal on two weekdays", "Ask TMB commercial about a temporary stand", "Sell from a cart for two mornings at €3"],
+    nextSteps: ["Count exits at Diagonal at 8 am and 2 pm on two weekdays", "Ask TMB commercial about a temporary stand", "Sell from a cart for two mornings at €3"],
     pivot: { idea: "Start as a temporary stand at Diagonal, not a fixed kiosk", why: "Tests demand for months without a tender or fit-out" },
   },
   steers: [
@@ -218,7 +219,6 @@ const saas: V7Sample = {
       findings: [
         { kind: "fact", text: "Verifactu becomes mandatory for the self-employed on 1 July 2027 (RDL 15/2025).", display: "1 Jul 2027", source: S.legaltoday, impact: 2 },
         { kind: "risk", text: "Hacienda announced a fourth delay, to October 2028; it is not yet law.", display: "Oct 2028?", source: S.wwwhatsnew, impact: -2 },
-        { kind: "fact", text: "An e-invoicing order in the BOE gives small firms and the self-employed until October 2028.", source: S.wwwhatsnew, impact: 1 },
       ],
     },
     tech: {
@@ -305,7 +305,7 @@ const bakery: V7Sample = {
         { kind: "number", text: "Bread demand fell to 27.82 kg a person in 2025, from 34.9 kg in 2015.", display: "27.82 kg", value: 27.82, unit: "kg a person", source: S.euronewsBread, impact: -1 },
         { kind: "number", text: "Spending on bread reached €3,378 million in 2024 (Mercasa data).", display: "€3,378M", value: 3378, unit: "€M", source: S.lexpressBakery, impact: 1 },
         { kind: "number", text: "A Puratos study of 18,000 people expects sourdough consumption to grow 40% in 2025.", display: "+40%", source: S.sourdough, impact: 1 },
-        { kind: "estimate", text: "At €4.50 a loaf and 120 loaves a day, a shop takes about €14k a month.", display: "≈ €14k / mo", basis: "120 × €4.50 × 26 days", impact: 1 },
+        { kind: "estimate", text: "At €4.50 a loaf and 120 loaves a day, a shop takes about €14k a month.", display: "≈ €14k / mo", basis: "120 × €4.50 × 26 days; revenue, not profit", impact: 0 },
       ],
     },
     viability: {
@@ -319,7 +319,7 @@ const bakery: V7Sample = {
     },
   },
   judge: {
-    verdictLine: "A real neighbourhood business, not a startup: test weekend boxes before a shop.",
+    verdictLine: "Not as a shop yet: bread is shrinking and bakers are scarce. Test weekend boxes first.",
     scalability: {
       parts: { Reach: 2, Repeatable: 4, "Margins at scale": 3, "Founder-free": 2, "Digital leverage": 2 },
       reach: "Neighbourhood",

@@ -4,7 +4,9 @@
 //   validate: Leo's web research starts with Mia (it only needs the idea) -> [mia] -> [leo] -> [sam + memo]
 //   v7:       the analyst team (jobs-v7.ts) runs alongside the validate groups, sharing the research
 //   build:    [nova] -> [dex, rae] (both sell Sam's launch offer, neither needs the other) -> [pip]
-import { research as webResearch, runDept, runMemo, type AiDept, type Research, type RunOpts } from "./ai.js";
+import { researchPacks, runDept, runMemo, type AiDept, type RunOpts } from "./ai.js";
+import { costScope, endCost } from "./cost.js";
+import { leoFromV7, memoFromV7 } from "./v7-bridge.js";
 import { config } from "./config.js";
 import { loadV7, runV7 } from "./jobs-v7.js";
 import { exec, getProject, getProjectRow, stageDone } from "./db.js";
@@ -15,6 +17,8 @@ const active = new Map<string, Promise<void>>();
 const DEPT_DEADLINE_MS = 150_000;
 /** R18: a failed department is retried once automatically after this pause. */
 const AUTO_RETRY_MS = 2_000;
+/** Plan + research (45 s) + analysts (2 × 60 s) + judge (45 s), with room to spare. */
+const V7_LEO_DEADLINE_MS = 300_000;
 
 function withDeadline<T>(p: Promise<T>, ms: number): Promise<T> {
   let t: NodeJS.Timeout | undefined;
@@ -29,9 +33,12 @@ export function startStage(projectId: string, stage: Stage): Promise<void> {
   const key = `${projectId}:${stage}`;
   const existing = active.get(key);
   if (existing) return existing;
-  const run = runStage(projectId, stage)
+  const run = costScope(projectId, stage, () => runStage(projectId, stage))
     .catch((e) => console.error(`[jobs] ${key}:`, e))
-    .finally(() => active.delete(key));
+    .finally(() => {
+      active.delete(key);
+      endCost(projectId, stage);
+    });
   active.set(key, run);
   return run;
 }
@@ -66,10 +73,13 @@ export const STAGE_GROUPS: Record<Stage, WorkDept[][]> = {
   build: [["nova"], ["dex", "rae"], ["pip"]],
 };
 
+/** Validate with the v7 team: Leo and the memo are derived from its report (no extra model calls). */
+type StageOpts = RunOpts & { v7?: Promise<void> };
+
 async function runStage(projectId: string, stage: Stage) {
   // Nothing else runs this stage in this process (startStage is deduplicated).
   await prepare(projectId, stage, true);
-  const opts: RunOpts = {};
+  const opts: StageOpts = {};
   let team: Promise<void> = Promise.resolve();
   if (stage === "validate") {
     // v6: Leo's web research (the slowest step) runs while Mia writes the plan.
@@ -79,13 +89,14 @@ async function runStage(projectId: string, stage: Stage) {
     const needV7 = !(v7?.status === "done" && v7.report);
     if (p && (leo.rows[0]?.status !== "done" || needV7)) {
       const t0 = Date.now();
-      const found: Promise<Research | null> = webResearch(p.idea, p.results.mia?.market ?? null).catch(() => null);
-      void found.then((r) => r && console.log(`[jobs] ${projectId} research ready after ${Date.now() - t0}ms`));
-      opts.research = found;
-      // v7: the analyst team picked for this idea runs in parallel with the v4 departments and cites the same
-      // research. It never fails the stage (web/src only reads the v4 fields); its status lives in results.v7.
-      if (needV7) team = runV7(projectId, p.idea, found).catch((e) => console.error(`[jobs] ${projectId} v7:`, e));
+      // v7: two small research packs in parallel (the first analysts start on the first pack that lands).
+      const packs = needV7 ? researchPacks(p.idea, p.results.mia?.market ?? null) : null;
+      if (packs) void packs.all.then((r) => r && console.log(`[jobs] ${projectId} research ready after ${Date.now() - t0}ms`));
+      if (packs) opts.research = packs.all;
+      // The analyst team runs in parallel with Mia. It never fails the stage; its status lives in results.v7.
+      if (packs) team = runV7(projectId, p.idea, packs).catch((e) => console.error(`[jobs] ${projectId} v7:`, e));
     }
+    if (v7?.report || needV7) opts.v7 = team;
   }
   try {
     for (const group of STAGE_GROUPS[stage]) {
@@ -98,14 +109,15 @@ async function runStage(projectId: string, stage: Stage) {
 }
 
 /** Runs one department with one automatic retry (R18). Resolves true when it is done. */
-async function runJob(projectId: string, dept: WorkDept, opts: RunOpts): Promise<boolean> {
+async function runJob(projectId: string, dept: WorkDept, opts: StageOpts): Promise<boolean> {
   const cur = await exec("SELECT status FROM jobs WHERE project_id = ? AND dept = ?", [projectId, dept]);
   if (cur.rows[0]?.status === "done") return true;
   await exec("UPDATE jobs SET status = 'working', started_at = ?, error = NULL WHERE project_id = ? AND dept = ?", [Date.now(), projectId, dept]);
   for (let attempt = 1; attempt <= 2; attempt++) {
     await exec("UPDATE jobs SET attempts = attempts + 1 WHERE project_id = ? AND dept = ?", [projectId, dept]);
     try {
-      const out = await withDeadline(runOne(projectId, dept, opts), DEPT_DEADLINE_MS);
+      // Leo waits for the v7 team when it is derived from its report: give it the team's whole budget.
+      const out = await withDeadline(runOne(projectId, dept, opts), dept === "leo" && opts.v7 ? V7_LEO_DEADLINE_MS : DEPT_DEADLINE_MS);
       await exec(
         "UPDATE jobs SET status = 'done', json = ?, model = ?, usage = ?, finished_at = ? WHERE project_id = ? AND dept = ?",
         [JSON.stringify(out.json), out.model, out.usage ? JSON.stringify(out.usage) : null, Date.now(), projectId, dept],
@@ -195,7 +207,14 @@ function placeholder(p: Project, dept: "nova" | "dex" | "rae"): NovaBrand | DexD
   return { start_date: new Date(Date.now() + 86_400_000).toISOString().slice(0, 10), posts: [], first_posts: [], handle: "@" + name.toLowerCase().replace(/[^a-z0-9]+/g, "") };
 }
 
-async function runOne(projectId: string, dept: WorkDept, opts: RunOpts = {}): Promise<{ json: unknown; model: string; usage: unknown }> {
+async function runOne(projectId: string, dept: WorkDept, opts: StageOpts = {}): Promise<{ json: unknown; model: string; usage: unknown }> {
+  if (dept === "leo" && opts.v7) {
+    // Cost pass: with the v7 team, Leo's report IS the v7 report (same score everywhere, no second research call).
+    await opts.v7;
+    const v = await loadV7(projectId);
+    if (v?.report) return { json: leoFromV7(v), model: "v7", usage: null };
+    console.warn(`[jobs] ${projectId} no v7 report, Leo runs on its own`);
+  }
   const p = await getProject(projectId);
   if (!p) throw new Error("Project not found");
   if (dept === "pip") return { json: await publish(projectId), model: "none", usage: null };
@@ -204,7 +223,8 @@ async function runOne(projectId: string, dept: WorkDept, opts: RunOpts = {}): Pr
     // R7: the memo runs inside Sam's working beat and is stored with Sam's result (normalize() exposes it as
     // results.memo). It never fails Sam: without it the Summary is assembled from the other results.
     try {
-      const memo = await runMemo(p.idea, { ...p.results, sam: out.json as NonNullable<Project["results"]["sam"]> });
+      const v = await loadV7(projectId);
+      const memo = v?.report ? memoFromV7(p.idea, v) : await runMemo(p.idea, { ...p.results, sam: out.json as NonNullable<Project["results"]["sam"]> });
       return { ...out, json: { ...(out.json as object), memo } };
     } catch (e) {
       console.error(`[jobs] ${projectId} memo skipped:`, (e as Error).message);

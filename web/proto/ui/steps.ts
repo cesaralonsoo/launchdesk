@@ -12,6 +12,7 @@ import { I } from "./icons";
 import { ldMark } from "./logo";
 import { badge, levelGlyph } from "./pixel";
 import { usd } from "./view";
+import { statusLine } from "../live/adapter";
 
 export const KIND_LABEL: Record<FindingKind, string> = { fact: "Fact", number: "Number", competitor: "Competitor", risk: "Risk", strength: "Strength", estimate: "Estimate" };
 const VERDICT = { go: "Go", pivot: "Pivot", "no-go": "No-go" } as const;
@@ -75,7 +76,7 @@ export function hireHtml(f: ProtoFlowV7): string {
   return `
   <section class="v-hire">
     <header class="v-head" data-st><span class="eyebrow px-eb">Hiring</span><h2 class="t-display">A team for this idea</h2></header>
-    <ol class="hires">${f.roster.map((a, i) => hireRow(a, i < f.hired)).join("")}</ol>
+    ${f.roster.length ? `<ol class="hires">${f.roster.map((a, i) => hireRow(a, i < f.hired)).join("")}</ol>` : `<div class="ev-wait">${f.live?.error ? esc(f.live.error) : "Picking analysts for your idea"}<span class="dots"><i></i><i></i><i></i></span></div>`}
   </section>`;
 }
 const hireRow = (a: Analyst, on: boolean) => `
@@ -97,9 +98,24 @@ export function evidenceHtml(f: ProtoFlowV7, i: number): string {
       <div><b>${esc(a.name)} <em>${esc(ROLE_LIBRARY[a.role].dept)}</em></b><span>${esc(a.mission)}</span></div>
       <span class="ev-k num">${k}<small>/${mine.length}</small></span>
     </header>
-    <div class="ev-slot">${fd ? findingCard(fd) : `<div class="ev-wait">Starting the research<span class="dots"><i></i><i></i><i></i></span></div>`}</div>
+    <div class="ev-slot">${fd && i < f.revealed ? findingCard(fd) : evWait(f)}</div>
     ${evidenceFoot(f, i)}
   </section>`;
+}
+const WORK_WORD = { queued: "Up next", working: "Searching the web", done: "Done", error: "Skipped" } as const;
+/** Before the first finding lands (real AI: 15–30 s): every analyst's live status, so the wait is never blank. */
+export function evWait(f: ProtoFlowV7): string {
+  const L = f.live;
+  if (!L || !f.roster.length || L.error) return `<div class="ev-wait">${esc(L ? (L.error ?? statusLine(L.status)) : "Starting the research")}<span class="dots"><i></i><i></i><i></i></span></div>`;
+  const work = L.project.v7.work;
+  const rows = f.roster.map((a) => {
+    const w = work.find((x) => x.analyst === a.role);
+    const st = w?.status ?? "queued";
+    const n = w?.findings.length ?? 0;
+    return `<li data-s="${st}">${badge(a.name, a.color, 22)}<b>${esc(a.name)}</b><span class="et-m">${esc(a.mission)}</span><em>${st === "working" ? `${WORK_WORD.working}<span class="dots"><i></i><i></i><i></i></span>` : st === "done" ? `${n} found` : WORK_WORD[st]}</em></li>`;
+  }).join("");
+  const early = !work.some((w) => w.status === "done" || w.findings.length);
+  return `<div class="ev-team"><ol>${rows}</ol>${early ? `<p>Each analyst searches the web live. First findings usually land in 15–30 s.</p>` : ""}</div>`;
 }
 export function findingCard(fd: Finding): string {
   const hero = fd.display ?? (fd.competitor?.price ? fd.competitor.price : "");
@@ -124,12 +140,16 @@ export function evidenceFoot(f: ProtoFlowV7, cur: number): string {
   const ready = scoreDisplay({ evidence: { total: shown.length, sourced: src, sourcedShare: 0, sources: [] } }) === "hero";
   const total = f.findings.length;
   const cells = f.findings.map((x, j) => `<button type="button" class="cell" data-act="peek" data-i="${j}" data-on="${j < f.revealed ? 1 : 0}" data-s="${x.source ? 1 : 0}" data-cur="${j === cur ? 1 : 0}" aria-label="Finding ${j + 1}" ${j < f.revealed ? "" : "disabled"}></button>`).join("");
+  const L = f.live;
+  const waiting = !!L && !L.phase1Done;
+  const status = L && (waiting || L.error) ? `<div class="ev-status"${L.error ? ' data-err="1"' : ""}>${L.error ? esc(L.error) : `${esc(statusLine(L.status))}<span class="dots"><i></i><i></i><i></i></span>`}</div>` : "";
   return `
   <footer class="ev-foot">
-    <div class="ev-cells" style="--n:${total}">${cells}</div>
+    ${status}
+    <div class="ev-cells" style="--n:${Math.max(total, 1)}">${cells}</div>
     <div class="ev-count"><span><b class="num">${shown.length}</b> finding${shown.length === 1 ? "" : "s"} · <b class="num">${src}</b> sourced</span>
       <span class="ev-unlock" data-ready="${ready ? 1 : 0}">${ready ? `${I.check(13)}Score unlocked` : "Score unlocks at 6 · 3 sourced"}</span></div>
-    <button class="btn btn-quiet ev-skip" data-act="next" type="button"><span>${f.revealed >= total ? "See the report" : "Skip to report"}</span>${I.arrow(14)}</button>
+    ${waiting ? "" : `<button class="btn btn-quiet ev-skip" data-act="next" type="button"><span>${f.revealed >= total ? "See the report" : "Skip to report"}</span>${I.arrow(14)}</button>`}
   </footer>`;
 }
 
@@ -283,6 +303,7 @@ export function steerHtml(f: ProtoFlowV7, draft: string): string {
   <section class="v-steer">
     <header class="v-head" data-st><span class="eyebrow px-eb">You're the CEO</span><h2 class="t-display">Tell your team</h2></header>
     ${s ? steerResultHtml(f, s) : ""}
+    ${f.steerError ? `<p class="st-err" role="alert">${esc(f.steerError)}</p>` : ""}
     ${!s || s.status === "done" ? `
     <form class="steer-f" data-st autocomplete="off">
       <div class="idea-field sm"><textarea name="note" rows="1" maxlength="280" placeholder="Focus it like this…" aria-label="Note to your team">${esc(draft)}</textarea>
@@ -398,20 +419,25 @@ export function sourceHtml(fd: Finding, a: Analyst): string {
 }
 
 export function officesHtml(f: ProtoFlowV7): string {
+  const row = (p: (typeof f.projects)[number], example: boolean) => {
+    const l = f.levelOf(p.id);
+    const r = p.v7.report;
+    const cur = p.id === f.project.id;
+    return `<li><button type="button" data-act="switch" data-id="${esc(p.id)}" aria-current="${cur}">
+        <span class="of-g">${levelGlyph(l, 22)}</span>
+        <span class="of-t"><b>${esc(p.title)}${example ? `<span class="of-tag">Example</span>` : ""}</b><span>${esc(p.idea)}</span></span>
+        <span class="of-r"><b class="num">${r ? one(r.score) : "–"}</b><em>${LEVEL_META[l].short}${r && scoreDisplay(r) !== "hero" ? " · provisional" : ""}</em></span>
+      </button></li>`;
+  };
+  const mine = f.projects.filter((p) => !f.isSample(p.id));
+  const samples = f.projects.filter((p) => f.isSample(p.id));
   return `
   <section class="offices">
     <header class="of-head"><h2 class="t-display">Your offices</h2><button class="btn btn-ghost btn-icon ov-x" data-act="close" type="button" aria-label="Close">${I.close(16)}</button></header>
     <p class="of-sub">One world per idea.</p>
-    <ul class="of-list">${f.projects.map((p) => {
-      const l = f.levelOf(p.id);
-      const r = p.v7.report;
-      const cur = p.id === f.project.id;
-      return `<li><button type="button" data-act="switch" data-id="${esc(p.id)}" aria-current="${cur}">
-        <span class="of-g">${levelGlyph(l, 22)}</span>
-        <span class="of-t"><b>${esc(p.title)}</b><span>${esc(p.idea)}</span></span>
-        <span class="of-r"><b class="num">${r ? one(r.score) : "–"}</b><em>${LEVEL_META[l].short}${r && scoreDisplay(r) !== "hero" ? " · provisional" : ""}</em></span>
-      </button></li>`;
-    }).join("")}</ul>
+    ${mine.length ? `<ul class="of-list">${mine.map((p) => row(p, false)).join("")}</ul>` : `<p class="of-sub">Your ideas will live here. Nothing yet.</p>`}
+    <p class="of-sec">Examples</p>
+    <ul class="of-list">${samples.map((p) => row(p, true)).join("")}</ul>
     <button class="btn btn-primary of-new" data-act="new" type="button"><span>New idea</span>${I.arrow(16)}</button>
   </section>`;
 }

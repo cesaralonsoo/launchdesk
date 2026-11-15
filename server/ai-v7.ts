@@ -10,7 +10,8 @@
 // or, for other ideas, from clearly labelled estimates.
 import Anthropic from "@anthropic-ai/sdk";
 import { config } from "./config.js";
-import type { Research } from "./ai.js";
+import { fallbackOpts, type Research } from "./ai.js";
+import { recordUsage } from "./cost.js";
 import {
   ANALYST_ROLES,
   ROLE_LIBRARY,
@@ -127,22 +128,83 @@ const researchBlock = (r: Research | null) =>
 let client: Anthropic | null = null;
 const getClient = () => (client ??= new Anthropic({ apiKey: config.anthropicKey, maxRetries: 2, timeout: 120_000 }));
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-const MODEL = { plan: "claude-sonnet-5-5", analyst: "claude-sonnet-5-5", judge: "claude-sonnet-5-5", steer: "claude-sonnet-5-5" } as const;
+/** Cost pass (.notes/ai-v7.md): the plan and the steer routing are small classification calls (Haiku); the analysts
+ *  and the judge make the decisions (Sonnet 5.5, low effort). Env overrides: MODEL_PLAN, MODEL_ANALYST, MODEL_JUDGE. */
+const envModel = (name: string, d: string) => (process.env[name] && /^claude-[a-z0-9-]+$/.test(process.env[name]!) ? process.env[name]! : d);
+const MODEL = {
+  plan: envModel("MODEL_PLAN", "claude-haiku-5-5"),
+  analyst: envModel("MODEL_ANALYST", "claude-sonnet-5-5"),
+  judge: envModel("MODEL_JUDGE", "claude-sonnet-5-5"),
+  steer: envModel("MODEL_PLAN", "claude-haiku-5-5"),
+} as const;
+const CALL_TIMEOUT_MS = 60_000;
 
-async function callJson<T>(label: string, model: string, effort: "low" | "medium", prompt: string, schema: Schema): Promise<T> {
+/**
+ * Pulls every COMPLETE object out of the "findings" array of a partial JSON answer (structured outputs stream the
+ * keys in schema order). Lets an analyst's findings be saved one by one while the model is still writing.
+ */
+export function completeFindings(partial: string): unknown[] {
+  const k = partial.indexOf('"findings"');
+  if (k < 0) return [];
+  const open = partial.indexOf("[", k);
+  if (open < 0) return [];
+  const out: unknown[] = [];
+  let depth = 0;
+  let start = -1;
+  let inStr = false;
+  for (let i = open + 1; i < partial.length; i++) {
+    const ch = partial[i]!;
+    if (inStr) {
+      if (ch === "\\") i++;
+      else if (ch === '"') inStr = false;
+      continue;
+    }
+    if (ch === '"') inStr = true;
+    else if (ch === "{") {
+      if (depth === 0) start = i;
+      depth++;
+    } else if (ch === "}") {
+      depth--;
+      if (depth === 0 && start >= 0) {
+        try {
+          out.push(JSON.parse(partial.slice(start, i + 1)));
+        } catch {
+          /* not a whole object yet */
+        }
+        start = -1;
+      }
+    } else if (ch === "]" && depth === 0) break;
+  }
+  return out;
+}
+
+async function callJson<T>(label: string, model: string, effort: "low" | "medium", prompt: string, schema: Schema, onText?: (soFar: string) => void): Promise<T> {
   const t0 = Date.now();
   try {
-    const msg = await getClient()
-      .beta.messages.stream({
+    const stream = getClient().beta.messages.stream(
+      {
         model,
         max_tokens: 8000,
-        betas: ["server-side-fallback-2026-07-01"],
-        fallbacks: "default",
+        ...fallbackOpts(model),
         system: SYSTEM_V7,
         messages: [{ role: "user", content: prompt }],
         output_config: { effort, format: { type: "json_schema", schema } },
-      })
-      .finalMessage();
+      },
+      { timeout: CALL_TIMEOUT_MS, maxRetries: 1 },
+    );
+    if (onText) {
+      let soFar = "";
+      stream.on("text", (d) => {
+        soFar += d;
+        try {
+          onText(soFar);
+        } catch {
+          /* a progress callback never fails the call */
+        }
+      });
+    }
+    const msg = await stream.finalMessage();
+    recordUsage(label, msg.model, msg.usage);
     console.log(`[ai7] ${label} ${msg.model} in=${msg.usage.input_tokens} out=${msg.usage.output_tokens} ${Date.now() - t0}ms`);
     if (msg.stop_reason === "refusal") throw new Error("The AI declined to work on this idea.");
     if (msg.stop_reason === "max_tokens") throw new Error("The AI answer was cut off. Please retry.");
@@ -250,11 +312,21 @@ export async function runAnalyst(
   idea: string,
   a: Analyst,
   research: Research | null,
-  opts: { note?: string; previous?: readonly Finding[]; startIndex?: number } = {},
+  opts: { note?: string; previous?: readonly Finding[]; startIndex?: number; onFinding?: (soFar: Finding[]) => void } = {},
 ): Promise<AnalystRun> {
   if (config.mockAi) {
-    await mockWait();
-    return mockAnalyst(idea, a.role, opts.startIndex ?? 0);
+    // Demo mode streams too: the findings land one by one, like a real run.
+    const run = mockAnalyst(idea, a.role, opts.startIndex ?? 0);
+    const total = config.mockDelayMs ?? 1200 + Math.random() * 1200;
+    if (opts.onFinding && run.findings.length > 1) {
+      const step = total / run.findings.length;
+      for (let i = 1; i < run.findings.length; i++) {
+        await sleep(step);
+        opts.onFinding(run.findings.slice(0, i));
+      }
+      await sleep(step);
+    } else await sleep(total);
+    return run;
   }
   const prev = opts.previous?.length ? `\n<your_earlier_findings>\n${opts.previous.map((f) => `${f.id} (${f.kind}${f.source ? ", sourced" : ""}): ${f.text}`).join("\n")}\n</your_earlier_findings>` : "";
   const note = opts.note ? `\n<ceo_note>${opts.note}</ceo_note>\nThe founder (your CEO) wrote this note. Re-check your work with that focus: return only NEW or CHANGED findings (1 to 3); when one supersedes an earlier finding, set replaces to its id. Do not repeat unchanged findings.` : "";
@@ -264,7 +336,16 @@ export async function runAnalyst(
 
 Your focus: ${ROLE_FOCUS[a.role]}
 Write ${opts.note ? "1 to 3" : "2 to 4"} findings, strongest first. kind: fact (a sourced statement), number (a sourced figure; put it in value/unit/display), competitor (named only with a source, else a category), risk, strength, estimate. impact = how it moves your factor (−2 … +2; 0 = context). Then a headline (max 12 words).`;
-  const out = await callJson<AnalystOut>(`analyst:${a.role}`, MODEL.analyst, "medium", prompt, SCHEMAS_V7.analyst);
+  let seen = 0;
+  const onText = opts.onFinding
+    ? (soFar: string) => {
+        const got = completeFindings(soFar) as AnalystOut["findings"];
+        if (got.length <= seen) return;
+        seen = got.length;
+        opts.onFinding!(sanitizeFindings(a.role, { headline: "", findings: got }, research, { startIndex: opts.startIndex, knownIds: opts.previous?.map((f) => f.id) }));
+      }
+    : undefined;
+  const out = await callJson<AnalystOut>(`analyst:${a.role}`, MODEL.analyst, "low", prompt, SCHEMAS_V7.analyst, onText);
   return { headline: capWords(out.headline, 12), findings: sanitizeFindings(a.role, out, research, { startIndex: opts.startIndex, knownIds: opts.previous?.map((f) => f.id) }) };
 }
 
@@ -358,7 +439,7 @@ ${list}
 - strengths and weaknesses: exactly 3 each, each citing the finding id it rests on.
 - next_steps: exactly 3 things the founder does this week, cheapest test of the biggest risk first.
 - pivot: the best concrete pivot if the evidence is weak, else null.`;
-  return judgeDraftOf(await callJson<JudgeOut>("judge", MODEL.judge, "medium", prompt, SCHEMAS_V7.judge));
+  return judgeDraftOf(await callJson<JudgeOut>("judge", MODEL.judge, "low", prompt, SCHEMAS_V7.judge));
 }
 
 export function mockJudge(idea: string, findings: readonly Finding[]): JudgeDraft {
@@ -414,6 +495,11 @@ export function routeByKeywords(note: string, roster: readonly Analyst[], target
   return { ack: `Got it. Re-checking ${names.join(" and ")} with your note.`, rerun, hire: [], drop: [] };
 }
 
+const raceDeadline = <T>(p: Promise<T>, ms: number): Promise<T> => {
+  let t: NodeJS.Timeout | undefined;
+  return Promise.race([p, new Promise<never>((_, rej) => (t = setTimeout(() => rej(new Error("routing timed out")), ms)))]).finally(() => clearTimeout(t));
+};
+
 export async function routeSteer(idea: string, note: string, roster: readonly Analyst[], target?: readonly AnalystRole[]): Promise<SteerPlan> {
   if (config.mockAi) {
     const s = v7SampleFor(idea);
@@ -422,7 +508,8 @@ export async function routeSteer(idea: string, note: string, roster: readonly An
     return routeByKeywords(note, roster, target);
   }
   try {
-    const out = await callJson<SteerOut>("steer", MODEL.steer, "low", `The founder is the CEO of this team and wrote a note. Decide who re-checks their work.\n\n<idea>${idea}</idea>\n<team>${roster.map((a) => `${a.role} (${a.name}): ${a.mission}`).join("; ")}</team>\n<ceo_note>${note}</ceo_note>${target?.length ? `\nThe CEO addressed: ${target.join(", ")}.` : ""}\n\nack: one line back, max 14 words, saying what you'll re-check. rerun: 1-3 team roles whose findings the note changes. hire: one new role only if the note needs a skill nobody has (else empty). drop: roles the note makes irrelevant (never viability or competition; usually empty).`, SCHEMAS_V7.steer);
+    // The POST /steer answer waits for this routing: bounded, and the keyword router answers when it is slow.
+    const out = await raceDeadline(callJson<SteerOut>("steer", MODEL.steer, "low", `The founder is the CEO of this team and wrote a note. Decide who re-checks their work.\n\n<idea>${idea}</idea>\n<team>${roster.map((a) => `${a.role} (${a.name}): ${a.mission}`).join("; ")}</team>\n<ceo_note>${note}</ceo_note>${target?.length ? `\nThe CEO addressed: ${target.join(", ")}.` : ""}\n\nack: one line back, max 14 words, saying what you'll re-check. rerun: 1-3 team roles whose findings the note changes. hire: one new role only if the note needs a skill nobody has (else empty). drop: roles the note makes irrelevant (never viability or competition; usually empty).`, SCHEMAS_V7.steer), 12_000);
     const have = new Set(roster.map((a) => a.role));
     const hires = out.hire.filter((h) => !have.has(h.role)).slice(0, 1);
     const rerun = [...new Set([...(target ?? []), ...out.rerun])].filter((r) => have.has(r) || hires.some((h) => h.role === r)).slice(0, 3);

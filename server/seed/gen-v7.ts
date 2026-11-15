@@ -46,7 +46,7 @@ export function buildWorld(key: V7SampleKey): SampleWorld {
     coffee: { level: 0, ago: 0, built: false }, // the demo run: starts in the room (legacy = data/pausa.json)
     saas: { level: 3, ago: 12, built: true }, // scales: validated, built, grown to the district
     dog: { level: 2, ago: 5, built: true }, // city-sized: built and live, capped at the building
-    bakery: { level: 1, ago: 2, built: false }, // neighbourhood: the office floor, never more
+    bakery: { level: 0, ago: 2, built: false }, // no-go on the evidence: stays in the room (cap 0)
   };
   const p = plan[key];
   const cap = v7.report!.scalability.cap;

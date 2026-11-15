@@ -4,7 +4,8 @@ import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono, type Context } from "hono";
 import { normalizeFounderAddress } from "./address.js";
 import { broadcast, checkPaymentTx, findQrPayment, paymentTag, RpcError } from "./chain.js";
-import { config, STAGES } from "./config.js";
+import { config, merchantOnMainnet, STAGES } from "./config.js";
+import { allow, clientIp } from "./ratelimit.js";
 import { exec, getProject, getProjectRow, stageDone, type ProjectRow } from "./db.js";
 import * as jobs from "./jobs.js";
 import { isRunning, prepareStage, startStage } from "./jobs.js";
@@ -34,6 +35,12 @@ const isLocalRequest = (c: Context) => {
   // The Host header can be spoofed from the LAN: also require a loopback socket when there is one.
   const remote = (c.env as { incoming?: { socket?: { remoteAddress?: string } } } | undefined)?.incoming?.socket?.remoteAddress;
   return remote == null || LOOPBACK.includes(remote);
+};
+/** Payments need a merchant address, and in production it must be a mainnet one. */
+const assertPayable = () => {
+  if (!config.merchantAddress) throw new ApiError(503, "Payments are not configured yet");
+  if (config.production && !merchantOnMainnet()) throw new ApiError(503, "Payments are switched off: the server is not set up for Bitcoin Cash mainnet.");
+  assertRealAi();
 };
 /** Real money must never buy sample output. */
 const assertRealAi = () => {
@@ -130,6 +137,8 @@ app.post("/api/projects", async (c) => {
     throw new ApiError(400, "This demo server only runs the 3 sample ideas. Pick one of them to watch a sample run.");
   if (text.length < 15) throw new ApiError(400, "Tell us a bit more about your idea (at least a sentence).");
   if (text.length > 2000) throw new ApiError(400, "Please keep the idea under 2000 characters.");
+  if (!allow("create", clientIp(c), config.rateLimit.create, config.rateLimit.windowMs))
+    throw new ApiError(429, "You started a lot of projects in a few minutes. Please wait a little and try again.");
   const id = newId();
   // F3: the key is returned once; only its hash is stored.
   const ownerKey = randomBytes(24).toString("base64url");
@@ -167,8 +176,7 @@ const bip21 = (sats: number) =>
 app.post("/api/projects/:id/quote", async (c) => {
   const { p, stage } = await loadForStage(c.req.param("id"), (await body<{ stage: Stage }>(c)).stage);
   assertWritable(await getProjectRow(p.id));
-  if (!config.merchantAddress) throw new ApiError(503, "Payments are not configured yet");
-  assertRealAi();
+  assertPayable();
   const now = Date.now();
   const q = await exec("SELECT sats, expires_at, bch_usd, qr_sats FROM quotes WHERE project_id = ? AND stage = ?", [p.id, stage]);
   let sats: number;
@@ -240,7 +248,7 @@ app.post("/api/projects/:id/pay", async (c) => {
       sats = 0;
     } else if (b.watch) {
       // F10: plain QR (BIP21) payment. Look for a transaction paying the exact unique amount of this quote.
-      assertRealAi();
+      assertPayable();
       const q = await exec("SELECT qr_sats, expires_at FROM quotes WHERE project_id = ? AND stage = ?", [p.id, stage]);
       const row = q.rows[0];
       if (!row || row.qr_sats == null) throw new ApiError(400, "Get a price quote first");
@@ -257,14 +265,24 @@ app.post("/api/projects/:id/pay", async (c) => {
       txid = found.txid;
       sats = found.sats;
     } else {
-      assertRealAi();
+      assertPayable();
       const q = await exec("SELECT sats, expires_at FROM quotes WHERE project_id = ? AND stage = ?", [p.id, stage]);
       const row = q.rows[0];
       if (!row) throw new ApiError(400, "Get a price quote first");
       if (Number(row.expires_at) < Date.now() - 5 * 60_000) throw new ApiError(400, "The price quote expired. Please try again.");
       const quoted = Number(row.sats);
       const txHex = typeof b.txHex === "string" ? b.txHex : "";
-      const checked = checkPaymentTx(txHex, Math.floor(quoted * 0.99), paymentTag(p.id, stage));
+      if (!txHex) throw new ApiError(400, "No signed transaction was sent. Approve the payment in your wallet and try again.");
+      let checked: ReturnType<typeof checkPaymentTx>;
+      try {
+        checked = checkPaymentTx(txHex, Math.floor(quoted * 0.99), paymentTag(p.id, stage));
+      } catch (e) {
+        throw new ApiError(400, (e as Error).message);
+      }
+      // Idempotent: the same transaction sent twice (double click, retry after a timeout) is not broadcast again.
+      const known = await exec("SELECT project_id, stage FROM payments WHERE txid = ?", [checked.txid]);
+      if (known.rows.length && (String(known.rows[0]!.project_id) !== p.id || String(known.rows[0]!.stage) !== stage))
+        throw new ApiError(409, "This payment was already used for another order.");
       try {
         await broadcast(txHex, checked.txid);
       } catch (e) {
@@ -326,6 +344,8 @@ app.post("/api/projects/:id/steer", async (c) => {
   if (text.length < 3) throw new ApiError(400, "Write a short note for your team.");
   if (text.length > 280) throw new ApiError(400, "Keep the note under 280 characters.");
   const roles = Array.isArray(target) ? target.filter((r): r is AnalystRole => (ANALYST_ROLES as readonly string[]).includes(r)) : undefined;
+  if (!allow("steer", clientIp(c), config.rateLimit.steer, config.rateLimit.windowMs))
+    throw new ApiError(429, "That is a lot of notes in a few minutes. Please wait a little before steering again.");
   if (isRunning(p.id, "validate") || isRunning(p.id, "build")) throw new ApiError(409, "Your team is still working. Steer when it is done.");
   try {
     return c.json(await startSteer(p.id, p.idea, text, roles), 202);
@@ -465,17 +485,24 @@ app.all("/api/*", () => {
 // PNG previews (/og/*.png) need @resvg/resvg-js, which is not installed: those answer 501 and no og:image is set.
 app.get("/og/*", (c) => c.json({ error: "Link preview images are not available yet." }, 501));
 
-let indexHtml: { at: number; html: string } | null = null;
-/** dist/web/index.html, re-read when a new build replaces it. */
-const readIndex = () => {
+// "/" (and every other client route) is the v7 app, dist/web/index.html. The v4 bundle, dist/web/classic.html,
+// still renders the public site /s/:slug and the shared pack /r/:shareId.
+const htmlCache = new Map<string, { at: number; html: string }>();
+/** A built HTML entry from dist/web, re-read when a new build replaces it. */
+const readHtml = (file: string) => {
+  const path = `./dist/web/${file}`;
   try {
-    const at = statSync("./dist/web/index.html").mtimeMs;
-    if (!indexHtml || indexHtml.at !== at) indexHtml = { at, html: readFileSync("./dist/web/index.html", "utf8") };
-    return indexHtml.html;
+    const at = statSync(path).mtimeMs;
+    const hit = htmlCache.get(path);
+    if (hit && hit.at === at) return hit.html;
+    const html = readFileSync(path, "utf8");
+    htmlCache.set(path, { at, html });
+    return html;
   } catch {
     return null;
   }
 };
+const readIndex = () => readHtml("classic.html");
 const attr = (s: string) => s.replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]!);
 function withMeta(html: string, m: { title: string; description: string; noindex?: boolean }) {
   const tags = [
@@ -522,6 +549,10 @@ app.get("/r/:shareId", async (c, next) => {
   );
 });
 
-// Built SPA (production). Client routes /, /p/:id, /r/:id and /s/:slug all fall back to index.html.
+// Built app (production). /s/:slug and /r/:id are answered above with classic.html; /proto.html is served as a
+// file (alias of the v7 app); every other client route (/, /p/:id, …) falls back to the v7 index.html.
 app.use("/*", serveStatic({ root: "./dist/web" }));
-app.get("/*", serveStatic({ path: "./dist/web/index.html" }));
+app.get("/*", (c, next) => {
+  const html = readHtml("index.html");
+  return html ? c.html(html) : next();
+});

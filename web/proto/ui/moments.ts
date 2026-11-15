@@ -159,6 +159,7 @@ export function livePanel(v: View, r7?: { score: number; verdict: string; nextSt
         ${S ? `<div class="fact"><dt>Cash to start${est()}</dt><dd>${esc(S.cash_needed.display)}</dd></div>` : ""}
         <div class="fact"><dt>Pre-orders</dt><dd>${num(0)}${v.preorderGoal ? `<small> / ${v.preorderGoal}</small>` : ""}</dd></div>
       </dl>
+      <p class="biz-bch" data-st><i aria-hidden="true">₿</i><span>Your site takes <b>Bitcoin Cash pre-orders</b>, paid straight to your wallet. LaunchDesk never touches the money.</span></p>
       <div class="next7" data-st><span class="lbl">${r7?.nextSteps.length ? "Your next steps" : "Your next 7 days"}</span><ol>${days.map((d, i) => `<li><span class="n7-i">${i + 1}</span><span>${esc(d)}</span></li>`).join("")}</ol></div>
       <div class="biz-act" data-st>
         <button class="btn btn-primary" data-act="site" type="button"><span>Visit your site</span>${I.ext(14)}</button>

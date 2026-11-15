@@ -13,7 +13,7 @@
     "color": "#3B82F6",
     "mission": "Who already sells Verifactu invoicing, and at what price",
     "why": "Billing software is a crowded shelf",
-    "weight": 0.263
+    "weight": 0.26
    },
    {
     "id": "market",
@@ -22,7 +22,7 @@
     "color": "#F59E0B",
     "mission": "How many traders could pay, and how much",
     "why": "Subscriptions live on headcount times price",
-    "weight": 0.211
+    "weight": 0.21
    },
    {
     "id": "regulation",
@@ -31,7 +31,7 @@
     "color": "#475569",
     "mission": "What the law forces, and when",
     "why": "Verifactu deadlines create the demand",
-    "weight": 0.105
+    "weight": 0.11
    },
    {
     "id": "tech",
@@ -40,7 +40,7 @@
     "color": "#0891B2",
     "mission": "Can a phone app issue compliant tickets at a stall",
     "why": "Software must be built and certified",
-    "weight": 0.158
+    "weight": 0.16
    },
    {
     "id": "viability",
@@ -49,7 +49,7 @@
     "color": "#8B7CF6",
     "mission": "Strengths, weak points and what kills it",
     "why": "Every idea gets a viability check",
-    "weight": 0.263
+    "weight": 0.26
    }
   ],
   "work": [
@@ -204,23 +204,9 @@
       "id": "regulation-1",
       "analyst": "regulation",
       "t": 4000
-     },
-     {
-      "kind": "fact",
-      "text": "An e-invoicing order in the BOE gives small firms and the self-employed until October 2028.",
-      "source": {
-       "url": "https://wwwhatsnew.com/2026/10/06/hacienda-verifactu-octubre-2028-aplazamiento-factura-electronica-2026",
-       "title": "Hacienda retrasa Verifactu hasta octubre de 2028: el cuarto aplazamiento en tres años",
-       "domain": "wwwhatsnew.com",
-       "accessed": "2026-11-15"
-      },
-      "impact": 1,
-      "id": "regulation-2",
-      "analyst": "regulation",
-      "t": 6600
      }
     ],
-    "score": 6,
+    "score": 5,
     "headline": "The law creates demand, but the date keeps moving."
    },
    {
@@ -310,14 +296,14 @@
    }
   ],
   "report": {
-   "score": 5.3,
+   "score": 5.2,
    "verdict": "pivot",
    "verdictLine": "Worth building narrow: tickets for stalls, sold through market associations.",
    "factors": [
     {
      "analyst": "competition",
      "label": "Competition",
-     "weight": 0.263,
+     "weight": 0.26,
      "score": 4,
      "findings": [
       "competition-0",
@@ -330,7 +316,7 @@
     {
      "analyst": "market",
      "label": "Market",
-     "weight": 0.211,
+     "weight": 0.21,
      "score": 7,
      "findings": [
       "market-0",
@@ -343,20 +329,19 @@
     {
      "analyst": "regulation",
      "label": "Rules",
-     "weight": 0.105,
-     "score": 6,
+     "weight": 0.11,
+     "score": 5,
      "findings": [
       "regulation-0",
-      "regulation-1",
-      "regulation-2"
+      "regulation-1"
      ],
-     "sourced": 3,
-     "total": 3
+     "sourced": 2,
+     "total": 2
     },
     {
      "analyst": "tech",
      "label": "Tech",
-     "weight": 0.158,
+     "weight": 0.16,
      "score": 6,
      "findings": [
       "tech-0",
@@ -369,7 +354,7 @@
     {
      "analyst": "viability",
      "label": "Viability",
-     "weight": 0.263,
+     "weight": 0.26,
      "score": 4.5,
      "findings": [
       "viability-0",
@@ -380,11 +365,11 @@
      "total": 3
     }
    ],
-   "math": "0.26×4.0 + 0.21×7.0 + 0.10×6.0 + 0.16×6.0 + 0.26×4.5 = 5.3",
+   "math": "0.26×4.0 + 0.21×7.0 + 0.11×5.0 + 0.16×6.0 + 0.26×4.5 = 5.2",
    "evidence": {
-    "total": 15,
-    "sourced": 10,
-    "sourcedShare": 0.67,
+    "total": 14,
+    "sourced": 9,
+    "sourcedShare": 0.64,
     "sources": [
      {
       "url": "https://sede.agenciatributaria.gob.es/Sede/ayuda/consultas-informaticas/presentacion-declaraciones-ayuda-tecnica/aplicacion-gratuita-verifactu-aeat.html",
@@ -1453,20 +1438,20 @@
      },
      {
       "what": "score",
-      "before": 5.3,
-      "after": 5.4,
-      "why": "Weighted factors now add up to 5.4"
+      "before": 5.2,
+      "after": 5.3,
+      "why": "Weighted factors now add up to 5.3"
      }
     ],
     "report": {
-     "score": 5.4,
+     "score": 5.3,
      "verdict": "pivot",
      "verdictLine": "Build it narrow and sell it by association, not stall by stall.",
      "factors": [
       {
        "analyst": "competition",
        "label": "Competition",
-       "weight": 0.263,
+       "weight": 0.26,
        "score": 4,
        "findings": [
         "competition-0",
@@ -1479,7 +1464,7 @@
       {
        "analyst": "market",
        "label": "Market",
-       "weight": 0.211,
+       "weight": 0.21,
        "score": 7.5,
        "findings": [
         "market-0",
@@ -1493,20 +1478,19 @@
       {
        "analyst": "regulation",
        "label": "Rules",
-       "weight": 0.105,
-       "score": 6,
+       "weight": 0.11,
+       "score": 5,
        "findings": [
         "regulation-0",
-        "regulation-1",
-        "regulation-2"
+        "regulation-1"
        ],
-       "sourced": 3,
-       "total": 3
+       "sourced": 2,
+       "total": 2
       },
       {
        "analyst": "tech",
        "label": "Tech",
-       "weight": 0.158,
+       "weight": 0.16,
        "score": 6,
        "findings": [
         "tech-0",
@@ -1519,7 +1503,7 @@
       {
        "analyst": "viability",
        "label": "Viability",
-       "weight": 0.263,
+       "weight": 0.26,
        "score": 4.5,
        "findings": [
         "viability-0",
@@ -1530,11 +1514,11 @@
        "total": 3
       }
      ],
-     "math": "0.26×4.0 + 0.21×7.5 + 0.10×6.0 + 0.16×6.0 + 0.26×4.5 = 5.4",
+     "math": "0.26×4.0 + 0.21×7.5 + 0.11×5.0 + 0.16×6.0 + 0.26×4.5 = 5.3",
      "evidence": {
-      "total": 16,
-      "sourced": 10,
-      "sourcedShare": 0.63,
+      "total": 15,
+      "sourced": 9,
+      "sourcedShare": 0.6,
       "sources": [
        {
         "url": "https://sede.agenciatributaria.gob.es/Sede/ayuda/consultas-informaticas/presentacion-declaraciones-ayuda-tecnica/aplicacion-gratuita-verifactu-aeat.html",

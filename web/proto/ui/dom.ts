@@ -29,11 +29,13 @@ export function countUp(root: HTMLElement, ms = 600): void {
     }
     const delay = Number(n.dataset.delay ?? 120);
     const t0 = performance.now() + delay;
-    n.textContent = fmt(0);
+    // Scores (decimals) roll up from just below the value: a glance mid-animation never reads "0.0/10".
+    const from = dec > 0 ? Math.max(0, target - 1.5) : 0;
+    n.textContent = fmt(from);
     const step = (now: number) => {
       const k = Math.min(1, Math.max(0, (now - t0) / ms));
       const e = 1 - Math.pow(1 - k, 4); // ease-out quart
-      n.textContent = fmt(target * e);
+      n.textContent = fmt(from + (target - from) * e);
       if (k < 1 && n.isConnected) requestAnimationFrame(step);
     };
     requestAnimationFrame(step);

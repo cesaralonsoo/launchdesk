@@ -8,16 +8,23 @@ import { REPORT_PAGES, type ProtoFlowV7 } from "../flow";
 import { DEMO_CHAPTERS, type Demo } from "../flow/demo";
 import type { Project } from "../../src/types";
 import { resultCard } from "./cards";
-import { countUp, el, isMobile, reducedMotion, stagger } from "./dom";
+import { countUp, el, esc, isMobile, reducedMotion, stagger } from "./dom";
 import { ldLogo } from "./logo";
 import { livePanel, siteOverlay } from "./moments";
 import { levelGlyph } from "./pixel";
 import {
   noBuildHtml,
-  analystTag, boomHtml, evidenceFoot, evidenceHtml, findingCard, floorHtml, hireHtml, ideaHtml, levelHtml, officesHtml,
+  analystTag, boomHtml, evidenceFoot, evidenceHtml, evWait, findingCard, floorHtml, hireHtml, ideaHtml, levelHtml, officesHtml,
   payHtml, reportPage, reportReader, sourceHtml, steerHtml, steerSuggestions, who, workTag,
 } from "./steps";
 import { ensureBrandFonts, makeView, type View } from "./view";
+import { createProject, liveConfig } from "../live/adapter";
+import { livePayHtml, mountPay } from "../live/pay";
+import { ldMark } from "./logo";
+import { badge } from "./pixel";
+import { builderBadge } from "./steps";
+import { BUILD_TEAM } from "../contracts";
+import type { AppConfig as AppConfigLike } from "../../src/types";
 
 export interface Ui {
   openOffices(): void;
@@ -39,9 +46,17 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
   if (deps.still) document.documentElement.dataset.still = "1";
   let view: View | null = null;
   let viewFor = "";
+  let viewOf: unknown = null;
+  let cfg: AppConfigLike | null = null;
+  void liveConfig().then((c) => {
+    cfg = c;
+    paintMode();
+    if (curKey === "idea" || curKey === "end") render(true);
+  });
   const getView = () => {
-    if (viewFor !== flow.project.id) {
+    if (viewFor !== flow.project.id || viewOf !== flow.project.legacy) {
       viewFor = flow.project.id;
+      viewOf = flow.project.legacy;
       view = flow.project.legacy ? makeView(flow.project.legacy as Project) : null;
       if (view) ensureBrandFonts(view);
     }
@@ -52,9 +67,9 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
 
   const root = el(`<div class="ui v7">
     <header class="chrome">
-      <a class="wordmark" href="?" aria-label="LaunchDesk, start over">${ldLogo(24)}</a>
+      <a class="wordmark" href="/" aria-label="LaunchDesk, start over">${ldLogo(24)}</a>
       <ol class="grow" aria-label="Growth"></ol>
-      <div class="chrome-r"><button class="offices-btn glass" type="button" data-act="offices" aria-label="Your offices"><span class="ob-g"></span><span class="ob-t">Your offices</span></button></div>
+      <div class="chrome-r"><span class="live-tag" hidden></span><button class="offices-btn glass" type="button" data-act="offices" aria-label="Your offices"><span class="ob-g"></span><span class="ob-t">Your offices</span></button></div>
     </header>
     <div class="demo-bar" hidden><div class="db-track"></div><div class="db-meta"><span class="db-ch"></span><span class="db-keys"><kbd>Space</kbd> pause <kbd>→</kbd> skip <kbd>Esc</kbd> exit</span></div></div>
     <div class="atag" data-on="0"></div>
@@ -66,6 +81,26 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
   const $ = <T extends HTMLElement>(s: string) => root.querySelector<T>(s)!;
   const growEl = $(".grow"), panelsEl = $(".panels"), overlay = $(".overlay"), atag = $(".atag"), wtag = $(".wtag"), obG = $(".ob-g");
   const demoBar = $(".demo-bar");
+  const modeTag = $(".live-tag");
+  /** The honest label: a real run on a sample-data server, or a sample world shown as an example. */
+  function paintMode() {
+    const st = flow.state.step;
+    let k = "", t = "";
+    if (demo) k = "";
+    else if (flow.live) {
+      if (cfg?.mockAi) (k = "demo"), (t = "Demo mode: sample analysis");
+    } else if (st === "idea" || st === "end" || st === "bedroom") {
+      if (cfg?.mockAi) (k = "demo"), (t = "Demo mode: sample analysis");
+    } else if (flow.isSample(flow.project.id)) (k = "example"), (t = "Example");
+    modeTag.hidden = !k;
+    if (k && (modeTag.dataset.k !== k || modeTag.dataset.t !== t)) {
+      modeTag.dataset.k = k;
+      modeTag.dataset.t = t;
+      modeTag.title = t;
+      // Phones get the short word so the tag never pushes "Your offices" off-screen.
+      modeTag.innerHTML = `<i></i><span class="lt-l">${t}</span><span class="lt-s">${k === "demo" ? "Demo" : t}</span>`;
+    }
+  }
 
   // ────────────────────────────── chrome: the growth track (room → floor → building → district)
   let growKey = "";
@@ -126,7 +161,7 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
       case "pay2":
         return s.step;
       case "hire":
-        return "hire";
+        return `hire:${flow.roster.length}`;
       case "evidence":
         return "evidence";
       case "report":
@@ -155,9 +190,16 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     const v = getView();
     if (key === "idea") return ideaHtml(flow.project.idea, typedIdea);
     if (key === "end") return ideaHtml(flow.project.idea, "", true);
+    if ((key === "pay1" || key === "pay2") && flow.live && !demo) {
+      const st = key === "pay1" ? 1 : 2;
+      const avs = st === 1 ? (flow.roster.length ? flow.roster.map((a) => badge(a.name, a.color, 26)).join("") : "") : BUILD_TEAM.map((b) => builderBadge(b, 26)).join("");
+      return livePayHtml(st === 1 ? "validate" : "build", cfg?.prices[st === 1 ? "validate" : "build"] ?? (st === 1 ? 10 : 20), avs,
+        st === 1 ? "Validate your idea" : "Build and launch", st === 1 ? "A research team picked for this idea" : "Brand · logo and site · launch plan · live",
+        !!cfg?.mockAi, ldMark(18, undefined, true));
+    }
     if (key === "pay1") return payHtml(flow, 1, !!typedIdea.trim() && typedIdea.trim() !== flow.project.idea.trim());
     if (key === "pay2") return payHtml(flow, 2, false);
-    if (key === "hire") return hireHtml(flow);
+    if (key.startsWith("hire")) return hireHtml(flow);
     if (key === "evidence") return evidenceHtml(flow, s.finding ?? 0);
     if (key.startsWith("report:")) return reportPage(flow, s.page ?? "score");
     if (key.startsWith("steer")) return steerHtml(flow, steerDraft);
@@ -169,8 +211,11 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     if (key.startsWith("district")) return levelHtml(flow, 3, v?.name ?? flow.project.title);
     return "";
   }
+  let disposePanel: (() => void) | null = null;
   function show(key: string | null, s: FlowStateV7) {
     if (key === curKey) return update(s);
+    disposePanel?.();
+    disposePanel = null;
     const old = curPanel;
     if (old) {
       old.classList.remove("in");
@@ -209,23 +254,26 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
   /** Progressive updates inside the same surface (no remount). */
   function update(s: FlowStateV7) {
     if (!curPanel || !curKey) return;
-    if (curKey === "hire") {
+    if (curKey.startsWith("hire")) {
       curPanel.querySelectorAll<HTMLElement>(".hire").forEach((li, i) => (li.dataset.on = i < flow.hired ? "1" : "0"));
       measure();
     } else if (curKey === "evidence") {
       const i = s.finding ?? 0;
-      const fd = flow.findings[i];
+      const fd = i < flow.revealed ? flow.findings[i] : undefined;
       const slot = curPanel.querySelector<HTMLElement>(".ev-slot")!;
       const curId = slot.querySelector<HTMLElement>(".fcard")?.dataset.fid;
       const head = curPanel.querySelector(".ev-who");
+      if (!fd && !slot.querySelector(".fcard")) slot.innerHTML = evWait(flow);
       if (fd && curId !== fd.id) {
         const fresh = el(evidenceHtml(flow, i));
         head?.replaceWith(fresh.querySelector(".ev-who")!);
         const card = el(findingCard(fd));
         const prev = slot.querySelector(".fcard");
         if (prev) {
+          // the old card is gone before the new one fades in (no overlapping text mid-swap)
           prev.classList.add("leave");
-          setTimeout(() => prev.remove(), 260);
+          card.classList.add("after");
+          setTimeout(() => prev.remove(), 180);
         } else slot.innerHTML = "";
         slot.appendChild(card);
         // the cell flies home: the newest cell pops
@@ -237,12 +285,52 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
   }
 
   function mount(p: HTMLElement, key: string, s: FlowStateV7) {
+    if ((key === "pay1" || key === "pay2") && flow.live && !demo) {
+      const host = p.querySelector<HTMLElement>(".pay-live");
+      const id = flow.live.id;
+      if (host)
+        disposePanel = mountPay(host, {
+          projectId: id,
+          stage: key === "pay1" ? "validate" : "build",
+          config: cfg,
+          onPaid: () => {
+            flow.live?.kick();
+            if (flow.live?.id === id) flow.next({ type: "approve-pay" });
+          },
+        });
+    }
     if (key === "idea" || key === "end") {
       const form = p.querySelector<HTMLFormElement>("form")!;
       const ta = form.querySelector<HTMLTextAreaElement>("textarea")!;
+      const go = form.querySelector<HTMLButtonElement>("button[type=submit]")!;
+      let sending = false;
+      // The sample sentences are one click away from the start (a judge never has to type to see a run).
+      const chipsHtml = () =>
+        cfg?.sampleIdeas.length ? `<div class="idea-chips">${cfg.sampleIdeas.map((x) => `<button type="button" data-idea="${esc(x)}">${esc(x.split(",")[0]!)}</button>`).join("")}</div>` : "";
+      const wireChips = () => form.querySelectorAll<HTMLButtonElement>("[data-idea]").forEach((b) => b.addEventListener("click", () => ((ta.value = b.dataset.idea!), submit())));
+      const fail = (msg: string) => {
+        sending = false;
+        go.disabled = false;
+        form.querySelector(".idea-err")?.remove();
+        form.querySelector(".idea-chips")?.remove();
+        form.querySelector(".idea-field")!.insertAdjacentHTML("afterend", `<p class="idea-err" role="alert">${esc(msg)}</p>${cfg?.mockAi ? chipsHtml() : ""}`);
+        wireChips();
+        measure();
+      };
       const submit = () => {
+        // An empty box runs the idea shown as the placeholder instead of an error.
+        if (!ta.value.trim() && !demo && key === "idea") ta.value = ta.placeholder;
         typedIdea = ta.value;
-        flow.next({ type: "submit-idea", idea: ta.value });
+        if (demo) return flow.next({ type: "submit-idea", idea: ta.value });
+        const idea = ta.value.trim();
+        if (idea.length < 15) return fail(idea ? "Tell us a bit more: one full sentence." : "Type your idea first.");
+        if (sending) return;
+        sending = true;
+        go.disabled = true;
+        createProject(idea).then(
+          (proj) => flow.startLive(proj, "new"),
+          (e: Error) => fail(e.message || "Could not start. Try again."),
+        );
       };
       form.addEventListener("submit", (e) => (e.preventDefault(), submit()));
       ta.addEventListener("keydown", (e) => {
@@ -251,6 +339,10 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
           submit();
         }
       });
+      if (!demo && cfg?.sampleIdeas.length) {
+        form.querySelector(".idea-field")!.insertAdjacentHTML("afterend", chipsHtml());
+        wireChips();
+      }
       if (demo && key === "idea") typeInto(ta, flow.project.idea || DEMO_IDEA_FALLBACK, 3600);
       else if (!isMobile() && !deps.still) setTimeout(() => ta.focus({ preventScroll: true }), 400);
     }
@@ -405,11 +497,19 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     }
     if (act === "replay" || act === "tour") return void (location.href = "?demo=1");
     if (act === "example") {
-      const done = flow.projects.find((p) => p.v7.report?.scalability.cap === 3) ?? flow.projects[flow.projects.length - 1];
-      return done && flow.next({ type: "switch-project", id: done.id });
+      // Replay the finished sample fast: findings stream in (~10 s), then the report opens. The world levels follow
+      // from the report's own buttons.
+      const done = flow.projects.find((p) => flow.isSample(p.id) && p.v7.report?.scalability.cap === 3) ?? flow.projects[flow.projects.length - 1];
+      if (!done) return;
+      flow.next({ type: "switch-project", id: done.id });
+      flow.setTiming({ findingEvery: 520, analystGap: 320, reportTail: 600 });
+      fastExample = true;
+      return flow.goto({ step: "evidence" }, { animate: true });
     }
     if (act === "path") return flow.commitPath(Number(t.dataset.i));
     if (act === "site") {
+      const slug = flow.live?.siteSlug;
+      if (slug) return void open(`/s/${encodeURIComponent(slug)}`, "_blank", "noopener");
       const v = getView();
       return v && openOverlay(siteOverlay(v), "site");
     }
@@ -436,11 +536,19 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     const s = flow.state;
     root.dataset.step = s.step;
     paintGrow();
+    paintMode();
     if (force) curKey = null;
     show(keyFor(s), s);
     paintTags();
   }
-  flow.onChange(() => render());
+  let fastExample = false;
+  flow.onChange((st) => {
+    if (fastExample && st.step !== "evidence") {
+      fastExample = false;
+      flow.setTiming({});
+    }
+    render();
+  });
   addEventListener("resize", () => {
     measure();
     paintTags();

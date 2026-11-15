@@ -154,7 +154,11 @@ export async function getProject(id: string): Promise<Project | null> {
     project.timings[stage] = allDone ? { started, finished: Math.max(...js.map((j) => Number(j.finished_at))) } : { started };
   }
   // v7: the analyst team's results sit next to the v4 fields (web/src ignores them).
-  if (v7.rows[0]?.json) (project.results as Record<string, unknown>).v7 = JSON.parse(String(v7.rows[0].json));
+  if (v7.rows[0]?.json) {
+    // The AI cost of the run is a server diagnostic (logged and stored), not something the page shows.
+    const { cost: _cost, ...pub } = JSON.parse(String(v7.rows[0].json)) as Record<string, unknown>;
+    (project.results as Record<string, unknown>).v7 = pub;
+  }
   // v3 rows keep working: upgrade old result shapes on read (additive, nothing is rewritten in the DB).
   return normalize(project);
 }

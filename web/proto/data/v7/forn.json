@@ -13,7 +13,7 @@
     "color": "#3B82F6",
     "mission": "Who already sells bread on these streets",
     "why": "Bread is sold on every block",
-    "weight": 0.357
+    "weight": 0.36
    },
    {
     "id": "market",
@@ -22,7 +22,7 @@
     "color": "#F59E0B",
     "mission": "Is bread money growing or shrinking",
     "why": "A bakery needs daily repeat buyers",
-    "weight": 0.286
+    "weight": 0.28
    },
    {
     "id": "viability",
@@ -31,7 +31,7 @@
     "color": "#8B7CF6",
     "mission": "Strengths, weak points and what kills it",
     "why": "Every idea gets a viability check",
-    "weight": 0.357
+    "weight": 0.36
    }
   ],
   "work": [
@@ -145,15 +145,15 @@
       "kind": "estimate",
       "text": "At €4.50 a loaf and 120 loaves a day, a shop takes about €14k a month.",
       "display": "≈ €14k / mo",
-      "basis": "120 × €4.50 × 26 days",
-      "impact": 1,
+      "basis": "120 × €4.50 × 26 days; revenue, not profit",
+      "impact": 0,
       "id": "market-3",
       "analyst": "market",
       "t": 9200,
       "source": null
      }
     ],
-    "score": 6.5,
+    "score": 6,
     "headline": "Less bread overall, more sourdough: a premium niche."
    },
    {
@@ -216,14 +216,14 @@
    }
   ],
   "report": {
-   "score": 4.5,
-   "verdict": "pivot",
-   "verdictLine": "A real neighbourhood business, not a startup: test weekend boxes before a shop.",
+   "score": 4.4,
+   "verdict": "no-go",
+   "verdictLine": "Not as a shop yet: bread is shrinking and bakers are scarce. Test weekend boxes first.",
    "factors": [
     {
      "analyst": "competition",
      "label": "Competition",
-     "weight": 0.357,
+     "weight": 0.36,
      "score": 3.5,
      "findings": [
       "competition-0",
@@ -236,8 +236,8 @@
     {
      "analyst": "market",
      "label": "Market",
-     "weight": 0.286,
-     "score": 6.5,
+     "weight": 0.28,
+     "score": 6,
      "findings": [
       "market-0",
       "market-1",
@@ -250,7 +250,7 @@
     {
      "analyst": "viability",
      "label": "Viability",
-     "weight": 0.357,
+     "weight": 0.36,
      "score": 4,
      "findings": [
       "viability-0",
@@ -262,7 +262,7 @@
      "total": 4
     }
    ],
-   "math": "0.36×3.5 + 0.29×6.5 + 0.36×4.0 = 4.5",
+   "math": "0.36×3.5 + 0.28×6.0 + 0.36×4.0 = 4.4",
    "evidence": {
     "total": 11,
     "sourced": 7,
@@ -297,7 +297,7 @@
    "confidence": "high",
    "scalability": {
     "score": 2.6,
-    "cap": 1,
+    "cap": 0,
     "reach": "Neighbourhood",
     "why": "The baker is the product: each shop needs its own oven, staff and street.",
     "wouldScale": [
@@ -370,7 +370,7 @@
   "status": "done",
   "researched": 0
  },
- "level": 1,
+ "level": 0,
  "sign": {
   "kind": "draft",
   "name": "Sourdough bakery in Gràcia",

@@ -22,7 +22,7 @@
     "color": "#3B82F6",
     "mission": "Which apps and neighbours already walk Madrid's dogs",
     "why": "Walk platforms already exist",
-    "weight": 0.313
+    "weight": 0.31
    },
    {
     "id": "regulation",
@@ -31,7 +31,7 @@
     "color": "#475569",
     "mission": "What the animal-welfare law asks of owners and walkers",
     "why": "Animal rules changed in 2023",
-    "weight": 0.125
+    "weight": 0.13
    },
    {
     "id": "viability",
@@ -40,7 +40,7 @@
     "color": "#8B7CF6",
     "mission": "Strengths, weak points and what kills it",
     "why": "Every idea gets a viability check",
-    "weight": 0.313
+    "weight": 0.31
    }
   ],
   "work": [
@@ -234,7 +234,7 @@
     {
      "analyst": "competition",
      "label": "Competition",
-     "weight": 0.313,
+     "weight": 0.31,
      "score": 3.5,
      "findings": [
       "competition-0",
@@ -247,7 +247,7 @@
     {
      "analyst": "regulation",
      "label": "Rules",
-     "weight": 0.125,
+     "weight": 0.13,
      "score": 5,
      "findings": [
       "regulation-0",
@@ -259,7 +259,7 @@
     {
      "analyst": "viability",
      "label": "Viability",
-     "weight": 0.313,
+     "weight": 0.31,
      "score": 4.5,
      "findings": [
       "viability-0",
