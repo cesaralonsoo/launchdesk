@@ -1,0 +1,381 @@
+{
+ "id": "forn",
+ "idea": "A neighbourhood sourdough bakery in Gràcia, Barcelona, €4.50 loaves, six mornings a week",
+ "title": "Sourdough bakery in Gràcia",
+ "createdAt": "2026-11-12T09:30:00.000Z",
+ "v7": {
+  "version": 7,
+  "roster": [
+   {
+    "id": "competition",
+    "role": "competition",
+    "name": "Leo",
+    "color": "#3B82F6",
+    "mission": "Who already sells bread on these streets",
+    "why": "Bread is sold on every block",
+    "weight": 0.357
+   },
+   {
+    "id": "market",
+    "role": "market",
+    "name": "Sam",
+    "color": "#F59E0B",
+    "mission": "Is bread money growing or shrinking",
+    "why": "A bakery needs daily repeat buyers",
+    "weight": 0.286
+   },
+   {
+    "id": "viability",
+    "role": "viability",
+    "name": "Mia",
+    "color": "#8B7CF6",
+    "mission": "Strengths, weak points and what kills it",
+    "why": "Every idea gets a viability check",
+    "weight": 0.357
+   }
+  ],
+  "work": [
+   {
+    "analyst": "competition",
+    "status": "done",
+    "findings": [
+     {
+      "kind": "number",
+      "text": "Spain has 11,000–11,500 artisan bakeries with their own workshop.",
+      "display": "11,000+",
+      "source": {
+       "url": "https://lexpress-franchise.com/es/articulos/situacion-sector-panaderias-espana/",
+       "title": "Situación del sector de las panaderías en España en 2026",
+       "domain": "lexpress-franchise.com",
+       "accessed": "2026-11-15"
+      },
+      "impact": 0,
+      "id": "competition-0",
+      "analyst": "competition",
+      "t": 1400
+     },
+     {
+      "kind": "competitor",
+      "text": "Supermarket bake-off bread: cheaper, open later, on every block.",
+      "competitor": {
+       "name": "Supermarket bake-off bread",
+       "named": false,
+       "note": "Cheap, convenient, not sourdough"
+      },
+      "basis": "Typical Barcelona high street",
+      "impact": -1,
+      "id": "competition-1",
+      "analyst": "competition",
+      "t": 4000,
+      "source": null
+     },
+     {
+      "kind": "number",
+      "text": "36% of artisan bakers name chains and supermarkets as a main worry.",
+      "display": "36%",
+      "source": {
+       "url": "https://www.corresponsables.com/actualidad/crisis-de-relevo-en-la-panaderia-artesanal-el-45-ve-dificil-encontrar-personal-en-la-proxima-decada/",
+       "title": "Crisis de relevo en la panadería artesanal: el 45% ve difícil encontrar personal en la próxima década",
+       "domain": "corresponsables.com",
+       "accessed": "2026-11-15"
+      },
+      "impact": -1,
+      "id": "competition-2",
+      "analyst": "competition",
+      "t": 6600
+     }
+    ],
+    "score": 3.5,
+    "headline": "Thousands of bakeries and supermarket bread compete on habit."
+   },
+   {
+    "analyst": "market",
+    "status": "done",
+    "findings": [
+     {
+      "kind": "number",
+      "text": "Bread demand fell to 27.82 kg a person in 2025, from 34.9 kg in 2015.",
+      "display": "27.82 kg",
+      "value": 27.82,
+      "unit": "kg a person",
+      "source": {
+       "url": "https://es.euronews.com/2025/11/08/el-pan-desaparece-de-la-mesa-espanola-del-kilo-diario-a-la-extincion-cultural",
+       "title": "El pan desaparece de la mesa española: del kilo diario a la extinción cultural",
+       "domain": "es.euronews.com",
+       "accessed": "2026-11-15"
+      },
+      "impact": -1,
+      "id": "market-0",
+      "analyst": "market",
+      "t": 1400
+     },
+     {
+      "kind": "number",
+      "text": "Spending on bread reached €3,378 million in 2024 (Mercasa data).",
+      "display": "€3,378M",
+      "value": 3378,
+      "unit": "€M",
+      "source": {
+       "url": "https://lexpress-franchise.com/es/articulos/situacion-sector-panaderias-espana/",
+       "title": "Situación del sector de las panaderías en España en 2026",
+       "domain": "lexpress-franchise.com",
+       "accessed": "2026-11-15"
+      },
+      "impact": 1,
+      "id": "market-1",
+      "analyst": "market",
+      "t": 4000
+     },
+     {
+      "kind": "number",
+      "text": "A Puratos study of 18,000 people expects sourdough consumption to grow 40% in 2025.",
+      "display": "+40%",
+      "source": {
+       "url": "https://www.interempresas.net/Alimentaria/581665-La-masa-madre-lidera-el-sector-de-la-panaderia-con-un-crecimiento-global-del-40-por.html",
+       "title": "La masa madre lidera el sector de la panadería con un crecimiento global del 40% para 2025",
+       "domain": "interempresas.net",
+       "accessed": "2026-11-15"
+      },
+      "impact": 1,
+      "id": "market-2",
+      "analyst": "market",
+      "t": 6600
+     },
+     {
+      "kind": "estimate",
+      "text": "At €4.50 a loaf and 120 loaves a day, a shop takes about €14k a month.",
+      "display": "≈ €14k / mo",
+      "basis": "120 × €4.50 × 26 days",
+      "impact": 1,
+      "id": "market-3",
+      "analyst": "market",
+      "t": 9200,
+      "source": null
+     }
+    ],
+    "score": 6.5,
+    "headline": "Less bread overall, more sourdough: a premium niche."
+   },
+   {
+    "analyst": "viability",
+    "status": "done",
+    "findings": [
+     {
+      "kind": "risk",
+      "text": "72% of artisan bakers struggled to hire skilled staff last year.",
+      "display": "72%",
+      "source": {
+       "url": "https://www.corresponsables.com/actualidad/crisis-de-relevo-en-la-panaderia-artesanal-el-45-ve-dificil-encontrar-personal-en-la-proxima-decada/",
+       "title": "Crisis de relevo en la panadería artesanal: el 45% ve difícil encontrar personal en la próxima década",
+       "domain": "corresponsables.com",
+       "accessed": "2026-11-15"
+      },
+      "impact": -1,
+      "id": "viability-0",
+      "analyst": "viability",
+      "t": 1400
+     },
+     {
+      "kind": "risk",
+      "text": "About 600 bakeries close in Spain every year, according to ASEMAC.",
+      "display": "≈ 600 / yr",
+      "source": {
+       "url": "https://www.corresponsables.com/actualidad/crisis-de-relevo-en-la-panaderia-artesanal-el-45-ve-dificil-encontrar-personal-en-la-proxima-decada/",
+       "title": "Crisis de relevo en la panadería artesanal: el 45% ve difícil encontrar personal en la próxima década",
+       "domain": "corresponsables.com",
+       "accessed": "2026-11-15"
+      },
+      "impact": -1,
+      "id": "viability-1",
+      "analyst": "viability",
+      "t": 4000
+     },
+     {
+      "kind": "strength",
+      "text": "Sourdough keeps three to four days, so fewer loaves go to waste.",
+      "basis": "Typical shelf life of naturally leavened bread",
+      "impact": 1,
+      "id": "viability-2",
+      "analyst": "viability",
+      "t": 6600,
+      "source": null
+     },
+     {
+      "kind": "strength",
+      "text": "Weekend pre-order boxes let you bake to order before renting a shop.",
+      "basis": "Common way small bakers start",
+      "impact": 1,
+      "id": "viability-3",
+      "analyst": "viability",
+      "t": 9200,
+      "source": null
+     }
+    ],
+    "score": 4,
+    "headline": "A good craft business, but hard to staff and hard to copy."
+   }
+  ],
+  "report": {
+   "score": 4.5,
+   "verdict": "pivot",
+   "verdictLine": "A real neighbourhood business, not a startup: test weekend boxes before a shop.",
+   "factors": [
+    {
+     "analyst": "competition",
+     "label": "Competition",
+     "weight": 0.357,
+     "score": 3.5,
+     "findings": [
+      "competition-0",
+      "competition-1",
+      "competition-2"
+     ],
+     "sourced": 2,
+     "total": 3
+    },
+    {
+     "analyst": "market",
+     "label": "Market",
+     "weight": 0.286,
+     "score": 6.5,
+     "findings": [
+      "market-0",
+      "market-1",
+      "market-2",
+      "market-3"
+     ],
+     "sourced": 3,
+     "total": 4
+    },
+    {
+     "analyst": "viability",
+     "label": "Viability",
+     "weight": 0.357,
+     "score": 4,
+     "findings": [
+      "viability-0",
+      "viability-1",
+      "viability-2",
+      "viability-3"
+     ],
+     "sourced": 2,
+     "total": 4
+    }
+   ],
+   "math": "0.36×3.5 + 0.29×6.5 + 0.36×4.0 = 4.5",
+   "evidence": {
+    "total": 11,
+    "sourced": 7,
+    "sourcedShare": 0.64,
+    "sources": [
+     {
+      "url": "https://lexpress-franchise.com/es/articulos/situacion-sector-panaderias-espana/",
+      "title": "Situación del sector de las panaderías en España en 2026",
+      "domain": "lexpress-franchise.com",
+      "accessed": "2026-11-15"
+     },
+     {
+      "url": "https://www.corresponsables.com/actualidad/crisis-de-relevo-en-la-panaderia-artesanal-el-45-ve-dificil-encontrar-personal-en-la-proxima-decada/",
+      "title": "Crisis de relevo en la panadería artesanal: el 45% ve difícil encontrar personal en la próxima década",
+      "domain": "corresponsables.com",
+      "accessed": "2026-11-15"
+     },
+     {
+      "url": "https://es.euronews.com/2025/11/08/el-pan-desaparece-de-la-mesa-espanola-del-kilo-diario-a-la-extincion-cultural",
+      "title": "El pan desaparece de la mesa española: del kilo diario a la extinción cultural",
+      "domain": "es.euronews.com",
+      "accessed": "2026-11-15"
+     },
+     {
+      "url": "https://www.interempresas.net/Alimentaria/581665-La-masa-madre-lidera-el-sector-de-la-panaderia-con-un-crecimiento-global-del-40-por.html",
+      "title": "La masa madre lidera el sector de la panadería con un crecimiento global del 40% para 2025",
+      "domain": "interempresas.net",
+      "accessed": "2026-11-15"
+     }
+    ]
+   },
+   "confidence": "high",
+   "scalability": {
+    "score": 2.6,
+    "cap": 1,
+    "reach": "Neighbourhood",
+    "why": "The baker is the product: each shop needs its own oven, staff and street.",
+    "wouldScale": [
+     "A second baker trained on your recipes",
+     "Wholesale loaves to cafés nearby",
+     "A central workshop feeding two shops"
+    ],
+    "parts": [
+     {
+      "label": "Reach",
+      "score": 2
+     },
+     {
+      "label": "Repeatable",
+      "score": 4
+     },
+     {
+      "label": "Margins at scale",
+      "score": 3
+     },
+     {
+      "label": "Founder-free",
+      "score": 2
+     },
+     {
+      "label": "Digital leverage",
+      "score": 2
+     }
+    ]
+   },
+   "strengths": [
+    {
+     "text": "Sourdough is the growing corner of a shrinking market.",
+     "finding": "market-2"
+    },
+    {
+     "text": "Bread spending is still €3.4 billion a year.",
+     "finding": "market-1"
+    },
+    {
+     "text": "Pre-orders let you bake to demand.",
+     "finding": "viability-3"
+    }
+   ],
+   "weaknesses": [
+    {
+     "text": "72% of artisan bakers can't find skilled staff.",
+     "finding": "viability-0"
+    },
+    {
+     "text": "People buy less bread every year.",
+     "finding": "market-0"
+    },
+    {
+     "text": "Supermarket bread is cheaper and open later.",
+     "finding": "competition-1"
+    }
+   ],
+   "nextSteps": [
+    "Sell 40 weekend boxes to neighbours by pre-order",
+    "Bake three test batches and log the cost per loaf",
+    "Price two ground-floor units with extraction in Gràcia"
+   ],
+   "pivot": {
+    "idea": "Weekend sourdough boxes by pre-order, no shop yet",
+    "why": "Proves repeat buyers before rent and staff"
+   }
+  },
+  "steers": [],
+  "status": "done",
+  "researched": 0
+ },
+ "level": 1,
+ "sign": {
+  "kind": "draft",
+  "name": "Sourdough bakery in Gràcia",
+  "color": "#1D1D1F"
+ },
+ "legacy": null,
+ "prepared": []
+}

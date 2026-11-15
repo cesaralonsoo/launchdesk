@@ -40,3 +40,6 @@ export function toPast(p: Project): PastProject {
  * Tablero (board-game café, No-go, the honest no), Segunda Vuelta (restored bikes, Go, launched → district).
  */
 export const PAST_PROJECTS: PastProject[] = [bread, dog, games, bikes].map((p) => toPast(p as unknown as Project));
+
+// v7 (WS-INTEL): real sourced sample worlds, the deterministic steer mock and helpers (data/v7.ts, DATA.md).
+export { SAMPLE_V7, PROJECTS_V7, mockSteer, applySteerToProject, brandSignOf, findingsInOrder, preparedSteers, DEMO_STEER_NOTE, type PreparedSteer } from "./v7";

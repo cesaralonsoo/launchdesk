@@ -1,3 +1,57 @@
+# LaunchDesk prototype v7 — contracts (current; v5/v6 below are history)
+
+**The brief in one line:** an idea starts in the founder's **room**, a team of analysts chosen *for that idea* gathers **evidence with real sources** one finding at a time, a **report** (score + scalability) comes out of it, and only then the room **booms** into an office floor → building → district, **as far as the idea truly scales**. You are the CEO: you can steer the team. It must read in **2 minutes**.
+
+Source of truth for types: `contracts.ts` (v7 block at the end). Stubs that typecheck today: `world/v7.ts` (`asWorldV7(world)` adapter), `world/bedroom/index.ts` (`createBedroomModel`), `data/v7.ts` (`SAMPLE_V7`, `PROJECTS_V7`, `mockSteer`, re-exported from `data/index.ts`). Owners replace them freely, keeping the exported signatures.
+
+## Ownership (disjoint)
+
+| WS | Files | Delivers |
+|---|---|---|
+| **WS-OFFICE** | `world/office/**`, `world/bedroom/**` | `OfficeModelV7`, `BedroomModel`. Revert characters to v5 (`git show f9cb376:web/proto/world/office/agents.ts`: soft rounded figures, two-dot eyes). Pixel-art direction for office + bedroom. New company sign. |
+| **WS-WORLD** | `world/index.ts, camera.ts, daycycle.ts, sky.ts, v7.ts, levels/**`, other new `world/*` | `WorldV7` (createWorld returns it; drop the adapter), boom, level cap ghosts, roster mapping, projects. |
+| **WS-EXP** | `proto.html, main.ts, ui/**, themes/**, flow/**` | `FlowV7`, one-thing-at-a-time UI, fixed theme, new LaunchDesk logo, demo mode, deep links. |
+| **WS-INTEL** | `server/**, test/**, data/**` | Real sourced samples (`ProjectV7`), `ResultsV7` on the server, roster picker, steer endpoint + mock. |
+
+Shared changes to `contracts.ts`: additive only, announced under "v7 notes (<id>)" below. Never `web/src/**` or `public/**`. No new deps.
+
+## a) Levels — `WorldLevel = 0|1|2|3`, `LEVEL_META`
+0 **Your room** (founder + laptop, all of phase 1) · 1 **Your office** (floor, phase 2 build) · 2 **Your building** (live) · 3 **Your district** (only ideas that scale). `levelTransition(from,to)`: 0→1 = **boom** (`BOOM_MS` 2600: 150 ms anticipation, laptop flash, room walls fold outward, props burst into pixel cubes, the floor slab spreads out from the room's footprint and the rooms rise column by column, analysts hop to their research desks, camera pulls to the floor overview; reduced motion = 400 ms crossfade); 1→2→3 = the v6 continuous pull-backs; switching projects = `"switch"`. The old `Level` (1|2|3) and `setLevel` stay for compatibility.
+
+## b) Dynamic roster
+`ROLE_LIBRARY`: viability (Mia), competition (Leo), market/money (Sam), demand (Ava), pricing (Theo), location (Lola), regulation (Omar), tech (Kai), scalability (Iris), each with `dept`, colour, default mission, score weight, hiring rule. The validate stage hires **3–5** (`Analyst {id=role, role, name, color, mission (for this idea, ≤12 w), why (≤12 w), weight normalised}`); viability + competition always. Build specialists `BUILD_TEAM = nova, dex, rae, pip` are phase-2 hires (asleep until $0.20). `ActorId = AnalystRole | BuildDept | "founder"`.
+Seats (`seatOf(id, roster, level)`): **bedroom** = founder at `desk`, analysts at `s0…s4` in hire order (bed edge, beanbag, window cushion, pinboard, door chair). **Floor** (same 4×2 footprint as v6) = back row research wing `r0 r1 r2 r3` (roster order, 5th analyst = 2nd desk in r3); front row `lobby` (founder's CEO desk + reception) · `nova` · `dex` · `launch` (rae desk 0, pip desk 1). The bedroom sits exactly on the lobby footprint (`BEDROOM_FOOTPRINT` cx −9, cz 3.3, 6×5) so the founder's desk becomes the CEO desk after the boom.
+`ActorState`: absent · arriving (hire "poof", self-resolves to idle ~900 ms) · idle · working · presenting · done · asleep.
+**World API (`WorldV7 extends World`):** `worldLevel`, `setWorldLevel(l)`, `setLevelCap(cap)`, `setRoster(r)`, `setActorState(id, s, {instant})`, `pulse(id, kind)` (pixel "paper" flies to the founder/pinboard when a finding lands), `focusActor(id|"overview")`, `actorScreenPoint(id)`, `onActorClick`, `setSign(CompanySign)`, `setProject(WorldProject)`. Above the cap the next level shows as a ghost (dashed clay outline, no lights). **Office (`OfficeModelV7`)**: same + `floorRoomBounds(room)`, `pickActor`, `setReveal(k)` (boom: 0 = only lobby footprint, 1 = full floor). **Bedroom (`BedroomModel`)**: root origin = room floor centre, ≤ 2.6 high; `focusBounds`, `setBoom(k)` (0 intact → 1 gone), `applyAtmosphere`, `update`.
+`CompanySign {kind: draft|brand, name, tagline?, color, glyph?}`: bedroom = handwritten note on the pinboard; floor = lobby wall sign; draft = working title until Nova, brand = Nova name + Dex glyph drawn on the pixel grid. Never the LaunchDesk logo.
+
+## c) Evidence + report
+`Finding {id, analyst, kind: fact|estimate|competitor|risk|strength|number, text ≤18 w, value?, unit?, display?, source?: {url,title,domain,accessed YYYY-MM-DD} | null, basis? (estimates), competitor? {name, named, price?, note}, impact −2…+2, t (ms after the analyst started), replaces?}`. **fact / number / named competitor require a source**; without one it is an estimate with a basis; an unsourced competitor is a category (`named:false`). `AnalystWork {analyst, status, findings, score 0–10 (≤ 7.5 if none sourced), headline}`.
+`IdeaReport {score, verdict, verdictLine, factors[{analyst,label,weight,score,findings[],sourced,total}], math, evidence {total, sourced, sourcedShare, sources[]}, confidence (= confidenceFor(share): ≥.6 high, ≥.3 medium), scalability {score 0–10, cap, reach, why, wouldScale[1–3], parts[Reach, Repeatable, Margins at scale, Founder-free, Digital leverage]}, strengths[3]{text,finding}, weaknesses[3], nextSteps[3], pivot?}`. `levelCapFor(s, verdict)`: no-go → 0, ≤3 → 1 Floor, 4–6 → 2 Building, ≥7 → 3 District. `scoreDisplay(r)`: **hero only with ≥ 6 findings and ≥ 3 sourced**, otherwise "provisional" (small, says what is missing). The score always shows "Evidence n · m sourced" next to it. The report is what $0.10 buys.
+
+## d) CEO steer
+`SteerRequest {note ≤280, target?}` → `SteerResult {id, note, ack ≤14 w, status, rerun[], hired[], dropped[], findings[] (with replaces), changes[{what: score|factor|scalability|verdict|finding|roster, key?, before, after, why}], report, at}`. Real app: `POST /api/projects/:id/steer` (owner key, same auth as /run) → 202 `{id, ack, rerun}`; 409 while a stage runs; 429 after `STEER_LIMIT` = 3 per stage; progress via the existing GET poll at `results.v7.steers[]`; free. Proto: `mockSteer(project, note, target?)` (WS-INTEL makes it keyword-deterministic with prepared, honest variants for the sample, e.g. "office workers, not tourists"). UI shows ack → rerunning analysts work in the world → diff chips ("Demand 6.4 → 7.0").
+
+## e) Projects = worlds
+Server stores `results.v7: ResultsV7 {version 7, roster, work[], report, steers[]}` additively (keep v4 `mia/leo/sam/…` so `web/src` keeps working). UI uses `ProjectV7 {id, idea, title, createdAt, v7, level reached, sign, legacy (v6 Project for phase-2 cards)}`; `worldProjectOf(p)` → `WorldProject {id, level, cap, capWhy, roster, builders, sign}` → `world.setProject()`. UI: "Your offices" switcher, one world per project; storage key `launchdesk.proto.projects.v7` (try/catch).
+
+## f) UI theme fixed
+`UI_THEME = "graphite"` light. The day cycle changes **only the scene** (sky, sun, lamps, windows). `ui/**` must not subscribe to `onClock` for colours; remove `applyDayTokens`/`commitScheme` from boot; panels stay opaque enough (fill ≥ 0.88) that a night sky never darkens them; the logo and text never change.
+
+## g) Flow, demo, deep links
+`FlowStepV7`: bedroom → idea → pay1 → hire → evidence → report (pages score → scale → points → next) → steer (optional loop) → boom → floor → pay2 → build (nova, dex, rae, pip × working/result) → live → building → district → end. `STEP_LEVEL` maps steps to levels (building/district clamp to the cap and show the ghost + why). `FlowStateV7 {step, projectId, analyst?, finding?, page?, builder?, phase?, level}`; actions add `steer`, `decide grow|pivot|stop`, `switch-project`, `new-project`.
+**UI rules:** one surface at a time; ≤ 12 words outside cards; each step has one headline and one action; findings arrive one at a time as a single chip (kind badge, text, source domain or "Estimate · basis"), then collapse into a counter; the score appears only in the report.
+**`?demo=1`** (`DEMO_SCRIPT`, ~110 s, `DEMO_LENGTH_S` 112): 0 room + idea types itself · 6 pay1 · 10 hire · 18 evidence (~10 findings, 2.6 s each) · 46 report score · 53 scale · 59 points · 64 steer · 72 boom · 78 pay2 · 81/85/89/93 nova/dex/rae/pip · 96 live · 100 building · 104 district ghost + what would make it scale · 109 end "Your turn". Space pause, → skip, Esc exit; thin chapter bar on top; `&t=<s>` seeks.
+**Deep links (`readParamsV7`)**: `?step=bedroom|idea|pay1|hire|evidence|report|steer|boom|floor|pay2|build|live|building|district|end`, also `?step=nova|dex|rae|pip` (= build + who); `&analyst=<role>&n=<i>` (evidence), `&page=score|scale|points|next`, `&who=`, `&phase=working|result`, `&project=<id>`, `&demo=1&t=`. v6 params (`time`, `cycle`, `still`, `quality`, `ui`, `switcher`) unchanged. `html[data-ready="1"]` / `data-busy` unchanged.
+
+## Logo
+WS-EXP replaces the LaunchDesk mark completely (`ui/logo.ts`, favicon): drawn on a pixel grid to match the pixel-art world, one ink colour + at most one BCH-green pixel, legible at 16 px, no gradients. The in-world company sign is WS-OFFICE's and shows the user's company, not LaunchDesk.
+
+## Gates
+`npx tsc --noEmit -p web/proto`, `npm run typecheck`, `npm run build`, `npm test`. No fabricated statistics, names, quotes or URLs: every `source` is a page actually fetched (url + title + access date); everything else is an estimate. Screenshots at 1440×900 and 390×844.
+
+---
+
 # LaunchDesk prototype v5 — contracts
 
 The brief, in one line: **a minimalist, beautiful office that grows into a tower and then a district while the user watches seven specialists assemble and value their idea.** The user does three things (type the idea, approve $0.10, approve $0.20) and sets the pace on results ("Next"). We lead everything else.
@@ -282,3 +336,98 @@ Only `world/office/**` changed. `OfficeModel` API, coordinates, `bounds()`/`room
 - **Day cycle:** default is a 30-minute day starting at 0.64 (late afternoon). UI tokens come in two families (light DAY↔GOLDEN, dark NIGHT↔EMBER) with hysteresis; the light/dark swap waits up to 45 s and is applied on the next panel change (`commitScheme`) with a 1.3 s crossfade, so the UI never flips under the user's eyes. `?cycle=<sec>`, `?time=<0..1|dawn|day|golden|dusk|night>`, `?switcher=1`.
 - **Light:** golden-hour key retuned (low raking sun, warm sky), crisper day, interior darkening delayed, more lit windows at night.
 - **Mobile:** sticky verdict actions, top scrim under the wordmark, scrollable card tabs, projects as a list.
+
+## v7 notes (<id>)
+
+Append cross-workstream notes here, one subsection per workstream.
+
+### v7 notes (ws-world, port 5272)
+
+- **`createWorld(host, opts)` returns `WorldV7 & WorldExtras` directly** (`world/index.ts`, type `WorldX`). `world/v7.ts#asWorldV7` is now a typed pass-through (kept so stub-era imports compile). Options are additive: `WorldOptionsV7 = WorldOptions & { worldLevel?: 0|1|2|3; pixel?: 0|1|2 }`. Pass `worldLevel: 0` to boot in the room (default = `level ?? 1`). The v6 `level` getter returns `max(1, worldLevel)`; `setLevel(l)` = `setWorldLevel(l)`.
+- **Levels.** 0 = `createBedroomModel()` placed at `BEDROOM_FOOTPRINT` (office-root coords; office root stays at the origin). `setWorldLevel` follows `levelTransition`: `boom` for 0→1 (animated, `BOOM_MS`), v6 pull/push for 1↔2↔3, crossfade (canvas only, sky stays) for every other jump and for `setProject`. Reduced motion: the boom is a 400 ms crossfade. `animate:false` snaps.
+- **Boom (world/boom.ts, timings in `BOOM`).** 0–150 ms push-in + laptop flash (a point light at `bedroom.actorAnchor("founder")`); 150 ms burst: 150 pixel cubes (room colours + roster colours) thrown out of the footprint with one bounce, two stepped octagonal shockwaves, a 0.5 s camera kick. `bedroom.setBoom(k)` over 150–1000 ms, `office.setReveal(k)` over 420–2270 ms (linear k; the office eases it), and the camera holds on the room through the burst, then pulls to the floor overview from 320 ms to 2600 ms. The bedroom's own cube burst and the world's 80 cubes add up; WS-OFFICE may drop theirs or the world can (`N` in boom.ts). **If the office has no `setReveal` yet**, the world spreads the office root out of the lobby footprint (scale) as a fallback. Framing always uses the office's rest transform.
+- **Cap + ghost (world/levels/ghost.ts).** `setLevelCap(cap)` then `setWorldLevel(l > cap)` builds `cap` and frames the ghost of `cap+1`: a dashed clay blueprint (instanced dash boxes + faint volumes, no lights, slow breathing) with a pixel padlock sprite: cap 0 = the 7 other floor rooms around the room, cap 1 = the 12-floor tower outline over the office, cap 2 = every district building (new `District.ghostBoxes()`) with the padlock over the tower roof. Extras: `ghostScreenPoint()` (CSS px of the padlock, for the "why it stops here" tag) and `ghostLevel()`.
+- **Actors.** `setRoster`, `setActorState`, `setSign` go to both the bedroom and the office (so the hand-over at the boom is seamless); `pulse` goes to whichever is shown. `focusActor(id)` frames `bedroom.focusBounds(id)` at level 0 and `office.floorRoomBounds(seatOf(id).room)` on the floor (diving back in from 2/3). `actorScreenPoint` is null at levels 2/3 and during the boom. `onActorClick` uses `pickActor`. Until the office implements the v7 methods, the world maps actors onto the v6 rooms (r0..r3 = mia/leo/sam/nova rooms, nova→dex room, dex→rae room, launch→pip room).
+- **`setProject(p)`**: 600 ms crossfade; inside it sets cap, roster, founder idle, analysts idle (done if `p.level ≥ 1`), builders idle/done or asleep, sign, and snaps to `min(p.level, cap)` with no ghost. Portfolio (`setPortfolio`) is unchanged from v6.
+- **Owner update (César): default is `?pixel=0` = no renderer pixelation** (native, crisp v6-quality render; the pixel-art flavour comes from WS-OFFICE's flat shading/textures). `?pixel=1|2` remain opt-in looks.
+- **Caps are not forever (owner update):** every idea can scale (a bakery can become a franchise). The ghost + padlock means "unlock by choosing a scale path". When the UI/flow commits to a path, call `setLevelCap(higher)`: if the flow had already asked for that level, the world grows into it immediately (ghost → real building/district with the normal pull-back).
+- **Pixel art (world/pixel.ts, opt-in).** The canvas renders at one art pixel per 2 CSS px (`?pixel=1`; 1.5 px on phones) into a half-float target; one full-screen pass tone-maps, adds a 1-pixel ink outline on silhouettes and depth breaks (warm umber by day, navy at night), quantises to 40 levels with a 4×4 Bayer dither, and the canvas is upscaled with `image-rendering: pixelated`. `?pixel=2` = 3 CSS px, 24 levels (chunky). `?pixel=0` = v6 native look. The DOM UI is never pixelated. The sky follows: in pixel mode it is painted into a small canvas (2 × art pixel) with dithered bands and square, step-twinkling stars. Extras: `world.pixel`, `world.setPixel(m)`.
+- **Day cycle untouched** (sky, sun, lamps, windows); the world still exposes `onClock`, but per §f the UI must not use it for colours.
+- **For WS-OFFICE:** with `setReveal(0)` one standing figure is still visible on the hidden floor (front-right room, seen through the cap-0 floor ghost: `harness.html?wl=0&cap=0&ask=1`). Actors should hide while their room is unrevealed.
+- **Performance** (headless Chrome, Metal, 1440×900 @2×, quality=high, pixel=1): 60 fps in room, floor, building and district, p95 17.5 ms. During the boom, p95 17.6 ms with at most one 67 ms frame; programs are precompiled on idle (`pixel.compile`) so the first boom does not hitch on shader compiles.
+- **Dev harness**: `/proto/world/harness.html?wl=0..3&cap=&ask=&boom=<ms>&play=boom&pixel=&roster=3..5&focus=<actor>&brand=1&devroom=1` (`devroom=1` = a DEV-ONLY placeholder room from `world/dev-room.ts`, never imported by the app, for testing while the real bedroom is a stub). `debugBoom(ms)` poses the boom deterministically.
+
+### v7 notes (WS-INTEL)
+
+- **Server-only `ResultsV7` fields (additive, optional):** `status` (planning | researching | analysing | judging | done | error), `error` and `researched`. The UI can read `status` to show progress, and can ignore it otherwise. v7 lives at `project.results.v7`, stored in its own table, `results_v7`.
+- **Endpoint `POST /api/projects/:id/steer` `{note, target?}`:**
+  - Success returns 202 `{id, ack, rerun}`. The UI then polls the project until `steers[i].status` is `"done"`.
+  - Errors:
+    - 400: the note is not 3–280 characters.
+    - 402: validate is not paid.
+    - 404: unknown project.
+    - 409: a steer or stage is running, or there is no report yet.
+    - 429: there are already 3 steers.
+- **Scoring:**
+  - Steps: 1.0 for a sourced finding, 0.5 for an estimate.
+  - A factor with no sourced finding is capped at 7.5.
+  - Bands: Go at 6.5 or above with no factor at 3 or below; Pivot from 4.5; No-go below 4.5.
+  - `report.math` states the rule.
+  - All four samples are pivot. That is honest, so the UI should not assume any sample reaches Go.
+- **Data exports** (`data/index.ts`):
+  - `SAMPLE_V7` (title "Metro coffee kiosk", id pausa, level 0).
+  - `PROJECTS_V7`, in the order `[pausa, forn, ronda, tique]`.
+  - `DEMO_STEER_NOTE`, which is "Focus on office workers, not tourists, and start as a stand.". The score goes 5.5 → 5.9.
+  - `preparedSteers(id)` and `mockSteer`.
+  - `applySteerToProject`, which shifts the `t` of new findings past the kept ones.
+  - `findingsInOrder` and `brandSignOf`.
+- **The prototype's steer mock** returns an honest no-op (`changes: []`) for notes it has no prepared answer for. The server does the same in MOCK_AI.
+- **Caps:** forn 1, pausa 2, ronda 2, tique 3. Each sample's level is at or below its cap.
+- See `data/DATA.md` (v7) for the hero element per screen and the reveal order.
+
+### v7 notes (ws-office, port 5271)
+
+- **Characters are the v5 figures again** (`world/office/cast.ts`; the v6 `agents.ts` is deleted). `CAST` keeps the v5 looks for the original seven and adds looks for every v7 analyst plus the founder (hood, `FOUNDER_COLOR` #0AC18E). A roster colour overrides the shirt. States follow `ActorState`: `absent`; `arriving` (pop-in + cube poof, then idle after 900 ms); `idle`; `working` (typing, or a lap laptop when standing); `presenting` (paper raised); `done` (hop); `asleep`.
+- **Style knob** (`world/office/style.ts`): `clean | pixel | voxel`. Default is **voxel**: pixelated nearest-filtered textures, posterised; native pixel-art textures; flat shading; low-segment cylinders; cube plants; toon figures. Set it with `createOfficeModel({style})` / `createBedroomModel({style})` or `?ostyle=` (for dev comparisons). It reads best with WS-WORLD's `?pixel=1` pass on top, which is assumed to be the default renderer layer. The models never post-process. `applyAtmosphere` stays allocation-free (`lookFromAtmosphere` plus registry `resolve`).
+- **Office (`createOfficeModel`) returns `OfficeModelExt`.** This is `OfficeModelV7` plus legacy `setDeptState/deptState/roomBounds/pick/anchor`, `actorState`, `trayPoint`, `style` and `hints`. Exports: `envProbe(renderer)` (shared PMREM per renderer) and `OFFICE_STYLES`.
+  - **Roster:** `setRoster` puts research rooms r0..r3 in roster order, with the 5th analyst at r3 desk 1. Room furniture and wall art come from the analyst's role: viability SWOT, competition cork wall + globe, market money board, demand personas, pricing tags, location map, regulation binders, tech code wall + rack, scalability growth board. A room with no analyst shows a "HIRING" board. Wall art is shapes only: no numbers, names or logos.
+  - **Defaults:** analysts idle, builders asleep, founder idle at the lobby CEO desk. `FOUNDER_SPOT` is the same as the bedroom desk spot.
+  - **Reveal:** `setReveal(0)` hides the whole floor, and `setReveal(1)` is the rest state. The office eases it internally.
+  - **Pulse:** `pulse(id, kind)` flies a paper tinted by kind from the actor to the founder's tray.
+  - **Legacy mapping:** mia/leo/sam are roster 0/1/2.
+- **Lobby sign** = `setSign(sign)`, drawn as a 128×40 pixel canvas on the lobby back wall. A brand sign is a backlit panel in the brand colour, with glyph, name and an optional tagline. A draft sign is a kraft card with "WORKING TITLE" and the name; before naming it reads "YOUR IDEA". It never shows the LaunchDesk logo. The panel glows at night through the "glow" material role. Only the 3D sign is lit; the DOM UI is never touched.
+- **Bedroom (`createBedroomModel`, level 0)** carries its own plinth, matching the office slab, so it can stand alone at `BEDROOM_FOOTPRINT`.
+  - **Window:** the sky and skyline follow the day cycle, with lit windows, moon and fairy lights at night.
+  - **People:** the founder starts `working` at the desk. Analysts start `absent` and appear (`arriving`) at five spots: bed edge, beanbag, window bench, pinboard and door chair.
+  - **Pulse:** `pulse` pins a sticky in the kind colour on the cork board.
+  - **Boom:** `setBoom(k)` is scrubbable from 0 to 1:
+    - 0–0.1: flash.
+    - 0.06–0.42: walls fold outward on their outer edges.
+    - Up to 0.62: walls vanish.
+    - Throughout: furniture squashes and shrinks, and 220 cubes are thrown out (140 on low quality).
+    - 0.55–0.85: the floor goes.
+  - **API:** `focusBounds(id)` and `actorAnchor(id)` are implemented.
+- **Preview** (`/proto/world/office/preview.html`) params:
+  - Model, style and post-process: `model=bedroom`, `ostyle=`, `px=2` (preview-only pixel pass).
+  - Roster and actors: `roster=viability,competition,…`, and `actors=room0|hire|evidence|report|floor|build|live` or `id:state,…`.
+  - Sign: `sign=brand|draft:Name:#hex:glyph:tagline`.
+  - Camera and effects: `focus=<FloorRoom>|actor:<id>`, `reveal=0..1`, `boom=0..1`, `boomplay=1`, `pulse=id:kind,…`.
+  - `window.__office` is exposed.
+
+### v7 notes (owner update)
+César, relayed by the coordinator; overrides parts of §a/§c/§g:
+- **Every business can scale** (even a neighbourhood bakery, as a franchise). Scalability is no longer a hard cap that says "your business fits a Floor". The report shows the **scalability score** (how hard, in words: ≥ 7 "Natural fit", ≥ 4 "Doable with work", else "Hard, but possible") plus the **best scale path** for this idea and up to 2 alternatives.
+- **The next level is unlocked by committing to a scale path.** `levelCapFor` still gives the level the idea reaches *without* a chosen path. Once the founder picks a path, the flow lifts the cap to 3 (`flow.commitPath(i)` → `world.setLevelCap(3)`), and the building or district grows in with the usual pull-back. A no-go stays in the room and gets the pivot. There are no dead ends.
+- **New contract type (additive, optional):** `Scalability.paths?: ScalePath[]` with `{kind: locations|franchise|online|b2b|licensing|team|new-markets|product, label ≤ 6 w, how ≤ 14 w, ease 0–10}`. WS-INTEL may fill it. Until then the UI derives the paths from `wouldScale` by keyword (`ui/steps.ts scalePaths`), using the scalability score as `ease`.
+- **Pixel art is a subtle touch only, never a heavy pixel look.** The UI keeps its 8×8 logo, the small level glyphs and the rounded block meters. All labels use the product type (Inter Tight); Silkscreen is dropped.
+- **Judging (DoraHacks):** there is no live pitch, and judges open the link themselves. The first screen reads **"Turn your idea into a company."**, followed by a one-line explainer, the idea field, **Validate · $0.10**, and two quiet secondary links: "Watch the tour · 2 min" (`?demo=1`) and "See a finished example" (it opens the sample world that reaches the district).
+
+### v7 notes (WS-EXP, port 5273)
+- **Files:** `flow/index.ts` (`createFlow` → `ProtoFlowV7 extends FlowV7`), `flow/demo.ts` (`createDemo`, `DEMO_CHAPTERS`) and `flow/compat.ts` (`ensureWorldV7`: a no-op once `createWorld` returns a `WorldV7`). I also replaced `ui/index.ts`, added `ui/steps.ts` (one surface per step), `ui/pixel.ts` (level glyphs, analyst badges) and `ui/v7.css`, and rewrote `ui/logo.ts`. `themes/day.ts`, `ui/switcher.ts` and `ui/projects.ts` are deleted.
+- **Fixed UI:** `applyFixedUi()` (`themes/index.ts`) writes the Graphite tokens once, with glass at 0.95 / 0.985. Nothing in `ui/**` subscribes to `onClock`. The world's clock is set once in `main.ts`.
+- **Logo:** an 8×8 grid. `?logo=1..4` selects Skyline (default) / Desk / Lit window / Prompt. The comparison sheet is `web/proto/ui/sheet/logos.html`, rendered to `.notes/proto-v7/ws-exp/logos.png`.
+- **The flow only calls `WorldV7`.** Every step is played or snapped by `enter(step, animate)`. In demo mode the flow never moves to the next step by itself; the script does. The demo clock only runs while `html[data-ready="1"]`, and it clamps slow frames.
+- **Extra deep links:** `?offices=1` opens "Your offices", `?logo=n` picks a logo, `&project=<id>` opens that world.
+- **Evidence UI:** one finding card at a time (kind badge, optional hero `display`, text, then the source domain chip, which opens title, URL and access date, or "Estimate · basis"). Below it is one pixel cell per finding: green means sourced, outlined means estimate, and tapping a cell calls `flow.peek(i)`. A counter reads "n findings · m sourced" and turns into "Score unlocked" once `scoreDisplay` would say hero. The report's score counts up only after its factor bars fill.
+- **Steer diffs:** number changes render as `before → after` chips. Changes of type `finding` (or long string values) render as one "New finding / Updated finding" sentence.
+- **Keys (outside the demo):** → / Enter go to the next report page, card or level; ← goes back a report page; Esc closes overlays. In the demo, ← goes back one row.

@@ -123,6 +123,37 @@ const seen = (v as Project & { _seen: Set<string> })._seen;
 assert.ok(seen.has("sam:queued") || seen.has("sam:working"), "progress is visible while working");
 assert.equal((await exec("SELECT COUNT(*) AS n FROM jobs WHERE project_id = ?", [id])).rows[0]!.n, 3);
 
+// v7: the analyst team picked for the idea ran alongside (results.v7), with real sourced findings in demo mode
+type V7 = import("../server/v7.js").ResultsV7;
+const v7Of = (p: Project) => (p.results as { v7?: V7 }).v7;
+const t7 = await pollUntil(id, (p) => v7Of(p)?.status === "done");
+const r7 = v7Of(t7)!;
+assert.deepEqual(r7.roster.map((a) => a.role), ["competition", "market", "location", "viability"], "coffee idea hires its own team");
+assert.ok(r7.report && r7.report.evidence.sourced >= 3, "sourced evidence");
+assert.ok(r7.work.every((w) => w.status === "done" && w.findings.length > 0));
+assert.equal(r7.report.scalability.cap, 2);
+// steer: validation, then 202 → working → done with diff chips, 409 while it runs, 429 after the limit
+assert.equal((await call("POST", `/api/projects/${id}/steer`, { note: "" })).status, 400);
+assert.equal((await call("POST", `/api/projects/${id}/steer`, { note: "x".repeat(281) })).status, 400);
+assert.equal((await call("POST", "/api/projects/nope/steer", { note: "Focus on offices" })).status, 404);
+const st1 = await call<{ id: string; ack: string; rerun: string[] }>("POST", `/api/projects/${id}/steer`, { note: "Focus on office workers, not tourists" });
+assert.equal(st1.status, 202);
+assert.deepEqual(st1.json.rerun, ["location", "viability"]);
+assert.ok(st1.json.ack.length > 0);
+assert.equal((await call("POST", `/api/projects/${id}/steer`, { note: "And cheaper cups" })).status, 409, "one note at a time");
+const s1 = await pollUntil(id, (p) => v7Of(p)?.steers[0]?.status === "done");
+const done1 = v7Of(s1)!.steers[0]!;
+assert.ok(done1.changes.some((c) => c.what === "score" && c.before === r7.report!.score && c.after === done1.report!.score));
+assert.deepEqual(v7Of(s1)!.report, done1.report, "the stored report is the steered one");
+for (const note of ["Could we also sell our beans online?", "Make the cups purple"]) {
+  assert.equal((await call("POST", `/api/projects/${id}/steer`, { note })).status, 202);
+  await pollUntil(id, (p) => v7Of(p)!.steers.every((x) => x.status === "done"));
+}
+const s3 = v7Of((await call<Project>("GET", `/api/projects/${id}`)).json)!;
+assert.equal(s3.steers.length, 3);
+assert.deepEqual(s3.steers[2]!.changes, [], "a note demo mode can't research changes nothing");
+assert.equal((await call("POST", `/api/projects/${id}/steer`, { note: "One more idea" })).status, 429);
+
 // re-run after done does nothing
 assert.equal((await call("POST", `/api/projects/${id}/run`, { stage: "validate" })).status, 200);
 

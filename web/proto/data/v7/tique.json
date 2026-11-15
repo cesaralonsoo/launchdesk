@@ -1,0 +1,1659 @@
+{
+ "id": "tique",
+ "idea": "A phone app that issues Verifactu-ready tickets and invoices for Spanish market traders, €6 a month",
+ "title": "Phone tickets for market traders",
+ "createdAt": "2026-11-02T09:30:00.000Z",
+ "v7": {
+  "version": 7,
+  "roster": [
+   {
+    "id": "competition",
+    "role": "competition",
+    "name": "Leo",
+    "color": "#3B82F6",
+    "mission": "Who already sells Verifactu invoicing, and at what price",
+    "why": "Billing software is a crowded shelf",
+    "weight": 0.263
+   },
+   {
+    "id": "market",
+    "role": "market",
+    "name": "Sam",
+    "color": "#F59E0B",
+    "mission": "How many traders could pay, and how much",
+    "why": "Subscriptions live on headcount times price",
+    "weight": 0.211
+   },
+   {
+    "id": "regulation",
+    "role": "regulation",
+    "name": "Omar",
+    "color": "#475569",
+    "mission": "What the law forces, and when",
+    "why": "Verifactu deadlines create the demand",
+    "weight": 0.105
+   },
+   {
+    "id": "tech",
+    "role": "tech",
+    "name": "Kai",
+    "color": "#0891B2",
+    "mission": "Can a phone app issue compliant tickets at a stall",
+    "why": "Software must be built and certified",
+    "weight": 0.158
+   },
+   {
+    "id": "viability",
+    "role": "viability",
+    "name": "Mia",
+    "color": "#8B7CF6",
+    "mission": "Strengths, weak points and what kills it",
+    "why": "Every idea gets a viability check",
+    "weight": 0.263
+   }
+  ],
+  "work": [
+   {
+    "analyst": "competition",
+    "status": "done",
+    "findings": [
+     {
+      "kind": "competitor",
+      "text": "Hacienda's own Verifactu app is free, but cannot issue simplified tickets.",
+      "display": "€0",
+      "source": {
+       "url": "https://sede.agenciatributaria.gob.es/Sede/ayuda/consultas-informaticas/presentacion-declaraciones-ayuda-tecnica/aplicacion-gratuita-verifactu-aeat.html",
+       "title": "Aplicación gratuita VERI*FACTU de la AEAT",
+       "domain": "sede.agenciatributaria.gob.es",
+       "accessed": "2026-11-15"
+      },
+      "competitor": {
+       "name": "AEAT free Verifactu app",
+       "named": true,
+       "price": "€0",
+       "note": "Full invoices only, no tickets"
+      },
+      "impact": 1,
+      "id": "competition-0",
+      "analyst": "competition",
+      "t": 1400
+     },
+     {
+      "kind": "number",
+      "text": "Verifactu invoicing apps cost €4.99–17 a month: Anfix, Holded €15, Quipu €17.",
+      "display": "€4.99–17",
+      "source": {
+       "url": "https://www.oie.es/programas-verifactu/",
+       "title": "Comparador de programas VeriFactu para autónomos y pymes",
+       "domain": "oie.es",
+       "accessed": "2026-11-15"
+      },
+      "impact": -1,
+      "id": "competition-1",
+      "analyst": "competition",
+      "t": 4000
+     },
+     {
+      "kind": "competitor",
+      "text": "Invoo sells Verifactu invoicing to the self-employed at €10.90 a month.",
+      "display": "€10.90",
+      "source": {
+       "url": "https://invoo.es/es/blog/guias/verifactu-aplazado-2027-que-cambia-autonomos/",
+       "title": "Verifactu: aplazamiento previsto a octubre de 2028",
+       "domain": "invoo.es",
+       "accessed": "2026-11-15"
+      },
+      "competitor": {
+       "name": "Invoo",
+       "named": true,
+       "price": "€10.90 / month",
+       "note": "General invoicing, not built for stalls"
+      },
+      "impact": -1,
+      "id": "competition-2",
+      "analyst": "competition",
+      "t": 6600
+     }
+    ],
+    "score": 4,
+    "headline": "Cheap rivals everywhere; nobody owns tickets at the stall."
+   },
+   {
+    "analyst": "market",
+    "status": "done",
+    "findings": [
+     {
+      "kind": "number",
+      "text": "3,419,873 self-employed were registered in Spain at the end of February 2026.",
+      "display": "3.42M",
+      "value": 3419873,
+      "unit": "self-employed",
+      "source": {
+       "url": "https://forbes.es/economia/883419/upta-celebra-el-record-de-autonomos-en-febrero-y-el-avance-hacia-actividades-con-mayor-valor-anadido/",
+       "title": "UPTA celebra el récord de autónomos en febrero y el avance hacia actividades con mayor valor añadido",
+       "domain": "forbes.es",
+       "accessed": "2026-11-15"
+      },
+      "impact": 1,
+      "id": "market-0",
+      "analyst": "market",
+      "t": 1400
+     },
+     {
+      "kind": "number",
+      "text": "Andalusia alone had nearly 900 street markets with about 42,000 stalls (2013 census).",
+      "display": "42,000 stalls",
+      "value": 42000,
+      "unit": "stalls",
+      "source": {
+       "url": "https://juntadeandalucia.es/presidencia/portavoz/resources/files/2015/2/27/1425031602787Plan%20Activaci%C3%B3n%20Comercio%20Ambulante%202015-2017.pdf",
+       "title": "Plan de Activación del Comercio Ambulante en Andalucía 2015-2017",
+       "domain": "juntadeandalucia.es",
+       "accessed": "2026-11-15"
+      },
+      "impact": 1,
+      "id": "market-1",
+      "analyst": "market",
+      "t": 4000
+     },
+     {
+      "kind": "estimate",
+      "text": "If 1% of Andalusia's 42,000 stalls paid €6 a month: about €30k a year.",
+      "display": "≈ €30k / yr",
+      "basis": "420 stalls × €6 × 12 months",
+      "impact": 0,
+      "id": "market-2",
+      "analyst": "market",
+      "t": 6600,
+      "source": null
+     }
+    ],
+    "score": 7,
+    "headline": "Millions of self-employed; traders are a reachable first niche."
+   },
+   {
+    "analyst": "regulation",
+    "status": "done",
+    "findings": [
+     {
+      "kind": "fact",
+      "text": "Verifactu becomes mandatory for the self-employed on 1 July 2027 (RDL 15/2025).",
+      "display": "1 Jul 2027",
+      "source": {
+       "url": "https://www.legaltoday.com/actualidad-juridica/noticias-de-derecho/nueva-prorroga-verifactu-no-sera-obligatorio-hasta-2027-para-sociedades-y-otros-contribuyentes-2025-12-04/",
+       "title": "Nueva prórroga: Verifactu no será obligatorio hasta 2027 para Sociedades y otros contribuyentes",
+       "domain": "legaltoday.com",
+       "accessed": "2026-11-15"
+      },
+      "impact": 2,
+      "id": "regulation-0",
+      "analyst": "regulation",
+      "t": 1400
+     },
+     {
+      "kind": "risk",
+      "text": "Hacienda announced a fourth delay, to October 2028; it is not yet law.",
+      "display": "Oct 2028?",
+      "source": {
+       "url": "https://wwwhatsnew.com/2026/10/06/hacienda-verifactu-octubre-2028-aplazamiento-factura-electronica-2026",
+       "title": "Hacienda retrasa Verifactu hasta octubre de 2028: el cuarto aplazamiento en tres años",
+       "domain": "wwwhatsnew.com",
+       "accessed": "2026-11-15"
+      },
+      "impact": -2,
+      "id": "regulation-1",
+      "analyst": "regulation",
+      "t": 4000
+     },
+     {
+      "kind": "fact",
+      "text": "An e-invoicing order in the BOE gives small firms and the self-employed until October 2028.",
+      "source": {
+       "url": "https://wwwhatsnew.com/2026/10/06/hacienda-verifactu-octubre-2028-aplazamiento-factura-electronica-2026",
+       "title": "Hacienda retrasa Verifactu hasta octubre de 2028: el cuarto aplazamiento en tres años",
+       "domain": "wwwhatsnew.com",
+       "accessed": "2026-11-15"
+      },
+      "impact": 1,
+      "id": "regulation-2",
+      "analyst": "regulation",
+      "t": 6600
+     }
+    ],
+    "score": 6,
+    "headline": "The law creates demand, but the date keeps moving."
+   },
+   {
+    "analyst": "tech",
+    "status": "done",
+    "findings": [
+     {
+      "kind": "fact",
+      "text": "Records in Hacienda's free app can't be exported to other billing software.",
+      "source": {
+       "url": "https://sede.agenciatributaria.gob.es/Sede/ayuda/consultas-informaticas/presentacion-declaraciones-ayuda-tecnica/aplicacion-gratuita-verifactu-aeat.html",
+       "title": "Aplicación gratuita VERI*FACTU de la AEAT",
+       "domain": "sede.agenciatributaria.gob.es",
+       "accessed": "2026-11-15"
+      },
+      "impact": 1,
+      "id": "tech-0",
+      "analyst": "tech",
+      "t": 1400
+     },
+     {
+      "kind": "strength",
+      "text": "A phone plus a Bluetooth ticket printer covers a stall; no till needed.",
+      "basis": "Common mobile point-of-sale set-up",
+      "impact": 1,
+      "id": "tech-1",
+      "analyst": "tech",
+      "t": 4000,
+      "source": null
+     },
+     {
+      "kind": "risk",
+      "text": "Billing software needs a producer's compliance statement before it is sold.",
+      "basis": "Our reading of RD 1007/2023; verify with an adviser",
+      "impact": -1,
+      "id": "tech-2",
+      "analyst": "tech",
+      "t": 6600,
+      "source": null
+     }
+    ],
+    "score": 6,
+    "headline": "Buildable on a phone; compliance work is the long pole."
+   },
+   {
+    "analyst": "viability",
+    "status": "done",
+    "findings": [
+     {
+      "kind": "strength",
+      "text": "Clear wedge: tickets from a phone, the one job the free app can't do.",
+      "basis": "AEAT app limits plus how stalls sell",
+      "impact": 2,
+      "id": "viability-0",
+      "analyst": "viability",
+      "t": 1400,
+      "source": null
+     },
+     {
+      "kind": "risk",
+      "text": "UPTA estimates Hacienda's free app already covers about 80% of the self-employed.",
+      "display": "≈ 80%",
+      "source": {
+       "url": "https://wwwhatsnew.com/2026/10/06/hacienda-verifactu-octubre-2028-aplazamiento-factura-electronica-2026",
+       "title": "Hacienda retrasa Verifactu hasta octubre de 2028: el cuarto aplazamiento en tres años",
+       "domain": "wwwhatsnew.com",
+       "accessed": "2026-11-15"
+      },
+      "impact": -1,
+      "id": "viability-1",
+      "analyst": "viability",
+      "t": 4000
+     },
+     {
+      "kind": "risk",
+      "text": "Some traders' special VAT regimes may not require tickets; check before selling.",
+      "basis": "Unverified: VAT regimes vary by trader",
+      "impact": -1,
+      "id": "viability-2",
+      "analyst": "viability",
+      "t": 6600,
+      "source": null
+     }
+    ],
+    "score": 4.5,
+    "headline": "Sharp wedge, thin price; the free app is the real rival."
+   }
+  ],
+  "report": {
+   "score": 5.3,
+   "verdict": "pivot",
+   "verdictLine": "Worth building narrow: tickets for stalls, sold through market associations.",
+   "factors": [
+    {
+     "analyst": "competition",
+     "label": "Competition",
+     "weight": 0.263,
+     "score": 4,
+     "findings": [
+      "competition-0",
+      "competition-1",
+      "competition-2"
+     ],
+     "sourced": 3,
+     "total": 3
+    },
+    {
+     "analyst": "market",
+     "label": "Market",
+     "weight": 0.211,
+     "score": 7,
+     "findings": [
+      "market-0",
+      "market-1",
+      "market-2"
+     ],
+     "sourced": 2,
+     "total": 3
+    },
+    {
+     "analyst": "regulation",
+     "label": "Rules",
+     "weight": 0.105,
+     "score": 6,
+     "findings": [
+      "regulation-0",
+      "regulation-1",
+      "regulation-2"
+     ],
+     "sourced": 3,
+     "total": 3
+    },
+    {
+     "analyst": "tech",
+     "label": "Tech",
+     "weight": 0.158,
+     "score": 6,
+     "findings": [
+      "tech-0",
+      "tech-1",
+      "tech-2"
+     ],
+     "sourced": 1,
+     "total": 3
+    },
+    {
+     "analyst": "viability",
+     "label": "Viability",
+     "weight": 0.263,
+     "score": 4.5,
+     "findings": [
+      "viability-0",
+      "viability-1",
+      "viability-2"
+     ],
+     "sourced": 1,
+     "total": 3
+    }
+   ],
+   "math": "0.26×4.0 + 0.21×7.0 + 0.10×6.0 + 0.16×6.0 + 0.26×4.5 = 5.3",
+   "evidence": {
+    "total": 15,
+    "sourced": 10,
+    "sourcedShare": 0.67,
+    "sources": [
+     {
+      "url": "https://sede.agenciatributaria.gob.es/Sede/ayuda/consultas-informaticas/presentacion-declaraciones-ayuda-tecnica/aplicacion-gratuita-verifactu-aeat.html",
+      "title": "Aplicación gratuita VERI*FACTU de la AEAT",
+      "domain": "sede.agenciatributaria.gob.es",
+      "accessed": "2026-11-15"
+     },
+     {
+      "url": "https://www.oie.es/programas-verifactu/",
+      "title": "Comparador de programas VeriFactu para autónomos y pymes",
+      "domain": "oie.es",
+      "accessed": "2026-11-15"
+     },
+     {
+      "url": "https://invoo.es/es/blog/guias/verifactu-aplazado-2027-que-cambia-autonomos/",
+      "title": "Verifactu: aplazamiento previsto a octubre de 2028",
+      "domain": "invoo.es",
+      "accessed": "2026-11-15"
+     },
+     {
+      "url": "https://forbes.es/economia/883419/upta-celebra-el-record-de-autonomos-en-febrero-y-el-avance-hacia-actividades-con-mayor-valor-anadido/",
+      "title": "UPTA celebra el récord de autónomos en febrero y el avance hacia actividades con mayor valor añadido",
+      "domain": "forbes.es",
+      "accessed": "2026-11-15"
+     },
+     {
+      "url": "https://juntadeandalucia.es/presidencia/portavoz/resources/files/2015/2/27/1425031602787Plan%20Activaci%C3%B3n%20Comercio%20Ambulante%202015-2017.pdf",
+      "title": "Plan de Activación del Comercio Ambulante en Andalucía 2015-2017",
+      "domain": "juntadeandalucia.es",
+      "accessed": "2026-11-15"
+     },
+     {
+      "url": "https://www.legaltoday.com/actualidad-juridica/noticias-de-derecho/nueva-prorroga-verifactu-no-sera-obligatorio-hasta-2027-para-sociedades-y-otros-contribuyentes-2025-12-04/",
+      "title": "Nueva prórroga: Verifactu no será obligatorio hasta 2027 para Sociedades y otros contribuyentes",
+      "domain": "legaltoday.com",
+      "accessed": "2026-11-15"
+     },
+     {
+      "url": "https://wwwhatsnew.com/2026/10/06/hacienda-verifactu-octubre-2028-aplazamiento-factura-electronica-2026",
+      "title": "Hacienda retrasa Verifactu hasta octubre de 2028: el cuarto aplazamiento en tres años",
+      "domain": "wwwhatsnew.com",
+      "accessed": "2026-11-15"
+     }
+    ]
+   },
+   "confidence": "high",
+   "scalability": {
+    "score": 8.5,
+    "cap": 3,
+    "reach": "Country",
+    "why": "Software: the same app serves a stall in Seville or Bilbao at almost no extra cost.",
+    "wouldScale": [
+     "Card payments on the same phone",
+     "Bookkeeping export for gestorías",
+     "Other Verifactu-bound trades: food trucks, fairs"
+    ],
+    "parts": [
+     {
+      "label": "Reach",
+      "score": 9
+     },
+     {
+      "label": "Repeatable",
+      "score": 9
+     },
+     {
+      "label": "Margins at scale",
+      "score": 8
+     },
+     {
+      "label": "Founder-free",
+      "score": 7
+     },
+     {
+      "label": "Digital leverage",
+      "score": 9
+     }
+    ]
+   },
+   "strengths": [
+    {
+     "text": "The free app can't issue tickets: that is the gap.",
+     "finding": "competition-0"
+    },
+    {
+     "text": "Verifactu is law, with a fixed date for the self-employed.",
+     "finding": "regulation-0"
+    },
+    {
+     "text": "3.42 million self-employed, 42,000 stalls in one region.",
+     "finding": "market-1"
+    }
+   ],
+   "weaknesses": [
+    {
+     "text": "The deadline keeps slipping: October 2028 is announced.",
+     "finding": "regulation-1"
+    },
+    {
+     "text": "Rivals already sell from €4.99 a month.",
+     "finding": "competition-1"
+    },
+    {
+     "text": "Most self-employed may settle for the free app.",
+     "finding": "viability-1"
+    }
+   ],
+   "nextSteps": [
+    "Interview 15 stallholders at two weekly markets",
+    "Ask one market association to trial it",
+    "Confirm which VAT regimes must issue tickets"
+   ],
+   "pivot": {
+    "idea": "Sell through market associations as a group plan",
+    "why": "Lowers acquisition cost and fixes the price war"
+   }
+  },
+  "steers": [],
+  "status": "done",
+  "researched": 0
+ },
+ "level": 3,
+ "sign": {
+  "kind": "brand",
+  "name": "Tique",
+  "tagline": "Your ticket, from your pocket.",
+  "color": "#1B2430",
+  "glyph": "tile"
+ },
+ "legacy": {
+  "id": "p-tique",
+  "idea": "A phone app that issues Verifactu-ready tickets and invoices for Spanish market traders, €6 a month",
+  "created_at": 1793611500000,
+  "payments": {
+   "validate": {
+    "txid": "dev-p-tique-validate",
+    "sats": 0,
+    "cents": 10,
+    "at": 1793611505000
+   },
+   "build": {
+    "txid": "dev-p-tique-build",
+    "sats": 0,
+    "cents": 20,
+    "at": 1793611560000
+   }
+  },
+  "status": {
+   "mia": "done",
+   "leo": "done",
+   "sam": "done",
+   "nova": "done",
+   "dex": "done",
+   "rae": "done",
+   "pip": "done"
+  },
+  "results": {
+   "mia": {
+    "title": "Phone tickets for market traders",
+    "one_liner": "Legal tickets from your phone at the stall, for €6 a month.",
+    "brief": {
+     "concept": "A phone app plus a pocket Bluetooth printer that issues Verifactu-ready tickets and invoices at a market stall, €6 a month.",
+     "for": "Stallholders at weekly street markets in Andalusia who sell to the public and still write tickets by hand.",
+     "goal": "Sign 50 paid first months from stallholders and one market association before building beyond the prototype."
+    },
+    "market": {
+     "city": null,
+     "country_iso": "ES",
+     "currency": "€",
+     "language": "en"
+    },
+    "gate": {
+     "metric": "paid first months",
+     "target": 50,
+     "by_week": 4
+    },
+    "checklist": [
+     {
+      "week": 1,
+      "task": "Interview 15 stallholders at two weekly markets",
+      "how": "Ask how they issued their last ticket, what it cost and what their gestoría told them about Verifactu.",
+      "done_when": "15 logged; 6+ worried about the deadline",
+      "helped_by": "leo",
+      "est_hours": 6
+     },
+     {
+      "week": 1,
+      "task": "Ask a tax adviser which regimes need tickets",
+      "how": "Bring three real trader profiles and get the answer in writing.",
+      "done_when": "Written answer for three trader types",
+      "helped_by": "leo",
+      "est_hours": 2
+     },
+     {
+      "week": 1,
+      "task": "Call two market associations",
+      "how": "Ask how they share news with members and who decides on group deals.",
+      "done_when": "Two calls logged; one meeting booked",
+      "helped_by": null,
+      "est_hours": 2
+     },
+     {
+      "week": 2,
+      "task": "Demo a clickable prototype at one market",
+      "how": "Issue a test ticket on a real stall with a borrowed printer, timed.",
+      "done_when": "10 demos; median ticket under 20 seconds",
+      "helped_by": "dex",
+      "est_hours": 6
+     },
+     {
+      "week": 2,
+      "task": "Price printers and the compliance statement",
+      "how": "Get two printer quotes and one quote from a lawyer for the producer statement.",
+      "done_when": "Three written quotes",
+      "helped_by": "sam",
+      "est_hours": 2
+     },
+     {
+      "week": 3,
+      "task": "Send the pre-order page to every trader met",
+      "how": "Message interviewees and the association with the €4.80 first-year offer.",
+      "done_when": "Page sent to 80+ traders",
+      "helped_by": "pip",
+      "est_hours": 2
+     },
+     {
+      "week": 3,
+      "task": "Post the launch posts in trader groups",
+      "how": "Publish Rae's week-3 posts and answer every question the same day.",
+      "done_when": "Posts live; every message answered",
+      "helped_by": "rae",
+      "est_hours": 3
+     },
+     {
+      "week": 4,
+      "task": "Reach 50 paid first months",
+      "how": "Visit the two markets again and sign traders on the spot with the QR.",
+      "done_when": "50 first months paid on-chain",
+      "helped_by": "pip",
+      "est_hours": 6
+     },
+     {
+      "week": 4,
+      "task": "Decide: build the app or stop",
+      "how": "Compare paid months, demo times and the adviser's answer with Sam's break-even.",
+      "done_when": "Decision written down with the numbers",
+      "helped_by": "sam",
+      "est_hours": 2
+     }
+    ]
+   },
+   "leo": {
+    "score": 6.2,
+    "verdict": "pivot",
+    "headline": "Own tickets at the stall, not invoicing in general.",
+    "summary": "The law creates demand and the free official app can't issue tickets, but general invoicing apps are cheap and the deadline keeps moving. A narrow ticket tool sold through associations is winnable.",
+    "signals": [
+     {
+      "name": "Demand",
+      "score": 6.8,
+      "why": "A legal deadline every trader will hear about",
+      "source_id": null,
+      "weight": 0.3
+     },
+     {
+      "name": "Competition gap",
+      "score": 5.8,
+      "why": "Rivals invoice; few are built for a stall",
+      "source_id": null,
+      "weight": 0.2
+     },
+     {
+      "name": "Price acceptance",
+      "score": 6.2,
+      "why": "€6 sits inside what invoicing apps charge",
+      "source_id": null,
+      "weight": 0.2
+     },
+     {
+      "name": "Channel",
+      "score": 6.4,
+      "why": "Market associations reach whole markets at once",
+      "source_id": null,
+      "weight": 0.15
+     },
+     {
+      "name": "Timing",
+      "score": 5.4,
+      "why": "Deadline announced for delay again",
+      "source_id": null,
+      "weight": 0.15
+     }
+    ],
+    "why_go": "Traders will need compliant tickets, the free app doesn't do them, and associations can bring a whole market in one meeting.",
+    "risks": [
+     {
+      "risk": "The deadline slips again and nobody buys early.",
+      "mitigation": "Sell speed at the stall, not compliance alone.",
+      "severity": "high"
+     },
+     {
+      "risk": "Some traders may not need tickets at all.",
+      "mitigation": "Get a written answer from an adviser in week 1.",
+      "severity": "high"
+     },
+     {
+      "risk": "Cheap invoicing apps add a ticket feature.",
+      "mitigation": "Win associations first; stay the stall specialist.",
+      "severity": "med"
+     }
+    ],
+    "pivot": {
+     "idea": "Sell through market associations as a group plan, €5 a stall.",
+     "why": "Fixes channel and price: one meeting signs a market instead of one trader."
+    },
+    "next_step": "Interview 15 stallholders at two markets this week: 6 worried about the deadline is the bar.",
+    "market_facts": [
+     {
+      "fact": "Weekly street markets usually have dozens of stalls each.",
+      "source_id": null,
+      "is_estimate": true
+     },
+     {
+      "fact": "Many stallholders still write tickets by hand or use a basic till.",
+      "source_id": null,
+      "is_estimate": true
+     },
+     {
+      "fact": "Invoicing apps for the self-employed commonly cost €5 to €17 a month.",
+      "source_id": null,
+      "is_estimate": true
+     },
+     {
+      "fact": "Pocket Bluetooth ticket printers usually cost under €100.",
+      "source_id": null,
+      "is_estimate": true
+     }
+    ],
+    "competitors": [
+     {
+      "name": "The free official invoicing app",
+      "note": "Free, but no simplified tickets",
+      "price": 0.5,
+      "differentiation": 3,
+      "url": null
+     },
+     {
+      "name": "General invoicing apps",
+      "note": "Built for offices, not stalls",
+      "price": 5,
+      "differentiation": 5,
+      "url": null
+     },
+     {
+      "name": "Shop tills (TPV)",
+      "note": "Pricey hardware, needs a counter",
+      "price": 8,
+      "differentiation": 6,
+      "url": null
+     },
+     {
+      "name": "Handwritten tickets",
+      "note": "Free, not compliant once required",
+      "price": 0.5,
+      "differentiation": 1,
+      "url": null
+     }
+    ],
+    "you": {
+     "price": 4,
+     "differentiation": 8
+    },
+    "interviews": {
+     "who": "Stallholders who sell to the public at weekly markets",
+     "where": "At two weekly markets before 9:00, while setting up",
+     "questions": [
+      "How did you give your last customer a ticket?",
+      "What do you pay today for invoicing or a till?",
+      "What has your gestoría told you about Verifactu?",
+      "When did a customer last ask you for an invoice?",
+      "What happened the last time your till or printer failed?"
+     ],
+     "good_sign": "They mention the deadline unprompted and already pay for something that half works.",
+     "target": 15
+    },
+    "kill_criteria": [
+     "Stop if fewer than 6 of 15 stallholders worry about issuing compliant tickets.",
+     "Stop if the adviser says most traders here don't need tickets.",
+     "Stop if no association agrees to a trial in four weeks."
+    ],
+    "score_math": "0.30×6.8 + 0.20×5.8 + 0.20×6.2 + 0.15×6.4 + 0.15×5.4 = 6.2",
+    "verdict_rule": "Go from 7.0 with no signal at 3 or below · Pivot 5.0–6.9 · No-go under 5.0",
+    "confidence": {
+     "level": "low",
+     "note": "Desk estimates only, no web sources: signals capped at 7.5. Interviews decide."
+    },
+    "sources": []
+   },
+   "sam": {
+    "currency": "€",
+    "canvas": {
+     "customer": "Stallholders at weekly markets who sell to the public",
+     "value": "A legal ticket in 20 seconds from the phone",
+     "revenue": "€6 a month per stall, card or BCH",
+     "channels": "Market associations, markets themselves, gestorías",
+     "costs": "Founder, hosting, printers stock, adviser and support",
+     "unit_economics": "Each subscription leaves about €5.10 after payment fees and hosting"
+    },
+    "assumptions": [
+     {
+      "key": "customers_per_day_m1",
+      "label": "Paid months billed a day, month 1",
+      "value": 2,
+      "unit": "per day",
+      "basis": "First association trial, 60 stalls",
+      "is_estimate": true
+     },
+     {
+      "key": "customers_per_day_m12",
+      "label": "Paid months billed a day, month 12",
+      "value": 40,
+      "unit": "per day",
+      "basis": "About 1,200 stalls across a few associations",
+      "is_estimate": true
+     },
+     {
+      "key": "avg_ticket",
+      "label": "Price per stall per month",
+      "value": 6,
+      "unit": "€",
+      "basis": "Within today's €5–17 invoicing range",
+      "is_estimate": true
+     },
+     {
+      "key": "gross_margin_pct",
+      "label": "Margin after fees and hosting",
+      "value": 85,
+      "unit": "%",
+      "basis": "Typical for small SaaS",
+      "is_estimate": true
+     },
+     {
+      "key": "fixed_costs_month",
+      "label": "Fixed costs a month",
+      "value": 2750,
+      "unit": "€",
+      "basis": "Sum of the four lines below",
+      "is_estimate": true
+     },
+     {
+      "key": "startup_cost",
+      "label": "Start-up cost",
+      "value": 9000,
+      "unit": "€",
+      "basis": "App build, compliance statement, demo printers",
+      "is_estimate": true
+     },
+     {
+      "key": "open_days_month",
+      "label": "Billing days a month",
+      "value": 30,
+      "unit": "days",
+      "basis": "Subscriptions renew every day of the month",
+      "is_estimate": true
+     }
+    ],
+    "fixed_costs_breakdown": [
+     {
+      "label": "Founder, minimum pay",
+      "value": 1800
+     },
+     {
+      "label": "Hosting and records storage",
+      "value": 300
+     },
+     {
+      "label": "Market visits and printers stock",
+      "value": 400
+     },
+     {
+      "label": "Adviser and gestoría",
+      "value": 250
+     }
+    ],
+    "months": [
+     {
+      "month": 1,
+      "revenue": 360,
+      "costs": 2804,
+      "cash": -11444
+     },
+     {
+      "month": 2,
+      "revenue": 562,
+      "costs": 2834,
+      "cash": -13716
+     },
+     {
+      "month": 3,
+      "revenue": 901,
+      "costs": 2885,
+      "cash": -15700
+     },
+     {
+      "month": 4,
+      "revenue": 1441,
+      "costs": 2966,
+      "cash": -17225
+     },
+     {
+      "month": 5,
+      "revenue": 2227,
+      "costs": 3084,
+      "cash": -18082
+     },
+     {
+      "month": 6,
+      "revenue": 3232,
+      "costs": 3235,
+      "cash": -18085
+     },
+     {
+      "month": 7,
+      "revenue": 4328,
+      "costs": 3399,
+      "cash": -17156
+     },
+     {
+      "month": 8,
+      "revenue": 5333,
+      "costs": 3550,
+      "cash": -15373
+     },
+     {
+      "month": 9,
+      "revenue": 6119,
+      "costs": 3668,
+      "cash": -12922
+     },
+     {
+      "month": 10,
+      "revenue": 6659,
+      "costs": 3749,
+      "cash": -10012
+     },
+     {
+      "month": 11,
+      "revenue": 6998,
+      "costs": 3800,
+      "cash": -6814
+     },
+     {
+      "month": 12,
+      "revenue": 7200,
+      "costs": 3830,
+      "cash": -3444
+     }
+    ],
+    "price": {
+     "value": 6,
+     "display": "€6.00",
+     "note": "€6 a month per stall"
+    },
+    "startup_cost": {
+     "value": 9000,
+     "display": "€9k",
+     "note": "App build, compliance statement, demo printers"
+    },
+    "cash_needed": {
+     "value": 18085,
+     "display": "€18k",
+     "month": 6
+    },
+    "break_even": {
+     "month": 7,
+     "note": "Revenue covers costs from month 7"
+    },
+    "breakeven_units_per_day": 18,
+    "year1": {
+     "revenue": "€45k",
+     "costs": "€40k",
+     "result": "+€5.6k",
+     "monthly_profit_m12": "€3.4k",
+     "payback": "About month 14"
+    },
+    "main_risk": "How many traders must issue tickets decides everything: get an adviser's written answer for three trader types this week.",
+    "key_assumption": "customers_per_day_m12",
+    "launch_offer": {
+     "item": "First month for one stall",
+     "price": 4.8,
+     "normal_price": 6,
+     "limit": 100,
+     "display": "€4.80",
+     "normal_display": "€6",
+     "discount_pct": 20,
+     "contribution": 3.9,
+     "contribution_display": "€3.90",
+     "revenue_if_sold_out": 480,
+     "revenue_display": "€480"
+    },
+    "unit": {
+     "price": 6,
+     "variable_cost": 0.9,
+     "contribution": 5.1,
+     "margin_pct": 85,
+     "line": "€6 a sale − €0.90 direct cost = €5.10 left"
+    },
+    "breakeven": {
+     "per_month": 540,
+     "per_day": 18,
+     "formula": "€2,750 fixed ÷ €5.10 per sale ÷ 30 days = 18 sales a day"
+    },
+    "headroom": {
+     "m12_per_day": 40,
+     "breakeven_per_day": 18,
+     "multiple": 2.2,
+     "note": "Month-12 plan is 2.2× break-even"
+    },
+    "sensitivity": [
+     {
+      "key": "customers_per_day_m12",
+      "label": "Paid months billed a day",
+      "low": {
+       "value": 32,
+       "year1_result": -2154,
+       "break_even_month": 7,
+       "breakeven_per_day": 18,
+       "cash_needed": 19569
+      },
+      "base": {
+       "value": 40,
+       "year1_result": 5556,
+       "break_even_month": 7,
+       "breakeven_per_day": 18,
+       "cash_needed": 18085
+      },
+      "high": {
+       "value": 48,
+       "year1_result": 13266,
+       "break_even_month": 6,
+       "breakeven_per_day": 18,
+       "cash_needed": 17149
+      },
+      "swing": 15420,
+      "line": "Paid months billed a day ±20%: year 1 from −€2.2k to +€13k"
+     },
+     {
+      "key": "fixed_costs_month",
+      "label": "Fixed costs a month",
+      "low": {
+       "value": 2200,
+       "year1_result": 12156,
+       "break_even_month": 6,
+       "breakeven_per_day": 15,
+       "cash_needed": 15332
+      },
+      "base": {
+       "value": 2750,
+       "year1_result": 5556,
+       "break_even_month": 7,
+       "breakeven_per_day": 18,
+       "cash_needed": 18085
+      },
+      "high": {
+       "value": 3300,
+       "year1_result": -1044,
+       "break_even_month": 7,
+       "breakeven_per_day": 22,
+       "cash_needed": 21385
+      },
+      "swing": 13200,
+      "line": "Fixed costs a month ±20%: year 1 from −€1k to +€12k"
+     },
+     {
+      "key": "gross_margin_pct",
+      "label": "Margin after fees and hosting",
+      "low": {
+       "value": 75,
+       "year1_result": 1019,
+       "break_even_month": 7,
+       "breakeven_per_day": 21,
+       "cash_needed": 18958
+      },
+      "base": {
+       "value": 85,
+       "year1_result": 5556,
+       "break_even_month": 7,
+       "breakeven_per_day": 18,
+       "cash_needed": 18085
+      },
+      "high": {
+       "value": 95,
+       "year1_result": 10092,
+       "break_even_month": 6,
+       "breakeven_per_day": 17,
+       "cash_needed": 17533
+      },
+      "swing": 9073,
+      "line": "Margin after fees and hosting ±10 pts: year 1 from +€1k to +€10k"
+     }
+    ]
+   },
+   "memo": {
+    "purpose": "A phone app that issues Verifactu-ready tickets and invoices for market stallholders in Spain.",
+    "problem": "Stallholders sell to the public all day and many still write tickets by hand. Verifactu will require compliant billing software, and the free official app can't issue simplified tickets.",
+    "insight": "The gap is narrow and real: tickets at the stall. Associations can bring a whole market at once, which fixes the cost of finding each trader.",
+    "verdict_line": "Pivot to associations: it needs 18 paid stall months a day to break even, and the plan reaches 40 by month 12.",
+    "next_7_days": [
+     "Interview 15 stallholders at two weekly markets",
+     "Ask an adviser which regimes need tickets",
+     "Book a meeting with one market association"
+    ]
+   },
+   "nova": {
+    "names": [
+     {
+      "name": "Tique",
+      "why": "How the market says 'ticket': short, local, and exactly what it does.",
+      "tagline": "Your ticket, from your pocket.",
+      "palette": [
+       {
+        "name": "Primary",
+        "hex": "#1B2430"
+       },
+       {
+        "name": "Accent",
+        "hex": "#E8603C"
+       },
+       {
+        "name": "Background",
+        "hex": "#F7F4EE"
+       },
+       {
+        "name": "Extra",
+        "hex": "#4F8A6E"
+       }
+      ]
+     },
+     {
+      "name": "Puesto",
+      "why": "The stall itself: the name tells traders it was built for them.",
+      "tagline": "Built for the stall.",
+      "palette": [
+       {
+        "name": "Primary",
+        "hex": "#22301F"
+       },
+       {
+        "name": "Accent",
+        "hex": "#F2B33D"
+       },
+       {
+        "name": "Background",
+        "hex": "#F5F2E9"
+       },
+       {
+        "name": "Extra",
+        "hex": "#B5523B"
+       }
+      ]
+     },
+     {
+      "name": "Recibo",
+      "why": "Plain and trusted: the word every customer asks for.",
+      "tagline": "Legal tickets in seconds.",
+      "palette": [
+       {
+        "name": "Primary",
+        "hex": "#1E2A38"
+       },
+       {
+        "name": "Accent",
+        "hex": "#2E9C8F"
+       },
+       {
+        "name": "Background",
+        "hex": "#F4F6F5"
+       },
+       {
+        "name": "Extra",
+        "hex": "#D9653B"
+       }
+      ]
+     }
+    ],
+    "chosen": 0,
+    "positioning": "For market stallholders who must issue legal tickets, Tique is the phone ticket app that prints one in 20 seconds at the stall.",
+    "typography": {
+     "display": "Bricolage Grotesque",
+     "body": "Inter"
+    },
+    "voice": {
+     "traits": [
+      "Plain",
+      "Quick",
+      "Friendly",
+      "Exact"
+     ],
+     "rules": "Talk like a trader to a trader: short lines, real prices, one action.",
+     "sample": "Ticket printed. Next customer."
+    }
+   },
+   "dex": {
+    "logos": [
+     {
+      "concept": "The T monogram on a rounded tile in coral, like a printed ticket stub.",
+      "icon": "shop",
+      "shape": "monogram",
+      "monogram": "T",
+      "glyph": "tile",
+      "wordmark": {
+       "weight": 700,
+       "letter_spacing_em": -0.02,
+       "case": "title",
+       "mark": "monogram",
+       "placement": "left"
+      }
+     },
+     {
+      "concept": "Wordmark ending in a coral full stop: done, ticket issued.",
+      "icon": "shop",
+      "shape": "wordmark",
+      "monogram": "TQ",
+      "glyph": "stop",
+      "wordmark": {
+       "weight": 600,
+       "letter_spacing_em": -0.03,
+       "case": "lower",
+       "mark": "none",
+       "placement": "left"
+      }
+     },
+     {
+      "concept": "A ring crossed by a bar carrying the T: a market sign you spot from the aisle.",
+      "icon": "shop",
+      "shape": "emblem",
+      "monogram": "T",
+      "glyph": "roundel",
+      "wordmark": {
+       "weight": 700,
+       "letter_spacing_em": 0.1,
+       "case": "upper",
+       "mark": "monogram",
+       "placement": "above"
+      }
+     }
+    ],
+    "landing": {
+     "headline": "Legal tickets from your phone.",
+     "subheadline": "Tique prints Verifactu-ready tickets and invoices at your market stall in seconds, for €6 a month.",
+     "bullets": [
+      "First month €4.80, then €6",
+      "Works with a pocket printer",
+      "Full refund if we don't launch"
+     ],
+     "cta": "Pre-order for €4.80",
+     "offer": "First 100 stall months at €4.80",
+     "offer_price": 4.8,
+     "normal_price": 6,
+     "price_hint_usd": 5.2,
+     "faq": [
+      {
+       "q": "What do I get, and when?",
+       "a": "Your first month of Tique for one stall when we launch; we message you the date."
+      },
+      {
+       "q": "What if you never launch?",
+       "a": "We build only after 50 pre-orders. If we don't, every pre-order is refunded in full."
+      },
+      {
+       "q": "Do I even need tickets?",
+       "a": "It depends on your VAT regime. We confirm it with an adviser before you pay a second month."
+      }
+     ],
+     "where_when": null
+    }
+   },
+   "rae": {
+    "start_date": "2026-11-09",
+    "handle": "@tique.app",
+    "posts": [
+     {
+      "day": 1,
+      "channel": "instagram",
+      "time": "08:00",
+      "format": "post",
+      "hook": "How did you write your last ticket?",
+      "caption": "We're visiting two weekly markets to ask stallholders how they issue tickets today. Tell us yours.",
+      "cta": "Answer in the poll"
+     },
+     {
+      "day": 3,
+      "channel": "linkedin",
+      "time": "09:00",
+      "format": "post",
+      "hook": "Verifactu and the market stall",
+      "caption": "The free official app can't issue simplified tickets. Stalls sell to the public. That's the gap we're testing.",
+      "cta": "Follow the build"
+     },
+     {
+      "day": 5,
+      "channel": "instagram",
+      "time": "08:00",
+      "format": "story",
+      "hook": "Paper or phone?",
+      "caption": "Quick poll for stallholders: paper tickets, a till, or nothing yet?",
+      "cta": "Vote in the poll"
+     },
+     {
+      "day": 8,
+      "channel": "tiktok",
+      "time": "19:00",
+      "format": "reel",
+      "hook": "A legal ticket in 20 seconds?",
+      "caption": "We timed a phone ticket at a real stall this morning. Here's the stopwatch, good and bad.",
+      "cta": "Follow the build"
+     },
+     {
+      "day": 10,
+      "channel": "instagram",
+      "time": "08:00",
+      "format": "carousel",
+      "hook": "What 10 stallholders told us",
+      "caption": "Ten demos at the market, the questions they asked and what we're changing.",
+      "cta": "Follow for the result"
+     },
+     {
+      "day": 15,
+      "channel": "instagram",
+      "time": "08:00",
+      "format": "post",
+      "hook": "Pre-orders open: €4.80 first month",
+      "caption": "The first 100 stall months at €4.80, then €6. We build at 50 pre-orders; if not, full refund.",
+      "cta": "Pre-order yours"
+     },
+     {
+      "day": 16,
+      "channel": "email",
+      "time": "08:00",
+      "format": "email",
+      "hook": "Pre-orders are open",
+      "caption": "You told us how you issue tickets today. Here's the €4.80 first-month offer and the refund rule.",
+      "cta": "Pre-order now"
+     },
+     {
+      "day": 18,
+      "channel": "linkedin",
+      "time": "09:00",
+      "format": "post",
+      "hook": "Why we sell through associations",
+      "caption": "One meeting with a market association reaches a whole market. Here's our method.",
+      "cta": "Read the method"
+     },
+     {
+      "day": 22,
+      "channel": "instagram",
+      "time": "08:00",
+      "format": "story",
+      "hook": "Countdown to 50",
+      "caption": "Every pre-order moves the bar. At 50 we build; under 50 everyone is refunded.",
+      "cta": "Pre-order yours"
+     },
+     {
+      "day": 26,
+      "channel": "email",
+      "time": "08:00",
+      "format": "email",
+      "hook": "Last week at €4.80",
+      "caption": "Pre-orders close on Saturday. After that Tique is €6 a month.",
+      "cta": "Pre-order now"
+     }
+    ],
+    "first_posts": [
+     {
+      "kind": "Question",
+      "title": "Your last ticket?",
+      "text": "We're visiting two weekly markets to ask stallholders how they issue tickets today: paper, a till, or nothing yet. Tell us yours in the poll.",
+      "date": "2026-11-09T08:00",
+      "channel": "instagram"
+     },
+     {
+      "kind": "The gap",
+      "title": "Tickets the free app can't do",
+      "text": "Hacienda's free Verifactu app issues full invoices, not simplified tickets. Market stalls sell to the public all day. We're testing a phone app for exactly that. Follow the build.",
+      "date": "2026-11-11T09:00",
+      "channel": "linkedin"
+     },
+     {
+      "kind": "Stall test",
+      "title": "A ticket in 20 seconds?",
+      "text": "This morning we issued phone tickets at a real stall and timed every one. Here's the stopwatch, good and bad. Should we build it?",
+      "date": "2026-11-16T19:00",
+      "channel": "tiktok"
+     }
+    ]
+   },
+   "pip": {
+    "slug": "tique",
+    "url": "/s/tique",
+    "live_at": "2026-11-02T09:26:20.000Z"
+   }
+  },
+  "timings": {
+   "validate": {
+    "started": 1793611505000,
+    "finished": 1793611541000
+   },
+   "build": {
+    "started": 1793611560000,
+    "finished": 1793611602000
+   }
+  },
+  "models": {
+   "mia": "mock",
+   "leo": "mock",
+   "sam": "mock",
+   "nova": "mock",
+   "dex": "mock",
+   "rae": "mock",
+   "pip": "none"
+  },
+  "share_id": null
+ },
+ "prepared": [
+  {
+   "key": "associations",
+   "match": "\\b(association|associations|asociaci[oó]n|group|bundle|council|ayuntamiento|b2b)\\b",
+   "note": "Sell to market associations, not one trader at a time.",
+   "result": {
+    "id": "steer-1",
+    "note": "Sell to market associations, not one trader at a time.",
+    "ack": "Good call. Re-checking competition and money for association deals.",
+    "status": "done",
+    "rerun": [
+     "competition",
+     "market"
+    ],
+    "hired": [],
+    "dropped": [],
+    "findings": [
+     {
+      "kind": "estimate",
+      "text": "One association deal can sign dozens of stalls in a single meeting.",
+      "basis": "Markets are organised by association",
+      "impact": 1,
+      "id": "market-3",
+      "analyst": "market",
+      "t": 1400,
+      "source": null
+     }
+    ],
+    "changes": [
+     {
+      "what": "factor",
+      "key": "market",
+      "before": 7,
+      "after": 7.5,
+      "why": "Group deals cut the cost of each customer"
+     },
+     {
+      "what": "finding",
+      "key": "market-3",
+      "before": null,
+      "after": "One association deal can sign dozens of stalls in a single meeting.",
+      "why": "New evidence for your focus"
+     },
+     {
+      "what": "score",
+      "before": 5.3,
+      "after": 5.4,
+      "why": "Weighted factors now add up to 5.4"
+     }
+    ],
+    "report": {
+     "score": 5.4,
+     "verdict": "pivot",
+     "verdictLine": "Build it narrow and sell it by association, not stall by stall.",
+     "factors": [
+      {
+       "analyst": "competition",
+       "label": "Competition",
+       "weight": 0.263,
+       "score": 4,
+       "findings": [
+        "competition-0",
+        "competition-1",
+        "competition-2"
+       ],
+       "sourced": 3,
+       "total": 3
+      },
+      {
+       "analyst": "market",
+       "label": "Market",
+       "weight": 0.211,
+       "score": 7.5,
+       "findings": [
+        "market-0",
+        "market-1",
+        "market-2",
+        "market-3"
+       ],
+       "sourced": 2,
+       "total": 4
+      },
+      {
+       "analyst": "regulation",
+       "label": "Rules",
+       "weight": 0.105,
+       "score": 6,
+       "findings": [
+        "regulation-0",
+        "regulation-1",
+        "regulation-2"
+       ],
+       "sourced": 3,
+       "total": 3
+      },
+      {
+       "analyst": "tech",
+       "label": "Tech",
+       "weight": 0.158,
+       "score": 6,
+       "findings": [
+        "tech-0",
+        "tech-1",
+        "tech-2"
+       ],
+       "sourced": 1,
+       "total": 3
+      },
+      {
+       "analyst": "viability",
+       "label": "Viability",
+       "weight": 0.263,
+       "score": 4.5,
+       "findings": [
+        "viability-0",
+        "viability-1",
+        "viability-2"
+       ],
+       "sourced": 1,
+       "total": 3
+      }
+     ],
+     "math": "0.26×4.0 + 0.21×7.5 + 0.10×6.0 + 0.16×6.0 + 0.26×4.5 = 5.4",
+     "evidence": {
+      "total": 16,
+      "sourced": 10,
+      "sourcedShare": 0.63,
+      "sources": [
+       {
+        "url": "https://sede.agenciatributaria.gob.es/Sede/ayuda/consultas-informaticas/presentacion-declaraciones-ayuda-tecnica/aplicacion-gratuita-verifactu-aeat.html",
+        "title": "Aplicación gratuita VERI*FACTU de la AEAT",
+        "domain": "sede.agenciatributaria.gob.es",
+        "accessed": "2026-11-15"
+       },
+       {
+        "url": "https://www.oie.es/programas-verifactu/",
+        "title": "Comparador de programas VeriFactu para autónomos y pymes",
+        "domain": "oie.es",
+        "accessed": "2026-11-15"
+       },
+       {
+        "url": "https://invoo.es/es/blog/guias/verifactu-aplazado-2027-que-cambia-autonomos/",
+        "title": "Verifactu: aplazamiento previsto a octubre de 2028",
+        "domain": "invoo.es",
+        "accessed": "2026-11-15"
+       },
+       {
+        "url": "https://forbes.es/economia/883419/upta-celebra-el-record-de-autonomos-en-febrero-y-el-avance-hacia-actividades-con-mayor-valor-anadido/",
+        "title": "UPTA celebra el récord de autónomos en febrero y el avance hacia actividades con mayor valor añadido",
+        "domain": "forbes.es",
+        "accessed": "2026-11-15"
+       },
+       {
+        "url": "https://juntadeandalucia.es/presidencia/portavoz/resources/files/2015/2/27/1425031602787Plan%20Activaci%C3%B3n%20Comercio%20Ambulante%202015-2017.pdf",
+        "title": "Plan de Activación del Comercio Ambulante en Andalucía 2015-2017",
+        "domain": "juntadeandalucia.es",
+        "accessed": "2026-11-15"
+       },
+       {
+        "url": "https://www.legaltoday.com/actualidad-juridica/noticias-de-derecho/nueva-prorroga-verifactu-no-sera-obligatorio-hasta-2027-para-sociedades-y-otros-contribuyentes-2025-12-04/",
+        "title": "Nueva prórroga: Verifactu no será obligatorio hasta 2027 para Sociedades y otros contribuyentes",
+        "domain": "legaltoday.com",
+        "accessed": "2026-11-15"
+       },
+       {
+        "url": "https://wwwhatsnew.com/2026/10/06/hacienda-verifactu-octubre-2028-aplazamiento-factura-electronica-2026",
+        "title": "Hacienda retrasa Verifactu hasta octubre de 2028: el cuarto aplazamiento en tres años",
+        "domain": "wwwhatsnew.com",
+        "accessed": "2026-11-15"
+       }
+      ]
+     },
+     "confidence": "high",
+     "scalability": {
+      "score": 8.5,
+      "cap": 3,
+      "reach": "Country",
+      "why": "Software: the same app serves a stall in Seville or Bilbao at almost no extra cost.",
+      "wouldScale": [
+       "Card payments on the same phone",
+       "Bookkeeping export for gestorías",
+       "Other Verifactu-bound trades: food trucks, fairs"
+      ],
+      "parts": [
+       {
+        "label": "Reach",
+        "score": 9
+       },
+       {
+        "label": "Repeatable",
+        "score": 9
+       },
+       {
+        "label": "Margins at scale",
+        "score": 8
+       },
+       {
+        "label": "Founder-free",
+        "score": 7
+       },
+       {
+        "label": "Digital leverage",
+        "score": 9
+       }
+      ]
+     },
+     "strengths": [
+      {
+       "text": "The free app can't issue tickets: that is the gap.",
+       "finding": "competition-0"
+      },
+      {
+       "text": "Verifactu is law, with a fixed date for the self-employed.",
+       "finding": "regulation-0"
+      },
+      {
+       "text": "3.42 million self-employed, 42,000 stalls in one region.",
+       "finding": "market-1"
+      }
+     ],
+     "weaknesses": [
+      {
+       "text": "The deadline keeps slipping: October 2028 is announced.",
+       "finding": "regulation-1"
+      },
+      {
+       "text": "Rivals already sell from €4.99 a month.",
+       "finding": "competition-1"
+      },
+      {
+       "text": "Most self-employed may settle for the free app.",
+       "finding": "viability-1"
+      }
+     ],
+     "nextSteps": [
+      "Interview 15 stallholders at two weekly markets",
+      "Ask one market association to trial it",
+      "Confirm which VAT regimes must issue tickets"
+     ],
+     "pivot": {
+      "idea": "Sell through market associations as a group plan",
+      "why": "Lowers acquisition cost and fixes the price war"
+     }
+    },
+    "at": "2026-11-02T09:31:00.000Z"
+   }
+  }
+ ]
+}

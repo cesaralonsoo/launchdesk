@@ -48,6 +48,8 @@ export interface District {
   setPortfolio(items: PortfolioItem[]): void;
   /** v6: world points just above each portfolio building's roof (label anchors). */
   portfolioAnchors(): { id: string; p: THREE.Vector3 }[];
+  /** v7: one box per building volume (world space), for the dashed "locked district" ghost. */
+  ghostBoxes(): THREE.Box3[];
   dispose(): void;
 }
 
@@ -586,6 +588,16 @@ export function createDistrict(opts: { quality: "low" | "high"; env: THREE.Textu
     },
     bounds() {
       return new THREE.Box3(new THREE.Vector3(-BASE_X, Y0 - BASE_T, -BASE_Z), new THREE.Vector3(BASE_X, 30, BASE_Z));
+    },
+    ghostBoxes() {
+      const out: THREE.Box3[] = [];
+      for (const b of buildings)
+        for (const p of b.spec.parts) {
+          const fh = (p.rhythm ?? "fins") === "shop" ? 4.2 : FH;
+          const y0 = KY + 0.12 + (p.from ?? 0) * FH;
+          out.push(new THREE.Box3(new THREE.Vector3(b.spec.x + p.x - p.w / 2, y0, b.spec.z + p.z - p.d / 2), new THREE.Vector3(b.spec.x + p.x + p.w / 2, y0 + p.floors * fh, b.spec.z + p.z + p.d / 2)));
+        }
+      return out;
     },
     framePoints() {
       const pts: THREE.Vector3[] = [];

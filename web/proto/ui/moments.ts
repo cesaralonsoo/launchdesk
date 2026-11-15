@@ -142,9 +142,12 @@ export function levelUpPanel(v: View): string {
 }
 
 // ───────────────────────────── live: "your business"
-export function livePanel(v: View): string {
+/** `r7`: the v7 report (score, verdict, next steps). When given it replaces the v6 Leo score so the live card never
+ *  disagrees with the report the founder just read. */
+export function livePanel(v: View, r7?: { score: number; verdict: string; nextSteps: string[] } | null): string {
   const S = v.sam, L = v.leo, M = v.memo;
-  const days = M?.next_7_days ?? v.weeks[0]?.slice(0, 3).map((t) => t.task) ?? [];
+  const days = r7?.nextSteps.length ? r7.nextSteps.slice(0, 3) : M?.next_7_days ?? v.weeks[0]?.slice(0, 3).map((t) => t.task) ?? [];
+  const V7: Record<string, string> = { go: "Go", pivot: "Pivot", "no-go": "No-go" };
   return `
   <section class="biz">
     <div class="biz-site" data-st>${v.dex ? sitePreview(v, false, true) : ""}</div>
@@ -152,15 +155,15 @@ export function livePanel(v: View): string {
       <header class="biz-top" data-st><span class="live-dot"></span><span class="eyebrow">Live at <b>${esc(v.pip?.url ?? "")}</b></span></header>
       <div class="biz-brand" data-st style="--b-font:${stackOf(v.fonts.display)}">${brandLogo(v, 0, 30)}<p>${esc(v.brand?.tagline ?? "")}</p></div>
       <dl class="facts f3" data-st>
-        ${L ? `<div class="fact"><dt>Score</dt><dd>${num(L.score, 1)}<small> · ${esc(verdictText(v))}</small></dd></div>` : ""}
+        ${r7 ? `<div class="fact"><dt>Score</dt><dd>${num(r7.score, 1)}<small> · ${esc(V7[r7.verdict] ?? r7.verdict)}</small></dd></div>` : L ? `<div class="fact"><dt>Score</dt><dd>${num(L.score, 1)}<small> · ${esc(verdictText(v))}</small></dd></div>` : ""}
         ${S ? `<div class="fact"><dt>Cash to start${est()}</dt><dd>${esc(S.cash_needed.display)}</dd></div>` : ""}
         <div class="fact"><dt>Pre-orders</dt><dd>${num(0)}${v.preorderGoal ? `<small> / ${v.preorderGoal}</small>` : ""}</dd></div>
       </dl>
-      <div class="next7" data-st><span class="lbl">Your next 7 days</span><ol>${days.map((d, i) => `<li><span class="n7-i">${i + 1}</span><span>${esc(d)}</span></li>`).join("")}</ol></div>
+      <div class="next7" data-st><span class="lbl">${r7?.nextSteps.length ? "Your next steps" : "Your next 7 days"}</span><ol>${days.map((d, i) => `<li><span class="n7-i">${i + 1}</span><span>${esc(d)}</span></li>`).join("")}</ol></div>
       <div class="biz-act" data-st>
         <button class="btn btn-primary" data-act="site" type="button"><span>Visit your site</span>${I.ext(14)}</button>
         <button class="btn btn-ghost" data-act="pack" type="button">${I.report(16)}<span>Full report</span></button>
-        <button class="btn btn-quiet nl" data-act="continue" type="button" aria-label="See your district"><span>District</span>${I.arrow(14)}</button>
+        <button class="btn btn-quiet nl" data-act="continue" type="button" aria-label="See it grow"><span>Grow</span>${I.arrow(14)}</button>
       </div>
     </div>
   </section>`;

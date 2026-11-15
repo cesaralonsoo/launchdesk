@@ -59,6 +59,8 @@ export async function migrate() {
   await addColumn("quotes", "qr_sats", "INTEGER"); // F10: unique amount for the plain QR (BIP21) path
   await addColumn("jobs", "attempts", "INTEGER NOT NULL DEFAULT 0"); // R18
   await db.execute("CREATE UNIQUE INDEX IF NOT EXISTS projects_share ON projects(share_id) WHERE share_id IS NOT NULL");
+  // v7 (WS-INTEL): the analyst team's results (ResultsV7) and the shared web research they cite, one row per project.
+  await db.execute("CREATE TABLE IF NOT EXISTS results_v7 (project_id TEXT PRIMARY KEY, json TEXT NOT NULL, research TEXT, updated_at INTEGER NOT NULL)");
 }
 
 async function addColumn(table: string, column: string, type: string) {
@@ -106,9 +108,10 @@ export const stageOf = (d: WorkDept) => DEPT_STAGE[d];
 export async function getProject(id: string): Promise<Project | null> {
   const row = await getProjectRow(id);
   if (!row) return null;
-  const [pays, jobs] = await Promise.all([
+  const [pays, jobs, v7] = await Promise.all([
     exec("SELECT stage, txid, sats, cents, created_at FROM payments WHERE project_id = ?", [id]),
     exec("SELECT dept, stage, status, json, model, error, queued_at, finished_at, attempts FROM jobs WHERE project_id = ?", [id]),
+    exec("SELECT json FROM results_v7 WHERE project_id = ?", [id]),
   ]);
 
   const project: Project = {
@@ -150,6 +153,8 @@ export async function getProject(id: string): Promise<Project | null> {
     const allDone = js.length === STAGE_DEPTS[stage].length && js.every((j) => j.status === "done");
     project.timings[stage] = allDone ? { started, finished: Math.max(...js.map((j) => Number(j.finished_at))) } : { started };
   }
+  // v7: the analyst team's results sit next to the v4 fields (web/src ignores them).
+  if (v7.rows[0]?.json) (project.results as Record<string, unknown>).v7 = JSON.parse(String(v7.rows[0].json));
   // v3 rows keep working: upgrade old result shapes on read (additive, nothing is rewritten in the DB).
   return normalize(project);
 }

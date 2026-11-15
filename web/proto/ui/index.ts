@@ -1,572 +1,456 @@
-// v6 · Every DOM surface (WS-B): chrome, idea, pay, floating status tag, result cards, verdict, level toasts,
-// "your business", district, Your projects (drawer + read-only report), dev switcher (?switcher=1).
-// One layout: center. Reads the flow; only calls flow.next/goto/replay. Never touches world internals.
+// v7 · Every DOM surface (WS-EXP). One surface at a time over the world: the chrome (logo · growth track · your
+// offices), one panel for the current step, a floating name tag on whoever works, and overlays (source, offices,
+// report, site). Reads the flow; only calls flow.next / goto / peek. Fixed light theme: nothing here listens to the clock.
 import "./ui.css";
-import { BUILD_DEPTS, ROOM_META, VALIDATE_DEPTS, type Dept, type FlowState, type Insets, type World } from "../contracts";
-import { PAUSA } from "../data";
-import { DOING, WORKLOG } from "../data/sample";
-import type { ProtoFlow } from "../flow";
-import { logoSystem, resultCard } from "./cards";
-import { commitScheme } from "../themes/day";
-import { countUp, el, esc, isMobile, reducedMotion, stagger } from "./dom";
-import { I, avatar } from "./icons";
+import "./v7.css";
+import { DEMO_LENGTH_S, LEVEL_META, type FlowStateV7, type Insets, type WorldLevel, type WorldV7 } from "../contracts";
+import { REPORT_PAGES, type ProtoFlowV7 } from "../flow";
+import { DEMO_CHAPTERS, type Demo } from "../flow/demo";
+import type { Project } from "../../src/types";
+import { resultCard } from "./cards";
+import { countUp, el, isMobile, reducedMotion, stagger } from "./dom";
 import { ldLogo } from "./logo";
-import { ideaPanel, levelUpPanel, livePanel, payPanel, scalePanel, siteOverlay, verdictPanel } from "./moments";
-import { createStore, drawerHtml, projectOf, readerHtml, type ProjectStore, type Run } from "./projects";
-import { JUMPS, createSwitcher, type Clock } from "./switcher";
-import { ensureBrandFonts, makeView, usd, type View } from "./view";
+import { livePanel, siteOverlay } from "./moments";
+import { levelGlyph } from "./pixel";
+import {
+  noBuildHtml,
+  analystTag, boomHtml, evidenceFoot, evidenceHtml, findingCard, floorHtml, hireHtml, ideaHtml, levelHtml, officesHtml,
+  payHtml, reportPage, reportReader, sourceHtml, steerHtml, steerSuggestions, who, workTag,
+} from "./steps";
+import { ensureBrandFonts, makeView, type View } from "./view";
 
 export interface Ui {
-  openProjects(): void;
+  openOffices(): void;
   dispose(): void;
 }
-
 export interface UiDeps {
-  world: World;
-  flow: ProtoFlow;
-  clock: Clock;
-  /** dev tools, only with ?switcher=1 */
-  switcher: boolean;
-  fast?: boolean;
-  /** Screenshot mode: no entrance motion. */
+  world: WorldV7;
+  flow: ProtoFlowV7;
+  demo: Demo | null;
   still?: boolean;
-  store?: ProjectStore;
 }
 
-type Pos = "center" | "bottom" | "toast" | "sheet";
-const TOP = 64;
-const TOP_INSET = 104;
-const TOP_INSET_M = 64;
-
-type WorldPlus = World & { renderedLevel?(): 1 | 2 | 3; officeScreenPoint?(): { x: number; y: number } | null; portfolioScreenPoints?(): { id: string; x: number; y: number }[] };
+type Pos = "center" | "bottom" | "sheet" | "boom";
+const DEMO_IDEA_FALLBACK = "A specialty coffee kiosk at a metro exit";
 
 export function createUi(host: HTMLElement, deps: UiDeps): Ui {
   const { world, flow } = deps;
-  const store = deps.store ?? createStore();
+  let demo = deps.demo;
   if (deps.still) document.documentElement.dataset.still = "1";
-  const view: View = makeView(PAUSA);
-  ensureBrandFonts(view);
+  let view: View | null = null;
+  let viewFor = "";
+  const getView = () => {
+    if (viewFor !== flow.project.id) {
+      viewFor = flow.project.id;
+      view = flow.project.legacy ? makeView(flow.project.legacy as Project) : null;
+      if (view) ensureBrandFonts(view);
+    }
+    return view;
+  };
+  let typedIdea = "";
+  let steerDraft = "";
 
-  const root = el(`<div class="ui">
+  const root = el(`<div class="ui v7">
     <header class="chrome">
-      <a class="wordmark" href="?" aria-label="LaunchDesk, start over">${ldLogo(20)}</a>
-      <div class="chrome-c"></div>
-      <div class="chrome-r">
-        <div class="lvl" aria-label="Level"></div>
-        <div class="wallet">${I.wallet(15)}<span class="w-txt">Wallet</span></div>
-        <button class="proj-btn glass" type="button" data-act="projects" aria-label="Your projects">${I.grid(15)}<b class="pj-n"></b></button>
-      </div>
+      <a class="wordmark" href="?" aria-label="LaunchDesk, start over">${ldLogo(24)}</a>
+      <ol class="grow" aria-label="Growth"></ol>
+      <div class="chrome-r"><button class="offices-btn glass" type="button" data-act="offices" aria-label="Your offices"><span class="ob-g"></span><span class="ob-t">Your offices</span></button></div>
     </header>
-    <div class="ftag" aria-live="polite"></div>
-    <div class="floortag" data-on="0"><i></i><span>Your office · Floor 1</span></div>
-    <div class="pftags" data-on="0"></div>
+    <div class="demo-bar" hidden><div class="db-track"></div><div class="db-meta"><span class="db-ch"></span><span class="db-keys"><kbd>Space</kbd> pause <kbd>→</kbd> skip <kbd>Esc</kbd> exit</span></div></div>
+    <div class="atag" data-on="0"></div>
+    <div class="wtag glass" data-on="0"></div>
     <div class="panels"></div>
-    <button class="proj-pill glass" type="button" data-act="projects" data-on="0">${I.grid(15)}<span>Projects</span><b class="pj-n"></b></button>
     <div class="overlay" data-open="0"><div class="scrim" data-act="close"></div><div class="ov-body"></div></div>
   </div>`);
   host.appendChild(root);
   const $ = <T extends HTMLElement>(s: string) => root.querySelector<T>(s)!;
-  const lvlEl = $(".lvl"), walletEl = $(".wallet"), tagEl = $(".ftag"), panelsEl = $(".panels"), overlay = $(".overlay");
-  const floorEl = $(".floortag"), pill = $(".proj-pill"), pfEl = $(".pftags");
-  const wx = world as WorldPlus;
+  const growEl = $(".grow"), panelsEl = $(".panels"), overlay = $(".overlay"), atag = $(".atag"), wtag = $(".wtag"), obG = $(".ob-g");
+  const demoBar = $(".demo-bar");
 
-  // ────────────────────────────── chrome
-  // progress lives on the card ("Validate · 2/3"); the chrome only names the level, as a badge (not a button)
-  const LV = ["Office", "Building", "District"];
-  lvlEl.innerHTML = `<span class="lvl-ic"></span><span class="lvl-k"></span><span class="lvl-name"></span>`;
-  let shownLevel = 0;
-  function paintLevel() {
-    const lvl = wx.renderedLevel?.() ?? world.level;
-    if (lvl === shownLevel) return;
-    shownLevel = lvl;
-    lvlEl.dataset.level = String(lvl);
-    lvlEl.querySelector(".lvl-ic")!.innerHTML = lvl === 3 ? I.district(15) : lvl === 2 ? I.building(15) : I.office(15);
-    lvlEl.querySelector(".lvl-k")!.textContent = `Level ${lvl}`;
-    lvlEl.querySelector(".lvl-name")!.textContent = LV[lvl - 1]!;
-    lvlEl.classList.remove("bump");
-    void lvlEl.offsetWidth;
-    lvlEl.classList.add("bump");
-  }
-  function paintChrome(s: FlowState) {
-    root.dataset.step = s.step;
-    paintLevel();
-    const paid = flow.paidCents;
-    walletEl.querySelector(".w-txt")!.innerHTML = paid ? `<b class="num">${usd(paid)}</b> paid` : "Wallet";
-    walletEl.dataset.paid = paid ? "1" : "0";
+  // ────────────────────────────── chrome: the growth track (room → floor → building → district)
+  let growKey = "";
+  function paintGrow() {
+    const cur = world.worldLevel as WorldLevel;
+    const cap = flow.cap;
+    const key = `${cur}:${cap}`;
+    if (key === growKey) return;
+    growKey = key;
+    growEl.innerHTML = ([0, 1, 2, 3] as WorldLevel[])
+      .map((l) => `<li data-s="${l === cur ? "now" : l < cur ? "done" : l > cap ? "ghost" : "next"}" title="${LEVEL_META[l].name}${l > cap ? " · beyond this idea's reach" : ""}">${levelGlyph(l, 16)}<span>${LEVEL_META[l].short}</span></li>`)
+      .join("");
+    obG.innerHTML = levelGlyph(cur, 14);
   }
 
-  // ────────────────────────────── projects (pill, drawer, reader) + portfolio buildings
-  let runId: string | null = null;
-  function paintProjects() {
-    const n = store.all().length;
-    root.querySelectorAll<HTMLElement>(".pj-n").forEach((b) => (b.textContent = n ? String(n) : ""));
-    pill.dataset.on = n ? "1" : "0";
-    root.dataset.projects = String(n);
-    world.setPortfolio?.(store.portfolio().filter((p) => p.id !== runId)); // the run on screen is the hero tower, not a second building
-  }
-  store.onChange(paintProjects);
-  paintProjects();
-
-  function track(s: FlowState, prev: FlowState) {
-    if (!runId) return;
-    if (s.step === "verdict" && prev.step !== "verdict") store.update(runId, { score: view.leo?.score ?? null, verdict: view.leo?.verdict ?? null, level: 1, status: "validated" });
-    else if ((s.step === "level-up" || s.step === "live") && prev.step !== s.step) store.update(runId, { level: 2, status: "live", title: view.mia?.title ?? view.name });
-    else if (s.step === "scale" && prev.step !== "scale") store.update(runId, { level: 3, status: "district" });
-    if ((s.step === "idle" || s.step === "idea") && runId) {
-      runId = null;
-      paintProjects();
-    }
+  // ────────────────────────────── demo bar
+  if (demo) {
+    demoBar.hidden = false;
+    root.dataset.demo = "1";
+    $(".db-track").innerHTML = DEMO_CHAPTERS.map(([at], i) => {
+      const end = DEMO_CHAPTERS[i + 1]?.[0] ?? DEMO_LENGTH_S;
+      return `<span class="db-seg" style="flex:${end - at}"><i></i></span>`;
+    }).join("");
+    const segs = [...demoBar.querySelectorAll<HTMLElement>(".db-seg i")];
+    const ch = $(".db-ch");
+    demo.onTick(() => {
+      if (!demo) return;
+      if (!demo.on) {
+        demoBar.hidden = true;
+        root.dataset.demo = "0";
+        demo = null;
+        render(true);
+        return;
+      }
+      DEMO_CHAPTERS.forEach(([at], i) => {
+        const end = DEMO_CHAPTERS[i + 1]?.[0] ?? DEMO_LENGTH_S;
+        segs[i]!.style.transform = `scaleX(${Math.max(0, Math.min(1, (demo!.t - at) / (end - at)))})`;
+      });
+      const c = [...DEMO_CHAPTERS].reverse().find(([at]) => at <= demo!.t);
+      ch.textContent = `${demo.paused ? "Paused · " : ""}${c?.[1] ?? ""}`;
+    });
   }
 
   // ────────────────────────────── panels
   let curKey: string | null = null;
   let curPanel: HTMLElement | null = null;
-  let insets: Insets = { left: 0, right: 0, top: TOP_INSET, bottom: 0 };
+  let insets: Insets = { left: 0, right: 0, top: 0, bottom: 0 };
 
-  function keyFor(s: FlowState): string | null {
-    const settled = flow.settled;
+  function keyFor(s: FlowStateV7): string | null {
+    if (flow.moving && s.step !== "boom") return null;
     switch (s.step) {
-      case "idle":
+      case "bedroom":
         return null;
       case "idea":
-        return "idea";
-      case "pay-validate":
-        return settled ? "pay:validate" : null;
-      case "pay-build":
-        return settled ? "pay:build" : null;
-      case "validate":
+      case "end":
+        return s.step;
+      case "pay1":
+      case "pay2":
+        return s.step;
+      case "hire":
+        return "hire";
+      case "evidence":
+        return "evidence";
+      case "report":
+        return `report:${s.page ?? "score"}`;
+      case "steer":
+        return `steer:${flow.steers.length}:${flow.steering?.status ?? "none"}`;
+      case "boom":
+        return flow.moving ? "boom" : null;
+      case "floor":
+        return "floor";
       case "build":
-        return s.phase === "result" && s.dept ? `card:${s.dept}` : null;
+        return s.phase === "result" ? `build:${s.builder}` : null;
+      case "building":
+      case "district":
+        return `${s.step}:${flow.cap}:${flow.chosenPath ?? "-"}`;
       default:
-        return settled ? s.step : null;
+        return s.step;
     }
   }
   function posFor(key: string): Pos {
-    if (isMobile()) return key === "idea" || key.startsWith("pay") ? "sheet" : key === "level-up" ? "toast" : "sheet";
-    if (key === "level-up" || key === "scale") return "toast";
-    return key === "idea" || key.startsWith("pay") ? "center" : "bottom";
+    if (key === "boom") return "boom";
+    if (isMobile()) return "sheet";
+    return "bottom"; // every surface rises from the bottom; the world is framed in the space above it
   }
-  function build(key: string, s: FlowState): HTMLElement {
-    let html = "";
-    if (key === "idea") html = ideaPanel(s.idea, store.all().length);
-    else if (key.startsWith("pay:")) html = payPanel(view, key.slice(4) as "validate" | "build", s.idea);
-    else if (key.startsWith("card:")) html = resultCard(view, key.slice(5) as Dept);
-    else if (key === "verdict") html = verdictPanel(view);
-    else if (key === "level-up") html = levelUpPanel(view);
-    else if (key === "live") html = livePanel(view);
-    else if (key === "scale") html = scalePanel(view, store.all().length);
-    const p = el(`<div class="panel glass" data-key="${key.split(":")[0]}" data-pos="${posFor(key)}">${html}</div>`);
-    stagger(p);
-    return p;
+  function build(key: string, s: FlowStateV7): string {
+    const v = getView();
+    if (key === "idea") return ideaHtml(flow.project.idea, typedIdea);
+    if (key === "end") return ideaHtml(flow.project.idea, "", true);
+    if (key === "pay1") return payHtml(flow, 1, !!typedIdea.trim() && typedIdea.trim() !== flow.project.idea.trim());
+    if (key === "pay2") return payHtml(flow, 2, false);
+    if (key === "hire") return hireHtml(flow);
+    if (key === "evidence") return evidenceHtml(flow, s.finding ?? 0);
+    if (key.startsWith("report:")) return reportPage(flow, s.page ?? "score");
+    if (key.startsWith("steer")) return steerHtml(flow, steerDraft);
+    if (key === "boom") return boomHtml();
+    if (key === "floor") return floorHtml(flow);
+    if (key.startsWith("build:")) return v ? resultCard(v, s.builder!) : s.phase === "result" ? noBuildHtml(s.builder ?? null) : "";
+    if (key === "live") return v ? livePanel(v, flow.report) : noBuildHtml(null);
+    if (key.startsWith("building")) return levelHtml(flow, 2, v?.name ?? flow.project.title);
+    if (key.startsWith("district")) return levelHtml(flow, 3, v?.name ?? flow.project.title);
+    return "";
   }
-
-  function computeInsets(p: HTMLElement | null): Insets {
-    const vh = innerHeight;
-    const top = isMobile() ? TOP_INSET_M : TOP_INSET;
-    const base: Insets = { left: 0, right: 0, top, bottom: 0 };
-    if (!p) return base;
-    const pos = p.dataset.pos as Pos;
-    const r = p.getBoundingClientRect();
-    if (pos === "center") return base; // the popup floats over the office on purpose
-    if (pos === "toast") return { ...base, bottom: Math.round(vh - r.top + 8) };
-    return { ...base, bottom: Math.round(vh - r.top + 12) };
-  }
-  function pushInsets(i: Insets) {
-    if (!(["left", "right", "top", "bottom"] as const).some((k) => Math.abs(i[k] - insets[k]) > 6)) return;
-    insets = i;
-    world.setInsets(i);
-    placeTag();
-  }
-
-  function showPanel(key: string | null, s: FlowState) {
-    if (key === curKey) return;
-    commitScheme(); // a step change is the calm moment for a pending day ↔ night skin swap (crossfaded)
+  function show(key: string | null, s: FlowStateV7) {
+    if (key === curKey) return update(s);
     const old = curPanel;
-    curKey = key;
-    curPanel = null;
     if (old) {
       old.classList.remove("in");
       old.classList.add("out");
-      old.inert = true;
-      setTimeout(() => old.remove(), reducedMotion() ? 0 : 260);
+      setTimeout(() => old.remove(), 280);
     }
+    curKey = key;
+    curPanel = null;
     if (!key) {
-      pushInsets(computeInsets(null));
+      setInsets({ left: 0, right: 0, top: 0, bottom: 0 });
       return;
     }
-    const p = build(key, s);
-    curPanel = p;
+    const pos = posFor(key);
+    const p = el(`<div class="panel ${pos === "boom" ? "" : "glass"}" data-pos="${pos}" data-key="${key.split(":")[0]}">${build(key, s)}</div>`);
+    stagger(p);
     panelsEl.appendChild(p);
-    wirePanel(p, key);
-    requestAnimationFrame(() => {
-      p.classList.add("in");
-      countUp(p);
-      pushInsets(computeInsets(p));
-      const f = p.querySelector<HTMLElement>("textarea");
-      if (f && !isMobile()) f.focus({ preventScroll: true });
-    });
+    curPanel = p;
+    countUp(p, 900);
+    mount(p, key, s);
+    requestAnimationFrame(() => requestAnimationFrame(() => p.classList.add("in")));
+    queueMicrotask(() => measure());
+  }
+  function measure() {
+    if (!curPanel || !curKey) return;
+    const pos = curPanel.dataset.pos as Pos;
+    const r = curPanel.getBoundingClientRect();
+    if (pos === "bottom" || pos === "sheet" || pos === "center") setInsets({ left: 0, right: 0, top: isMobile() ? 56 : 64, bottom: Math.round(innerHeight - r.top + 12) });
+    else setInsets({ left: 0, right: 0, top: 0, bottom: 0 });
+  }
+  function setInsets(i: Insets) {
+    if (Math.abs(i.bottom - insets.bottom) < 8 && Math.abs(i.top - insets.top) < 8) return;
+    insets = i;
+    world.setInsets(i);
   }
 
-  /** While another tab is open, the card keeps the height of its first tab (the rest scrolls inside), so
-   *  switching tabs never moves the layout or the camera. Back on the first tab the lock is released. */
-  function switchTab(scope: HTMLElement, id: string) {
-    const panes = scope.querySelector<HTMLElement>(".c-panes");
-    const first = panes?.querySelector<HTMLElement>(".c-pane");
-    if (panes && first && !isMobile() && !scope.closest(".reader")) {
-      if (first.dataset.pane === id) {
-        panes.style.height = "";
-        delete panes.dataset.locked;
-      } else if (!panes.style.height) {
-        panes.style.height = `${Math.ceil(panes.getBoundingClientRect().height)}px`;
-        panes.dataset.locked = "1";
+  /** Progressive updates inside the same surface (no remount). */
+  function update(s: FlowStateV7) {
+    if (!curPanel || !curKey) return;
+    if (curKey === "hire") {
+      curPanel.querySelectorAll<HTMLElement>(".hire").forEach((li, i) => (li.dataset.on = i < flow.hired ? "1" : "0"));
+      measure();
+    } else if (curKey === "evidence") {
+      const i = s.finding ?? 0;
+      const fd = flow.findings[i];
+      const slot = curPanel.querySelector<HTMLElement>(".ev-slot")!;
+      const curId = slot.querySelector<HTMLElement>(".fcard")?.dataset.fid;
+      const head = curPanel.querySelector(".ev-who");
+      if (fd && curId !== fd.id) {
+        const fresh = el(evidenceHtml(flow, i));
+        head?.replaceWith(fresh.querySelector(".ev-who")!);
+        const card = el(findingCard(fd));
+        const prev = slot.querySelector(".fcard");
+        if (prev) {
+          prev.classList.add("leave");
+          setTimeout(() => prev.remove(), 260);
+        } else slot.innerHTML = "";
+        slot.appendChild(card);
+        // the cell flies home: the newest cell pops
       }
+      curPanel.querySelector(".ev-foot")!.replaceWith(el(evidenceFoot(flow, i)));
+      const pop = curPanel.querySelector<HTMLElement>(`.cell[data-i="${flow.revealed - 1}"]`);
+      if (pop && fd && i === flow.revealed - 1) pop.classList.add("pop");
     }
-    scope.querySelectorAll<HTMLElement>("[data-tab]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === id)));
-    scope.querySelectorAll<HTMLElement>(".c-pane").forEach((pn) => {
-      const on = pn.dataset.pane === id;
-      if (on && pn.hidden) {
-        pn.hidden = false;
-        pn.classList.remove("pane-in");
-        void pn.offsetWidth;
-        pn.classList.add("pane-in");
-        countUp(pn);
-        pn.parentElement!.scrollTop = 0;
-      } else if (!on) pn.hidden = true;
-    });
   }
 
-  function wirePanel(p: HTMLElement, key: string) {
-    if (key === "idea") {
+  function mount(p: HTMLElement, key: string, s: FlowStateV7) {
+    if (key === "idea" || key === "end") {
       const form = p.querySelector<HTMLFormElement>("form")!;
-      const ta = form.querySelector("textarea")!;
-      form.addEventListener("submit", (e) => {
-        e.preventDefault();
-        if (!flow.settled) return;
+      const ta = form.querySelector<HTMLTextAreaElement>("textarea")!;
+      const submit = () => {
+        typedIdea = ta.value;
         flow.next({ type: "submit-idea", idea: ta.value });
-      });
+      };
+      form.addEventListener("submit", (e) => (e.preventDefault(), submit()));
       ta.addEventListener("keydown", (e) => {
         if (e.key === "Enter" && !e.shiftKey) {
           e.preventDefault();
-          form.requestSubmit();
+          submit();
         }
       });
+      if (demo && key === "idea") typeInto(ta, flow.project.idea || DEMO_IDEA_FALLBACK, 3600);
+      else if (!isMobile() && !deps.still) setTimeout(() => ta.focus({ preventScroll: true }), 400);
     }
-    p.addEventListener("click", (e) => {
-      const t = e.target as HTMLElement;
-      const tab = t.closest<HTMLElement>("[data-tab]");
-      if (tab) return switchTab(p, tab.dataset.tab!);
-      const lg = t.closest<HTMLElement>("[data-logo]");
-      if (lg) return pickLogo(p, Number(lg.dataset.logo));
-      const b = t.closest<HTMLElement>("[data-act]");
-      if (b) void act(b.dataset.act!, b);
-    });
-  }
-  /** Dex: the three concepts are real options; picking one redraws the whole logo system and its rationale. */
-  function pickLogo(scope: HTMLElement, i: number) {
-    scope.querySelectorAll<HTMLElement>("[data-logo]").forEach((c) => {
-      const on = Number(c.dataset.logo) === i;
-      c.classList.toggle("on", on);
-      c.setAttribute("aria-checked", String(on));
-    });
-    const hero = scope.querySelector<HTMLElement>("[data-logo-hero]");
-    const take = scope.querySelector<HTMLElement>("[data-logo-take]");
-    const cell = scope.querySelector<HTMLElement>(`[data-logo="${i}"]`);
-    if (hero) {
-      hero.innerHTML = logoSystem(view, i);
-      hero.classList.remove("pane-in");
-      void hero.offsetWidth;
-      hero.classList.add("pane-in");
-    }
-    if (take && cell) take.textContent = cell.dataset.concept ?? "";
-  }
-
-  async function act(a: string, b?: HTMLElement) {
-    if (a === "next") return flow.next({ type: "next" });
-    if (a === "approve" && b) {
-      if (b.dataset.state) return;
-      // a run joins "Your projects" once it is paid for, not when the idea is typed
-      if (flow.state.step === "pay-validate" && !runId) {
-        runId = store.start(flow.state.idea.trim() || PAUSA.idea);
-        paintProjects();
+    if (demo && (key.startsWith("district") || key.startsWith("building")) && flow.cap < (key.startsWith("district") ? 3 : 2))
+      setTimeout(() => demo && p.isConnected && p.querySelector<HTMLButtonElement>("[data-act=path]")?.click(), 1200);
+    if ((key === "pay1" || key === "pay2") && demo) setTimeout(() => p.querySelector<HTMLButtonElement>("[data-act=approve]")?.click(), 1500);
+    if (key.startsWith("steer")) {
+      const form = p.querySelector<HTMLFormElement>(".steer-f");
+      const ta = form?.querySelector<HTMLTextAreaElement>("textarea");
+      if (form && ta) {
+        ta.addEventListener("input", () => (steerDraft = ta.value));
+        const send = () => {
+          if (!ta.value.trim()) return ta.focus();
+          const note = ta.value;
+          steerDraft = "";
+          flow.next({ type: "steer", note });
+        };
+        form.addEventListener("submit", (e) => (e.preventDefault(), send()));
+        ta.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            send();
+          }
+        });
+        if (demo && !flow.steering) {
+          typeInto(ta, steerSuggestions(flow)[0]!, 2200);
+          setTimeout(() => ta.isConnected && send(), 2700);
+        } else if (!isMobile() && !deps.still && !flow.steering) setTimeout(() => ta.focus({ preventScroll: true }), 300);
       }
-      const sp = reducedMotion() ? 0 : 1;
-      b.dataset.state = "busy";
-      await sleep((850 * sp) / flow.speed);
-      b.dataset.state = "done";
-      await sleep((750 * sp) / flow.speed);
-      return flow.next({ type: "approve-pay" });
     }
-    if (a === "build") return flow.next({ type: "decide", choice: "build" });
-    if (a === "pivot") return flow.next({ type: "decide", choice: "pivot" });
-    if (a === "stop") {
-      if (runId) store.update(runId, { status: "stopped" });
-      return flow.next({ type: "decide", choice: "stop" });
-    }
-    if (a === "continue") return flow.next({ type: "continue" });
-    if (a === "pack") return openReader(view, null, "Startup pack");
-    if (a === "site") return openOverlay(siteOverlay(view), "site");
-    if (a === "projects") return openProjects();
-    if (a === "back") return openProjects();
-    if (a === "close") return closeOverlay();
-    if (a === "new") {
-      closeOverlay();
-      return flow.goto({ step: "idea", idea: "" });
-    }
-    if (a === "replay") return flow.replay();
+    void s;
   }
 
-  // ────────────────────────────── overlay: drawer, reader, site
-  const ovBody = overlay.querySelector<HTMLElement>(".ov-body")!;
-  let lastFocus: HTMLElement | null = null;
-  function openOverlay(html: string, kind: "drawer" | "reader" | "site") {
-    if (overlay.dataset.open !== "1") lastFocus = document.activeElement as HTMLElement | null;
-    ovBody.dataset.kind = kind;
-    ovBody.innerHTML = `<div class="ov-card glass" data-kind="${kind}" tabindex="-1">${html}</div>`;
-    stagger(ovBody);
+  function typeInto(ta: HTMLTextAreaElement, text: string, ms: number) {
+    if (reducedMotion()) {
+      ta.value = text;
+      return;
+    }
+    const t0 = performance.now();
+    const step = (now: number) => {
+      const k = Math.min(1, (now - t0) / ms);
+      ta.value = text.slice(0, Math.round(text.length * k));
+      if (k < 1 && ta.isConnected) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+
+  // ────────────────────────────── floating tags (analyst name over their head · build work tag)
+  function paintTags() {
+    const s = flow.state;
+    const v = getView();
+    let target: Parameters<WorldV7["actorScreenPoint"]>[0] | null = null;
+    if (s.step === "evidence" && s.analyst && !curPanel?.matches(".out")) target = s.analyst;
+    if (target) {
+      const a = who(flow, target as never);
+      const pt = world.actorScreenPoint(target);
+      if (pt && pt.y > 60) {
+        if (atag.dataset.who !== a.id) {
+          atag.innerHTML = analystTag(a);
+          atag.dataset.who = a.id;
+        }
+        atag.style.transform = `translate(${Math.round(pt.x)}px, ${Math.round(pt.y - 14)}px) translate(-50%, -100%)`;
+        atag.dataset.on = "1";
+      } else atag.dataset.on = "0";
+    } else atag.dataset.on = "0";
+    if (s.step === "build" && s.phase === "working" && s.builder && v) {
+      if (wtag.dataset.who !== s.builder) {
+        wtag.innerHTML = workTag(s.builder);
+        wtag.dataset.who = s.builder;
+      }
+      const pt = world.actorScreenPoint(s.builder);
+      const x = pt ? Math.min(innerWidth - 150, Math.max(150, pt.x)) : innerWidth / 2;
+      const y = pt ? Math.max(90, pt.y - 24) : innerHeight * 0.4;
+      wtag.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px) translate(-50%, -100%)`;
+      wtag.dataset.on = "1";
+    } else {
+      wtag.dataset.on = "0";
+      wtag.dataset.who = "";
+    }
+  }
+  world.onCameraChange(paintTags);
+
+  // ────────────────────────────── overlays
+  function openOverlay(html: string, kind: string) {
+    const body = overlay.querySelector<HTMLElement>(".ov-body")!;
+    body.dataset.kind = kind;
+    body.innerHTML = `<div class="ov-card glass" data-kind="${kind}">${html}</div>`;
     overlay.dataset.open = "1";
-    overlay.dataset.kind = kind;
-    const card = ovBody.querySelector<HTMLElement>(".ov-card")!;
-    card.classList.remove("in");
-    requestAnimationFrame(() => {
-      card.classList.add("in");
-      countUp(card);
-      card.focus({ preventScroll: true }); // keyboard users tab from here; no focus ring on open
-    });
-    card.addEventListener("click", (e) => {
-      const t = e.target as HTMLElement;
-      const o = t.closest<HTMLElement>("button[data-open]"); // not the .overlay root, which also carries data-open="1"
-      if (o) return openRun(o.dataset.open!);
-      const sec = t.closest<HTMLElement>(".rd-nav [data-sec]");
-      if (sec) return showSection(card, sec.dataset.sec!);
-      const tab = t.closest<HTMLElement>("[data-tab]");
-      if (tab) return switchTab(tab.closest<HTMLElement>(".card")!, tab.dataset.tab!);
-      const b = t.closest<HTMLElement>("[data-act]");
-      if (b) void act(b.dataset.act!, b);
-    });
+    const card = body.firstElementChild as HTMLElement;
+    requestAnimationFrame(() => requestAnimationFrame(() => card.classList.add("in")));
   }
   function closeOverlay() {
-    if (overlay.dataset.open !== "1") return;
     overlay.dataset.open = "0";
-    ovBody.querySelector(".ov-card")?.classList.remove("in");
-    lastFocus?.focus?.({ preventScroll: true });
   }
-  overlay.querySelector(".scrim")!.addEventListener("click", closeOverlay);
-
-  function openProjects() {
-    openOverlay(drawerHtml(store.all()), "drawer");
-  }
-  function openRun(id: string) {
-    const r = store.all().find((x) => x.id === id);
-    if (!r) return;
-    const v = makeView(projectOf(r));
-    ensureBrandFonts(v);
-    openReader(v, r, r.own ? "Your run" : "Sample project");
-  }
-  function openReader(v: View, r: Run | null, title: string) {
-    openOverlay(readerHtml(v, r, title), "reader");
-  }
-  function showSection(card: HTMLElement, id: string) {
-    card.querySelectorAll<HTMLElement>(".rd-nav [data-sec]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.sec === id)));
-    card.querySelectorAll<HTMLElement>(".rd-sec").forEach((s) => {
-      const on = s.dataset.sec === id;
-      if (on && s.hidden) {
-        s.hidden = false;
-        s.classList.remove("pane-in");
-        void s.offsetWidth;
-        s.classList.add("pane-in");
-        countUp(s);
-      } else if (!on) s.hidden = true;
-    });
-    card.querySelector<HTMLElement>(".rd-body")!.scrollTop = 0;
-    card.querySelector<HTMLElement>(`.rd-nav [data-sec="${id}"]`)?.scrollIntoView({ block: "nearest", inline: "center", behavior: reducedMotion() ? "auto" : "smooth" });
+  function openFinding(id: string) {
+    const fd = flow.findings.find((x) => x.id === id);
+    if (!fd) return;
+    openOverlay(sourceHtml(fd, who(flow, fd.analyst)), "source");
   }
 
-  // ────────────────────────────── floating status tag
-  let tagDept: Dept | null = null;
-  let tagTimer = 0;
-  function showTag(d: Dept | null) {
-    if (d === tagDept) return;
-    tagDept = d;
-    clearInterval(tagTimer);
-    if (!d) {
-      tagEl.dataset.on = "0";
+  // ────────────────────────────── actions
+  root.addEventListener("click", (e) => {
+    const t = (e.target as HTMLElement).closest<HTMLElement>("[data-act]");
+    if (!t) return;
+    const act = t.dataset.act!;
+    if (act === "approve") {
+      if (t.dataset.state) return;
+      t.dataset.state = "busy";
+      setTimeout(() => {
+        t.dataset.state = "done";
+        flow.next({ type: "approve-pay" });
+      }, reducedMotion() ? 0 : 650);
       return;
     }
-    const lines = WORKLOG[d];
-    const ms = flow.workMs;
-    tagEl.style.setProperty("--room", ROOM_META[d].color);
-    tagEl.innerHTML = `
-      <span class="tg-av">${avatar(d, 30)}<svg class="tg-ring" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" pathLength="1" style="animation-duration:${ms}ms"/></svg></span>
-      <span class="tg-txt"><b>${ROOM_META[d].name} <em>· ${esc(ROOM_META[d].does)}</em></b><span class="tg-line"><span>${esc(DOING[d])}</span></span></span>`;
-    tagEl.dataset.on = "1";
-    let i = 0;
-    const lineEl = tagEl.querySelector(".tg-line")!;
-    const swap = () => {
-      if (i >= lines.length) return;
-      const n = el(`<span>${esc(lines[i++]!)}</span>`);
-      lineEl.querySelectorAll("span:not(.out)").forEach((old) => {
-        old.classList.add("out");
-        setTimeout(() => old.remove(), 260);
-      });
-      lineEl.appendChild(n);
-    };
-    swap();
-    tagTimer = window.setInterval(swap, Math.max(700, ms / lines.length));
-    placeTag();
-  }
-  function placeTag() {
-    if (!tagDept) return;
-    const pt = world.roomScreenPoint(tagDept);
-    if (!pt) {
-      tagEl.style.opacity = "0";
-      return;
+    if (act === "next") return flow.next({ type: "next" });
+    if (act === "continue") return flow.next({ type: "continue" });
+    if (act === "prev" || act === "page") {
+      const i = REPORT_PAGES.indexOf(flow.state.page ?? "score");
+      const page = act === "page" ? (t.dataset.page as (typeof REPORT_PAGES)[number]) : REPORT_PAGES[Math.max(0, i - 1)]!;
+      return flow.goto({ step: "report", page });
     }
-    tagEl.style.opacity = "";
-    const r = tagEl.getBoundingClientRect();
-    if (isMobile()) {
-      tagEl.style.transform = `translate3d(${((innerWidth - r.width) / 2).toFixed(1)}px, ${(innerHeight - r.height - 24).toFixed(1)}px, 0)`;
-      return;
+    if (act === "grow") return flow.next({ type: "decide", choice: "grow" });
+    if (act === "pivot") return flow.next({ type: "decide", choice: "pivot" });
+    if (act === "steer") return flow.goto({ step: "steer" });
+    if (act === "ask-scale") {
+      steerDraft = "What would make it scale?";
+      return flow.goto({ step: "steer" });
     }
-    const x = Math.min(innerWidth - r.width - 12, Math.max(12, pt.x - r.width / 2));
-    const y = Math.max(TOP, Math.min(innerHeight - r.height - 12, pt.y - r.height - 28));
-    tagEl.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
-  }
-  function placeFloor() {
-    const pt = wx.officeScreenPoint?.() ?? null;
-    const on = !!pt && (wx.renderedLevel?.() ?? 1) >= 2 && flow.settled;
-    floorEl.dataset.on = on ? "1" : "0";
-    if (!pt || !on) return;
-    const r = floorEl.getBoundingClientRect();
-    const x = Math.min(innerWidth - r.width - 12, Math.max(12, pt.x - r.width / 2));
-    const y = Math.max(TOP, Math.min(innerHeight - insets.bottom - r.height - 6, pt.y + 14));
-    floorEl.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
-  }
-  // v6 integrate: name tags over the past-project buildings in the district (world.portfolioScreenPoints)
-  let pfKey = "";
-  function placePortfolio() {
-    const pts = flow.settled && flow.state.step === "scale" && !isMobile() ? wx.portfolioScreenPoints?.() ?? [] : [];
-    pfEl.dataset.on = pts.length ? "1" : "0";
-    if (!pts.length) return;
-    const runs = store.all();
-    const key = pts.map((p) => p.id).join(",");
-    if (key !== pfKey) {
-      pfKey = key;
-      pfEl.innerHTML = pts.map((p) => {
-        const r = runs.find((x) => x.id === p.id);
-        if (!r) return "";
-        const name = (r.level >= 2 ? makeView(projectOf(r)).brand?.name : null) ?? r.title.replace(/\s+in\s+[A-Z][\p{L} ]+$/u, "");
-        return `<button type="button" class="pft" data-open="${esc(r.id)}" data-v="${r.verdict ?? ""}"><b>${esc(name.length > 24 ? name.slice(0, 23).trimEnd() + "…" : name)}</b>${r.score != null ? `<span class="num">${r.score.toFixed(1)}</span>` : ""}</button>`;
-      }).join("");
-    }
-    const bottom = innerHeight - insets.bottom - 8;
-    const placed: Array<{ x: number; y: number; w: number; h: number }> = [];
-    [...pts].sort((a, b) => b.y - a.y).forEach((p) => {
-      const t = pfEl.querySelector<HTMLElement>(`[data-open="${CSS.escape(p.id)}"]`);
-      if (!t) return;
-      const w = t.offsetWidth, h = t.offsetHeight;
-      const x = Math.min(innerWidth - w - 12, Math.max(12, p.x - w / 2));
-      let y = Math.min(bottom - h, Math.max(TOP, p.y - h - 10));
-      // nearer tags (lower on screen) win; farther ones step up until they no longer overlap
-      for (let k = 0; k < 6 && placed.some((o) => x < o.x + o.w + 4 && o.x < x + w + 4 && y < o.y + o.h + 4 && o.y < y + h + 4); k++) y -= h + 6;
-      placed.push({ x, y, w, h });
-      t.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
-    });
-  }
-  // chrome buttons outside panels ("Projects" pill on desktop, icon in the mobile top bar)
-  root.querySelectorAll<HTMLElement>(".proj-pill, .proj-btn").forEach((b) => b.addEventListener("click", () => openProjects()));
-  pfEl.addEventListener("click", (e) => {
-    const o = (e.target as HTMLElement).closest<HTMLElement>("button[data-open]");
-    if (o) openRun(o.dataset.open!);
-  });
-  const offCam = world.onCameraChange(() => {
-    placeTag();
-    placeFloor();
-    placePortfolio();
-    paintLevel();
-  });
-
-  // ────────────────────────────── render
-  function render(s: FlowState, prev: FlowState) {
-    paintChrome(s);
-    track(s, prev);
-    const working = (s.step === "validate" || s.step === "build") && s.phase === "working" && flow.settled ? s.dept! : null;
-    showTag(working);
-    showPanel(keyFor(s), s);
-    placeFloor();
-    placePortfolio();
-  }
-  const offFlow = flow.onChange((s, prev) => render(s, prev));
-  render(flow.state, flow.state);
-
-  const onResize = () => {
-    if (curPanel && curKey) {
-      curPanel.dataset.pos = posFor(curKey);
-      pushInsets(computeInsets(curPanel));
-    }
-    placeTag();
-  };
-  addEventListener("resize", onResize);
-
-  // ────────────────────────────── keyboard: → / Enter = Next, Esc closes, ← → move through a report
-  const onKey = (e: KeyboardEvent) => {
-    const t = e.target as HTMLElement;
-    const typing = t.tagName === "TEXTAREA" || t.tagName === "INPUT" || t.tagName === "SELECT";
-    if (e.key === "Escape") {
-      if (overlay.dataset.open === "1") return closeOverlay();
-      if (flow.state.step === "pay-validate") return flow.goto({ step: "idea" });
-      return;
-    }
-    if (typing) return;
-    if (overlay.dataset.open === "1") {
-      const nav = ovBody.querySelector<HTMLElement>(".rd-nav");
-      if (nav && (e.key === "ArrowRight" || e.key === "ArrowLeft")) {
-        const tabs = [...nav.querySelectorAll<HTMLElement>("[data-sec]")];
-        const i = tabs.findIndex((x) => x.getAttribute("aria-selected") === "true");
-        const n = tabs[Math.max(0, Math.min(tabs.length - 1, i + (e.key === "ArrowRight" ? 1 : -1)))];
-        if (n) showSection(ovBody.querySelector<HTMLElement>(".ov-card")!, n.dataset.sec!);
-        e.preventDefault();
+    if (act === "report") return flow.goto({ step: "report", page: "score" });
+    if (act === "suggest") {
+      const ta = curPanel?.querySelector<HTMLTextAreaElement>(".steer-f textarea");
+      if (ta) {
+        ta.value = t.textContent ?? "";
+        steerDraft = ta.value;
+        ta.focus();
       }
       return;
     }
-    if (e.key === "ArrowRight" || e.key === "Enter") {
-      if (t.tagName === "BUTTON" && e.key === "Enter" && !t.classList.contains("btn-next")) return; // native activation
-      if (curKey?.startsWith("card:")) {
-        e.preventDefault();
-        void act("next");
-      } else if (curKey === "level-up") {
-        e.preventDefault();
-        void act("continue");
-      } else if (flow.state.step === "idle") flow.next();
+    if (act === "peek") return flow.peek(Number(t.dataset.i));
+    if (act === "source" || act === "finding") return openFinding(t.dataset.f!);
+    if (act === "offices") return openOverlay(officesHtml(flow), "offices");
+    if (act === "switch") {
+      closeOverlay();
+      demo?.exit();
+      return flow.next({ type: "switch-project", id: t.dataset.id! });
     }
-  };
-  addEventListener("keydown", onKey);
+    if (act === "new") {
+      closeOverlay();
+      demo?.exit();
+      typedIdea = "";
+      return flow.next({ type: "new-project" });
+    }
+    if (act === "replay" || act === "tour") return void (location.href = "?demo=1");
+    if (act === "example") {
+      const done = flow.projects.find((p) => p.v7.report?.scalability.cap === 3) ?? flow.projects[flow.projects.length - 1];
+      return done && flow.next({ type: "switch-project", id: done.id });
+    }
+    if (act === "path") return flow.commitPath(Number(t.dataset.i));
+    if (act === "site") {
+      const v = getView();
+      return v && openOverlay(siteOverlay(v), "site");
+    }
+    if (act === "pack") return openOverlay(reportReader(flow), "reader");
+    if (act === "close") return closeOverlay();
+  });
+  addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && overlay.dataset.open === "1") return closeOverlay();
+    if (demo || overlay.dataset.open === "1") return;
+    if ((e.target as HTMLElement)?.closest?.("textarea, input")) return;
+    const s = flow.state;
+    if (e.key === "ArrowRight" || e.key === "Enter") {
+      if (s.step === "report" && s.page !== "next") return flow.next({ type: "next" });
+      if (s.step === "evidence" || s.step === "floor" || s.step === "live" || s.step === "building" || (s.step === "build" && s.phase === "result")) return flow.next({ type: "next" });
+    }
+    if (e.key === "ArrowLeft" && s.step === "report") {
+      const i = REPORT_PAGES.indexOf(s.page ?? "score");
+      if (i > 0) flow.goto({ step: "report", page: REPORT_PAGES[i - 1]! });
+    }
+  });
 
-  // ────────────────────────────── dev tools
-  if (deps.switcher) {
-    root.appendChild(
-      createSwitcher({
-        clock: deps.clock,
-        fast: !!deps.fast,
-        onSpeed: (f) => flow.setSpeed(f ? 3 : 1),
-        onJump(id) {
-          const j = JUMPS.find((x) => x.id === id);
-          if (j) flow.goto({ ...j.to });
-        },
-        onReplay: () => flow.replay(),
-      }),
-    );
+  // ────────────────────────────── render loop (flow events)
+  function render(force = false) {
+    const s = flow.state;
+    root.dataset.step = s.step;
+    paintGrow();
+    if (force) curKey = null;
+    show(keyFor(s), s);
+    paintTags();
   }
+  flow.onChange(() => render());
+  addEventListener("resize", () => {
+    measure();
+    paintTags();
+  });
+  render();
+  // the growth track follows the world's level while it animates (boom, pull-backs)
+  setInterval(paintGrow, 250);
 
   return {
-    openProjects,
-    dispose() {
-      offFlow();
-      offCam();
-      removeEventListener("resize", onResize);
-      removeEventListener("keydown", onKey);
-      root.remove();
-    },
+    openOffices: () => openOverlay(officesHtml(flow), "offices"),
+    dispose: () => root.remove(),
   };
 }
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));

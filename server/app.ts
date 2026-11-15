@@ -8,6 +8,8 @@ import { config, STAGES } from "./config.js";
 import { exec, getProject, getProjectRow, stageDone, type ProjectRow } from "./db.js";
 import * as jobs from "./jobs.js";
 import { isRunning, prepareStage, startStage } from "./jobs.js";
+import { SteerError, startSteer } from "./jobs-v7.js";
+import { ANALYST_ROLES, type AnalystRole } from "./v7.js";
 import { bchUsdCached, bchUsdOrZero, centsToSats } from "./price.js";
 import { STAGE_DEPTS, type AppConfig, type CreatedProject, type Project, type Quote, type ShareLink, type SiteData, type Stage, type Stats, type WorkDept } from "./types.js";
 
@@ -16,7 +18,7 @@ const QUOTE_MS = 15 * 60_000;
 
 class ApiError extends Error {
   constructor(
-    public status: 400 | 402 | 403 | 404 | 409 | 501 | 502 | 503,
+    public status: 400 | 402 | 403 | 404 | 409 | 429 | 501 | 502 | 503,
     message: string,
   ) {
     super(message);
@@ -303,6 +305,34 @@ app.post("/api/projects/:id/run", async (c) => {
     void startStage(p.id, stage);
   }
   return c.json({ ok: true as const });
+});
+
+/**
+ * v7 CEO steer (contract §d): body {note ≤ 280, target?: AnalystRole[]}, same auth as /run. Free.
+ * 202 {id, ack, rerun}; progress via GET /api/projects/:id → results.v7.steers[]. 409 while a stage or a steer runs
+ * (or before the report exists); 429 after STEER_LIMIT notes.
+ */
+app.post("/api/projects/:id/steer", async (c) => {
+  const id = c.req.param("id");
+  const row = await getProjectRow(id);
+  if (!row) throw new ApiError(404, "Project not found");
+  assertWritable(row);
+  assertOwner(c, row, false);
+  const p = await getProject(id);
+  if (!p) throw new ApiError(404, "Project not found");
+  if (!p.payments.validate) throw new ApiError(402, "This stage is not paid yet.");
+  const { note, target } = await body<{ note: string; target: AnalystRole[] }>(c);
+  const text = (typeof note === "string" ? note : "").replace(/\s+/g, " ").trim();
+  if (text.length < 3) throw new ApiError(400, "Write a short note for your team.");
+  if (text.length > 280) throw new ApiError(400, "Keep the note under 280 characters.");
+  const roles = Array.isArray(target) ? target.filter((r): r is AnalystRole => (ANALYST_ROLES as readonly string[]).includes(r)) : undefined;
+  if (isRunning(p.id, "validate") || isRunning(p.id, "build")) throw new ApiError(409, "Your team is still working. Steer when it is done.");
+  try {
+    return c.json(await startSteer(p.id, p.idea, text, roles), 202);
+  } catch (e) {
+    if (e instanceof SteerError) throw new ApiError(e.status, e.message);
+    throw e;
+  }
 });
 
 /** Public data for the generated landing page at /s/:slug. */

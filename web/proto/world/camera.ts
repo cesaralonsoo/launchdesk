@@ -98,8 +98,10 @@ export const easeLevel = (t: number) => (t < 0.5 ? 16 * t ** 5 : 1 - Math.pow(-2
 export const easeOutward = (t: number) => 0.5 * (1 - Math.pow(1 - t, 3)) + 0.5 * easeInOut(t);
 
 /** Per-level orientation (degrees). Portrait screens look along the short side a bit more. */
-export function levelAngles(level: 1 | 2 | 3, aspect: number): { yaw: number; pitch: number } {
+export function levelAngles(level: 0 | 1 | 2 | 3, aspect: number): { yaw: number; pitch: number } {
   const portrait = aspect < 0.85;
+  // v7 level 0: the founder's room as a cut-away diorama, a touch lower so the walls and the desk read
+  if (level === 0) return { yaw: D2R(portrait ? 40 : 36), pitch: D2R(portrait ? 40 : 33) };
   if (level === 1) return { yaw: D2R(portrait ? 56 : 34), pitch: D2R(40) };
   if (level === 2) return { yaw: D2R(portrait ? 44 : 38), pitch: D2R(24) };
   return { yaw: D2R(portrait ? 44 : 36), pitch: D2R(33) };

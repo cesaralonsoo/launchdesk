@@ -7,7 +7,11 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
-import type { Quality, Room } from "../../contracts";
+import type { AtmospherePreset, Quality } from "../../contracts";
+import { isPixel, isVoxel } from "./style";
+
+/** Material owner key: a floor room ("r0", "lobby", …), a room variant ("r1/competition"), "bed", or null = shell. */
+export type Room = string;
 
 export type P3 = [number, number, number];
 
@@ -34,6 +38,7 @@ export type Role =
   | "workPool" // additive dept-coloured pool while the room works
   | "shadow" // contact shadows / AO decals
   | "led" // tiny always-on indicators
+  | "glow" // emissive map that lights up with the lamps at night (lit skyline windows, fairy lights, sign backlight)
   | "vc"; // merged vertex-coloured material (fixed props / characters): colour lives in the vertices
 
 export type Surfaces = { floor: string; wall: string; slab: string; glass: string; corridor: string };
@@ -218,6 +223,15 @@ export class Registry {
         sm.roughness = 0.25;
       }
       if (role === "lamp") sm.emissive.copy(LAMP_GLOW);
+      if (role === "glow") {
+        sm.emissiveMap = o.map ?? null;
+        sm.emissive.set("#ffffff");
+        if (o.map) {
+          sm.transparent = true;
+          sm.alphaTest = 0.5;
+        }
+      }
+      if (isVoxel() && role !== "glass" && role !== "window" && role !== "screen" && role !== "glow") sm.flatShading = true;
       mat = sm;
     }
     const e: Entry = {
@@ -228,7 +242,7 @@ export class Registry {
       base: new THREE.Color(o.color ?? "#ffffff"),
       shade: o.shade ?? 1,
       opacity: o.opacity ?? (role === "glass" ? 0.28 : role === "window" ? 0.55 : 1),
-      emissive: o.emissive ?? (role === "screen" ? 1 : role === "lamp" ? 1 : 0),
+      emissive: o.emissive ?? (role === "screen" || role === "lamp" || role === "glow" ? 1 : 0),
       ei: 0,
     };
     mat.name = role;
@@ -259,7 +273,7 @@ export class Registry {
     const hit = this.byKey.get(key);
     if (hit) return hit.mat as THREE.MeshStandardMaterial;
     const p = VC_PARAMS[bucket];
-    const mat = new THREE.MeshStandardMaterial({ color: "#ffffff", vertexColors: true, roughness: p.rough, metalness: p.metal });
+    const mat = new THREE.MeshStandardMaterial({ color: "#ffffff", vertexColors: true, roughness: p.rough, metalness: p.metal, flatShading: isVoxel() });
     const uDesat = { value: 0 };
     mat.name = "vc";
     mat.userData.uDesat = uDesat;
@@ -400,6 +414,7 @@ function resolveEntry(e: Entry, L: Look, mix?: RoomMix) {
     case "vc":
       c.copy(WHITE);
       break;
+    case "glow":
     case "skin":
     case "fixed":
     case "screen":
@@ -447,6 +462,10 @@ function resolveEntry(e: Entry, L: Look, mix?: RoomMix) {
       const on = 0.05 + lamps * (0.25 + 0.95 * dark + 0.3 * warm);
       e.ei = e.emissive * on * (1 - 0.9 * locked);
       m.emissiveIntensity = e.ei;
+    } else if (e.role === "glow") {
+      e.ei = e.emissive * lamps * (0.15 + 1.6 * dark + 0.35 * warm) * (1 - locked);
+      m.emissiveIntensity = e.ei;
+      m.color.copy(c).multiplyScalar(0.25 + 0.75 * (1 - dark));
     } else if (e.role === "window") {
       m.emissive.copy(c);
       m.emissiveIntensity = (0.45 + 0.12 * warm - 0.22 * dark) * (1 - 0.6 * locked);
@@ -480,8 +499,12 @@ export class Builder {
     return o;
   }
 
+  /** Pixel styles: crisp square edges (rounded corners go), voxel: chunky 6–8-sided cylinders and spheres. */
+  private readonly px = isPixel();
+  private readonly vx = isVoxel();
+
   box(w: number, h: number, d: number, m: THREE.Material, pos: P3, r = 0, parent: THREE.Object3D = this.group, shadow = true): THREE.Mesh {
-    const rad = Math.min(r, w / 2 - 1e-3, h / 2 - 1e-3, d / 2 - 1e-3);
+    const rad = this.px ? 0 : Math.min(r, w / 2 - 1e-3, h / 2 - 1e-3, d / 2 - 1e-3);
     const g = rad > 0.002 ? new RoundedBoxGeometry(w, h, d, this.q === "high" ? 3 : 1, rad) : new THREE.BoxGeometry(w, h, d);
     const mesh = new THREE.Mesh(g, m);
     mesh.castShadow = shadow;
@@ -490,7 +513,7 @@ export class Builder {
   }
 
   cyl(rt: number, rb: number, h: number, m: THREE.Material, pos: P3, seg = 24, parent: THREE.Object3D = this.group): THREE.Mesh {
-    const s = this.q === "high" ? seg : Math.max(8, Math.round(seg * 0.5));
+    const s = this.vx ? Math.max(4, Math.min(8, Math.round(seg / 3))) : this.q === "high" ? seg : Math.max(8, Math.round(seg * 0.5));
     const mesh = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, s), m);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
@@ -498,8 +521,8 @@ export class Builder {
   }
 
   sphere(r: number, m: THREE.Material, pos: P3, seg = 20, parent: THREE.Object3D = this.group): THREE.Mesh {
-    const s = this.q === "high" ? seg : Math.max(8, Math.round(seg * 0.5));
-    const mesh = new THREE.Mesh(new THREE.SphereGeometry(r, s, Math.max(6, Math.round(s * 0.7))), m);
+    const s = this.vx ? Math.max(5, Math.min(8, Math.round(seg / 3))) : this.q === "high" ? seg : Math.max(8, Math.round(seg * 0.5));
+    const mesh = new THREE.Mesh(new THREE.SphereGeometry(r, s, Math.max(this.vx ? 4 : 6, Math.round(s * 0.7))), m);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     return this.place(mesh, pos, parent);
@@ -507,7 +530,7 @@ export class Builder {
 
   /** Low-poly faceted blob (foliage). */
   blob(r: number, m: THREE.Material, pos: P3, detail = 1, parent: THREE.Object3D = this.group): THREE.Mesh {
-    const mesh = new THREE.Mesh(new THREE.IcosahedronGeometry(r, this.q === "high" ? detail : 0), m);
+    const mesh = this.vx ? new THREE.Mesh(new THREE.BoxGeometry(r * 1.6, r * 1.6, r * 1.6), m) : new THREE.Mesh(new THREE.IcosahedronGeometry(r, this.q === "high" ? detail : 0), m);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     return this.place(mesh, pos, parent);
@@ -534,7 +557,7 @@ export class Builder {
   }
 
   torus(R: number, r: number, m: THREE.Material, pos: P3, arc = Math.PI * 2, parent: THREE.Object3D = this.group): THREE.Mesh {
-    const mesh = new THREE.Mesh(new THREE.TorusGeometry(R, r, this.q === "high" ? 10 : 6, this.q === "high" ? 40 : 20, arc), m);
+    const mesh = new THREE.Mesh(new THREE.TorusGeometry(R, r, this.vx ? 4 : this.q === "high" ? 10 : 6, this.vx ? 12 : this.q === "high" ? 40 : 20, arc), m);
     mesh.castShadow = true;
     return this.place(mesh, pos, parent);
   }
@@ -671,6 +694,45 @@ export function mergeLimb(group: THREE.Object3D, mat: THREE.Material, R: Registr
   m.castShadow = cast;
   m.receiveShadow = true;
   group.add(m);
+}
+
+const _lc = new THREE.Color();
+const clamp01 = (x: number) => (x < 0 ? 0 : x > 1 ? 1 : x);
+const smoothstep = (a: number, b: number, x: number) => {
+  const t = clamp01((x - a) / (b - a));
+  return t * t * (3 - 2 * t);
+};
+function lum(hex: string) {
+  hexInto(_lc, hex).convertLinearToSRGB();
+  return 0.2126 * _lc.r + 0.7152 * _lc.g + 0.0722 * _lc.b;
+}
+/**
+ * Atmosphere → look (allocation-free, safe at 10×/s). Derives three continuous factors: dark (sky luminance and a
+ * weak key light), warm (a low orange key), lamps (world `lightLevel` first, then `lightsOn` as a number or boolean).
+ */
+export function lookFromAtmosphere(look: Look, a: AtmospherePreset) {
+  setSurfaces(look, a.surfaces);
+  look.acc = a.accentStrength ?? 1;
+  const sky = a.sky[a.sky.length - 1]!;
+  const skyDark = 1 - smoothstep(0.06, 0.42, lum(sky));
+  const keyDark = 1 - smoothstep(0.6, 1.8, a.key.intensity);
+  look.dark = clamp01(Math.max(skyDark, keyDark * 0.85));
+  hexInto(_lc, a.key.color).convertLinearToSRGB();
+  const warmHue = clamp01((_lc.r - _lc.b - 0.06) / 0.26);
+  look.warm = warmHue * (1 - smoothstep(30, 60, a.key.elevation) * 0.6) * (1 - look.dark);
+  const lo = a.lightsOn as unknown;
+  const ll = (a as { lightLevel?: unknown }).lightLevel;
+  look.lamps =
+    typeof ll === "number"
+      ? clamp01(ll)
+      : typeof lo === "number"
+        ? clamp01(lo)
+        : lo === true
+          ? Math.max(0.3, look.dark, look.warm * 0.7)
+          : lo === false
+            ? 0
+            : clamp01(look.dark * 1.2 + look.warm * 0.4);
+  look.env = 0.24 - 0.15 * look.dark - 0.06 * look.warm;
 }
 
 export const mixHex = (a: string, b: string, k: number) => "#" + new THREE.Color(a).lerp(new THREE.Color(b), k).getHexString();

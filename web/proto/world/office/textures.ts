@@ -1,25 +1,87 @@
 // WS-A · canvas textures for the level-1 office. Drawn once, cached, shared.
 // Product text on textures is English and minimal (wordmark, week labels). Fonts fall back to system UI.
 import * as THREE from "three";
+import { isPixel } from "./style";
+import { pixelPlanksTex, pixelRugTex, pixelStoneTex } from "./pixel";
 
 type Draw = (g: CanvasRenderingContext2D, w: number, h: number) => void;
 const cache = new Map<string, THREE.CanvasTexture>();
 
-export function canvasTex(key: string, w: number, h: number, draw: Draw, srgb = true): THREE.CanvasTexture {
-  const hit = cache.get(key);
+/**
+ * Draw once, cache, share. `px` (v7 pixel styles only): downsample factor — the texture is drawn at full size, then
+ * reduced by `px` with box filtering, posterised to a limited palette and sampled nearest (crisp pixel-art texels).
+ * `native`: the draw function already paints a pixel-art canvas at its final size (always nearest in pixel styles).
+ */
+export function canvasTex(key: string, w: number, h: number, draw: Draw, srgb = true, px = 0, native = false): THREE.CanvasTexture {
+  const pixel = isPixel() && (px > 1 || native);
+  const k = `${key}|${pixel ? "px" + px : "hd"}`;
+  const hit = cache.get(k);
   if (hit) return hit;
-  const c = document.createElement("canvas");
+  let c = document.createElement("canvas");
   c.width = w;
   c.height = h;
   const g = c.getContext("2d")!;
+  g.imageSmoothingEnabled = !native;
   draw(g, w, h);
+  if (pixel && px > 1) c = pixelate(c, Math.max(1, Math.round(w / px)), Math.max(1, Math.round(h / px)));
+  else if (native && !pixel) {
+    // clean style: a pixel-native drawing upscaled 4× (nearest) so linear filtering keeps its edges
+    const up = document.createElement("canvas");
+    up.width = w * 4;
+    up.height = h * 4;
+    const ug = up.getContext("2d")!;
+    ug.imageSmoothingEnabled = false;
+    ug.drawImage(c, 0, 0, up.width, up.height);
+    c = up;
+  }
   const t = new THREE.CanvasTexture(c);
   if (srgb) t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = 8;
-  t.generateMipmaps = true;
-  t.minFilter = THREE.LinearMipmapLinearFilter;
-  cache.set(key, t);
+  if (pixel) {
+    t.magFilter = THREE.NearestFilter;
+    t.minFilter = THREE.NearestMipmapLinearFilter;
+    t.generateMipmaps = true;
+    t.anisotropy = 4;
+  } else {
+    t.anisotropy = 8;
+    t.generateMipmaps = true;
+    t.minFilter = THREE.LinearMipmapLinearFilter;
+  }
+  cache.set(k, t);
   return t;
+}
+
+/** Box-filter `src` down to w×h, then posterise each channel (and alpha) to a small palette. */
+function pixelate(src: HTMLCanvasElement, w: number, h: number): HTMLCanvasElement {
+  // step down by halves for a clean box filter (drawImage with smoothing ≈ bilinear per step)
+  let cur = src;
+  while (cur.width / 2 >= w * 1.0001 && cur.height / 2 >= h * 1.0001) {
+    const n = document.createElement("canvas");
+    n.width = Math.max(w, Math.round(cur.width / 2));
+    n.height = Math.max(h, Math.round(cur.height / 2));
+    const ng = n.getContext("2d")!;
+    ng.imageSmoothingEnabled = true;
+    ng.imageSmoothingQuality = "high";
+    ng.drawImage(cur, 0, 0, n.width, n.height);
+    cur = n;
+  }
+  const out = document.createElement("canvas");
+  out.width = w;
+  out.height = h;
+  const og = out.getContext("2d")!;
+  og.imageSmoothingEnabled = true;
+  og.imageSmoothingQuality = "high";
+  og.drawImage(cur, 0, 0, w, h);
+  const img = og.getImageData(0, 0, w, h);
+  const d = img.data;
+  const q = (v: number, step: number) => Math.min(255, Math.round(v / step) * step);
+  for (let i = 0; i < d.length; i += 4) {
+    d[i] = q(d[i]!, 17);
+    d[i + 1] = q(d[i + 1]!, 17);
+    d[i + 2] = q(d[i + 2]!, 17);
+    d[i + 3] = q(d[i + 3]!, 51);
+  }
+  og.putImageData(img, 0, 0);
+  return out;
 }
 
 export function disposeTextures() {
@@ -77,6 +139,7 @@ export function plasterTex(): THREE.CanvasTexture {
 
 /** Oak planks with grain, knots and soft per-plank tone. Near-white, multiplied by the material colour. */
 export function planksTex(): THREE.CanvasTexture {
+  if (isPixel()) return pixelPlanksTex();
   const t = canvasTex("planks2", 1024, 1024, (g, w, h) => {
     const r = rng(11);
     g.fillStyle = "#ffffff";
@@ -128,6 +191,7 @@ export function planksTex(): THREE.CanvasTexture {
 
 /** Large-format mineral stone tiles (corridor): very fine noise, faint veining, hairline joints. */
 export function stoneTex(): THREE.CanvasTexture {
+  if (isPixel()) return pixelStoneTex();
   const t = canvasTex("stone", 512, 512, (g, w, h) => {
     const r = rng(23);
     g.fillStyle = "#ffffff";
@@ -167,7 +231,7 @@ export function radialTex(): THREE.CanvasTexture {
     grd.addColorStop(1, "rgba(255,255,255,0)");
     g.fillStyle = grd;
     g.fillRect(0, 0, w, h);
-  });
+  }, true, 8);
 }
 
 /** Rounded-rectangle soft shadow (for boxy furniture: desks, sofas, racks). */
@@ -177,7 +241,7 @@ export function softRectTex(): THREE.CanvasTexture {
     g.fillStyle = "#fff";
     rr(g, 26, 26, w - 52, h - 52, 14);
     g.fill();
-  });
+  }, true, 8);
 }
 
 /** Linear fade (AO along wall bases): opaque at v=0, transparent at v=1. */
@@ -189,11 +253,12 @@ export function fadeTex(): THREE.CanvasTexture {
     grd.addColorStop(1, "rgba(255,255,255,0)");
     g.fillStyle = grd;
     g.fillRect(0, 0, w, h);
-  });
+  }, true, 8);
 }
 
 /** Woven rug: a subtle border and texture, white-based so the material colour tints it. */
 export function rugTex(kind: "rect" | "round"): THREE.CanvasTexture {
+  if (isPixel() && kind === "rect") return pixelRugTex("rect");
   return canvasTex(`rug:${kind}`, 256, 256, (g, w, h) => {
     const r = rng(kind === "rect" ? 3 : 5);
     g.clearRect(0, 0, w, h);
@@ -223,7 +288,7 @@ export function rugTex(kind: "rect" | "round"): THREE.CanvasTexture {
       g.stroke();
     }
     g.restore();
-  });
+  }, true, 8);
 }
 
 // ─────────────────────────────────────────────── screens
@@ -328,7 +393,7 @@ export function screenTex(color: string, variant: number): THREE.CanvasTexture {
         g.stroke();
       }
     }
-  });
+  }, true, 4);
 }
 
 /** Blank dark glass for screens that are off (locked rooms). */
@@ -340,7 +405,7 @@ export function screenOffTex(): THREE.CanvasTexture {
     grd.addColorStop(1, "#1A2230");
     g.fillStyle = grd;
     g.fillRect(0, 0, w, h);
-  });
+  }, true, 2);
 }
 
 // ─────────────────────────────────────────────── department walls
@@ -385,7 +450,7 @@ export function planWallTex(color: string): THREE.CanvasTexture {
     g.fillStyle = color;
     rr(g, 22, h - 30, (w - 44) * 0.32, 6, 3);
     g.fill();
-  });
+  }, true, 6);
 }
 
 /** Leo: large market screen (score dial + bars). */
@@ -427,7 +492,7 @@ export function marketWallTex(color: string): THREE.CanvasTexture {
       rr(g, 240, y - 18, 70, 7, 3);
       g.fill();
     });
-  });
+  }, true, 6);
 }
 
 /** Sam: finance board, rising cash curve that crosses zero at month 6. */
@@ -471,7 +536,7 @@ export function financeWallTex(color: string): THREE.CanvasTexture {
     g.beginPath();
     g.arc(bx, by, 4, 0, Math.PI * 2);
     g.fill();
-  });
+  }, true, 6);
 }
 
 /** Nova: moodboard with swatches, type specimen and a photo block. */
@@ -534,7 +599,7 @@ export function moodboardTex(color: string): THREE.CanvasTexture {
         g.fillRect(14, 18 + i * 18, i === 0 ? 100 : 120 - i * 14, 7);
       }
     });
-  });
+  }, true, 6);
 }
 
 /** Dex: logo exploration grid (three marks, one chosen). */
@@ -576,7 +641,7 @@ export function logoGridTex(color: string): THREE.CanvasTexture {
         g.fill();
       }
     }
-  });
+  }, true, 5);
 }
 
 /** Rae: 30-day content calendar. */
@@ -597,7 +662,7 @@ export function calendarTex(color: string): THREE.CanvasTexture {
         g.fill();
       }
     }
-  });
+  }, true, 5);
 }
 
 /** Pip: launch console screen with a big "Live" status bar. */
@@ -619,7 +684,7 @@ export function consoleTex(color: string): THREE.CanvasTexture {
     g.fillStyle = color;
     rr(g, w - 60, 22, 36, 36, 18);
     g.fill();
-  });
+  }, true, 5);
 }
 
 /** Lobby: LaunchDesk wordmark on a dark panel. */
@@ -655,7 +720,7 @@ export function plaqueTex(letter: string, color: string): THREE.CanvasTexture {
     g.textAlign = "center";
     g.textBaseline = "middle";
     g.fillText(letter, w / 2, h / 2 + 3);
-  });
+  }, true, 4);
 }
 
 /** White check on transparent (done badge). */
@@ -693,5 +758,5 @@ export function printTex(color: string, seed: number): THREE.CanvasTexture {
       g.arc(130, 160, 40, 0, Math.PI * 2);
       g.fill();
     }
-  });
+  }, true, 5);
 }

@@ -1,8 +1,8 @@
 // WS-A · the architecture: model base slab, floors, corridor, walls with ribbon windows, glass partitions,
 // skirting, baked AO along wall bases. Same floor plan as layout.ts.
 import * as THREE from "three";
-import type { Room } from "../../contracts";
-import { Builder, type Registry } from "./kit";
+import { Builder, type Registry, type Room } from "./kit";
+import { isPixel } from "./style";
 import { CORRIDOR, HALF_X, HALF_Z, ROOMS, ROOM_D, ROOM_W, SLAB_PAD, type RoomDef } from "./layout";
 import { fadeTex, planksTex, plasterTex, softRectTex, stoneTex } from "./textures";
 
@@ -101,14 +101,9 @@ function glassPartition(B: Builder, R: Registry, room: Room, accent: string, len
   for (let i = 0; i <= n; i++) B.box(i === 0 || i === n ? 0.022 : 0.012, GLASS_H, 0.03, metal, [cx - len / 2 + (i / n) * len, GLASS_H / 2, cz]);
 }
 
-export interface ShellOut {
-  shared: THREE.Group;
-  perRoom: Map<Room, THREE.Group>;
-}
-
-export function buildShell(R: Registry, q: "low" | "high"): ShellOut {
+/** Slab, corridor, the left exterior wall and the ground shadow (shared by every room). */
+export function buildSharedShell(R: Registry, q: "low" | "high"): THREE.Group {
   const S = new Builder(q);
-  const perRoom = new Map<Room, THREE.Group>();
   const NEU = NEUTRAL;
 
   // ── base slab: an architectural model plinth
@@ -128,7 +123,7 @@ export function buildShell(R: Registry, q: "low" | "high"): ShellOut {
   // thresholds into the back rooms
   for (const r of ROOMS) {
     if (r.row !== "back") continue;
-    S.box(ROOM_W, 0.008, 0.03, R.m("fixed", r.id, r.color, { color: "#8C8F94", rough: 0.35, metal: 0.8 }), [r.cx, 0.001, -CORRIDOR / 2], 0, undefined, false);
+    S.box(ROOM_W, 0.008, 0.03, R.m("fixed", null, NEU, { color: "#8C8F94", rough: 0.35, metal: 0.8 }), [r.cx, 0.001, -CORRIDOR / 2], 0, undefined, false);
   }
   // ── left exterior wall (runs the whole depth, ribbon window)
   ribbonWall(S, R, null, NEU, "z", HALF_Z * 2 + WALL_T, -HALF_X - WALL_T / 2 + 0.04, 0);
@@ -142,16 +137,19 @@ export function buildShell(R: Registry, q: "low" | "high"): ShellOut {
   const gs = S.decal(sw + 2.4, sd + 2.4, R.m("shadow", null, NEU, { map: softRectTex(), opacity: 0.42 }), [0, -0.548, 0.35]);
   gs.name = "office-ground-shadow";
   gs.userData.keep = true;
+  return S.group;
+}
 
-  for (const r of ROOMS) {
+/** One room's floor, walls, partitions and feature panels. `key` owns the materials (a room or a room variant). */
+export function buildRoomShell(R: Registry, q: "low" | "high", r: RoomDef, key: Room, col: string): THREE.Group {
+  {
     const B = new Builder(q);
     const { x0, z0, z1, back } = roomBox(r);
-    const room = r.id;
-    const col = r.color;
+    const room = key;
 
     // floor: microcement with a faint dept tint
     const floor = B.box(ROOM_W, 0.05, ROOM_D, R.m("floor", room, col, { map: planksTex(), rough: 0.55 }), [r.cx, -0.025, r.cz], 0, undefined, false);
-    uvScale(floor, ROOM_W / 2.2, ROOM_D / 2.2);
+    uvScale(floor, ROOM_W / (isPixel() ? 1.3 : 2.2), ROOM_D / (isPixel() ? 1.3 : 2.2));
     // seam lines between rooms (subtle reveal)
     B.box(ROOM_W, 0.004, 0.012, R.m("wallCap", room, col, { shade: 0.85 }), [r.cx, 0.001, back ? z1 - 0.006 : z0 + 0.006], 0, undefined, false);
 
@@ -183,7 +181,6 @@ export function buildShell(R: Registry, q: "low" | "high"): ShellOut {
       // lobby: feature wall on the exterior wall face, below the window
       accentPanel(B, R, room, col, "+x", ROOM_D - 0.02, SILL - 0.1, -HALF_X + 0.04, r.cz);
     }
-    perRoom.set(room, B.group);
+    return B.group;
   }
-  return { shared: S.group, perRoom };
 }

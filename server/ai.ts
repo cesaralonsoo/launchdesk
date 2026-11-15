@@ -743,6 +743,8 @@ Work out the market from the idea (city, country, currency). Search the web, pre
 - Alternatives: 3 to 5 named businesses or categories customers use now, with their official site when you find one, price level and one weakness.
 - Costs and rules: typical rent, wages, licences or regulation that change the economics.
 - Timing: trends or seasonality that make now better or worse.
+- Place and reach (v7 analysts): footfall or audience size where it would operate, and whether it repeats in other cities.
+- Build (v7 analysts): for software or hardware, what exists already and what rules it must meet.
 Only write what the sources say; say "not found" rather than guessing. Short sentences.`;
   for (const type of RESEARCH_TOOLS) {
     try {

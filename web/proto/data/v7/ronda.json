@@ -1,0 +1,1313 @@
+{
+ "id": "ronda",
+ "idea": "A dog-walking app for busy Madrid professionals, €12 a walk",
+ "title": "Group dog walks in Madrid",
+ "createdAt": "2026-11-09T09:30:00.000Z",
+ "v7": {
+  "version": 7,
+  "roster": [
+   {
+    "id": "demand",
+    "role": "demand",
+    "name": "Ava",
+    "color": "#22A06B",
+    "mission": "How many dogs, and whose owners lack the time",
+    "why": "The buyer is busy, not dog-less",
+    "weight": 0.25
+   },
+   {
+    "id": "competition",
+    "role": "competition",
+    "name": "Leo",
+    "color": "#3B82F6",
+    "mission": "Which apps and neighbours already walk Madrid's dogs",
+    "why": "Walk platforms already exist",
+    "weight": 0.313
+   },
+   {
+    "id": "regulation",
+    "role": "regulation",
+    "name": "Omar",
+    "color": "#475569",
+    "mission": "What the animal-welfare law asks of owners and walkers",
+    "why": "Animal rules changed in 2023",
+    "weight": 0.125
+   },
+   {
+    "id": "viability",
+    "role": "viability",
+    "name": "Mia",
+    "color": "#8B7CF6",
+    "mission": "Strengths, weak points and what kills it",
+    "why": "Every idea gets a viability check",
+    "weight": 0.313
+   }
+  ],
+  "work": [
+   {
+    "analyst": "demand",
+    "status": "done",
+    "findings": [
+     {
+      "kind": "number",
+      "text": "Madrid city had 323,175 registered dogs in 2024.",
+      "display": "323,175",
+      "value": 323175,
+      "unit": "dogs",
+      "source": {
+       "url": "https://www.elespanol.com/mascotario/20260129/perros-viven-hogares-madrid-total-andalucia/1003744103943_0.html",
+       "title": "320.000 perros viven en hogares de Madrid: más de un 10% del total, pero un 50% menos que en Andalucía",
+       "domain": "elespanol.com",
+       "accessed": "2026-11-15"
+      },
+      "impact": 2,
+      "id": "demand-0",
+      "analyst": "demand",
+      "t": 1400
+     },
+     {
+      "kind": "estimate",
+      "text": "Owners away 9–10 hours a workday need a midday walk most.",
+      "basis": "Typical office hours plus commute",
+      "impact": 1,
+      "id": "demand-1",
+      "analyst": "demand",
+      "t": 4000,
+      "source": null
+     }
+    ],
+    "score": 7.5,
+    "headline": "A big, growing dog population in one city."
+   },
+   {
+    "analyst": "competition",
+    "status": "done",
+    "findings": [
+     {
+      "kind": "competitor",
+      "text": "Rover, Gudog and PaseaPerros list walkers who set their own prices.",
+      "source": {
+       "url": "https://www.consumer.es/?p=295762",
+       "title": "Cinco apps para encontrar paseadores de perros",
+       "domain": "consumer.es",
+       "accessed": "2026-11-15"
+      },
+      "competitor": {
+       "name": "Rover, Gudog, PaseaPerros",
+       "named": true,
+       "note": "Marketplaces, quality varies by walker"
+      },
+      "impact": -1,
+      "id": "competition-0",
+      "analyst": "competition",
+      "t": 1400
+     },
+     {
+      "kind": "competitor",
+      "text": "Préstame Tu Perrito matches volunteer walkers for free; Premium from €4.99 a month.",
+      "display": "€0 · €4.99",
+      "source": {
+       "url": "https://www.consumer.es/?p=295762",
+       "title": "Cinco apps para encontrar paseadores de perros",
+       "domain": "consumer.es",
+       "accessed": "2026-11-15"
+      },
+      "competitor": {
+       "name": "Préstame Tu Perrito",
+       "named": true,
+       "price": "Free; Premium €4.99/month",
+       "note": "Volunteers, no fixed schedule"
+      },
+      "impact": -1,
+      "id": "competition-1",
+      "analyst": "competition",
+      "t": 4000
+     },
+     {
+      "kind": "estimate",
+      "text": "Few services run fixed group routes by street at a set time.",
+      "basis": "Our read of the platforms above; check locally",
+      "impact": 1,
+      "id": "competition-2",
+      "analyst": "competition",
+      "t": 6600,
+      "source": null
+     }
+    ],
+    "score": 3.5,
+    "headline": "Platforms sell one walker at a time; group routes are open."
+   },
+   {
+    "analyst": "regulation",
+    "status": "done",
+    "findings": [
+     {
+      "kind": "fact",
+      "text": "Spain's animal-welfare law: a dog can't be left unsupervised over 24 consecutive hours.",
+      "display": "24 h",
+      "source": {
+       "url": "https://www.dsca.gob.es/sites/default/files/derechos-sociales/preguntas-respuestas-frecuentes-ley-proteccion-derechos-y-bienestar-animales.pdf",
+       "title": "Ley de protección de los derechos y el bienestar de los animales: preguntas y respuestas (PDF)",
+       "domain": "dsca.gob.es",
+       "accessed": "2026-11-15"
+      },
+      "impact": 1,
+      "id": "regulation-0",
+      "analyst": "regulation",
+      "t": 1400
+     },
+     {
+      "kind": "risk",
+      "text": "As of January 2025, the owner course and insurance rules still awaited regulation.",
+      "source": {
+       "url": "https://www.vozpopuli.com/actualidad/ley-bienestar-animal-pendiente-2025-sd.html",
+       "title": "Ley de Bienestar Animal: ¿qué está pendiente para 2025?",
+       "domain": "vozpopuli.com",
+       "accessed": "2026-11-15"
+      },
+      "impact": -1,
+      "id": "regulation-1",
+      "analyst": "regulation",
+      "t": 4000
+     }
+    ],
+    "score": 5,
+    "headline": "The law pushes owners to arrange care; some rules still pending."
+   },
+   {
+    "analyst": "viability",
+    "status": "done",
+    "findings": [
+     {
+      "kind": "strength",
+      "text": "Group walks of four dogs earn about €48 an hour per walker.",
+      "display": "≈ €48 / h",
+      "basis": "4 dogs × €12",
+      "impact": 1,
+      "id": "viability-0",
+      "analyst": "viability",
+      "t": 1400,
+      "source": null
+     },
+     {
+      "kind": "risk",
+      "text": "Walker capacity caps growth: each new walker adds about 20 dogs.",
+      "basis": "4 dogs × ~5 walks a day",
+      "impact": -1,
+      "id": "viability-1",
+      "analyst": "viability",
+      "t": 4000,
+      "source": null
+     },
+     {
+      "kind": "risk",
+      "text": "Trust is the sale: one lost dog can end a neighbourhood.",
+      "basis": "Word of mouth drives pet services",
+      "impact": -1,
+      "id": "viability-2",
+      "analyst": "viability",
+      "t": 6600,
+      "source": null
+     }
+    ],
+    "score": 4.5,
+    "headline": "Good hourly money, capped by walkers and trust."
+   }
+  ],
+  "report": {
+   "score": 5,
+   "verdict": "pivot",
+   "verdictLine": "Strong demand, crowded apps: win one neighbourhood with fixed group routes.",
+   "factors": [
+    {
+     "analyst": "demand",
+     "label": "Customers",
+     "weight": 0.25,
+     "score": 7.5,
+     "findings": [
+      "demand-0",
+      "demand-1"
+     ],
+     "sourced": 1,
+     "total": 2
+    },
+    {
+     "analyst": "competition",
+     "label": "Competition",
+     "weight": 0.313,
+     "score": 3.5,
+     "findings": [
+      "competition-0",
+      "competition-1",
+      "competition-2"
+     ],
+     "sourced": 2,
+     "total": 3
+    },
+    {
+     "analyst": "regulation",
+     "label": "Rules",
+     "weight": 0.125,
+     "score": 5,
+     "findings": [
+      "regulation-0",
+      "regulation-1"
+     ],
+     "sourced": 2,
+     "total": 2
+    },
+    {
+     "analyst": "viability",
+     "label": "Viability",
+     "weight": 0.313,
+     "score": 4.5,
+     "findings": [
+      "viability-0",
+      "viability-1",
+      "viability-2"
+     ],
+     "sourced": 0,
+     "total": 3
+    }
+   ],
+   "math": "0.25×7.5 + 0.31×3.5 + 0.13×5.0 + 0.31×4.5 = 5.0",
+   "evidence": {
+    "total": 10,
+    "sourced": 5,
+    "sourcedShare": 0.5,
+    "sources": [
+     {
+      "url": "https://www.elespanol.com/mascotario/20260129/perros-viven-hogares-madrid-total-andalucia/1003744103943_0.html",
+      "title": "320.000 perros viven en hogares de Madrid: más de un 10% del total, pero un 50% menos que en Andalucía",
+      "domain": "elespanol.com",
+      "accessed": "2026-11-15"
+     },
+     {
+      "url": "https://www.consumer.es/?p=295762",
+      "title": "Cinco apps para encontrar paseadores de perros",
+      "domain": "consumer.es",
+      "accessed": "2026-11-15"
+     },
+     {
+      "url": "https://www.dsca.gob.es/sites/default/files/derechos-sociales/preguntas-respuestas-frecuentes-ley-proteccion-derechos-y-bienestar-animales.pdf",
+      "title": "Ley de protección de los derechos y el bienestar de los animales: preguntas y respuestas (PDF)",
+      "domain": "dsca.gob.es",
+      "accessed": "2026-11-15"
+     },
+     {
+      "url": "https://www.vozpopuli.com/actualidad/ley-bienestar-animal-pendiente-2025-sd.html",
+      "title": "Ley de Bienestar Animal: ¿qué está pendiente para 2025?",
+      "domain": "vozpopuli.com",
+      "accessed": "2026-11-15"
+     }
+    ]
+   },
+   "confidence": "medium",
+   "scalability": {
+    "score": 4.7,
+    "cap": 2,
+    "reach": "City",
+    "why": "Routes repeat street by street, but every walk still needs a person.",
+    "wouldScale": [
+     "A booking app that fills routes automatically",
+     "Trained walkers paid per route",
+     "The same model in a second city"
+    ],
+    "parts": [
+     {
+      "label": "Reach",
+      "score": 5
+     },
+     {
+      "label": "Repeatable",
+      "score": 6
+     },
+     {
+      "label": "Margins at scale",
+      "score": 4
+     },
+     {
+      "label": "Founder-free",
+      "score": 4
+     },
+     {
+      "label": "Digital leverage",
+      "score": 4
+     }
+    ]
+   },
+   "strengths": [
+    {
+     "text": "323,175 registered dogs in one city.",
+     "finding": "demand-0"
+    },
+    {
+     "text": "Fixed group routes are a gap the apps leave.",
+     "finding": "competition-2"
+    },
+    {
+     "text": "Four dogs an hour make the hour pay.",
+     "finding": "viability-0"
+    }
+   ],
+   "weaknesses": [
+    {
+     "text": "Rover and Gudog already list walkers.",
+     "finding": "competition-0"
+    },
+    {
+     "text": "Free volunteer matching exists.",
+     "finding": "competition-1"
+    },
+    {
+     "text": "Every walker caps growth at about 20 dogs.",
+     "finding": "viability-1"
+    }
+   ],
+   "nextSteps": [
+    "Map 30 dog owners on four streets in one district",
+    "Run a free group walk at 13:00 for a week",
+    "Sign ten owners to a paid weekly route"
+   ],
+   "pivot": {
+    "idea": "Fixed midday group routes in one district first",
+    "why": "Density makes each walker profitable"
+   }
+  },
+  "steers": [],
+  "status": "done",
+  "researched": 0
+ },
+ "level": 2,
+ "sign": {
+  "kind": "brand",
+  "name": "Ronda",
+  "tagline": "Same walker, every weekday.",
+  "color": "#1F3A2E",
+  "glyph": "route"
+ },
+ "legacy": {
+  "id": "p-ronda",
+  "idea": "A dog-walking app for busy Madrid professionals, €12 a walk",
+  "created_at": 1794216300000,
+  "payments": {
+   "validate": {
+    "txid": "dev-p-ronda-validate",
+    "sats": 0,
+    "cents": 10,
+    "at": 1794216305000
+   },
+   "build": {
+    "txid": "dev-p-ronda-build",
+    "sats": 0,
+    "cents": 20,
+    "at": 1794216360000
+   }
+  },
+  "status": {
+   "mia": "done",
+   "leo": "done",
+   "sam": "done",
+   "nova": "done",
+   "dex": "done",
+   "rae": "done",
+   "pip": "done"
+  },
+  "results": {
+   "mia": {
+    "title": "Dog-walking service in Madrid",
+    "one_liner": "The same trusted walker every weekday at midday, booked in two taps.",
+    "brief": {
+     "concept": "Vetted walkers doing 45-minute midday walks in Chamberí, booked through a simple page, €12 a group walk.",
+     "for": "Office workers aged 28 to 45 in Chamberí who leave a dog home alone from 9:00 to 18:00.",
+     "goal": "Get 25 owners to pay for a first walk and keep 10 on weekly plans after four weeks."
+    },
+    "market": {
+     "city": "Madrid",
+     "country_iso": "ES",
+     "currency": "€",
+     "language": "en"
+    },
+    "gate": {
+     "metric": "paid first walks",
+     "target": 25,
+     "by_week": 4
+    },
+    "checklist": [
+     {
+      "week": 1,
+      "task": "Interview 15 owners in two Chamberí parks",
+      "how": "Talk to owners at 8:00 and 20:00 about who walked their dog last week and what it cost.",
+      "done_when": "15 logged; 6+ pay someone today",
+      "helped_by": "leo",
+      "est_hours": 5
+     },
+     {
+      "week": 1,
+      "task": "Map the walkers owners already use",
+      "how": "Ask every owner for their walker's price, frequency and last no-show.",
+      "done_when": "10 current walkers with prices listed",
+      "helped_by": "leo",
+      "est_hours": 2
+     },
+     {
+      "week": 1,
+      "task": "Recruit three walkers for a paid trial",
+      "how": "Post in two local groups and meet each candidate in a park with their own dog.",
+      "done_when": "Three walkers signed for a trial week",
+      "helped_by": null,
+      "est_hours": 5
+     },
+     {
+      "week": 2,
+      "task": "Get two walker liability insurance quotes",
+      "how": "Ask two brokers for cover per walker and per dog, group walks included.",
+      "done_when": "Two written quotes in hand",
+      "helped_by": "sam",
+      "est_hours": 2
+     },
+     {
+      "week": 2,
+      "task": "Run 20 trial group walks at €12",
+      "how": "First walk free for interviewed owners, €12 from the second; one walker, three dogs max.",
+      "done_when": "20 walks done; 8+ paid",
+      "helped_by": "sam",
+      "est_hours": 8
+     },
+     {
+      "week": 2,
+      "task": "Pick the name and print 100 collar tags",
+      "how": "Choose one of Nova's names and hand tags to every trial owner.",
+      "done_when": "Name chosen; tags handed out",
+      "helped_by": "nova",
+      "est_hours": 2
+     },
+     {
+      "week": 3,
+      "task": "Send the booking page to 60 owners",
+      "how": "Message every owner met so far and two neighbourhood groups.",
+      "done_when": "60 owners received the link",
+      "helped_by": "pip",
+      "est_hours": 2
+     },
+     {
+      "week": 3,
+      "task": "Post the first three launch posts",
+      "how": "Share walk photos with owner permission on the planned days.",
+      "done_when": "Three posts live; every message answered",
+      "helped_by": "rae",
+      "est_hours": 3
+     },
+     {
+      "week": 4,
+      "task": "Sell 25 paid first walks",
+      "how": "Follow up personally with every owner who opened the page.",
+      "done_when": "25 first walks paid on-chain",
+      "helped_by": "pip",
+      "est_hours": 5
+     },
+     {
+      "week": 4,
+      "task": "Decide: one neighbourhood or stop",
+      "how": "Compare repeat bookings and walker hours with break-even and the kill criteria.",
+      "done_when": "Decision written down with the numbers",
+      "helped_by": "sam",
+      "est_hours": 2
+     }
+    ]
+   },
+   "leo": {
+    "score": 6.1,
+    "verdict": "pivot",
+    "headline": "Win one neighbourhood, not the whole city.",
+    "summary": "Owners already pay for walks, but large pet-sitting platforms cover all of Madrid. A dense, trusted service in one neighbourhood is winnable; a city-wide app is not.",
+    "signals": [
+     {
+      "name": "Demand",
+      "score": 7.2,
+      "why": "Many owners leave dogs alone through office hours",
+      "source_id": null,
+      "weight": 0.3
+     },
+     {
+      "name": "Competition gap",
+      "score": 3.8,
+      "why": "Big platforms and independents already cover the city",
+      "source_id": null,
+      "weight": 0.2
+     },
+     {
+      "name": "Price acceptance",
+      "score": 6.6,
+      "why": "€10–€15 a walk is common centrally",
+      "source_id": null,
+      "weight": 0.2
+     },
+     {
+      "name": "Channel",
+      "score": 6.8,
+      "why": "Parks, vets and pet shops reach owners cheaply",
+      "source_id": null,
+      "weight": 0.15
+     },
+     {
+      "name": "Timing",
+      "score": 5.6,
+      "why": "Hybrid work thins Monday and Friday demand",
+      "source_id": null,
+      "weight": 0.15
+     }
+    ],
+    "why_go": "Trust is local: the same walker in one neighbourhood every weekday beats a marketplace that sends a stranger.",
+    "risks": [
+     {
+      "risk": "Platforms already list hundreds of walkers here.",
+      "mitigation": "Stay in Chamberí; same walker, same time, every day.",
+      "severity": "high"
+     },
+     {
+      "risk": "One walker no-show breaks trust fast.",
+      "mitigation": "Keep a back-up walker on call during the trial.",
+      "severity": "high"
+     },
+     {
+      "risk": "Hybrid work halves Monday and Friday bookings.",
+      "mitigation": "Sell Tuesday–Thursday plans first.",
+      "severity": "med"
+     }
+    ],
+    "pivot": {
+     "idea": "Group midday walks in Chamberí, sold as a weekly plan, no app.",
+     "why": "Fixes the competition gap: platforms sell single walks with strangers; a fixed weekly group with the same walker is different and cheaper per dog."
+    },
+    "next_step": "Interview 15 owners in two Chamberí parks this week: 6 who pay today is the bar.",
+    "market_facts": [
+     {
+      "fact": "Central Madrid dog walks commonly cost €10 to €15 for 30 to 60 minutes.",
+      "source_id": null,
+      "is_estimate": true
+     },
+     {
+      "fact": "Owners in office jobs typically leave a dog alone for 7 to 9 hours.",
+      "source_id": null,
+      "is_estimate": true
+     },
+     {
+      "fact": "A walker can usually handle 3 to 4 compatible dogs on a group walk.",
+      "source_id": null,
+      "is_estimate": true
+     },
+     {
+      "fact": "Walker liability insurance is usually priced per walker and per dog.",
+      "source_id": null,
+      "is_estimate": true
+     }
+    ],
+    "competitors": [
+     {
+      "name": "Pet-sitting marketplaces",
+      "note": "Huge choice, a new face each time",
+      "price": 6,
+      "differentiation": 5,
+      "url": null
+     },
+     {
+      "name": "Independent local walkers",
+      "note": "Trusted, but full and hard to book",
+      "price": 5,
+      "differentiation": 6.5,
+      "url": null
+     },
+     {
+      "name": "Dog daycare centres",
+      "note": "Full day, pricey, far from home",
+      "price": 8.5,
+      "differentiation": 7,
+      "url": null
+     },
+     {
+      "name": "Neighbours and family",
+      "note": "Free, until they can't",
+      "price": 1,
+      "differentiation": 2,
+      "url": null
+     }
+    ],
+    "you": {
+     "price": 5,
+     "differentiation": 7.5
+    },
+    "interviews": {
+     "who": "Dog owners in Chamberí who work office hours",
+     "where": "Two parks at 8:00 and 20:00, and outside two vets",
+     "questions": [
+      "Who walked your dog last Tuesday at midday?",
+      "How did you find them?",
+      "What did you pay for the last walk?",
+      "Tell me about the last time a walk didn't happen.",
+      "How do you book a walk today?"
+     ],
+     "good_sign": "They pay someone already and can name a missed walk this month.",
+     "target": 15
+    },
+    "kill_criteria": [
+     "Stop if fewer than 6 of 15 owners pay for walks today.",
+     "Stop if under 8 of 20 trial walks convert to paid."
+    ],
+    "score_math": "0.30×7.2 + 0.20×3.8 + 0.20×6.6 + 0.15×6.8 + 0.15×5.6 = 6.1",
+    "verdict_rule": "Go from 7.0 with no signal at 3 or below · Pivot 5.0–6.9 · No-go under 5.0",
+    "confidence": {
+     "level": "low",
+     "note": "Desk estimates only, no web sources: signals capped at 7.5. Interviews decide."
+    },
+    "sources": []
+   },
+   "sam": {
+    "currency": "€",
+    "canvas": {
+     "customer": "Office workers with one dog in Chamberí",
+     "value": "The same vetted walker every weekday at midday",
+     "revenue": "Group walks at €12, solo walks at €18",
+     "channels": "Parks, vets, pet shops, owner referrals",
+     "costs": "Walker pay per walk, insurance, coordinator, local ads",
+     "unit_economics": "Each walk leaves about €4.90 after walker pay"
+    },
+    "assumptions": [
+     {
+      "key": "customers_per_day_m1",
+      "label": "Walks a day, month 1",
+      "value": 10,
+      "unit": "per day",
+      "basis": "Trial owners from interviews",
+      "is_estimate": true
+     },
+     {
+      "key": "customers_per_day_m12",
+      "label": "Walks a day, month 12",
+      "value": 60,
+      "unit": "per day",
+      "basis": "Four walkers, five groups of three",
+      "is_estimate": true
+     },
+     {
+      "key": "avg_ticket",
+      "label": "Average price per walk",
+      "value": 13,
+      "unit": "€",
+      "basis": "Mostly €12 group walks, some €18 solo",
+      "is_estimate": true
+     },
+     {
+      "key": "gross_margin_pct",
+      "label": "Margin after walker pay",
+      "value": 38,
+      "unit": "%",
+      "basis": "Walkers paid about €8 a walk",
+      "is_estimate": true
+     },
+     {
+      "key": "fixed_costs_month",
+      "label": "Fixed costs a month",
+      "value": 2600,
+      "unit": "€",
+      "basis": "Sum of the five lines below",
+      "is_estimate": true
+     },
+     {
+      "key": "startup_cost",
+      "label": "Start-up cost",
+      "value": 5500,
+      "unit": "€",
+      "basis": "Insurance set-up, gear, page, legal",
+      "is_estimate": true
+     },
+     {
+      "key": "open_days_month",
+      "label": "Walking days a month",
+      "value": 22,
+      "unit": "days",
+      "basis": "Weekdays only",
+      "is_estimate": true
+     }
+    ],
+    "fixed_costs_breakdown": [
+     {
+      "label": "Founder as coordinator (minimum)",
+      "value": 1600
+     },
+     {
+      "label": "Local ads and flyers",
+      "value": 450
+     },
+     {
+      "label": "Liability insurance",
+      "value": 260
+     },
+     {
+      "label": "Transport between parks",
+      "value": 200
+     },
+     {
+      "label": "Booking software",
+      "value": 90
+     }
+    ],
+    "months": [
+     {
+      "month": 1,
+      "revenue": 2860,
+      "costs": 4373,
+      "cash": -7013
+     },
+     {
+      "month": 2,
+      "revenue": 3282,
+      "costs": 4635,
+      "cash": -8366
+     },
+     {
+      "month": 3,
+      "revenue": 3992,
+      "costs": 5075,
+      "cash": -9449
+     },
+     {
+      "month": 4,
+      "revenue": 5121,
+      "costs": 5775,
+      "cash": -10103
+     },
+     {
+      "month": 5,
+      "revenue": 6762,
+      "costs": 6792,
+      "cash": -10133
+     },
+     {
+      "month": 6,
+      "revenue": 8864,
+      "costs": 8096,
+      "cash": -9365
+     },
+     {
+      "month": 7,
+      "revenue": 11156,
+      "costs": 9517,
+      "cash": -7726
+     },
+     {
+      "month": 8,
+      "revenue": 13258,
+      "costs": 10820,
+      "cash": -5288
+     },
+     {
+      "month": 9,
+      "revenue": 14899,
+      "costs": 11837,
+      "cash": -2226
+     },
+     {
+      "month": 10,
+      "revenue": 16028,
+      "costs": 12537,
+      "cash": 1265
+     },
+     {
+      "month": 11,
+      "revenue": 16738,
+      "costs": 12978,
+      "cash": 5025
+     },
+     {
+      "month": 12,
+      "revenue": 17160,
+      "costs": 13239,
+      "cash": 8946
+     }
+    ],
+    "price": {
+     "value": 13,
+     "display": "€13.00",
+     "note": "Group walk €12; average €13"
+    },
+    "startup_cost": {
+     "value": 5500,
+     "display": "€5.5k",
+     "note": "Insurance, gear, booking page, legal"
+    },
+    "cash_needed": {
+     "value": 10133,
+     "display": "€10k",
+     "month": 5
+    },
+    "break_even": {
+     "month": 6,
+     "note": "Revenue covers costs from month 6"
+    },
+    "breakeven_units_per_day": 24,
+    "year1": {
+     "revenue": "€120k",
+     "costs": "€106k",
+     "result": "+€14k",
+     "monthly_profit_m12": "€3.9k",
+     "payback": "Month 10"
+    },
+    "main_risk": "Margin depends on group walks: if most owners want solo walks, test an €18 solo price in week two.",
+    "key_assumption": "gross_margin_pct",
+    "launch_offer": {
+     "item": "First group walk",
+     "price": 9,
+     "normal_price": 12,
+     "limit": 50,
+     "display": "€9",
+     "normal_display": "€12",
+     "discount_pct": 25,
+     "contribution": 1.56,
+     "contribution_display": "€1.56",
+     "revenue_if_sold_out": 450,
+     "revenue_display": "€450"
+    },
+    "unit": {
+     "price": 13,
+     "variable_cost": 8.06,
+     "contribution": 4.94,
+     "margin_pct": 38,
+     "line": "€13 a sale − €8.06 direct cost = €4.94 left"
+    },
+    "breakeven": {
+     "per_month": 527,
+     "per_day": 24,
+     "formula": "€2,600 fixed ÷ €4.94 per sale ÷ 22 days = 24 sales a day"
+    },
+    "headroom": {
+     "m12_per_day": 60,
+     "breakeven_per_day": 24,
+     "multiple": 2.5,
+     "note": "Month-12 plan is 2.5× break-even"
+    },
+    "sensitivity": [
+     {
+      "key": "gross_margin_pct",
+      "label": "Margin after walker pay",
+      "low": {
+       "value": 28,
+       "year1_result": 2435,
+       "break_even_month": 7,
+       "breakeven_per_day": 33,
+       "cash_needed": 12453
+      },
+      "base": {
+       "value": 38,
+       "year1_result": 14446,
+       "break_even_month": 6,
+       "breakeven_per_day": 24,
+       "cash_needed": 10133
+      },
+      "high": {
+       "value": 48,
+       "year1_result": 26458,
+       "break_even_month": 5,
+       "breakeven_per_day": 19,
+       "cash_needed": 8578
+      },
+      "swing": 24023,
+      "line": "Margin after walker pay ±10 pts: year 1 from +€2.4k to +€26k"
+     },
+     {
+      "key": "customers_per_day_m12",
+      "label": "Walks a day",
+      "low": {
+       "value": 48,
+       "year1_result": 5316,
+       "break_even_month": 6,
+       "breakeven_per_day": 24,
+       "cash_needed": 11807
+      },
+      "base": {
+       "value": 60,
+       "year1_result": 14446,
+       "break_even_month": 6,
+       "breakeven_per_day": 24,
+       "cash_needed": 10133
+      },
+      "high": {
+       "value": 72,
+       "year1_result": 23574,
+       "break_even_month": 5,
+       "breakeven_per_day": 24,
+       "cash_needed": 8945
+      },
+      "swing": 18258,
+      "line": "Walks a day ±20%: year 1 from +€5.3k to +€24k"
+     },
+     {
+      "key": "fixed_costs_month",
+      "label": "Fixed costs a month",
+      "low": {
+       "value": 2080,
+       "year1_result": 20686,
+       "break_even_month": 5,
+       "breakeven_per_day": 20,
+       "cash_needed": 8023
+      },
+      "base": {
+       "value": 2600,
+       "year1_result": 14446,
+       "break_even_month": 6,
+       "breakeven_per_day": 24,
+       "cash_needed": 10133
+      },
+      "high": {
+       "value": 3120,
+       "year1_result": 8206,
+       "break_even_month": 6,
+       "breakeven_per_day": 29,
+       "cash_needed": 12733
+      },
+      "swing": 12480,
+      "line": "Fixed costs a month ±20%: year 1 from +€8.2k to +€21k"
+     }
+    ]
+   },
+   "memo": {
+    "purpose": "Midday group walks with the same trusted walker, for office workers in one Madrid neighbourhood.",
+    "problem": "Owners who work office hours leave dogs alone for up to nine hours. Marketplaces send a different stranger each time, and good independent walkers are full.",
+    "insight": "A city-wide app loses to platforms that already exist. A weekly group in one neighbourhood, with the same face every day, is something they don't offer.",
+    "verdict_line": "Pivot to one neighbourhood: break-even is about 24 walks a day, which needs four steady walkers.",
+    "next_7_days": [
+     "Interview 15 owners in two Chamberí parks",
+     "Recruit three walkers for a paid trial week",
+     "Ask two brokers for walker insurance quotes"
+    ]
+   },
+   "nova": {
+    "names": [
+     {
+      "name": "Ronda",
+      "why": "A neighbourhood round: the same route, the same walker, every day.",
+      "tagline": "Same walker, every weekday.",
+      "palette": [
+       {
+        "name": "Primary",
+        "hex": "#1F3A2E"
+       },
+       {
+        "name": "Accent",
+        "hex": "#E07A3F"
+       },
+       {
+        "name": "Background",
+        "hex": "#F5F1E8"
+       },
+       {
+        "name": "Extra",
+        "hex": "#8FB39A"
+       }
+      ]
+     },
+     {
+      "name": "Mediodía",
+      "why": "Names the hour owners worry about most.",
+      "tagline": "Your dog's favourite hour.",
+      "palette": [
+       {
+        "name": "Primary",
+        "hex": "#3A2A1F"
+       },
+       {
+        "name": "Accent",
+        "hex": "#4F9D8A"
+       },
+       {
+        "name": "Background",
+        "hex": "#FAF5EC"
+       },
+       {
+        "name": "Extra",
+        "hex": "#D8A06A"
+       }
+      ]
+     },
+     {
+      "name": "Correa",
+      "why": "The leash: simple, concrete, local.",
+      "tagline": "Midday walks, sorted.",
+      "palette": [
+       {
+        "name": "Primary",
+        "hex": "#22304A"
+       },
+       {
+        "name": "Accent",
+        "hex": "#F2B441"
+       },
+       {
+        "name": "Background",
+        "hex": "#F4F4EF"
+       },
+       {
+        "name": "Extra",
+        "hex": "#7A8FB0"
+       }
+      ]
+     }
+    ],
+    "chosen": 0,
+    "positioning": "For Chamberí professionals who leave a dog alone all day, Ronda is the midday walk club that sends the same walker every weekday.",
+    "typography": {
+     "display": "Bricolage Grotesque",
+     "body": "Inter"
+    },
+    "voice": {
+     "traits": [
+      "Friendly",
+      "Reliable",
+      "Local",
+      "Plain"
+     ],
+     "rules": "Write like the walker texting the owner: who, when, how it went.",
+     "sample": "Luna walked 45 minutes in the park. Happy and tired."
+    }
+   },
+   "dex": {
+    "logos": [
+     {
+      "concept": "A closed loop route with a start dot, then a rounded lowercase name: the daily round.",
+      "icon": "paw",
+      "shape": "emblem",
+      "monogram": "R",
+      "glyph": "route",
+      "wordmark": {
+       "weight": 700,
+       "letter_spacing_em": -0.03,
+       "case": "lower",
+       "mark": "none",
+       "placement": "left"
+      }
+     },
+     {
+      "concept": "An R on a soft rounded tile, like the tag on a collar, name beside it.",
+      "icon": "paw",
+      "shape": "monogram",
+      "monogram": "R",
+      "glyph": "tile",
+      "wordmark": {
+       "weight": 600,
+       "letter_spacing_em": 0.02,
+       "case": "title",
+       "mark": "monogram",
+       "placement": "left"
+      }
+     },
+     {
+      "concept": "Wordmark only, ending in a green full stop: same walker, same time, full stop.",
+      "icon": "paw",
+      "shape": "wordmark",
+      "monogram": "RO",
+      "glyph": "stop",
+      "wordmark": {
+       "weight": 600,
+       "letter_spacing_em": -0.02,
+       "case": "title",
+       "mark": "none",
+       "placement": "left"
+      }
+     }
+    ],
+    "landing": {
+     "headline": "A happy dog while you work.",
+     "subheadline": "45-minute midday group walks in Chamberí with the same vetted walker, every weekday.",
+     "bullets": [
+      "Same walker every day",
+      "Photo and route after each walk",
+      "Cancel until 9:00, no cost"
+     ],
+     "cta": "Pre-order for €9",
+     "offer": "First 50 group walks at €9",
+     "offer_price": 9,
+     "normal_price": 12,
+     "price_hint_usd": 9.7,
+     "faq": [
+      {
+       "q": "What do I get, and when?",
+       "a": "One 45-minute group walk on a weekday you choose, within two weeks of booking."
+      },
+      {
+       "q": "What if it doesn't happen?",
+       "a": "If we can't walk your dog within two weeks, we refund you in full."
+      },
+      {
+       "q": "Is my dog safe in a group?",
+       "a": "Groups of three dogs at most, matched by size and temperament after a free meet-up."
+      }
+     ],
+     "where_when": "Chamberí, weekdays 12:00 to 15:00"
+    }
+   },
+   "rae": {
+    "start_date": "2026-11-16",
+    "handle": "@ronda.mad",
+    "posts": [
+     {
+      "day": 1,
+      "channel": "instagram",
+      "time": "13:00",
+      "format": "post",
+      "hook": "Midday walks are coming to Chamberí",
+      "caption": "Same walker, every weekday, groups of three. First 50 walks at €9.",
+      "cta": "Pre-order a walk"
+     },
+     {
+      "day": 2,
+      "channel": "instagram",
+      "time": "20:00",
+      "format": "story",
+      "hook": "Who walks your dog at noon?",
+      "caption": "Neighbour, app, nobody? Tell us honestly.",
+      "cta": "Vote in the poll"
+     },
+     {
+      "day": 4,
+      "channel": "tiktok",
+      "time": "20:00",
+      "format": "reel",
+      "hook": "How we pick a walker",
+      "caption": "A park, their own dog, three questions. Here's what we look for.",
+      "cta": "Follow for launch"
+     },
+     {
+      "day": 5,
+      "channel": "instagram",
+      "time": "13:00",
+      "format": "carousel",
+      "hook": "Meet the three walkers",
+      "caption": "Who they are, their own dogs, how they handle a group of three.",
+      "cta": "Say hello"
+     },
+     {
+      "day": 8,
+      "channel": "instagram",
+      "time": "13:00",
+      "format": "post",
+      "hook": "Trial week starts today",
+      "caption": "Twenty trial walks this week in Chamberí. We'll share how it goes, late walks included.",
+      "cta": "Book a slot"
+     },
+     {
+      "day": 9,
+      "channel": "email",
+      "time": "08:00",
+      "format": "email",
+      "hook": "Your first walk: what happens",
+      "caption": "Key handover, the route, when the photo arrives. Everything before day one.",
+      "cta": "Pick your day"
+     },
+     {
+      "day": 11,
+      "channel": "tiktok",
+      "time": "20:00",
+      "format": "reel",
+      "hook": "45 minutes in 15 seconds",
+      "caption": "Route, water stop, one tired dog.",
+      "cta": "Book a walk"
+     },
+     {
+      "day": 15,
+      "channel": "instagram",
+      "time": "13:00",
+      "format": "post",
+      "hook": "Trial week, honestly",
+      "caption": "Walks done, walks late, what we changed. Straight from our notes.",
+      "cta": "Book yours"
+     },
+     {
+      "day": 18,
+      "channel": "linkedin",
+      "time": "09:00",
+      "format": "post",
+      "hook": "Why we started with one neighbourhood",
+      "caption": "Trust is local. What 15 owner interviews taught us.",
+      "cta": "Read more"
+     },
+     {
+      "day": 22,
+      "channel": "email",
+      "time": "08:00",
+      "format": "email",
+      "hook": "Weekly plans open",
+      "caption": "Tuesday to Thursday, same walker, same time, from your second walk.",
+      "cta": "Choose your days"
+     },
+     {
+      "day": 24,
+      "channel": "instagram",
+      "time": "13:00",
+      "format": "post",
+      "hook": "One route, every weekday",
+      "caption": "The Chamberí loop our groups walk at noon, and why we chose it.",
+      "cta": "Pre-order a walk"
+     },
+     {
+      "day": 26,
+      "channel": "instagram",
+      "time": "20:00",
+      "format": "story",
+      "hook": "Last days at €9",
+      "caption": "After Friday a first walk is €12.",
+      "cta": "Pre-order now"
+     }
+    ],
+    "first_posts": [
+     {
+      "kind": "Teaser",
+      "title": "Midday walks, Chamberí",
+      "text": "Midday walks are coming to Chamberí. The same walker every weekday, groups of three, a photo after every walk. First 50 walks at €9.",
+      "date": "2026-11-16T13:00",
+      "channel": "instagram"
+     },
+     {
+      "kind": "Behind the scenes",
+      "title": "How we pick walkers",
+      "text": "We meet every walker in a park with their own dog before they meet yours. Three questions decide it. Follow along.",
+      "date": "2026-11-19T20:00",
+      "channel": "tiktok"
+     },
+     {
+      "kind": "Meet the team",
+      "title": "Three walkers, one route",
+      "text": "These are the three people who'll walk your dog, every weekday at midday. Say hello before your first walk.",
+      "date": "2026-11-20T13:00",
+      "channel": "instagram"
+     }
+    ]
+   },
+   "pip": {
+    "slug": "ronda",
+    "url": "/s/ronda",
+    "live_at": "2026-11-09T09:26:20.000Z"
+   }
+  },
+  "timings": {
+   "validate": {
+    "started": 1794216305000,
+    "finished": 1794216341000
+   },
+   "build": {
+    "started": 1794216360000,
+    "finished": 1794216402000
+   }
+  },
+  "models": {
+   "mia": "mock",
+   "leo": "mock",
+   "sam": "mock",
+   "nova": "mock",
+   "dex": "mock",
+   "rae": "mock",
+   "pip": "none"
+  },
+  "share_id": null
+ },
+ "prepared": []
+}

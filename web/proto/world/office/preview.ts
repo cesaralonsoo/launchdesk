@@ -10,14 +10,24 @@
 //   still=1  no idle motion       bar=0 hide the buttons       cheer=<room> fire a celebration after load
 //   time   = dawn | day | golden | dusk | night | 0..1   v6 day cycle: an interpolated preset (overrides atmo)
 //   cycle  = <seconds>           run the whole day cycle (applyAtmosphere every 100 ms, like the world clock)
+// v7 (WS-OFFICE):
+//   model  = office | bedroom    which diorama (bedroom = level 0, the founder's room)
+//   ostyle = clean | pixel | voxel   art direction (default voxel)
+//   roster = viability,competition,market,…   the hired analysts (3–5, contracts ROLE_LIBRARY)
+//   actors = <id>:<state>,…      v7 actor states (absent|arriving|idle|working|presenting|done|asleep); presets:
+//            room0 (founder only) · hire · evidence · report · floor · build · live
+//   sign   = draft:Coffee kiosk | brand:Pausa:#C2410C:pause[:tagline]
+//   focus  = overview | <floor room r0…launch> | actor:<id>
+//   reveal = 0..1 (office boom reveal) · boom = 0..1 (bedroom boom) · pulse=<id>:<kind>,… fired after load
 import * as THREE from "three";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { GTAOPass } from "three/examples/jsm/postprocessing/GTAOPass.js";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { SMAAPass } from "three/examples/jsm/postprocessing/SMAAPass.js";
-import { ALL_DEPTS, ALL_ROOMS, type AtmospherePreset, type Dept, type DeptState, type Room, type ThemeId } from "../../contracts";
+import { ALL_DEPTS, ALL_ROOMS, ROLE_LIBRARY, type ActorId, type ActorState, type Analyst, type AnalystRole, type AtmospherePreset, type BedroomModel, type CompanySign, type Dept, type DeptState, type FindingKind, type FloorRoom, type Room, type ThemeId } from "../../contracts";
 import { THEMES } from "../../themes";
+import { createBedroomModel } from "../bedroom";
 import { createOfficeModel } from "./index";
 
 const qp = new URLSearchParams(location.search);
@@ -29,8 +39,11 @@ let atmoKey = qp.get("atmo") ?? "studio";
 if (!(atmoKey in ATMO)) atmoKey = "studio";
 
 const host = document.getElementById("world")!;
-const renderer = new THREE.WebGLRenderer({ antialias: quality === "high", alpha: false, powerPreference: "high-performance" });
-renderer.setPixelRatio(Math.min(quality === "high" ? 2 : 1, devicePixelRatio || 1));
+const renderer = new THREE.WebGLRenderer({ antialias: quality === "high" && Number(qp.get("px") ?? 1) <= 1, alpha: false, powerPreference: "high-performance" });
+// px=2|3: render at 1/px resolution and upscale with nearest (a renderer-level pixel pass, for the comparison)
+const pxQ = Math.max(1, Number(qp.get("px") ?? 1));
+renderer.setPixelRatio(pxQ > 1 ? 1 / pxQ : Math.min(quality === "high" ? 2 : 1, devicePixelRatio || 1));
+if (pxQ > 1) renderer.domElement.style.imageRendering = "pixelated";
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = qp.get("tm") === "neutral" ? THREE.NeutralToneMapping : THREE.ACESFilmicToneMapping;
 renderer.shadowMap.enabled = quality === "high";
@@ -54,11 +67,50 @@ ground.receiveShadow = true;
 scene.add(ground);
 
 const office = createOfficeModel({ quality, still });
-scene.add(office.root);
+const isBed = qp.get("model") === "bedroom";
+const bedroom: BedroomModel | null = isBed ? createBedroomModel({ quality, still }) : null;
+if (bedroom) {
+  scene.add(bedroom.root);
+  ground.position.y = -0.56;
+} else scene.add(office.root);
+
+// ── v7 roster / actors / sign
+const roles = (qp.get("roster") ?? "viability,competition,market").split(",").filter((r): r is AnalystRole => r in ROLE_LIBRARY);
+const roster: Analyst[] = roles.map((role) => ({ id: role, role, name: ROLE_LIBRARY[role].name, color: ROLE_LIBRARY[role].color, mission: ROLE_LIBRARY[role].mission, why: "", weight: 1 / roles.length }));
+office.setRoster(roster);
+bedroom?.setRoster(roster);
+const ACTOR_PRESETS: Record<string, (r: Analyst[]) => Array<[ActorId, ActorState]>> = {
+  room0: () => [["founder", "working"]],
+  hire: (r) => [["founder", "idle"], ...r.map((a, i) => [a.id, i < r.length - 1 ? "idle" : "arriving"] as [ActorId, ActorState])],
+  evidence: (r) => [["founder", "idle"], ...r.map((a, i) => [a.id, i === 0 ? "done" : i === 1 ? "presenting" : "working"] as [ActorId, ActorState])],
+  report: (r) => [["founder", "idle"], ...r.map((a) => [a.id, "done"] as [ActorId, ActorState])],
+  floor: (r) => [["founder", "idle"], ...r.map((a) => [a.id, "done"] as [ActorId, ActorState]), ["nova", "asleep"], ["dex", "asleep"], ["rae", "asleep"], ["pip", "asleep"]],
+  build: (r) => [["founder", "idle"], ...r.map((a) => [a.id, "done"] as [ActorId, ActorState]), ["nova", "done"], ["dex", "working"], ["rae", "idle"], ["pip", "asleep"]],
+  live: (r) => [["founder", "working"], ...r.map((a) => [a.id, "done"] as [ActorId, ActorState]), ["nova", "done"], ["dex", "done"], ["rae", "done"], ["pip", "done"]],
+};
+function applyActors(spec: string, instant: boolean) {
+  const preset = ACTOR_PRESETS[spec];
+  const pairs = preset ? preset(roster) : (spec.split(",").map((p) => p.split(":")) as Array<[ActorId, ActorState]>);
+  for (const [id, st] of pairs) {
+    office.setActorState(id, st, { instant });
+    bedroom?.setActorState(id, st, { instant });
+  }
+}
+const signQ = qp.get("sign");
+if (signQ) {
+  const [kind, name, color, glyph, tagline] = signQ.split(":");
+  const s: CompanySign = { kind: kind === "brand" ? "brand" : "draft", name: name ?? "Your idea", color: color ?? "#1E2229", glyph, tagline };
+  office.setSign(s);
+  bedroom?.setSign(s);
+}
+const revealQ = qp.get("reveal");
+if (revealQ != null) office.setReveal(Number(revealQ));
+const boomQ = qp.get("boom");
+if (boomQ != null) bedroom?.setBoom(Number(boomQ));
 
 let composer: EffectComposer | null = null;
 let gtao: GTAOPass | null = null;
-if (quality === "high" && qp.get("ao") !== "0") {
+if (quality === "high" && qp.get("ao") !== "0" && pxQ === 1) {
   // No MSAA on the AO path (GTAO reads non-multisampled depth → halos); SMAA after tone mapping instead.
   const rt = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 0 });
   composer = new EffectComposer(renderer, rt);
@@ -146,26 +198,38 @@ function applyAtmosphere(a: AtmospherePreset) {
   (ground.material as THREE.MeshStandardMaterial).color.set(a.ground);
   renderer.toneMappingExposure = a.exposure;
   office.applyAtmosphere(a);
+  bedroom?.applyAtmosphere(a);
 }
 
 // ── camera: same rig as WS-B (yaw 34°, pitch 40°, fov 24°)
 const YAW = THREE.MathUtils.degToRad(34), PITCH = THREE.MathUtils.degToRad(40);
 const dir = new THREE.Vector3(Math.cos(PITCH) * Math.sin(YAW), Math.sin(PITCH), Math.cos(PITCH) * Math.cos(YAW));
-let focus = (qp.get("focus") ?? "overview") as Room | "overview";
-if (focus !== "overview" && !ALL_ROOMS.includes(focus)) focus = "overview";
+let focus = (qp.get("focus") ?? "overview") as string;
+const FLOOR: readonly string[] = ["r0", "r1", "r2", "r3", "lobby", "nova", "dex", "launch"];
+if (focus !== "overview" && !ALL_ROOMS.includes(focus as Room) && !FLOOR.includes(focus) && !focus.startsWith("actor:")) focus = "overview";
+const boxFor = (f: string): THREE.Box3 => {
+  if (bedroom) return f.startsWith("actor:") ? bedroom.focusBounds(f.slice(6) as ActorId) : bedroom.bounds();
+  if (f === "overview") return office.bounds();
+  if (f.startsWith("actor:")) {
+    const p = office.actorAnchor(f.slice(6) as ActorId) ?? new THREE.Vector3();
+    return new THREE.Box3(new THREE.Vector3(p.x - 1.1, 0, p.z - 1.1), new THREE.Vector3(p.x + 1.1, 1.9, p.z + 1.1));
+  }
+  if (FLOOR.includes(f)) return office.floorRoomBounds(f as FloorRoom);
+  return office.roomBounds(f as Room);
+};
 const camT = new THREE.Vector3();
 let camD = 60;
 const goal = { t: new THREE.Vector3(), d: 60 };
-function frame(f: Room | "overview", snap = false) {
+function frame(f: string, snap = false) {
   focus = f;
-  const box = f === "overview" ? office.bounds() : office.roomBounds(f);
+  const box = boxFor(f);
   const size = box.getSize(new THREE.Vector3());
-  const r = (size.length() / 2) * (f === "overview" ? 0.86 : 0.95);
+  const r = (size.length() / 2) * (f === "overview" ? (bedroom ? 0.78 : 0.86) : 0.95);
   const vfov = THREE.MathUtils.degToRad(camera.fov);
   const hfov = 2 * Math.atan(Math.tan(vfov / 2) * camera.aspect);
   goal.d = Math.max(r / Math.sin(vfov / 2), r / Math.sin(hfov / 2));
   goal.t.copy(box.getCenter(new THREE.Vector3()));
-  if (f === "overview") goal.t.y = 0.2;
+  if (f === "overview") goal.t.y = bedroom ? 0.7 : 0.2;
   if (snap || still) {
     camT.copy(goal.t);
     camD = goal.d;
@@ -208,6 +272,8 @@ if (cycleSec > 0 && dayT < 0) dayT = 0.5;
 if (dayT >= 0) applyAtmosphere(dayPreset(dayT));
 else applyAtmosphere(THEMES[ATMO[atmoKey]!].atmosphere);
 applyStates(qp.get("states") ?? "locked", true);
+if (qp.get("actors")) applyActors(qp.get("actors")!, true);
+else if (bedroom) applyActors("room0", true);
 frame(focus, true);
 
 // ── buttons
@@ -223,13 +289,21 @@ const btn = (label: string, on: () => void, pressed = false) => {
 for (const k of Object.keys(ATMO)) btn(k, () => applyAtmosphere(THEMES[ATMO[k]!].atmosphere), k === atmoKey && dayT < 0);
 for (const k of Object.keys(NAMED)) btn(`t:${k}`, () => applyAtmosphere(dayPreset(NAMED[k]!)));
 for (const k of Object.keys(PRESETS)) btn(k, () => applyStates(k, false));
-for (const f of ["overview", ...ALL_ROOMS] as const) btn(f, () => frame(f));
-btn("cheer", () => office.cheer(focus === "overview" ? undefined : focus));
+for (const f of ["overview", ...FLOOR]) btn(f, () => frame(f));
+for (const k of Object.keys(ACTOR_PRESETS)) btn(`a:${k}`, () => applyActors(k, false));
+btn("cheer", () => office.cheer());
+btn("pulse", () => {
+  const a = roster[Math.floor(Math.random() * roster.length)];
+  const kinds: FindingKind[] = ["fact", "number", "competitor", "risk", "strength", "estimate"];
+  if (a) (bedroom ?? office).pulse(a.id, kinds[Math.floor(Math.random() * kinds.length)]!);
+});
 // click a room to frame it
 const ray = new THREE.Raycaster();
 renderer.domElement.addEventListener("click", (e) => {
   const r = renderer.domElement.getBoundingClientRect();
   ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
+  const id = bedroom ? bedroom.pickActor(ray) : office.pickActor(ray);
+  if (id) return frame(`actor:${id}`);
   const room = office.pick(ray);
   frame(room ?? "overview");
 });
@@ -239,6 +313,8 @@ const clock = new THREE.Clock();
 let frames = 0;
 let cycleAcc = 0;
 const cheerRoom = qp.get("cheer") as Room | null;
+let boomAnim = -1;
+const pulses = (qp.get("pulse") ?? "").split(",").filter(Boolean).map((p) => p.split(":") as [ActorId, FindingKind]);
 function tick() {
   requestAnimationFrame(tick);
   const dt = Math.min(0.1, clock.getDelta());
@@ -257,13 +333,20 @@ function tick() {
     }
   }
   office.update(dt, t);
+  bedroom?.update(dt, t);
+  if (boomAnim >= 0) {
+    boomAnim = Math.min(1, boomAnim + dt / 2.6);
+    bedroom?.setBoom(boomAnim);
+  }
   if (composer) composer.render(dt);
   else renderer.render(scene, camera);
   frames++;
   if (frames === 3) {
     document.documentElement.dataset.ready = "1";
     if (cheerRoom) office.cheer(cheerRoom === ("all" as Room) ? undefined : cheerRoom);
+    pulses.forEach(([id, k], i) => setTimeout(() => (bedroom ?? office).pulse(id, k), i * 120));
+    if (qp.get("boomplay") === "1") boomAnim = 0;
   }
 }
 tick();
-(window as unknown as { __office: unknown }).__office = { office, renderer, scene, camera, frame, applyStates, gtao, applyAtmosphere, dayPreset };
+(window as unknown as { __office: unknown }).__office = { office, bedroom, renderer, scene, camera, frame, applyStates, applyActors, gtao, applyAtmosphere, dayPreset, setBoom: (k: number) => bedroom?.setBoom(k), setReveal: (k: number) => office.setReveal(k) };

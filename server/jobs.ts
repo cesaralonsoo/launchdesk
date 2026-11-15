@@ -2,9 +2,11 @@
 // parallel, groups run one after another. Each result is saved as soon as it is ready so the office can animate
 // while the rest of the team works.
 //   validate: Leo's web research starts with Mia (it only needs the idea) -> [mia] -> [leo] -> [sam + memo]
+//   v7:       the analyst team (jobs-v7.ts) runs alongside the validate groups, sharing the research
 //   build:    [nova] -> [dex, rae] (both sell Sam's launch offer, neither needs the other) -> [pip]
 import { research as webResearch, runDept, runMemo, type AiDept, type Research, type RunOpts } from "./ai.js";
 import { config } from "./config.js";
+import { loadV7, runV7 } from "./jobs-v7.js";
 import { exec, getProject, getProjectRow, stageDone } from "./db.js";
 import { DEFAULT_FONTS, DEFAULT_WORDMARK, fmtMoney, STAGE_DEPTS, type DexDesign, type NovaBrand, type PipLive, type Project, type RaeLaunch, type Stage, type WorkDept } from "./types.js";
 
@@ -68,20 +70,30 @@ async function runStage(projectId: string, stage: Stage) {
   // Nothing else runs this stage in this process (startStage is deduplicated).
   await prepare(projectId, stage, true);
   const opts: RunOpts = {};
+  let team: Promise<void> = Promise.resolve();
   if (stage === "validate") {
     // v6: Leo's web research (the slowest step) runs while Mia writes the plan.
     const leo = await exec("SELECT status FROM jobs WHERE project_id = ? AND dept = 'leo'", [projectId]);
     const p = await getProject(projectId);
-    if (p && leo.rows[0]?.status !== "done") {
+    const v7 = await loadV7(projectId);
+    const needV7 = !(v7?.status === "done" && v7.report);
+    if (p && (leo.rows[0]?.status !== "done" || needV7)) {
       const t0 = Date.now();
       const found: Promise<Research | null> = webResearch(p.idea, p.results.mia?.market ?? null).catch(() => null);
       void found.then((r) => r && console.log(`[jobs] ${projectId} research ready after ${Date.now() - t0}ms`));
       opts.research = found;
+      // v7: the analyst team picked for this idea runs in parallel with the v4 departments and cites the same
+      // research. It never fails the stage (web/src only reads the v4 fields); its status lives in results.v7.
+      if (needV7) team = runV7(projectId, p.idea, found).catch((e) => console.error(`[jobs] ${projectId} v7:`, e));
     }
   }
-  for (const group of STAGE_GROUPS[stage]) {
-    const ok = await Promise.all(group.map((dept) => runJob(projectId, dept, opts)));
-    if (ok.includes(false)) return; // later departments stay queued; retryDept / POST /run continue from here
+  try {
+    for (const group of STAGE_GROUPS[stage]) {
+      const ok = await Promise.all(group.map((dept) => runJob(projectId, dept, opts)));
+      if (ok.includes(false)) return; // later departments stay queued; retryDept / POST /run continue from here
+    }
+  } finally {
+    await team;
   }
 }
 

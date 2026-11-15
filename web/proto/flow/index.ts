@@ -1,250 +1,552 @@
-// The experience state machine (WS-C). It is the only thing that drives the World.
-// idle → idea → pay-validate → validate(mia, leo, sam × working → result) → verdict → pay-build
-//      → build(nova, dex, rae, pip × working → result) → level-up → live → scale.        Timings: CONTRACTS.md §5.
-// Every world move goes outward: the office (level 1) does all the work, the tower (level 2) grows around it
-// once the startup is live, the district (level 3) is the horizon.
+// v7 · The experience state machine (WS-EXP). The only thing that drives the World.
 //
-// Pacing rule: never two camera moves at once, and the UI shows a surface only once the camera has settled.
-// `settled` (ProtoFlow, additive) is false while the world is moving for the current state; the UI waits for it.
-import { BUILD_DEPTS, VALIDATE_DEPTS, type Dept, type DeptState, type Flow, type FlowAction, type FlowState, type FlowStep, type Level, type World } from "../contracts";
-import { IDEA } from "../data";
+//   bedroom → idea → pay1 → hire → evidence → report(score → scale → points → next) → [steer]* → boom → floor
+//   → pay2 → build(nova, dex, rae, pip × working → result) → live → building → district → end
+//
+// One engine for three drivers: the user (next / actions), deep links (goto, snapped) and the judges' demo
+// (goto with animate, see flow/demo.ts). `enter(step, animate)` plays a step: hire pops analysts one by one, evidence
+// reveals findings one at a time, build runs each specialist. Every async sequence is cancelled by a new goto.
+// In demo mode (`auto = false`) the flow never moves to the next *step* by itself: the demo script does.
+import {
+  BUILD_TEAM, DEMO_SCRIPT, FLOW_STEPS_V7, STEER_LIMIT, STEP_LEVEL, levelCapFor, scoreDisplay, worldProjectOf,
+  type ActorId, type Analyst, type AnalystRole, type BuildDept, type CompanySign, type Finding, type FlowActionV7,
+  type FlowStateV7, type FlowStepV7, type FlowV7, type IdeaReport, type ProjectV7, type ReportPage, type SteerResult,
+  type WorldLevel, type WorldV7,
+} from "../contracts";
+import { PROJECTS_V7, SAMPLE_V7, mockSteer } from "../data";
+import type { Project } from "../../src/types";
 
-/** Working time per department at speed 1 (ms). */
-export const WORK_MS = 5200;
-/** Result cards auto-advance after this long (ms). Never divided by speed: reading time is the user's.
- *  Dense, decision-relevant cards (Leo, Sam, Rae) never auto-advance. The UI pauses it on hover/pointer move. */
-export const READ_MS = 20000;
-export const NO_AUTO: readonly string[] = ["leo", "sam", "rae"];
-/** Order of the steps (deep links, paid amount). */
-export const STEP_ORDER: FlowStep[] = ["idle", "idea", "pay-validate", "validate", "verdict", "pay-build", "build", "level-up", "live", "scale"];
+export const REPORT_PAGES: readonly ReportPage[] = ["score", "scale", "points", "next"];
+export const STORE_KEY = "launchdesk.proto.projects.v7";
 
-export interface ProtoFlow extends Flow {
-  /** false while the camera is still moving into the current state. */
-  readonly settled: boolean;
-  readonly speed: 1 | 3;
-  /** ms timestamp when the current dept started working (for the tag's progress ring). */
+/** Pacing at speed 1 (ms). The demo script compresses some of them (see flow/demo.ts). */
+export interface Timing {
+  intro: number; // bedroom → idea card
+  hireEvery: number;
+  hireTail: number; // after the last hire, before the research starts
+  findingEvery: number;
+  analystGap: number; // camera move between analysts
+  reportTail: number; // after the last finding, before the report
+  buildWork: number;
+  steerWork: number;
+}
+export const TIMING: Timing = { intro: 1100, hireEvery: 1500, hireTail: 1400, findingEvery: 2600, analystGap: 700, reportTail: 1300, buildWork: 4200, steerWork: 2800 };
+
+export interface ProtoFlowV7 extends FlowV7 {
+  readonly project: ProjectV7;
+  /** The current report (after any CEO steer). */
+  readonly report: IdeaReport | null;
+  readonly roster: readonly Analyst[];
+  /** Every finding, in reveal order (roster order, then t), with steer replacements applied. */
+  readonly findings: Finding[];
+  /** How many findings have been revealed (evidence step; = all after it). */
+  readonly revealed: number;
+  /** How many analysts have been hired so far (hire step; = all after it). */
+  readonly hired: number;
+  readonly cap: WorldLevel;
+  /** The cap from the scalability score alone (before a scale path is chosen; a path adds one level). */
+  readonly baseCap: WorldLevel;
+  readonly paidCents: number;
+  readonly steers: SteerResult[];
+  /** The steer being processed (ack shown, analysts re-running) or null. */
+  readonly steering: SteerResult | null;
+  readonly steersLeft: number;
+  /** ms timestamp when the current build specialist started (tag progress ring). */
   readonly workStart: number;
   readonly workMs: number;
-  /** $ cents paid so far in this run (wallet pill). */
-  readonly paidCents: number;
+  readonly demo: boolean;
+  readonly reduced: boolean;
+  /** A world move (boom, pull-back) is playing: the UI waits. */
+  readonly moving: boolean;
+  readonly projects: ProjectV7[];
+  /** v7 owner update: the scale path the founder committed to (index into scalePaths(report)), or null. */
+  readonly chosenPath: number | null;
+  /** Commit to a scale path: the world may now grow past the scalability cap (the score says how hard it is). */
+  commitPath(i: number): void;
+  levelOf(id: string): WorldLevel;
+  goto(s: Partial<FlowStateV7> & { step: FlowStepV7 }, opts?: { animate?: boolean }): void;
+  setDemo(on: boolean): void;
+  setTiming(t: Partial<Timing>): void;
+  /** Re-show a revealed finding (tap on the evidence counter). */
+  peek(i: number): void;
 }
 
-const LEVEL_OF: Record<FlowStep, Level> = {
-  idle: 1, idea: 1, "pay-validate": 1, validate: 1, verdict: 1, "pay-build": 1, build: 1, "level-up": 2, live: 2, scale: 3,
-};
+const ORDER = FLOW_STEPS_V7;
+const after = (a: FlowStepV7, b: FlowStepV7) => ORDER.indexOf(a) >= ORDER.indexOf(b);
 
-export function createFlow(world: World, init?: Partial<FlowState> & { step?: FlowStep }, opts: { hold?: boolean } = {}): ProtoFlow {
-  let speed: 1 | 3 = 1;
-  let state: FlowState = { step: "idle", idea: IDEA, level: 1 };
-  let settled = true;
-  let run = 0; // cancels pending async sequences on goto/replay
-  let timers: number[] = [];
-  let workStart = 0;
+/** Findings in reveal order. */
+export function orderFindings(p: ProjectV7, roster: readonly Analyst[] = p.v7.roster): Finding[] {
+  const out: Finding[] = [];
+  for (const a of roster) {
+    const w = p.v7.work.find((x) => x.analyst === a.id);
+    if (w) out.push(...[...w.findings].sort((x, y) => x.t - y.t));
+  }
+  return out;
+}
+
+// ───────────────────────────── per-project progress (one world per project)
+function loadLevels(): Record<string, WorldLevel> {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    const v = raw ? JSON.parse(raw) : null;
+    return v && typeof v === "object" ? v : {};
+  } catch {
+    return {};
+  }
+}
+function saveLevels(v: Record<string, WorldLevel>): void {
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify(v));
+  } catch {
+    /* private mode: progress lives for this tab only */
+  }
+}
+
+/** The company sign once Nova named it (brand) — from the legacy phase-2 payload. */
+export function brandSign(p: ProjectV7): CompanySign | null {
+  const L = p.legacy as Project | null;
+  const nova = L?.results?.nova;
+  const n = nova ? nova.names[nova.chosen] ?? nova.names[0] : null;
+  if (!n) return null;
+  const glyph = (L?.results?.dex?.logos?.[0] as { glyph?: string } | undefined)?.glyph;
+  const primary = n.palette?.find((c) => c.name === "Primary")?.hex ?? n.palette?.[0]?.hex ?? "#1D1D1F";
+  return { kind: "brand", name: n.name, tagline: n.tagline, color: primary, glyph };
+}
+
+export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { step: FlowStepV7 }, opts: { hold?: boolean; reduced?: boolean; demo?: boolean } = {}): ProtoFlowV7 {
+  const world = worldIn;
+  const reduced = !!opts.reduced;
+  let demo = !!opts.demo;
+  let T: Timing = { ...TIMING };
+  let project: ProjectV7 = SAMPLE_V7;
+  let report: IdeaReport | null = project.v7.report;
+  let roster: readonly Analyst[] = project.v7.roster;
+  let findings: Finding[] = orderFindings(project);
+  let steers: SteerResult[] = [];
+  let steering: SteerResult | null = null;
+  let revealed = 0;
+  let hired = 0;
   let paid = 0;
-  const cbs = new Set<(s: FlowState, p: FlowState) => void>();
+  let workStart = 0;
+  let moving = false;
+  let settled = true;
+  let run = 0;
+  let timers: number[] = [];
+  let levels = loadLevels();
+  let state: FlowStateV7 = { step: "bedroom", projectId: project.id, level: 0 };
+  const cbs = new Set<(s: FlowStateV7, p: FlowStateV7) => void>();
 
-  const emit = (prev: FlowState) => {
-    for (const cb of cbs) cb(state, prev);
-  };
-  const set = (patch: Partial<FlowState>, isSettled = settled) => {
+  let committed: Record<string, number> = {}; // project id → chosen scale path index
+  // Scalability caps the world (a neighbourhood bakery never gets a district). Committing to a scale path lifts the cap
+  // by ONE level (owner update: every business can grow with work), never past what the idea can carry; a no-go stays.
+  const baseCap = (): WorldLevel => report?.scalability.cap ?? levelCapFor(0, "go");
+  const cap = (): WorldLevel =>
+    (committed[project.id] != null && report?.verdict !== "no-go" ? Math.min(3, baseCap() + 1) : baseCap()) as WorldLevel;
+  const emit = (prev: FlowStateV7) => cbs.forEach((cb) => cb(state, prev));
+  const set = (patch: Partial<FlowStateV7>) => {
     const prev = state;
     state = { ...state, ...patch };
-    settled = isSettled;
     emit(prev);
   };
-  const settle = (token: number) => {
-    if (token !== run || settled) return;
-    settled = true;
-    emit(state);
-  };
-  const wait = (ms: number) => new Promise<void>((r) => timers.push(window.setTimeout(r, ms / speed)));
-  /** Wall-clock pause that speed does not shorten (time to look at a reward). */
-  const hold = (ms: number) => new Promise<void>((r) => timers.push(window.setTimeout(r, ms)));
+  const ping = () => emit(state);
   const cancel = () => {
     run++;
     timers.forEach(clearTimeout);
     timers = [];
+    moving = false;
   };
+  const wait = (ms: number) => new Promise<void>((r) => timers.push(window.setTimeout(r, reduced ? Math.min(ms, 60) : ms)));
+  const alive = (tok: number) => tok === run;
 
-  /** Dept lights for any state, so deep links render consistently. */
-  function paintDepts(s: FlowState) {
-    const order = [...VALIDATE_DEPTS, ...BUILD_DEPTS];
-    const idx = s.dept ? order.indexOf(s.dept) : -1;
-    const afterValidate = ["verdict", "level-up", "pay-build", "build", "live", "scale"].includes(s.step);
-    const afterBuild = ["level-up", "live", "scale"].includes(s.step);
-    const buildOpen = ["build", "level-up", "live", "scale"].includes(s.step) || (s.step === "pay-build" && paid >= 30);
-    for (const d of order) {
-      const i = order.indexOf(d);
-      let done: boolean;
-      if (s.step === "validate" || s.step === "build") {
-        const inStage = (s.step === "validate" ? VALIDATE_DEPTS : BUILD_DEPTS).includes(d);
-        done = inStage ? i < idx || (i === idx && s.phase === "result") : s.step === "build" && VALIDATE_DEPTS.includes(d);
-      } else done = VALIDATE_DEPTS.includes(d) ? afterValidate : afterBuild;
-      let st: DeptState = done ? "done" : "idle";
-      if (d === s.dept && s.phase === "working") st = "working";
-      if (BUILD_DEPTS.includes(d) && !buildOpen && st === "idle") st = "locked";
-      world.setDeptState(d, st);
-    }
+  function reach(l: WorldLevel) {
+    if ((levels[project.id] ?? 0) >= l) return;
+    levels = { ...levels, [project.id]: l };
+    saveLevels(levels);
   }
 
-  async function enterDept(d: Dept, step: "validate" | "build") {
-    const token = run;
-    set({ step, dept: d, phase: "working" }, false);
-    paintDepts(state);
-    await world.focus(d);
-    if (token !== run) return;
+  // ───────────────────────────── world painting (any state → consistent world, for deep links and replays)
+  function signFor(step: FlowStepV7, builder?: BuildDept, phase?: string): CompanySign {
+    const named = after(step, "live") || (step === "build" && builder && (builder !== "nova" || phase === "result"));
+    return (named && brandSign(project)) || project.sign;
+  }
+  function paintActors(s: FlowStateV7) {
+    const st = s.step;
+    world.setActorState("founder", "idle", { instant: true });
+    const preHire = !after(st, "hire");
+    roster.forEach((a, i) => {
+      let x: Parameters<WorldV7["setActorState"]>[1] = "done";
+      if (preHire) x = "absent";
+      else if (st === "hire") x = i < hired ? "idle" : "absent";
+      else if (st === "evidence") {
+        const cur = findings[Math.max(0, revealed - 1)]?.analyst ?? s.analyst;
+        const ci = roster.findIndex((r) => r.id === cur);
+        x = i < ci ? "done" : i === ci ? "working" : "idle";
+      } else if (st === "steer" && steering?.status === "working" && steering.rerun.includes(a.id)) x = "working";
+      world.setActorState(a.id, x, { instant: true });
+    });
+    const bi = s.builder ? BUILD_TEAM.indexOf(s.builder) : -1;
+    for (const b of BUILD_TEAM) {
+      let x: Parameters<WorldV7["setActorState"]>[1];
+      if (!after(st, "floor")) x = "absent";
+      else if (st === "floor" || (st === "pay2" && paid < 30)) x = "asleep";
+      else if (st === "pay2") x = "idle";
+      else if (st === "build") {
+        const i = BUILD_TEAM.indexOf(b);
+        x = i < bi ? "done" : i > bi ? "idle" : s.phase === "working" ? "working" : "done";
+      } else x = "done";
+      world.setActorState(b, x, { instant: true });
+    }
+  }
+  function worldLevelFor(step: FlowStepV7): WorldLevel {
+    const want = STEP_LEVEL[step];
+    return (want <= 1 ? want : Math.min(want, Math.max(1, cap()))) as WorldLevel;
+  }
+  function paintProject(level: WorldLevel) {
+    world.setLevelCap(cap());
+    world.setRoster(roster);
+    void world.setProject({ ...worldProjectOf(project), level, roster: [...roster], cap: cap(), capWhy: report?.scalability.why }, { animate: false });
+  }
+
+  // ───────────────────────────── step players
+  async function playHire(tok: number, animate: boolean) {
+    if (!animate) return;
+    for (let i = hired; i < roster.length; i++) {
+      await wait(i === 0 ? 500 : T.hireEvery);
+      if (!alive(tok)) return;
+      hired = i + 1;
+      world.setActorState(roster[i]!.id, "arriving");
+      ping();
+    }
+    await wait(T.hireTail);
+    if (!alive(tok) || demo) return;
+    enter({ step: "evidence" }, true);
+  }
+
+  async function playEvidence(tok: number, animate: boolean) {
+    if (!animate) return;
+    let cur: AnalystRole | null = revealed > 0 ? findings[revealed - 1]!.analyst : null;
+    while (revealed < findings.length) {
+      const f = findings[revealed]!;
+      if (f.analyst !== cur) {
+        if (cur) world.setActorState(cur, "done");
+        cur = f.analyst;
+        world.setActorState(cur, "working");
+        set({ analyst: cur });
+        void world.focusActor(cur, { ms: 700 });
+        await wait(T.analystGap);
+        if (!alive(tok)) return;
+      }
+      revealed++;
+      world.pulse(f.analyst, f.kind);
+      set({ finding: revealed - 1, analyst: f.analyst });
+      await wait(T.findingEvery);
+      if (!alive(tok)) return;
+    }
+    if (cur) world.setActorState(cur, "done");
+    ping();
+    await wait(T.reportTail);
+    if (!alive(tok) || demo) return;
+    enter({ step: "report", page: "score" }, true);
+  }
+
+  async function playBuild(tok: number, animate: boolean, b: BuildDept) {
+    if (state.phase !== "working" || !animate || opts.hold) return;
     workStart = performance.now();
-    settle(token);
-    await wait(WORK_MS);
-    if (token !== run) return;
-    set({ phase: "result" }, true);
-    paintDepts(state);
+    world.setActorState(b, "working");
+    await wait(T.buildWork);
+    if (!alive(tok)) return;
+    world.setActorState(b, "done");
+    if (b === "nova") world.setSign(signFor("build", "nova", "result"));
+    set({ phase: "result" });
   }
 
-  async function advanceDept() {
-    const token = run;
-    const list = state.step === "validate" ? VALIDATE_DEPTS : BUILD_DEPTS;
-    const i = state.dept ? list.indexOf(state.dept) : -1;
-    const nextD = list[i + 1];
-    if (nextD) return enterDept(nextD, state.step as "validate" | "build");
-    if (state.step === "validate") {
-      set({ step: "verdict", dept: undefined, phase: undefined }, false);
-      paintDepts(state);
-      await world.focus("overview");
-      settle(token);
-    } else {
-      // the startup is live: the office grows into a building around it. No UI while it grows, then a short hold.
-      set({ step: "level-up", dept: undefined, phase: undefined, level: 2 }, false);
-      paintDepts(state);
-      await world.setLevel(2);
-      if (token !== run) return;
-      world.celebrate("level-up");
-      await hold(1200);
-      if (token !== run) return;
-      settle(token);
+  async function playMove(tok: number, step: FlowStepV7, level: WorldLevel, animate: boolean) {
+    const from = world.worldLevel;
+    if (level === from || !animate) {
+      if (level !== from) await world.setWorldLevel(level, { animate: false });
+      return;
+    }
+    moving = true;
+    settled = false;
+    ping();
+    if (level === 1 && from === 0) world.celebrate("level-up");
+    await world.setWorldLevel(level, { animate: true });
+    if (!alive(tok)) return;
+    if (level > 1) world.celebrate("level-up");
+    moving = false;
+    settled = true;
+    ping();
+    if (step === "boom" && !demo) {
+      await wait(900);
+      if (alive(tok)) enter({ step: "floor" }, true);
     }
   }
 
-  const flow: ProtoFlow = {
-    get state() {
-      return state;
+  /** Plays (animate) or snaps (deep link) one step. */
+  function enter(s: Partial<FlowStateV7> & { step: FlowStepV7 }, animate: boolean) {
+    cancel();
+    const tok = run;
+    const step = s.step;
+    const prev = state;
+    // progress counters implied by the step
+    hired = after(step, "evidence") ? roster.length : step === "hire" ? (animate ? 0 : roster.length) : 0;
+    if (step === "evidence") {
+      const idx = s.finding ?? (s.analyst ? findings.findIndex((f) => f.analyst === s.analyst) : animate ? -1 : findings.length - 1);
+      const n = s.analyst && s.finding != null ? findings.findIndex((f) => f.analyst === s.analyst) + s.finding : idx;
+      revealed = animate && s.finding == null && !s.analyst ? 0 : Math.max(0, Math.min(findings.length, n + 1));
+    } else revealed = after(step, "report") ? findings.length : 0;
+    paid = after(step, "build") || (step === "pay2" && prev.step === "pay2" && paid >= 30) ? 30 : after(step, "hire") ? 10 : step === "pay1" && paid >= 10 ? 10 : 0;
+    if (!after(step, "steer") || step === "steer") {
+      /* keep steers (they changed the report) */
+    }
+    const page = step === "report" ? s.page ?? "score" : undefined;
+    const builder = step === "build" ? s.builder ?? "nova" : undefined;
+    const phase = step === "build" ? s.phase ?? (animate ? "working" : "result") : undefined;
+    const level = worldLevelFor(step);
+    const analyst = step === "evidence" ? (revealed > 0 ? findings[revealed - 1]!.analyst : s.analyst ?? roster[0]?.id) : undefined;
+    state = { step, projectId: project.id, level, page, builder, phase, analyst, finding: step === "evidence" ? Math.max(0, revealed - 1) : undefined };
+    settled = true;
+    if (level >= 1) reach(level);
+    if (step === "boom" || step === "floor") reach(1);
+    // world
+    world.setLevelCap(cap());
+    world.setRoster(roster);
+    world.setSign(signFor(step, builder, phase));
+    const moveAnimated = animate && !reduced && (step === "boom" || step === "building" || step === "district" || (step === "end" && world.worldLevel !== level));
+    // building/district above the cap: ask the world for the real level so it frames the ghost (+ padlock) of the
+    // next level; the flow state keeps the built (clamped) level.
+    const ask = (step === "building" || step === "district") && STEP_LEVEL[step] > level ? (STEP_LEVEL[step] as WorldLevel) : level;
+    if (!moveAnimated) void world.setWorldLevel(ask, { animate: false });
+    paintActors(state);
+    workStart = performance.now();
+    const focus: ActorId | "overview" =
+      step === "evidence" && analyst ? analyst : step === "build" && builder ? builder : "overview";
+    if (!moveAnimated && ask === level) void world.focusActor(focus, { animate: animate && !reduced });
+    if (animate && (step === "pay1" || step === "pay2") && prev.step !== step) {
+      /* camera already on the founder / lobby */
+    }
+    emit(prev);
+    if (moveAnimated) void playMove(tok, step, ask, true);
+    else if (step === "boom" && animate && !demo) void wait(reduced ? 400 : 900).then(() => alive(tok) && enter({ step: "floor" }, true));
+    if (step === "bedroom" && animate && !demo) void wait(T.intro).then(() => alive(tok) && enter({ step: "idea" }, true));
+    if (step === "hire") void playHire(tok, animate);
+    if (step === "evidence") void playEvidence(tok, animate);
+    if (step === "build" && builder) void playBuild(tok, animate, builder);
+    if (step === "live" && animate) world.celebrate("live");
+  }
+
+  function useProject(p: ProjectV7) {
+    project = p;
+    report = p.v7.report;
+    roster = p.v7.roster;
+    findings = orderFindings(p);
+    steers = [...p.v7.steers];
+    steering = null;
+  }
+
+  /** Where a project's world opens (switcher). */
+  function homeStep(p: ProjectV7): Partial<FlowStateV7> & { step: FlowStepV7 } {
+    const l = Math.max(levels[p.id] ?? 0, p.level);
+    if (l >= 3) return { step: "district" };
+    if (l === 2) return { step: "building" };
+    if (l === 1) return { step: p.legacy && (levels[p.id] ?? 0) >= 2 ? "live" : "floor" };
+    return p.v7.report ? { step: "report", page: "score" } : { step: "idea" };
+  }
+
+  async function doSteer(note: string) {
+    if (steering?.status === "working" || steers.length >= STEER_LIMIT) return;
+    const tok = run;
+    const res = mockSteer({ ...project, v7: { ...project.v7, report, steers } }, note.trim().slice(0, 280));
+    steering = { ...res, status: "working" };
+    if (state.step !== "steer") set({ step: "steer", page: undefined });
+    else ping();
+    for (const id of res.rerun) world.setActorState(id, "working");
+    if (res.rerun[0]) void world.focusActor(res.rerun[0], { ms: 800 });
+    for (const a of res.hired) world.setActorState(a.id, "arriving");
+    await wait(T.steerWork);
+    if (!alive(tok)) return;
+    // apply: roster changes, replaced findings, new report
+    if (res.hired.length || res.dropped.length) {
+      roster = [...roster.filter((a) => !res.dropped.includes(a.id)), ...res.hired];
+      world.setRoster(roster);
+    }
+    for (const f of res.findings) {
+      const i = f.replaces ? findings.findIndex((x) => x.id === f.replaces) : -1;
+      if (i >= 0) findings[i] = f;
+      else findings.push(f);
+    }
+    findings = [...findings];
+    revealed = findings.length;
+    if (res.report) report = res.report;
+    world.setLevelCap(cap());
+    for (const id of res.rerun) world.setActorState(id, "done");
+    for (const f of res.findings) world.pulse(f.analyst, f.kind);
+    void world.focusActor("overview", { ms: 900 });
+    steering = { ...res, status: "done" };
+    steers = [...steers, steering];
+    ping();
+  }
+
+  const flow: ProtoFlowV7 = {
+    get state() { return state; },
+    get settled() { return settled; },
+    get project() { return project; },
+    get report() { return report; },
+    get roster() { return roster; },
+    get findings() { return findings; },
+    get revealed() { return revealed; },
+    get hired() { return hired; },
+    get cap() { return cap(); },
+    get baseCap() { return baseCap(); },
+    get paidCents() { return paid; },
+    get steers() { return steers; },
+    get steering() { return steering; },
+    get steersLeft() { return Math.max(0, STEER_LIMIT - steers.length); },
+    get workStart() { return workStart; },
+    get workMs() { return T.buildWork; },
+    get demo() { return demo; },
+    get reduced() { return reduced; },
+    get moving() { return moving; },
+    get projects() { return PROJECTS_V7; },
+    get chosenPath() { return committed[project.id] ?? null; },
+    commitPath(i) {
+      committed = { ...committed, [project.id]: i };
+      world.setLevelCap(cap());
+      const st = state.step;
+      if (st === "building" || st === "district") enter({ step: st }, true);
+      else ping();
     },
-    get settled() {
-      return settled;
+    levelOf: (id) => {
+      const p = PROJECTS_V7.find((x) => x.id === id);
+      return Math.max(levels[id] ?? 0, p?.level ?? 0) as WorldLevel;
     },
-    get speed() {
-      return speed;
+    goto(s, o) {
+      enter(s, !!o?.animate);
     },
-    get workStart() {
-      return workStart;
+    setDemo(on) {
+      demo = on;
     },
-    get workMs() {
-      return WORK_MS / speed;
+    setTiming(t) {
+      T = { ...TIMING, ...t };
     },
-    get paidCents() {
-      return paid;
+    peek(i) {
+      if (i < 0 || i >= revealed) return;
+      set({ finding: i, analyst: findings[i]!.analyst });
     },
-    goto(s) {
-      cancel();
-      const level = s.level ?? LEVEL_OF[s.step];
-      let dept = s.dept;
-      let phase = s.phase;
-      if (s.step === "validate" || s.step === "build") {
-        const list = s.step === "validate" ? VALIDATE_DEPTS : BUILD_DEPTS;
-        if (!dept || !list.includes(dept)) dept = list[0];
-        phase = phase ?? "result";
-      } else {
-        dept = undefined;
-        phase = undefined;
-      }
-      const i = STEP_ORDER.indexOf(s.step);
-      paid = i >= STEP_ORDER.indexOf("build") ? 30 : i >= 3 ? 10 : 0;
-      workStart = performance.now();
-      const prev = state;
-      state = { idea: s.idea ?? state.idea, step: s.step, dept, phase, level };
-      settled = true;
-      paintDepts(state);
-      void world.setLevel(level, { animate: false });
-      const f = dept ?? (s.step === "pay-validate" || s.step === "pay-build" ? "lobby" : "overview");
-      void world.focus(f, { animate: false });
-      emit(prev);
-      if (s.step === "validate" || s.step === "build") {
-        if (phase === "working" && !opts.hold) {
-          const token = run;
-          void wait(WORK_MS).then(() => {
-            if (token !== run) return;
-            set({ phase: "result" }, true);
-            paintDepts(state);
-          });
-        }
-      }
-    },
-    async next(a?: FlowAction) {
+    next(a?: FlowActionV7) {
       const s = state.step;
-      const token = run;
-      if (!settled && !(s === "validate" || s === "build")) return;
-      if (s === "idle") return set({ step: "idea" }, true);
-      if (s === "idea" && a?.type === "submit-idea") {
-        set({ step: "pay-validate", idea: a.idea.trim() || IDEA }, false);
-        await world.focus("lobby", { ms: 900 });
-        return settle(token);
+      if (a?.type === "switch-project") {
+        const p = PROJECTS_V7.find((x) => x.id === a.id);
+        if (!p) return;
+        cancel();
+        useProject(p);
+        const home = homeStep(p);
+        paintProject(worldLevelFor(home.step));
+        return enter(home, false);
       }
-      if (s === "pay-validate" && a?.type === "approve-pay") {
-        paid = 10;
-        world.celebrate("paid");
-        emit(state);
-        await wait(700);
-        if (token !== run) return;
-        return enterDept("mia", "validate");
+      if (a?.type === "new-project") {
+        cancel();
+        useProject(SAMPLE_V7);
+        paid = 0;
+        return enter({ step: "idea" }, true);
       }
-      if ((s === "validate" || s === "build") && state.phase === "result") return advanceDept();
-      if (s === "verdict" && a?.type === "decide") {
-        if (a.choice === "stop") {
-          cancel();
-          return flow.goto({ step: "idle" });
+      if (a?.type === "steer") return void doSteer(a.note);
+      if (moving) return;
+      switch (s) {
+        case "bedroom":
+          return enter({ step: "idea" }, true);
+        case "idea":
+          if (a?.type === "submit-idea") return enter({ step: "pay1" }, true);
+          return;
+        case "pay1":
+          if (a?.type !== "approve-pay") return;
+          paid = 10;
+          world.celebrate("paid");
+          ping();
+          if (!demo) {
+            const tok = run;
+            void wait(900).then(() => alive(tok) && enter({ step: "hire" }, true));
+          }
+          return;
+        case "hire":
+          return enter({ step: "evidence" }, true);
+        case "evidence":
+          return enter({ step: "report", page: "score" }, true);
+        case "report": {
+          if (a?.type === "decide") return decide(a.choice);
+          const i = REPORT_PAGES.indexOf(state.page ?? "score");
+          if (i < REPORT_PAGES.length - 1) return set({ page: REPORT_PAGES[i + 1] });
+          return;
         }
-        if (a.choice === "pivot") return set({ step: "idea" }, true);
-        set({ step: "pay-build" }, false);
-        await world.focus("lobby", { ms: 1000 });
-        if (token !== run) return;
-        return settle(token);
+        case "steer":
+          if (a?.type === "decide") return decide(a.choice);
+          return enter({ step: "report", page: "next" }, false);
+        case "boom":
+          return enter({ step: "floor" }, true);
+        case "floor":
+          return enter({ step: "pay2" }, true);
+        case "pay2":
+          if (a?.type !== "approve-pay") return;
+          paid = 30;
+          world.celebrate("paid");
+          for (const b of BUILD_TEAM) world.setActorState(b, "arriving");
+          ping();
+          if (!demo) {
+            const tok = run;
+            void wait(1100).then(() => alive(tok) && enter({ step: "build", builder: "nova", phase: "working" }, true));
+          }
+          return;
+        case "build": {
+          if (state.phase !== "result") return;
+          const i = BUILD_TEAM.indexOf(state.builder ?? "nova");
+          const nb = BUILD_TEAM[i + 1];
+          return nb ? enter({ step: "build", builder: nb, phase: "working" }, true) : enter({ step: "live" }, true);
+        }
+        case "live":
+          return enter({ step: "building" }, true);
+        case "building":
+          return enter({ step: "district" }, true);
+        case "district":
+          return enter({ step: "end" }, true);
+        case "end":
+          if (a?.type === "submit-idea") {
+            useProject(SAMPLE_V7);
+            paint0();
+            return enter({ step: "pay1" }, true);
+          }
+          return;
       }
-      if (s === "level-up") {
-        set({ step: "live" }, false);
-        world.celebrate("live");
-        await hold(700);
-        if (token !== run) return;
-        return settle(token);
-      }
-      if (s === "pay-build" && a?.type === "approve-pay") {
-        paid = 30;
-        world.celebrate("paid");
-        paintDepts(state); // build rooms unlock
-        emit(state);
-        await wait(900);
-        if (token !== run) return;
-        return enterDept("nova", "build");
-      }
-      if (s === "live") {
-        set({ step: "scale", level: 3 }, false);
-        await world.setLevel(3);
-        return settle(token);
-      }
-    },
-    replay() {
-      flow.goto({ step: "idle" });
-      const token = run;
-      void wait(1200).then(() => token === run && flow.next());
-    },
-    setSpeed(x) {
-      speed = x;
     },
     onChange(cb) {
       cbs.add(cb);
       return () => cbs.delete(cb);
     },
   };
-  if (init?.step) flow.goto({ ...init, step: init.step });
-  else paintDepts(state);
+
+  function decide(c: "grow" | "pivot" | "stop") {
+    if (c === "grow") return cap() >= 1 ? enter({ step: "boom" }, true) : undefined;
+    if (c === "pivot") return enter({ step: "idea" }, true);
+    return enter({ step: "end" }, true);
+  }
+  function paint0() {
+    void world.setWorldLevel(0, { animate: false });
+  }
+
+  // boot
+  if (init?.step) {
+    const proj = PROJECTS_V7.find((x) => x.id === (init as { projectId?: string }).projectId);
+    if (proj) useProject(proj);
+    enter(init, !opts.hold && !reduced && init.step !== "report");
+  } else enter({ step: "bedroom" }, true);
   return flow;
 }
+
+/** Demo rows → the state goto() needs. */
+export const demoState = (row: (typeof DEMO_SCRIPT)[number]): Partial<FlowStateV7> & { step: FlowStepV7 } => ({
+  // row 0 is "the room, the idea types itself": the idea surface over the room, so judges see the input first
+  step: row.step === "bedroom" ? "idea" : row.step,
+  page: row.page,
+  builder: row.builder,
+  phase: row.builder ? "working" : undefined,
+});
+export { scoreDisplay };

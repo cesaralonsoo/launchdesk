@@ -139,7 +139,7 @@ export const PRODUCT_FONTS = {
   numbers: `"Inter Tight", "Inter", system-ui, sans-serif`,
 };
 
-/** Fonts, radii and glass physics. Colours come from themes/day.ts (they follow the day cycle). */
+/** Fonts, radii and glass physics. Colours: applyFixedUi() (v7, fixed). */
 export function applyBase(root: HTMLElement = document.documentElement): void {
   if (!document.head.querySelector("link[data-font='product']")) {
     const l = document.createElement("link");
@@ -154,4 +154,39 @@ export function applyBase(root: HTMLElement = document.documentElement): void {
   };
   for (const [k, val] of Object.entries(v)) root.style.setProperty(k, val);
   root.dataset.theme = "product";
+}
+
+// ───────────────────────────── v7: one fixed light UI (refined Graphite)
+/** v7 (contract f): the UI never follows the day cycle. Only the 3D scene changes with the hour; panels, text and the
+ *  logo stay exactly the same at noon and at midnight. Glass fill ≥ 0.9 so a night sky never darkens a panel. */
+export const UI_TOKENS: Record<string, string> = {
+  "--c-bg": "#E9ECF0",
+  "--c-sky": "#E6EAF0",
+  "--c-glass": "rgba(255,255,255,0.95)",
+  "--c-glass-strong": "rgba(255,255,255,0.985)",
+  "--c-surface": "#FFFFFF",
+  "--c-ink": "#0B0D12",
+  "--c-muted": "#5B6371",
+  "--c-line": "rgba(11,13,18,0.09)",
+  "--c-fill": "rgba(11,13,18,0.05)",
+  "--c-accent": "#0B0D12",
+  "--c-accent-ink": "#FFFFFF",
+  "--c-money": "#0AC18E",
+  "--c-money-ink": "#06855F",
+  "--c-positive": "#05875F",
+  "--c-warning": "#A15C00",
+  "--c-negative": "#C2352A",
+  "--glass-border": "rgba(255,255,255,0.75)",
+  "--glass-shadow": "0 1px 1px rgba(11,13,18,.05), 0 18px 50px -12px rgba(11,13,18,.28)",
+  "--glass-hi": "rgba(255,255,255,0.6)",
+};
+
+/** Fonts + the fixed tokens. Called once at boot; nothing writes colour tokens afterwards. */
+export function applyFixedUi(root: HTMLElement = document.documentElement): void {
+  applyBase(root);
+  // owner update: pixel art is only a subtle touch (logo grid, level glyphs, meters); labels use the product type
+  root.style.setProperty("--font-pixel", PRODUCT_FONTS.display);
+  for (const [k, v] of Object.entries(UI_TOKENS)) root.style.setProperty(k, v);
+  root.dataset.scheme = "light";
+  root.style.colorScheme = "light";
 }

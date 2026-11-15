@@ -86,3 +86,98 @@ capped at 7.5. Interviews decide." (v6 polish: any signal without a `source_id` 
 - Memo `verdict_line` always quotes the break-even pace; low-confidence Go reads "Go, to test".
 - Rae's offer posts start in the pre-order week (day 15 for Pausa), never before.
 - Regenerate with the scratchpad copy of `gen.mts` (MOCK_AI=1); no figure in these files is a real-world statistic.
+
+---
+
+# v7 sample worlds (WS-INTEL)
+
+## Files and exports
+
+- `data/v7/{pausa,tique,ronda,forn}.json` are generated and never edited by hand. Regenerate with `MOCK_AI=1 DATABASE_URL=:memory: npx tsx server/seed/gen-v7.ts`. They come from `server/v7-samples.ts` and go through the server's own `buildReport` and `applySteer`. `test/v7.test.ts` fails if the JSON is stale.
+- `data/v7.ts` exports:
+  - `SAMPLE_V7`: Pausa, "Metro coffee kiosk". It starts at level 0, and `legacy` is `data/pausa.json`.
+  - `PROJECTS_V7`, in the order `[pausa, forn, ronda, tique]`.
+  - `DEMO_STEER_NOTE` and `preparedSteers(id)`.
+  - `mockSteer(p, note, target?)` and `applySteerToProject(p, s)`.
+  - `findingsInOrder(p)` and `brandSignOf(p)`.
+
+| id | idea | roster (reveal order) | score | verdict | scale | cap | level | evidence (sourced/total) |
+|---|---|---|---|---|---|---|---|---|
+| pausa | coffee kiosk at a Barcelona metro exit | competition, market, location, viability | 5.5 | pivot | 4.3 | 2 | 0 | 11/13 |
+| forn | sourdough bakery in Gràcia | competition, market, viability | 4.5 | pivot | 2.6 | 1 | 1 | 7/11 |
+| ronda | Madrid dog-walking app | demand, competition, regulation, viability | 5.0 | pivot | 4.7 | 2 | 2 | 5/10 |
+| tique | Verifactu tickets for market traders | competition, market, regulation, tech, viability | 5.3 | pivot | 8.5 | 3 | 3 | 10/15 |
+
+All four samples come out as pivot. That is the honest result of the rule, not a choice we made. The bakery is capped at the floor (cap 1), so it never gets a district.
+
+## Hero element per screen (one thing at a time)
+
+1. **Bedroom / idea:** the idea sentence, typed in the founder's room.
+2. **Hire:** one analyst card at a time, in roster order, with the role name and its `why` line.
+3. **Evidence:** one finding chip at a time. The headline is the claim; the publisher domain and access date sit below it for a `source`, or the basis for an estimate. Sourced chips show the domain; estimates are labelled "estimate".
+4. **Report page 1, score:** `scoreDisplay(score)` large, plus the verdict word. The `math` line is small underneath.
+5. **Report page 2, scale:** the scalability score and the level cap. Use `why` as the line, the five weighted parts as the detail, and `toScale` as the call to action.
+6. **Report page 3, points:** strengths and weak points. Each one points at a finding id, so tapping it reopens the chip with its source.
+7. **Next / steer:** next steps and the CEO note box. Use `preparedSteers` as suggestion chips. The district ghost and padlock appear above the cap.
+
+## Reveal order
+
+- Findings play in `findingsInOrder(p)` order: roster order, then `t`. Within an analyst, `t = 1400 + 2600·i` ms (`paced`).
+- Findings merged by a steer are shifted to `last + 2600·(i+1)`, so they play after the findings that were kept.
+- A steer's `changes` are the diff to animate as before→after.
+
+## Scoring (computed, never typed)
+
+- **Factor:** clamp(5 + Σ impact × step, 0, 10). The step is 1.0 for a sourced finding and 0.5 for an estimate. A factor with no sourced finding is capped at 7.5.
+- **Score:** Σ normalised weight × factor, rounded to one decimal.
+- **Verdict:**
+  - Go: 6.5 or above, with no factor at 3 or below.
+  - Pivot: 4.5 to below 6.5.
+  - No-go: below 4.5.
+- **Scalability:** Reach .25, Repeatable .2, Margins .2, Founder-free .15, Digital .2. The cap comes from `levelCapFor`.
+
+## Prepared steers (demo)
+
+- **pausa "office"**: `DEMO_STEER_NOTE`, "Focus on office workers, not tourists, and start as a stand." It reruns location and viability and adds the sourced TMB stands finding. Location goes 7 → 8, viability 4.5 → 5.5, and the score 5.5 → 5.9.
+- **pausa "online"**: "Could we also sell our beans online to regulars?" Digital leverage goes up and scalability moves 4.3 → 4.7. This one is an estimate.
+- **tique "associations"**: "Sell to market associations, not one trader at a time."
+- **Any other note:** an honest no-op with `changes: []` and the ack "Noted. The prototype can't research new evidence for that." The server does the same in MOCK_AI.
+
+## Real sources (all opened by WS-INTEL, accessed 2026-11-15)
+
+- **Coffee:**
+  - TMB 2024 station ranking (noticies.tmb.cat).
+  - Ara English on 700.5M TMB journeys in 2025 (en.ara.cat).
+  - TMB first "paradeta" at Sagrera (noticies.tmb.cat).
+  - TMB Vall d'Hebron tender sheet (tmb.cat PDF).
+  - TMB stands page (tmb.cat).
+  - Time Out Barcelona on coffee prices, 9 May 2024.
+  - ARA "El mapa del cortado".
+  - World Coffee Portal on Syra Coffee and the Spanish branded coffee market.
+- **Tique:**
+  - LegalToday on RDL 15/2025.
+  - wwwhatsnew on the Verifactu delay, 6 Oct 2026.
+  - AEAT free Verifactu app page.
+  - oie.es invoicing-software comparator.
+  - Invoo pricing.
+  - Forbes España on UPTA's self-employed count.
+  - Junta de Andalucía Plan de Comercio Ambulante.
+- **Bakery:**
+  - Euronews on Spanish bread consumption, 8 Nov 2025.
+  - lexpress-franchise on Spanish artisan bakeries.
+  - Corresponsables on the Puratos/ASEMAC survey.
+  - Interempresas on Puratos Taste Tomorrow, 11 Dec 2024.
+- **Dog:**
+  - El Español on dogs in Madrid, 29 Jan 2026.
+  - Consumer EROSKI on dog-walking apps, 17 Sep 2022.
+  - Ministry of Social Rights animal-welfare-law FAQ (PDF).
+  - Vozpópuli on the pending course and insurance, 4 Jan 2025.
+
+The full url, title and domain for each one live in `server/v7-samples.ts` (`SOURCES`). Every `source` object in the JSON equals a registry entry; the test checks this.
+
+## Honesty rules (v7)
+
+- A fact or number without a source becomes `kind: "estimate"` with a `basis` (`enforceSourceRule`).
+- A competitor without a source gets `named: false`.
+- Sources come only from research citations. The server copies them from the research list by `source_id` and never takes a URL the model wrote.
+- Demo-mode findings for unknown ideas say "Demo mode: no web search, check it".

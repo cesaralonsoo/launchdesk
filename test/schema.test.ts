@@ -169,4 +169,5 @@ assert.equal(slugify("Cafè Andén!"), "cafe-anden");
 assert.equal(slugify("   "), "");
 
 await import("./quality.test.js");
+await import("./v7.test.ts");
 console.log("schemas and sanitizers: all passed");

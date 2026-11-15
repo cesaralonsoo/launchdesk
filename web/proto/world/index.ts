@@ -1,18 +1,27 @@
-// WS-B · World composition: renderer, lights, sky, fog, diorama base, camera rig, insets framing,
-// level 2 (tower) and level 3 (district) with one continuous pull-back, atmosphere tweens, celebrations.
-// Contract: World in ../contracts.ts. Extras (additive, typed below): setDistrictBuilt, debugPose, camera.
+// WS-B / WS-WORLD · World composition: renderer, lights, sky, fog, diorama base, camera rig, insets framing.
+// v7: level 0 = the founder's room (bedroom model on the lobby footprint) → BOOM → level 1 office floor → level 2
+// building → level 3 district, capped by the idea's scalability (the next level shows as a dashed ghost with a
+// padlock). Pixel-art canvas pass (?pixel=0..2), actors/roster/sign forwarded to the bedroom + office, one world per
+// project (setProject crossfades). Contract: WorldV7 in ../contracts.ts. Extras (additive): WorldExtras below.
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import {
-  READY_ATTR, ROOM_META, readParams, type AtmospherePreset, type ClockMode, type DayClockInfo, type PortfolioItem, type CreateWorld, type Dept, type DeptState, type FocusTarget, type Insets, type Level, type Room, type World, type WorldOptions,
+  BEDROOM_FOOTPRINT, BOOM_MS, BUILD_TEAM, FLOOR_PLAN, READY_ATTR, ROOM_META, levelTransition, readParams, seatOf,
+  type ActorId, type ActorState, type Analyst, type AtmospherePreset, type BedroomModel, type ClockMode, type CreateBedroomModel, type CompanySign, type DayClockInfo, type Dept, type DeptState,
+  type FindingKind, type FloorRoom, type FocusTarget, type Insets, type Level, type OfficeModel, type OfficeModelV7, type PortfolioItem, type Room, type WorldLevel,
+  type WorldOptions, type WorldProject, type WorldV7,
 } from "../contracts";
+import { createBedroomModel } from "./bedroom";
+import { BOOM, createBoomFx } from "./boom";
 import { Drift, FOV, applyShot, cloneShot, easeInOut, easeLevel, easeOutward, fitShot, levelAngles, lerpShot, roomAngles, type Shot } from "./camera";
 import { createBase, createDistrict, type District } from "./levels/district";
+import { createGhost, type GhostKind } from "./levels/ghost";
 import { Y0, clamp01, disposeFacades, win } from "./levels/kit";
 import type { Palette } from "./levels/palette";
-import { createTower, type Tower } from "./levels/tower";
+import { FLOORS, FLOOR_H, createTower, type Tower } from "./levels/tower";
 import { createOfficeModel } from "./office";
 import { DayClock, clockInfo, createDayCycle, type DayState } from "./daycycle";
+import { createPixelPass, readPixelMode, type PixelMode } from "./pixel";
 import { createSky } from "./sky";
 
 /** Additive extras on top of the frozen World contract (see CONTRACTS.md, "Changes by ws-b-levels"). */
@@ -32,7 +41,31 @@ export interface WorldExtras {
   clockMode(): ClockMode;
   /** Debug handles for scripts (not for product code). */
   readonly debug: { renderer: THREE.WebGLRenderer; scene: THREE.Scene; key: THREE.DirectionalLight; state(): unknown };
+  // ── v7 extras
+  /** Screen point (CSS px) of the padlock over the locked-level ghost, for a "why it stops here" tag. null = no ghost. */
+  ghostScreenPoint(): { x: number; y: number } | null;
+  /** Which ghost is showing (the level a bigger idea would unlock), or null. */
+  ghostLevel(): WorldLevel | null;
+  /** Current pixel-art mode (?pixel=0..2) and a live switch. */
+  readonly pixel: PixelMode;
+  setPixel(m: PixelMode): void;
+  /** Screenshot helper: pose the 0 → 1 boom at `ms` (0…BOOM_MS), no animation. */
+  debugBoom(ms: number): void;
+  readonly levelCap: WorldLevel;
 }
+
+/** v7 options (additive): `worldLevel` (initial, default `level` ?? 1) and `pixel` (default ?pixel= or 1). */
+export type WorldOptionsV7 = WorldOptions & { worldLevel?: WorldLevel; pixel?: PixelMode; /** dev: inject a room model (harness) */ createBedroom?: CreateBedroomModel };
+export type WorldX = WorldV7 & WorldExtras;
+type Office = OfficeModel & Partial<OfficeModelV7>;
+
+/** Floor rooms → v6 office rooms (same 4 × 2 grid) — used only while the office has no v7 methods. */
+const FLOOR_TO_ROOM: Record<FloorRoom, Room> = { r0: "mia", r1: "leo", r2: "sam", r3: "nova", lobby: "lobby", nova: "dex", dex: "rae", launch: "pip" };
+const ROOM_TO_FLOOR = Object.fromEntries(Object.entries(FLOOR_TO_ROOM).map(([f, r]) => [r, f])) as Record<Room, FloorRoom>;
+const STATE_V6: Record<ActorState, DeptState> = { absent: "locked", arriving: "working", idle: "idle", working: "working", presenting: "working", done: "done", asleep: "locked" };
+const GHOST_FOR: Record<number, GhostKind> = { 0: "floor", 1: "tower", 2: "district" };
+/** The office root's resting transform (identity). Framing and ghosts use it, never the mid-boom scale. */
+const OFFICE_REST = new THREE.Matrix4();
 
 /** city = planned massing rising, solid = its clay goes from ghost to solid (both 0 at level 2, 1 at level 3). */
 type Growth = { tower: number; ground: number; city: number; solid: number };
@@ -42,16 +75,18 @@ const GROWTH: Record<Level, Growth> = {
   3: { tower: 1, ground: 1, city: 1, solid: 1 },
 };
 
-export const createWorld: CreateWorld = (host, opts) => createWorldX(host, opts);
+/** v7: returns the WorldV7 directly (the tech-lead adapter in v7.ts is now a pass-through). */
+export const createWorld = (host: HTMLElement, opts: WorldOptionsV7): WorldX => createWorldX(host, opts);
 
-export function createWorldX(host: HTMLElement, opts: WorldOptions): World & WorldExtras {
+export function createWorldX(host: HTMLElement, opts: WorldOptionsV7): WorldX {
   const q = new URLSearchParams(location.search);
   const high = opts.quality === "high";
   const reduced = !!opts.reducedMotion;
+  const pixelMode: PixelMode = opts.pixel ?? readPixelMode();
 
   // ── renderer: transparent canvas over a CSS sky gradient on the host
-  const renderer = new THREE.WebGLRenderer({ antialias: high, alpha: true, powerPreference: "high-performance" });
-  renderer.setPixelRatio(Math.min(high ? 2 : 1, devicePixelRatio || 1));
+  const renderer = new THREE.WebGLRenderer({ antialias: high && pixelMode === 0, alpha: true, powerPreference: "high-performance" });
+  const pixel = createPixelPass(renderer, { mode: pixelMode, quality: opts.quality });
   renderer.setClearColor(0x000000, 0);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.NeutralToneMapping;
@@ -77,8 +112,15 @@ export function createWorldX(host: HTMLElement, opts: WorldOptions): World & Wor
 
   const base = createBase({ quality: opts.quality });
   scene.add(base.root);
-  const office = createOfficeModel({ quality: opts.quality });
+  const officeOpts = { quality: opts.quality, still: reduced };
+  const office = createOfficeModel(officeOpts) as Office;
   scene.add(office.root);
+  // v7 level 0: the founder's room sits exactly on the lobby footprint (office-root coordinates)
+  const bedroom: BedroomModel = (opts.createBedroom ?? createBedroomModel)({ quality: opts.quality, still: reduced });
+  bedroom.root.position.set(BEDROOM_FOOTPRINT.cx, 0, BEDROOM_FOOTPRINT.cz);
+  scene.add(bedroom.root);
+  const fx = createBoomFx();
+  scene.add(fx.root);
 
   // lazily built levels
   let tower: Tower | null = null;
@@ -98,7 +140,7 @@ export function createWorldX(host: HTMLElement, opts: WorldOptions): World & Wor
   }
   const officeShadow = office.root.getObjectByName("office-ground-shadow");
   function paintGrowth() {
-    if (officeShadow) officeShadow.visible = growth.tower < 0.03;
+    if (officeShadow && !office.setReveal) officeShadow.visible = growth.tower < 0.03;
     base.setPresence(Math.min(1, growth.ground * 2.5));
     if (!tower || !district) return;
     tower.setGrowth(growth.tower);
@@ -123,9 +165,14 @@ export function createWorldX(host: HTMLElement, opts: WorldOptions): World & Wor
   const deptStates = new Map<Dept, DeptState>();
 
   // ── state
-  let level: Level = opts.level ?? 1;
+  /** v7 world level actually built (≤ cap) · `asked` = what the flow asked for (> wl ⇒ the ghost of wl+1 shows). */
+  let wl: WorldLevel = opts.worldLevel ?? opts.level ?? 1;
+  let asked: WorldLevel = wl;
+  let cap: WorldLevel = 3;
+  /** v6 growth level (the room is drawn on top of a level-1 growth state). */
+  let level: Level = Math.max(1, wl) as Level;
   let insets: Insets = { left: 0, right: 0, top: 0, bottom: 0 };
-  let focusT: FocusTarget = "overview";
+  let focusT: Focus = "overview";
   let w = 1, h = 1;
   const cur: Shot = { target: new THREE.Vector3(), dist: 60, yaw: 0.6, pitch: 0.7 };
   type Anim = { from: Shot; to: Shot; t0: number; ms: number; ease: (k: number) => number; arc: number; done: () => void; g0?: Growth; g1?: Growth; up?: boolean };
@@ -139,6 +186,29 @@ export function createWorldX(host: HTMLElement, opts: WorldOptions): World & Wor
   const drift = new Drift();
   drift.enabled = !reduced;
   const clickCbs = new Set<(r: Room) => void>();
+  const actorCbs = new Set<(id: ActorId) => void>();
+  let roster: readonly Analyst[] = [];
+  const actorStates = new Map<ActorId, ActorState>();
+  let sign: CompanySign | null = null;
+  /** 0 = the room is intact and the floor hidden · 1 = the floor is complete and the room gone. */
+  let boomK = wl === 0 ? 0 : 1;
+  let boom: { t0: number; from: Shot; done: () => void } | null = null;
+  let fade: { t0: number; ms: number; mid: (() => void) | null; done: () => void } | null = null;
+  const ghost = createGhost(
+    {
+      floor: () => {
+        const rooms = (Object.keys(FLOOR_PLAN) as FloorRoom[]).filter((r) => r !== "lobby");
+        return rooms.map((r) => floorBounds(r).applyMatrix4(OFFICE_REST));
+      },
+      tower: () => [new THREE.Box3(new THREE.Vector3(-13.5, FLOOR_H - 0.55, -7.2), new THREE.Vector3(13.5, FLOORS * FLOOR_H - 0.55, 7.2))],
+      district: () => {
+        ensureLevels();
+        return district!.ghostBoxes();
+      },
+    },
+    { reduced },
+  );
+  scene.add(ghost.root);
   const camCbs = new Set<() => void>();
 
   // ── atmosphere = day cycle (lighting, sky, fog, palettes) × base preset (office surfaces, accent strength)
@@ -224,6 +294,9 @@ export function createWorldX(host: HTMLElement, opts: WorldOptions): World & Wor
     o.warmth = s.warmth;
     o.clockT = s.t;
     office.applyAtmosphere(o);
+    bedroom.applyAtmosphere(o);
+    ghost.setClay(pal.clay, s.night);
+    pixel.setInk(s.night);
     clockInfo(s, info);
     for (const cb of clockCbs) cb(info);
   }
@@ -264,23 +337,49 @@ export function createWorldX(host: HTMLElement, opts: WorldOptions): World & Wor
   }
 
   // ── framing
-  function boxFor(t: FocusTarget, lv: Level): THREE.Box3 | THREE.Vector3[] {
-    if (t !== "overview") return office.roomBounds(t).clone().applyMatrix4(office.root.matrixWorld);
-    if (lv === 1) return office.bounds().clone().applyMatrix4(office.root.matrixWorld);
+  /** Focus key: a v6 room / "overview", or `actor:<id>` (v7 focusActor). */
+  type Focus = FocusTarget | `actor:${string}`;
+  function floorBounds(r: FloorRoom): THREE.Box3 {
+    return (office.floorRoomBounds ? office.floorRoomBounds(r) : office.roomBounds(FLOOR_TO_ROOM[r])).clone();
+  }
+  function bedroomWorld(b: THREE.Box3) {
+    bedroom.root.updateMatrixWorld(true);
+    return b.applyMatrix4(bedroom.root.matrixWorld);
+  }
+  /** Framing box of one actor at the current world level. */
+  function actorBox(id: ActorId): THREE.Box3 {
+    if (wl === 0) return bedroomWorld(bedroom.focusBounds(id).clone());
+    const seat = seatOf(id, roster, 1);
+    return floorBounds(seat.room as FloorRoom).applyMatrix4(OFFICE_REST);
+  }
+  /** The level the camera frames: the built level, or the ghost above it when the flow asked past the cap. */
+  const viewLevel = (): WorldLevel => (asked > wl ? (Math.min(3, wl + 1) as WorldLevel) : wl);
+  function boxFor(t: FocusTarget, lv: Level | 0): THREE.Box3 | THREE.Vector3[] {
+    if (t !== "overview") return office.roomBounds(t).clone().applyMatrix4(OFFICE_REST);
+    if (lv === 0) return bedroomWorld(bedroom.bounds().clone());
+    if (lv === 1) return office.bounds().clone().applyMatrix4(OFFICE_REST);
     if (lv === 2) return new THREE.Box3(new THREE.Vector3(-24, Y0, -12), new THREE.Vector3(24, 12 * 3.2 + 6, 16));
     ensureLevels();
     return district!.framePoints();
   }
-  function shotFor(t: FocusTarget, lv: Level = level): Shot {
+  function shotFor(t: Focus, lv: WorldLevel = viewLevel()): Shot {
     const aspect = w / h;
+    if (t.startsWith("actor:")) {
+      const id = t.slice(6) as ActorId;
+      const b = actorBox(id).expandByVector(new THREE.Vector3(wl === 0 ? 0.35 : 0.8, 0, wl === 0 ? 0.35 : 0.8));
+      const c = b.getCenter(new THREE.Vector3());
+      const ang = wl === 0 ? levelAngles(0, aspect) : roomAngles(c.x, aspect);
+      return fitShot(b, ang.yaw, ang.pitch - (wl === 0 ? THREE.MathUtils.degToRad(4) : 0), w, h, insets, 0.12);
+    }
+    if (t !== "overview" && wl === 0) t = "overview"; // rooms only exist on the floor
     if (t !== "overview") {
-      const b = (boxFor(t, 1) as THREE.Box3).expandByVector(new THREE.Vector3(0.8, 0, 0.8));
+      const b = (boxFor(t as FocusTarget, 1) as THREE.Box3).expandByVector(new THREE.Vector3(0.8, 0, 0.8));
       const c = b.getCenter(new THREE.Vector3());
       const ang = roomAngles(c.x, aspect);
       return fitShot(b, ang.yaw, ang.pitch, w, h, insets, 0.12);
     }
     const ang = levelAngles(lv, aspect);
-    return fitShot(boxFor("overview", lv), ang.yaw, ang.pitch, w, h, insets, lv === 1 ? 0.06 : 0.04);
+    return fitShot(boxFor("overview", lv as Level | 0), ang.yaw, ang.pitch, w, h, insets, lv === 0 ? 0.1 : lv === 1 ? 0.06 : 0.04);
   }
 
   let pose = { dYaw: 0, dPitch: 0 };
@@ -396,26 +495,187 @@ export function createWorldX(host: HTMLElement, opts: WorldOptions): World & Wor
     const r = host.getBoundingClientRect();
     w = Math.max(1, r.width);
     h = Math.max(1, r.height);
-    renderer.setSize(w, h, false);
+    pixel.resize(w, h);
+    sky.setPixel(pixel.cssPx);
+    ghost.setViewport(w, h);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
     if (anim) anim.to = shotFor(focusT);
-    else void go(shotFor(focusT), { animate: false });
+    else if (!boom) void go(shotFor(focusT), { animate: false });
   }
   const ro = new ResizeObserver(resize);
   ro.observe(host);
 
-  // ── input: clicks on rooms, pointer parallax
+  // ── v7: the room ↔ floor reveal (boom), level snaps and crossfades
+  const G = (lv: WorldLevel) => GROWTH[Math.max(1, lv) as Level];
+  const LOBBY = new THREE.Vector3(BEDROOM_FOOTPRINT.cx, 0, BEDROOM_FOOTPRINT.cz);
+  /** Floor reveal: the office's own setReveal, or (until WS-OFFICE lands it) a slab that spreads out of the room. */
+  function revealOffice(k: number) {
+    if (office.setReveal) {
+      office.root.visible = true;
+      office.setReveal(k);
+      return;
+    }
+    office.root.visible = k > 0.001;
+    if (k >= 1) {
+      office.root.scale.set(1, 1, 1);
+      office.root.position.set(0, 0, 0);
+      return;
+    }
+    const e = easeOutward(win(k, 0, 0.6)), up = easeOutBack(win(k, 0.3, 0.7));
+    const sx = n(6 / 24.9, 1, e), sz = n(5 / 12.5, 1, e);
+    office.root.scale.set(sx, n(0.02, 1, up), sz);
+    office.root.position.set(LOBBY.x * (1 - sx), 0, LOBBY.z * (1 - sz));
+  }
+  function applyBoom(roomK: number, floorK: number) {
+    bedroom.setBoom(roomK);
+    bedroom.root.visible = roomK < 0.999;
+    revealOffice(floorK);
+  }
+  /** Snap every level-dependent piece to `lv` (no animation). */
+  function snapLevel(lv: WorldLevel) {
+    boom = null;
+    fx.clear();
+    wl = lv;
+    level = Math.max(1, lv) as Level;
+    boomK = lv === 0 ? 0 : 1;
+    applyBoom(lv === 0 ? 0 : 1, lv === 0 ? 0 : 1);
+    ghost.show(asked > wl ? GHOST_FOR[wl] ?? null : null, false);
+  }
+  /** Crossfade the canvas (the CSS sky stays): out, `mid()` snaps the new state, in. */
+  function crossfade(ms: number, mid: () => void): Promise<void> {
+    if (fade) {
+      fade.mid?.();
+      fade.done();
+    }
+    if (reduced && ms > 400) ms = 400;
+    return new Promise((done) => {
+      fade = { t0: performance.now(), ms, mid, done };
+      document.documentElement.dataset.busy = "1";
+    });
+  }
+  function founderPoint(): THREE.Vector3 | null {
+    const a = bedroom.actorAnchor("founder");
+    return a ? bedroom.root.localToWorld(a.clone()) : null;
+  }
+  function startBoom(): Promise<void> {
+    if (anim) {
+      const d = anim.done;
+      anim = null;
+      d();
+    }
+    const colors = ["#F2E6D3", "#E9DCC6", "#C9A27A", "#8C6A4F", "#0AC18E", "#FFFFFF", ...roster.map((a) => a.color)];
+    fx.arm(LOBBY.clone().add(office.root.position), { x: BEDROOM_FOOTPRINT.w / 2, z: BEDROOM_FOOTPRINT.d / 2 }, founderPoint(), colors);
+    return new Promise((done) => {
+      boom = { t0: performance.now(), from: cloneShot(cur), done };
+      document.documentElement.dataset.busy = "1";
+    });
+  }
+  const _shake = new THREE.Vector3();
+  let boomTo: Shot | null = null;
+  /** Deterministic boom pose at `ms` (also used by debugBoom). */
+  function poseBoom(ms: number, from: Shot) {
+    const roomK = easeInOut(win(ms, BOOM.roomFrom, BOOM.roomLen));
+    const floorK = win(ms, BOOM.floorFrom, BOOM.floorLen);
+    boomK = floorK;
+    applyBoom(roomK, floorK);
+    fx.pose(ms);
+    // camera: a short push-in (anticipation), then one smooth pull to the floor overview
+    boomTo = shotFor("overview", Math.max(1, viewLevel()) as WorldLevel);
+    const kc = win(ms, BOOM.camFrom, BOOM.camLen);
+    lerpShot(from, boomTo, easeOutward(kc), cur, 0.05);
+    const pre = ms < BOOM.pre ? Math.sin((ms / BOOM.pre) * Math.PI * 0.5) : Math.max(0, 1 - (ms - BOOM.pre) / 260);
+    cur.dist *= 1 - 0.045 * pre;
+    if (!reduced) cur.target.add(fx.shake(ms, _shake));
+  }
+  function finishBoom() {
+    if (!boom) return;
+    const d = boom.done;
+    boom = null;
+    fx.clear();
+    boomK = 1;
+    applyBoom(1, 1);
+    if (boomTo) {
+      cur.target.copy(boomTo.target);
+      cur.dist = boomTo.dist;
+      cur.yaw = boomTo.yaw;
+      cur.pitch = boomTo.pitch;
+    }
+    void go(shotFor(focusT), { animate: false });
+    d();
+  }
+
+  function setWorldLevel(l: WorldLevel, o?: { animate?: boolean }): Promise<void> {
+    const animate = (o?.animate ?? true) && !reduced;
+    const want = l;
+    const target = Math.min(l, cap) as WorldLevel;
+    const from = wl;
+    if (boom) finishBoom();
+    asked = want;
+    focusT = "overview";
+    const ghostKind = want > target ? GHOST_FOR[target] ?? null : null;
+    const tr = levelTransition(from, target);
+    if (from === target || tr === "pull" || tr === "push") {
+      wl = target;
+      level = Math.max(1, target) as Level;
+      ghost.show(ghostKind, animate);
+      const vl = viewLevel();
+      const ms = from === target ? (vl !== target ? 2400 : 1100) : levelMs(Math.max(1, from) as Level, level);
+      const ease = from === target ? easeInOut : target > from ? easeOutward : easeLevel;
+      return go(shotFor("overview", vl), { animate, ms, ease, growthTo: G(target) });
+    }
+    if (tr === "boom" && (o?.animate ?? true)) {
+      if (reduced) return crossfade(400, () => { snapLevel(target); setGrowthNow(G(target)); void go(shotFor("overview"), { animate: false }); });
+      wl = 1;
+      level = 1;
+      ghost.show(ghostKind, true);
+      setGrowthNow(G(1));
+      return startBoom();
+    }
+    // switch (0 ↔ 2/3, 1 → 0) or an instant boom: crossfade (or snap)
+    const apply = () => {
+      snapLevel(target);
+      ghost.show(ghostKind, false);
+      setGrowthNow(G(target));
+      void go(shotFor("overview"), { animate: false });
+    };
+    if (!(o?.animate ?? true)) {
+      apply();
+      return Promise.resolve();
+    }
+    return crossfade(reduced ? 400 : 700, apply);
+  }
+
+  // ── input: clicks on rooms / actors, pointer parallax
   const ray = new THREE.Raycaster();
+  const rayAt = (x: number, y: number) => ray.setFromCamera(new THREE.Vector2((x / w) * 2 - 1, -(y / h) * 2 + 1), camera);
   const toRoom = (x: number, y: number): Room | null => {
-    if (level !== 1) return null;
-    ray.setFromCamera(new THREE.Vector2((x / w) * 2 - 1, -(y / h) * 2 + 1), camera);
+    if (wl !== 1 || boom) return null;
+    rayAt(x, y);
     return office.pick(ray);
+  };
+  const toActor = (x: number, y: number): ActorId | null => {
+    if (boom || wl > 1) return null;
+    rayAt(x, y);
+    if (wl === 0) return bedroom.pickActor(ray);
+    if (office.pickActor) return office.pickActor(ray);
+    const room = office.pick(ray);
+    if (!room) return null;
+    const fr = ROOM_TO_FLOOR[room];
+    if (fr === "lobby") return "founder";
+    if (fr === "nova" || fr === "dex") return fr;
+    if (fr === "launch") return "pip";
+    return roster[+fr.slice(1)]?.id ?? null;
   };
   const onClick = (e: MouseEvent) => {
     const r = renderer.domElement.getBoundingClientRect();
-    const room = toRoom(e.clientX - r.left, e.clientY - r.top);
+    const x = e.clientX - r.left, y = e.clientY - r.top;
+    const room = toRoom(x, y);
     if (room) for (const cb of clickCbs) cb(room);
+    if (actorCbs.size) {
+      const id = toActor(x, y);
+      if (id) for (const cb of actorCbs) cb(id);
+    }
   };
   renderer.domElement.addEventListener("click", onClick);
   const onMove = (e: PointerEvent) => drift.pointer((e.clientX / innerWidth) * 2 - 1, (e.clientY / innerHeight) * 2 - 1);
@@ -461,10 +721,32 @@ export function createWorldX(host: HTMLElement, opts: WorldOptions): World & Wor
         a.done();
       }
     }
+    if (boom) {
+      const ms = now - boom.t0;
+      if (ms >= BOOM_MS) finishBoom();
+      else poseBoom(ms, boom.from);
+    }
+    if (fade) {
+      const k = Math.min(1, (now - fade.t0) / fade.ms);
+      if (k >= 0.5 && fade.mid) {
+        const m = fade.mid;
+        fade.mid = null;
+        m();
+      }
+      renderer.domElement.style.opacity = (k < 0.5 ? 1 - 2 * k : 2 * k - 1).toFixed(3);
+      if (k >= 1) {
+        const d = fade.done;
+        fade = null;
+        renderer.domElement.style.opacity = "";
+        d();
+      }
+    }
     const [dy, dp] = drift.step(dt, t);
     pose = { dYaw: dy, dPitch: dp };
     sync();
-    office.update(dt, t);
+    if (office.root.visible) office.update(dt, t);
+    if (bedroom.root.visible) bedroom.update(dt, t);
+    ghost.update(dt, t);
     if (Math.abs(workLight.intensity - workTarget) > 1e-3) workLight.intensity += (workTarget - workLight.intensity) * (reduced ? 1 : 1 - Math.exp(-dt * 3));
     tower?.update(dt, t);
     district?.update(dt, reduced ? 0 : t);
@@ -477,71 +759,215 @@ export function createWorldX(host: HTMLElement, opts: WorldOptions): World & Wor
         ring.visible = false;
       }
     }
-    renderer.render(scene, camera);
-    document.documentElement.dataset.busy = anim || builtAnim ? "1" : "0";
+    pixel.render(scene, camera);
+    document.documentElement.dataset.busy = anim || builtAnim || boom || fade ? "1" : "0";
     if (first) {
       first = false;
       document.documentElement.setAttribute(READY_ATTR, "1");
       // pre-build levels 2/3 while the user reads the idea popup, so the first pull-back never hitches
       const idle = (window as unknown as { requestIdleCallback?: (cb: () => void) => void }).requestIdleCallback ?? ((cb: () => void) => setTimeout(cb, 1200));
-      idle(() => ensureLevels());
+      idle(() => {
+        ensureLevels();
+        // warm every program the boom and the levels will need (hidden objects are skipped by compile)
+        const vis = [office.root, bedroom.root, fx.root, ghost.root, tower!.root, district!.ground, district!.city, base.root].map((o) => [o, o.visible] as const);
+        for (const [o] of vis) o.visible = true;
+        try {
+          pixel.compile(scene, camera);
+        } finally {
+          for (const [o, v] of vis) o.visible = v;
+        }
+      });
     }
   };
 
   // ── boot
   resize();
   setAtmosphere(opts.atmosphere);
-  setGrowthNow(GROWTH[level]);
+  snapLevel(wl);
+  setGrowthNow(G(wl));
   void go(shotFor("overview"), { animate: false });
   raf = requestAnimationFrame(tick);
 
   function pulseAt(room: Room) {
-    const b = office.roomBounds(room).clone().applyMatrix4(office.root.matrixWorld);
+    const b = office.roomBounds(room).clone().applyMatrix4(OFFICE_REST);
     const c = b.getCenter(new THREE.Vector3());
     ring.position.set(c.x, b.min.y + 0.03, c.z);
     ringMat.color.copy(pal.money);
     ring.visible = true;
     ringT = performance.now();
   }
+  const toScreen = (p: THREE.Vector3, m = 1.05) => {
+    p.project(camera);
+    if (p.z > 1 || Math.abs(p.x) > m || Math.abs(p.y) > m) return null;
+    return { x: ((p.x + 1) / 2) * w, y: ((1 - p.y) / 2) * h };
+  };
+  /** Work light over whoever is working on the floor (v6 dept rooms or v7 actors). */
+  function paintWorkLight() {
+    let box: THREE.Box3 | null = null, color = "#ffffff";
+    const v7 = [...actorStates].find(([, st]) => st === "working");
+    if (v7 && wl >= 1) {
+      const [id] = v7;
+      box = floorBounds(seatOf(id, roster, 1).room as FloorRoom).applyMatrix4(OFFICE_REST);
+      color = id === "founder" ? "#0AC18E" : (BUILD_TEAM as readonly string[]).includes(id) ? ROOM_META[id as Dept].color : roster.find((a) => a.id === id)?.color ?? "#ffffff";
+    } else {
+      const working = [...deptStates].find(([, st]) => st === "working")?.[0];
+      if (working && wl >= 1) {
+        box = office.roomBounds(working).clone().applyMatrix4(OFFICE_REST);
+        color = ROOM_META[working].color;
+      }
+    }
+    if (!box) {
+      workTarget = 0;
+      return;
+    }
+    const c = box.getCenter(new THREE.Vector3());
+    workLight.position.set(c.x, 2.4, c.z);
+    workLight.color.set(color);
+    workTarget = 3.2 + 1.8 * day.night;
+  }
+  /** v6 mapping of an actor onto a v6 dept room (only while the office has no v7 methods). */
+  function deptOf(id: ActorId): Dept | null {
+    if (id === "founder") return null;
+    const fr = seatOf(id, roster, 1).room as FloorRoom;
+    const r = FLOOR_TO_ROOM[fr];
+    return r === "lobby" ? null : (r as Dept);
+  }
 
-  const world: World & WorldExtras = {
+  const world: WorldX = {
     camera,
-    debug: { renderer, scene, key, state: () => ({ level, focusT, insets, w, h, cur: { t: cur.target.toArray(), d: cur.dist }, growth: { ...growth }, built: builtK }) },
+    debug: { renderer, scene, key, state: () => ({ wl, asked, cap, level, focusT, insets, w, h, boomK, ghost: ghost.kind, pixel: pixel.mode, cur: { t: cur.target.toArray(), d: cur.dist }, growth: { ...growth }, built: builtK }) },
     get level() {
       return level;
     },
+    get worldLevel() {
+      return wl;
+    },
+    get levelCap() {
+      return cap;
+    },
+    get pixel() {
+      return pixel.mode;
+    },
+    setPixel(m) {
+      pixel.setMode(m);
+      sky.setPixel(pixel.cssPx);
+    },
     setLevel(l, o) {
-      const from = level;
-      level = l;
-      focusT = "overview";
-      const animate = o?.animate ?? true;
-      const ms = levelMs(from, l);
-      return go(shotFor("overview", l), { animate, ms, ease: from === l ? easeInOut : l > from ? easeOutward : easeLevel, growthTo: GROWTH[l] });
+      return setWorldLevel(l, o);
+    },
+    setWorldLevel,
+    setLevelCap(c) {
+      // v7 owner update: a cap is not forever. Committing to a scale path raises it; if the flow already asked for a
+      // higher level, the world grows into the ghost right away (the ghost turns into the real thing).
+      const prev = cap;
+      cap = c;
+      if (wl > cap || (c > prev && asked > wl)) void setWorldLevel(asked);
+      else ghost.show(asked > wl && wl === cap ? GHOST_FOR[wl] ?? null : null, true);
     },
     focus(t, o) {
       const prev = focusT;
       focusT = t;
       const animate = o?.animate ?? true;
-      if (t !== "overview" && level !== 1) {
+      if (t !== "overview" && level !== 1 && wl !== 0) {
         // a room only exists inside the office: dive back in
         const from = level;
         level = 1;
+        wl = 1;
+        asked = 1;
+        ghost.show(null, animate);
         return go(shotFor(t, 1), { animate, ms: levelMs(from, 1), ease: easeLevel, growthTo: GROWTH[1] });
       }
       const sameKind = (t === "overview") === (prev === "overview");
       return go(shotFor(t), { animate, ms: o?.ms ?? 1100, arc: t !== "overview" && sameKind ? 0.035 : 0 });
     },
+    focusActor(id, o) {
+      if (id === "overview") return world.focus("overview", o);
+      if (wl >= 2) {
+        // an actor only exists inside the office: dive back in, then frame them
+        focusT = `actor:${id}`;
+        const from = level;
+        level = 1;
+        wl = 1;
+        asked = 1;
+        ghost.show(null, true);
+        return go(shotFor(focusT, 1), { animate: o?.animate ?? true, ms: levelMs(from, 1), ease: easeLevel, growthTo: GROWTH[1] });
+      }
+      const prev = focusT;
+      focusT = `actor:${id}`;
+      return go(shotFor(focusT), { animate: o?.animate ?? true, ms: o?.ms ?? 1100, arc: prev.startsWith("actor:") ? 0.03 : 0 });
+    },
     setDeptState(d: Dept, s: DeptState) {
       office.setDeptState(d, s);
       deptStates.set(d, s);
-      const working = [...deptStates].find(([, st]) => st === "working")?.[0];
-      if (working) {
-        const b = office.roomBounds(working).clone().applyMatrix4(office.root.matrixWorld);
-        const c = b.getCenter(new THREE.Vector3());
-        workLight.position.set(c.x, 2.4, c.z);
-        workLight.color.set(ROOM_META[working].color);
-        workTarget = 3.2 + 1.8 * day.night;
-      } else workTarget = 0;
+      paintWorkLight();
+    },
+    setRoster(r) {
+      roster = r.slice();
+      bedroom.setRoster(roster);
+      office.setRoster?.(roster);
+    },
+    setActorState(id, s, o) {
+      actorStates.set(id, s);
+      bedroom.setActorState(id, s, o);
+      if (office.setActorState) office.setActorState(id, s, o);
+      else {
+        const d = deptOf(id);
+        if (d) office.setDeptState(d, STATE_V6[s]);
+      }
+      paintWorkLight();
+    },
+    pulse(id: ActorId, kind: FindingKind) {
+      if (wl === 0) bedroom.pulse(id, kind);
+      else office.pulse?.(id, kind);
+    },
+    actorScreenPoint(id) {
+      if (wl >= 2 || growth.tower > 0.02 || boom) return null;
+      let p: THREE.Vector3 | null = null;
+      if (wl === 0) {
+        const a = bedroom.actorAnchor(id);
+        if (a) p = bedroom.root.localToWorld(a.clone());
+      } else {
+        const a = office.actorAnchor?.(id) ?? null;
+        if (a) p = office.root.localToWorld(a.clone());
+        else {
+          const d = id === "founder" ? "lobby" : deptOf(id);
+          if (d) p = office.root.localToWorld((office.anchor?.(d) ?? office.roomBounds(d).getCenter(new THREE.Vector3())).clone());
+        }
+      }
+      return p ? toScreen(p) : null;
+    },
+    onActorClick(cb) {
+      actorCbs.add(cb);
+      return () => actorCbs.delete(cb);
+    },
+    setSign(s: CompanySign) {
+      sign = s;
+      bedroom.setSign(s);
+      office.setSign?.(s);
+    },
+    setProject(p: WorldProject, o) {
+      const apply = () => {
+        cap = p.cap;
+        roster = p.roster.slice();
+        bedroom.setRoster(roster);
+        office.setRoster?.(roster);
+        actorStates.clear();
+        const set = (id: ActorId, s: ActorState) => world.setActorState(id, s, { instant: true });
+        set("founder", "idle");
+        for (const a of roster) set(a.id, p.level >= 1 ? "done" : "idle");
+        for (const b of BUILD_TEAM) set(b, p.builders.includes(b) ? (p.level >= 2 ? "done" : "idle") : "asleep");
+        world.setSign(p.sign);
+        asked = Math.min(p.level, cap) as WorldLevel;
+        focusT = "overview";
+        snapLevel(asked);
+        setGrowthNow(G(asked));
+        void go(shotFor("overview"), { animate: false });
+      };
+      if (o?.animate === false) {
+        apply();
+        return Promise.resolve();
+      }
+      return crossfade(reduced ? 400 : 600, apply);
     },
     setAtmosphere: (a) => setAtmosphere(a),
     setClock(c, o) {
@@ -566,16 +992,23 @@ export function createWorldX(host: HTMLElement, opts: WorldOptions): World & Wor
       if (!district || growth.city < 0.5) return [];
       const out: { id: string; x: number; y: number }[] = [];
       for (const a of district.portfolioAnchors()) {
-        _pp.copy(a.p).project(camera);
-        if (_pp.z > 1 || Math.abs(_pp.x) > 1 || Math.abs(_pp.y) > 1) continue;
-        out.push({ id: a.id, x: ((_pp.x + 1) / 2) * w, y: ((1 - _pp.y) / 2) * h });
+        const s = toScreen(_pp.copy(a.p), 1);
+        if (s) out.push({ id: a.id, ...s });
       }
       return out;
+    },
+    ghostScreenPoint() {
+      const a = ghost.anchor();
+      return a ? toScreen(a, 1) : null;
+    },
+    ghostLevel() {
+      return ghost.kind ? (({ floor: 1, tower: 2, district: 3 }) as const)[ghost.kind] : null;
     },
     clockMode: () => clock.current,
     setInsets(i) {
       if (i.left === insets.left && i.right === insets.right && i.top === insets.top && i.bottom === insets.bottom) return;
       insets = { ...i };
+      if (boom) return; // the boom re-reads the framing every frame
       if (anim) {
         anim.to = shotFor(focusT);
         return;
@@ -585,14 +1018,14 @@ export function createWorldX(host: HTMLElement, opts: WorldOptions): World & Wor
     celebrate(kind) {
       if (kind === "paid") {
         office.cheer("lobby");
-        if (level === 1) pulseAt("lobby");
+        if (wl <= 1) pulseAt("lobby");
       } else if (kind === "level-up") {
         office.cheer();
         if (tower && growth.tower >= 1 && !anim) tower.sweep();
         else pendingSweep = true;
       } else {
         office.cheer("pip");
-        if (level === 1) pulseAt("pip");
+        if (level === 1 && wl === 1) pulseAt("pip");
         beacon = true;
         ensureLevels();
         tower?.setBeacon(true, !reduced);
@@ -603,18 +1036,12 @@ export function createWorldX(host: HTMLElement, opts: WorldOptions): World & Wor
     },
     officeScreenPoint() {
       if (growth.tower < 0.5) return null;
-      const p = new THREE.Vector3(-8, Y0 - 0.2, 7.9); // front edge of the plinth, under the lobby entrance
-      p.project(camera);
-      if (p.z > 1 || Math.abs(p.x) > 1 || Math.abs(p.y) > 1) return null;
-      return { x: ((p.x + 1) / 2) * w, y: ((1 - p.y) / 2) * h };
+      return toScreen(new THREE.Vector3(-8, Y0 - 0.2, 7.9), 1); // front edge of the plinth, under the lobby entrance
     },
     roomScreenPoint(room) {
-      if (level !== 1 || growth.tower > 0.02) return null;
+      if (wl !== 1 || level !== 1 || growth.tower > 0.02) return null;
       const p = (office.anchor?.(room) ?? office.roomBounds(room).getCenter(new THREE.Vector3())).clone();
-      office.root.localToWorld(p);
-      p.project(camera);
-      if (p.z > 1 || Math.abs(p.x) > 1.05 || Math.abs(p.y) > 1.05) return null;
-      return { x: ((p.x + 1) / 2) * w, y: ((1 - p.y) / 2) * h };
+      return toScreen(office.root.localToWorld(p));
     },
     screenToRoom: toRoom,
     onRoomClick(cb) {
@@ -647,6 +1074,20 @@ export function createWorldX(host: HTMLElement, opts: WorldOptions): World & Wor
       const g = growthAt(GROWTH[from], GROWTH[to], clamp01(k), to > from);
       setGrowthNow(g);
       level = k >= 1 ? to : from;
+      wl = level;
+      asked = wl;
+      sync();
+    },
+    debugBoom(ms) {
+      anim = null;
+      boom = null;
+      asked = 1;
+      wl = 1;
+      level = 1;
+      setGrowthNow(G(1));
+      const colors = ["#F2E6D3", "#E9DCC6", "#C9A27A", "#8C6A4F", "#0AC18E", "#FFFFFF", ...roster.map((a) => a.color)];
+      fx.arm(LOBBY.clone(), { x: BEDROOM_FOOTPRINT.w / 2, z: BEDROOM_FOOTPRINT.d / 2 }, founderPoint(), colors);
+      poseBoom(Math.max(0, Math.min(BOOM_MS, ms)), shotFor("overview", 0));
       sync();
     },
     dispose() {
@@ -655,6 +1096,10 @@ export function createWorldX(host: HTMLElement, opts: WorldOptions): World & Wor
       window.removeEventListener("pointermove", onMove);
       renderer.domElement.removeEventListener("click", onClick);
       office.dispose();
+      bedroom.dispose();
+      fx.dispose();
+      ghost.dispose();
+      pixel.dispose();
       tower?.dispose();
       district?.dispose();
       base.dispose();
@@ -666,5 +1111,12 @@ export function createWorldX(host: HTMLElement, opts: WorldOptions): World & Wor
       renderer.domElement.remove();
     },
   };
+  void sign;
   return world;
+}
+
+/** Overshoot ease for things that pop up (rooms rising). */
+function easeOutBack(t: number) {
+  const c = 1.4;
+  return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2);
 }

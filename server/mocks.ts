@@ -9,7 +9,7 @@ import type { AiDept, DexV6, LeoDraft, MiaV6, ModelOut, NovaV6, SamDraftV6 } fro
 
 export const MOCK_IDEA = "A specialty coffee kiosk at a Barcelona metro exit, €3 flat whites for commuters";
 
-export type SampleKey = "coffee" | "dog" | "bikes" | "bread";
+export type SampleKey = "coffee" | "dog" | "bikes" | "bread" | "saas";
 type PostSeed = [day: number, channel: RaeLaunch["posts"][number]["channel"], time: string, format: RaeLaunch["posts"][number]["format"], hook: string, caption: string, cta: string];
 type Sample = {
   idea: string;
@@ -980,7 +980,215 @@ const games: ValidateSample = {
   }),
 };
 
-const SAMPLES: Record<SampleKey, Sample> = { coffee, dog, bikes, bread };
+
+// ---------------------------------------------------------------- Tique: Verifactu tickets for market traders (v7 district sample)
+// Prose here is the v4 department view of the v7 sample (server/v7-samples.ts holds the sourced findings). The v4
+// fields stay estimates (no source ids) like every v4 mock; the real pages are cited only in results.v7.
+
+const saas: Sample = {
+  idea: "A phone app that issues Verifactu-ready tickets and invoices for Spanish market traders, €6 a month",
+  mia: {
+    title: "Phone tickets for market traders",
+    one_liner: "Legal tickets from your phone at the stall, for €6 a month.",
+    brief: {
+      concept: "A phone app plus a pocket Bluetooth printer that issues Verifactu-ready tickets and invoices at a market stall, €6 a month.",
+      for: "Stallholders at weekly street markets in Andalusia who sell to the public and still write tickets by hand.",
+      goal: "Sign 50 paid first months from stallholders and one market association before building beyond the prototype.",
+    },
+    market: { city: null, country_iso: "ES", currency: "€", language: "en" },
+    gate: { metric: "paid first months", target: 50, by_week: 4 },
+    checklist: [
+      { week: 1, task: "Interview 15 stallholders at two weekly markets", how: "Ask how they issued their last ticket, what it cost and what their gestoría told them about Verifactu.", done_when: "15 logged; 6+ worried about the deadline", helped_by: "leo", est_hours: 6 },
+      { week: 1, task: "Ask a tax adviser which regimes need tickets", how: "Bring three real trader profiles and get the answer in writing.", done_when: "Written answer for three trader types", helped_by: "leo", est_hours: 2 },
+      { week: 1, task: "Call two market associations", how: "Ask how they share news with members and who decides on group deals.", done_when: "Two calls logged; one meeting booked", helped_by: null, est_hours: 2 },
+      { week: 2, task: "Demo a clickable prototype at one market", how: "Issue a test ticket on a real stall with a borrowed printer, timed.", done_when: "10 demos; median ticket under 20 seconds", helped_by: "dex", est_hours: 6 },
+      { week: 2, task: "Price printers and the compliance statement", how: "Get two printer quotes and one quote from a lawyer for the producer statement.", done_when: "Three written quotes", helped_by: "sam", est_hours: 2 },
+      { week: 3, task: "Send the pre-order page to every trader met", how: "Message interviewees and the association with the €4.80 first-year offer.", done_when: "Page sent to 80+ traders", helped_by: "pip", est_hours: 2 },
+      { week: 3, task: "Post the launch posts in trader groups", how: "Publish Rae's week-3 posts and answer every question the same day.", done_when: "Posts live; every message answered", helped_by: "rae", est_hours: 3 },
+      { week: 4, task: "Reach 50 paid first months", how: "Visit the two markets again and sign traders on the spot with the QR.", done_when: "50 first months paid on-chain", helped_by: "pip", est_hours: 6 },
+      { week: 4, task: "Decide: build the app or stop", how: "Compare paid months, demo times and the adviser's answer with Sam's break-even.", done_when: "Decision written down with the numbers", helped_by: "sam", est_hours: 2 },
+    ],
+  },
+  leo: {
+    score: 6.1,
+    verdict: "pivot",
+    headline: "Own tickets at the stall, not invoicing in general.",
+    summary: "The law creates demand and the free official app can't issue tickets, but general invoicing apps are cheap and the deadline keeps moving. A narrow ticket tool sold through associations is winnable.",
+    signals: [
+      sig("Demand", 6.8, "A legal deadline every trader will hear about"),
+      sig("Competition gap", 5.8, "Rivals invoice; few are built for a stall"),
+      sig("Price acceptance", 6.2, "€6 sits inside what invoicing apps charge"),
+      sig("Channel", 6.4, "Market associations reach whole markets at once"),
+      sig("Timing", 5.4, "Deadline announced for delay again"),
+    ],
+    why_go: "Traders will need compliant tickets, the free app doesn't do them, and associations can bring a whole market in one meeting.",
+    risks: [
+      { risk: "The deadline slips again and nobody buys early.", mitigation: "Sell speed at the stall, not compliance alone.", severity: "high" },
+      { risk: "Some traders may not need tickets at all.", mitigation: "Get a written answer from an adviser in week 1.", severity: "high" },
+      { risk: "Cheap invoicing apps add a ticket feature.", mitigation: "Win associations first; stay the stall specialist.", severity: "med" },
+    ],
+    pivot: { idea: "Sell through market associations as a group plan, €5 a stall.", why: "Fixes channel and price: one meeting signs a market instead of one trader." },
+    next_step: "Interview 15 stallholders at two markets this week: 6 worried about the deadline is the bar.",
+    market_facts: [
+      fact("Weekly street markets usually have dozens of stalls each."),
+      fact("Many stallholders still write tickets by hand or use a basic till."),
+      fact("Invoicing apps for the self-employed commonly cost €5 to €17 a month."),
+      fact("Pocket Bluetooth ticket printers usually cost under €100."),
+    ],
+    competitors: [
+      { name: "The free official invoicing app", note: "Free, but no simplified tickets", price: 0.5, differentiation: 3, url: null },
+      { name: "General invoicing apps", note: "Built for offices, not stalls", price: 5, differentiation: 5, url: null },
+      { name: "Shop tills (TPV)", note: "Pricey hardware, needs a counter", price: 8, differentiation: 6, url: null },
+      { name: "Handwritten tickets", note: "Free, not compliant once required", price: 0.5, differentiation: 1, url: null },
+    ],
+    you: { price: 4, differentiation: 8 },
+    interviews: {
+      who: "Stallholders who sell to the public at weekly markets",
+      where: "At two weekly markets before 9:00, while setting up",
+      questions: [
+        "How did you give your last customer a ticket?",
+        "What do you pay today for invoicing or a till?",
+        "What has your gestoría told you about Verifactu?",
+        "When did a customer last ask you for an invoice?",
+        "What happened the last time your till or printer failed?",
+      ],
+      good_sign: "They mention the deadline unprompted and already pay for something that half works.",
+      target: 15,
+    },
+    kill_criteria: [
+      "Stop if fewer than 6 of 15 stallholders worry about issuing compliant tickets.",
+      "Stop if the adviser says most traders here don't need tickets.",
+      "Stop if no association agrees to a trial in four weeks.",
+    ],
+  },
+  sam: {
+    currency: "€",
+    canvas: {
+      customer: "Stallholders at weekly markets who sell to the public",
+      value: "A legal ticket in 20 seconds from the phone",
+      revenue: "€6 a month per stall, card or BCH",
+      channels: "Market associations, markets themselves, gestorías",
+      costs: "Founder, hosting, printers stock, adviser and support",
+      unit_economics: "Each subscription leaves about €5.10 after payment fees and hosting",
+    },
+    assumptions: [
+      est("customers_per_day_m1", "Paid months billed a day, month 1", 2, "per day", "First association trial, 60 stalls"),
+      est("customers_per_day_m12", "Paid months billed a day, month 12", 40, "per day", "About 1,200 stalls across a few associations"),
+      est("avg_ticket", "Price per stall per month", 6, "€", "Within today's €5–17 invoicing range"),
+      est("gross_margin_pct", "Margin after fees and hosting", 85, "%", "Typical for small SaaS"),
+      est("fixed_costs_month", "Fixed costs a month", 2750, "€", "Sum of the four lines below"),
+      est("startup_cost", "Start-up cost", 9000, "€", "App build, compliance statement, demo printers"),
+      est("open_days_month", "Billing days a month", 30, "days", "Subscriptions renew every day of the month"),
+    ],
+    fixed_costs_breakdown: [
+      { label: "Founder, minimum pay", value: 1800 },
+      { label: "Hosting and records storage", value: 300 },
+      { label: "Market visits and printers stock", value: 400 },
+      { label: "Adviser and gestoría", value: 250 },
+    ],
+    price_note: "€6 a month per stall",
+    startup_note: "App build, compliance statement, demo printers",
+    main_risk: "How many traders must issue tickets decides everything: get an adviser's written answer for three trader types this week.",
+    launch_offer: { item: "First month for one stall", price: 4.8, normal_price: 6, limit: 100 },
+  },
+  nova: {
+    names: [
+      {
+        name: "Tique",
+        why: "How the market says 'ticket': short, local, and exactly what it does.",
+        tagline: "Your ticket, from your pocket.",
+        palette: [
+          { name: "Primary", hex: "#1B2430" },
+          { name: "Accent", hex: "#E8603C" },
+          { name: "Background", hex: "#F7F4EE" },
+          { name: "Extra", hex: "#4F8A6E" },
+        ],
+      },
+      {
+        name: "Puesto",
+        why: "The stall itself: the name tells traders it was built for them.",
+        tagline: "Built for the stall.",
+        palette: [
+          { name: "Primary", hex: "#22301F" },
+          { name: "Accent", hex: "#F2B33D" },
+          { name: "Background", hex: "#F5F2E9" },
+          { name: "Extra", hex: "#B5523B" },
+        ],
+      },
+      {
+        name: "Recibo",
+        why: "Plain and trusted: the word every customer asks for.",
+        tagline: "Legal tickets in seconds.",
+        palette: [
+          { name: "Primary", hex: "#1E2A38" },
+          { name: "Accent", hex: "#2E9C8F" },
+          { name: "Background", hex: "#F4F6F5" },
+          { name: "Extra", hex: "#D9653B" },
+        ],
+      },
+    ],
+    chosen: 0,
+    positioning: "For market stallholders who must issue legal tickets, Tique is the phone ticket app that prints one in 20 seconds at the stall.",
+    typography: { display: "Bricolage Grotesque", body: "Inter" },
+    voice: {
+      traits: ["Plain", "Quick", "Friendly", "Exact"],
+      rules: "Talk like a trader to a trader: short lines, real prices, one action.",
+      sample: "Ticket printed. Next customer.",
+    },
+  },
+  dex: {
+    logos: [
+      { concept: "The T monogram on a rounded tile in coral, like a printed ticket stub.", icon: "shop", shape: "monogram", monogram: "T", glyph: "tile", wordmark: { weight: 700, letter_spacing_em: -0.02, case: "title", mark: "monogram", placement: "left" } },
+      { concept: "Wordmark ending in a coral full stop: done, ticket issued.", icon: "shop", shape: "wordmark", monogram: "TQ", glyph: "stop", wordmark: { weight: 600, letter_spacing_em: -0.03, case: "lower", mark: "none", placement: "left" } },
+      { concept: "A ring crossed by a bar carrying the T: a market sign you spot from the aisle.", icon: "shop", shape: "emblem", monogram: "T", glyph: "roundel", wordmark: { weight: 700, letter_spacing_em: 0.1, case: "upper", mark: "monogram", placement: "above" } },
+    ],
+    landing: {
+      headline: "Legal tickets from your phone.",
+      subheadline: "Tique prints Verifactu-ready tickets and invoices at your market stall in seconds, for €6 a month.",
+      bullets: ["First month €4.80, then €6", "Works with a pocket printer", "Full refund if we don't launch"],
+      cta: "Pre-order for €4.80",
+      offer: "First 100 stall months at €4.80",
+      offer_price: 4.8,
+      normal_price: 6,
+      price_hint_usd: 5.2,
+      faq: [
+        { q: "What do I get, and when?", a: "Your first month of Tique for one stall when we launch; we message you the date." },
+        { q: "What if you never launch?", a: "We build only after 50 pre-orders. If we don't, every pre-order is refunded in full." },
+        { q: "Do I even need tickets?", a: "It depends on your VAT regime. We confirm it with an adviser before you pay a second month." },
+      ],
+      where_when: null,
+    },
+  },
+  rae: {
+    handle: "@tique.app",
+    posts: [
+      [1, "instagram", "08:00", "post", "How did you write your last ticket?", "We're visiting two weekly markets to ask stallholders how they issue tickets today. Tell us yours.", "Answer in the poll"],
+      [3, "linkedin", "09:00", "post", "Verifactu and the market stall", "The free official app can't issue simplified tickets. Stalls sell to the public. That's the gap we're testing.", "Follow the build"],
+      [5, "instagram", "08:00", "story", "Paper or phone?", "Quick poll for stallholders: paper tickets, a till, or nothing yet?", "Vote in the poll"],
+      [8, "tiktok", "19:00", "reel", "A legal ticket in 20 seconds?", "We timed a phone ticket at a real stall this morning. Here's the stopwatch, good and bad.", "Follow the build"],
+      [10, "instagram", "08:00", "carousel", "What 10 stallholders told us", "Ten demos at the market, the questions they asked and what we're changing.", "Follow for the result"],
+      [15, "instagram", "08:00", "post", "Pre-orders open: €4.80 first month", "The first 100 stall months at €4.80, then €6. We build at 50 pre-orders; if not, full refund.", "Pre-order yours"],
+      [16, "email", "08:00", "email", "Pre-orders are open", "You told us how you issue tickets today. Here's the €4.80 first-month offer and the refund rule.", "Pre-order now"],
+      [18, "linkedin", "09:00", "post", "Why we sell through associations", "One meeting with a market association reaches a whole market. Here's our method.", "Read the method"],
+      [22, "instagram", "08:00", "story", "Countdown to 50", "Every pre-order moves the bar. At 50 we build; under 50 everyone is refunded.", "Pre-order yours"],
+      [26, "email", "08:00", "email", "Last week at €4.80", "Pre-orders close on Saturday. After that Tique is €6 a month.", "Pre-order now"],
+    ],
+    first: [
+      [1, "08:00", "Question", "Your last ticket?", "We're visiting two weekly markets to ask stallholders how they issue tickets today: paper, a till, or nothing yet. Tell us yours in the poll."],
+      [3, "09:00", "The gap", "Tickets the free app can't do", "Hacienda's free Verifactu app issues full invoices, not simplified tickets. Market stalls sell to the public all day. We're testing a phone app for exactly that. Follow the build."],
+      [8, "19:00", "Stall test", "A ticket in 20 seconds?", "This morning we issued phone tickets at a real stall and timed every one. Here's the stopwatch, good and bad. Should we build it?"],
+    ],
+  },
+  memo: (r) => ({
+    purpose: "A phone app that issues Verifactu-ready tickets and invoices for market stallholders in Spain.",
+    problem: "Stallholders sell to the public all day and many still write tickets by hand. Verifactu will require compliant billing software, and the free official app can't issue simplified tickets.",
+    insight: "The gap is narrow and real: tickets at the stall. Associations can bring a whole market at once, which fixes the cost of finding each trader.",
+    verdict_line: `Pivot to associations: it needs ${be(r, 18)} paid stall months a day to break even, and the plan reaches ${m12(r, 40)} by month 12.`,
+    next_7_days: ["Interview 15 stallholders at two weekly markets", "Ask an adviser which regimes need tickets", "Book a meeting with one market association"],
+  }),
+};
+
+const SAMPLES: Record<SampleKey, Sample> = { coffee, dog, bikes, bread, saas };
 /** Validate-only samples: seeded into the prototype's "Your projects", never picked by sampleKey(). */
 export type ValidateOnlyKey = "games";
 const VALIDATE_ONLY: Record<ValidateOnlyKey, ValidateSample> = { games };
@@ -988,6 +1196,7 @@ const VALIDATE_ONLY: Record<ValidateOnlyKey, ValidateSample> = { games };
 /** R9: the sample closest to the idea text (chip sentences, or anything mentioning the same words). */
 export function sampleKey(idea?: string): SampleKey {
   const t = (idea ?? "").toLowerCase();
+  if (/\b(verifactu|invoice|invoices|invoicing|ticket|tickets|factura|facturas|mercadillos?|market traders?|saas)\b/.test(t)) return "saas";
   if (/\b(dog|dogs|walk|walker|walking|perro|perros|paseo|pet)\b/.test(t)) return "dog";
   if (/\b(bike|bikes|bicycle|cycling|bici|bicis|vintage)\b/.test(t)) return "bikes";
   if (/\b(bread|sourdough|baking|bake|bakery|pan|masa madre)\b/.test(t)) return "bread";

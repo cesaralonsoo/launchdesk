@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>LaunchDesk marks</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;650;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+body{margin:0;background:#E9ECF0;font:13px Inter,system-ui;color:#0B0D12}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;padding:24px}
+.c{border-radius:18px;overflow:hidden;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.c h3{margin:0;padding:14px 16px 0;font:600 14px "Inter Tight"}.c h3 small{color:#646B78;font-weight:500;margin-left:6px}
+.sw{padding:22px 16px;display:grid;gap:18px;justify-items:start}
+.sw.d{background:#0B0D12;color:#F2F4F7}
+.row{display:flex;gap:18px;align-items:end}
+.ld-logo{display:inline-flex;align-items:center;gap:calc(var(--ld)*.42)}
+.ld-word{font:650 calc(var(--ld)*.84)/1 "Inter Tight";letter-spacing:-.035em}
+.tab{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 12px;border-radius:9px 9px 0 0;background:#DEE1E6;font-size:12px}
+.d .tab{background:#23262D}
+.tab img{width:16px;height:16px;image-rendering:pixelated}
+.zoom{image-rendering:pixelated;width:64px;height:64px;border:1px dashed #ccd}
+.d .zoom{border-color:#333}
+p.note{padding:0 16px 16px;margin:0;color:#646B78;line-height:1.45}
+</style></head><body><div class="grid" id="g"></div>
+<script type="module">
+import { MARK_IDS, MARK_NAMES, ldLogo, ldMark, faviconHref } from "../logo.ts";
+const NOTES = {
+  skyline: "Room → floor → building in one stepped silhouette; the green pixel is the roof beacon the world lights when you go live. Reads at 16 px. Owns the growth story.",
+  desk: "A laptop on a desk: where every idea starts (the bedroom) and the 'Desk' in the name. Friendly, but the screen goes mushy at 16 px.",
+  window: "A facade with one lit window: your company, still working at night. Strong at 32 px, but at 16 px the 1-px holes read as noise and it says 'building', not 'grow'.",
+  prompt: "A terminal tile with a green cursor: 'type your idea'. Crisp at every size, but it says developer tool, not founder game.",
+};
+const g = document.getElementById("g");
+MARK_IDS.forEach((id, i) => {
+  const fav = faviconHref(id);
+  const sw = (cls) => `<div class="sw ${cls}">
+    <div>${ldLogo(24, id)}</div>
+    <div class="row">${ldMark(48, id, true)}${ldMark(32, id, true)}${ldMark(24, id, true)}${ldMark(16, id, true)}</div>
+    <div class="row"><span class="tab"><img src="${fav}" alt="">LaunchDesk</span></div>
+  </div>`;
+  g.insertAdjacentHTML("beforeend", `<div class="c"><h3>${i + 1} · ${MARK_NAMES[id]}<small>?logo=${i + 1}</small></h3>${sw("")}${sw("d")}<p class="note">${NOTES[id]}</p></div>`);
+});
+document.documentElement.dataset.ready = "1";
+</script></body></html>
