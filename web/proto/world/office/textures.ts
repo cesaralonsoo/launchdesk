@@ -75,38 +75,83 @@ export function plasterTex(): THREE.CanvasTexture {
   return t;
 }
 
-/** Wide light-oak planks (for the corridor / lobby). Greyscale-ish warm, multiplied by the material colour. */
+/** Oak planks with grain, knots and soft per-plank tone. Near-white, multiplied by the material colour. */
 export function planksTex(): THREE.CanvasTexture {
-  const t = canvasTex("planks", 512, 512, (g, w, h) => {
+  const t = canvasTex("planks2", 1024, 1024, (g, w, h) => {
     const r = rng(11);
     g.fillStyle = "#ffffff";
     g.fillRect(0, 0, w, h);
-    const rows = 8;
+    const rows = 10;
     const ph = h / rows;
     for (let i = 0; i < rows; i++) {
-      let x = -r() * 200;
+      let x = -r() * 400;
       while (x < w) {
-        const len = 180 + r() * 220;
+        const len = 420 + r() * 420;
         const tone = 0.93 + r() * 0.07;
         const c = Math.round(255 * tone);
-        g.fillStyle = `rgb(${c},${Math.round(c * 0.985)},${Math.round(c * 0.965)})`;
+        g.fillStyle = `rgb(${c},${Math.round(c * 0.975)},${Math.round(c * 0.94)})`;
         g.fillRect(x, i * ph, len, ph);
-        // grain
-        for (let k = 0; k < 9; k++) {
-          g.strokeStyle = `rgba(120,95,70,${0.025 + r() * 0.035})`;
-          g.lineWidth = 0.8 + r();
+        // long soft grain
+        for (let k = 0; k < 22; k++) {
+          g.strokeStyle = `rgba(110,80,50,${0.03 + r() * 0.06})`;
+          g.lineWidth = 0.6 + r() * 1.6;
           g.beginPath();
-          const y = i * ph + 4 + r() * (ph - 8);
+          const y = i * ph + 3 + r() * (ph - 6);
           g.moveTo(x, y);
-          g.bezierCurveTo(x + len * 0.3, y + (r() - 0.5) * 6, x + len * 0.7, y + (r() - 0.5) * 6, x + len, y);
+          g.bezierCurveTo(x + len * 0.3, y + (r() - 0.5) * 10, x + len * 0.7, y + (r() - 0.5) * 10, x + len, y + (r() - 0.5) * 4);
           g.stroke();
         }
-        g.fillStyle = "rgba(90,70,50,0.14)";
-        g.fillRect(x, i * ph, 1.5, ph);
+        // a cathedral figure now and then
+        if (r() < 0.45) {
+          const cx = x + len * (0.3 + r() * 0.4), cy = i * ph + ph / 2;
+          for (let k = 0; k < 5; k++) {
+            g.strokeStyle = `rgba(110,78,48,${0.05 + r() * 0.05})`;
+            g.lineWidth = 1;
+            g.beginPath();
+            g.ellipse(cx, cy, 30 + k * 22, 5 + k * 5, 0, 0, Math.PI * 2);
+            g.stroke();
+          }
+        }
+        g.fillStyle = "rgba(70,50,30,0.32)";
+        g.fillRect(x, i * ph, 2, ph);
         x += len;
       }
-      g.fillStyle = "rgba(90,70,50,0.16)";
-      g.fillRect(0, i * ph, w, 1.5);
+      g.fillStyle = "rgba(70,50,30,0.3)";
+      g.fillRect(0, i * ph, w, 2);
+      g.fillStyle = "rgba(255,255,255,0.25)";
+      g.fillRect(0, i * ph + 2, w, 1);
+    }
+  });
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return t;
+}
+
+/** Large-format mineral stone tiles (corridor): very fine noise, faint veining, hairline joints. */
+export function stoneTex(): THREE.CanvasTexture {
+  const t = canvasTex("stone", 512, 512, (g, w, h) => {
+    const r = rng(23);
+    g.fillStyle = "#ffffff";
+    g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 5000; i++) {
+      g.fillStyle = `rgba(90,82,74,${0.015 + r() * 0.03})`;
+      const s = 0.8 + r() * 1.8;
+      g.fillRect(r() * w, r() * h, s, s);
+    }
+    for (let i = 0; i < 18; i++) {
+      const grd = g.createRadialGradient(0, 0, 0, 0, 0, 70);
+      grd.addColorStop(0, "rgba(120,110,100,0.04)");
+      grd.addColorStop(1, "rgba(120,110,100,0)");
+      g.save();
+      g.translate(r() * w, r() * h);
+      g.fillStyle = grd;
+      g.fillRect(-70, -70, 140, 140);
+      g.restore();
+    }
+    // 2 × 2 tiles per texture repeat (≈ 1.6 m tiles), hairline joints
+    g.fillStyle = "rgba(80,72,64,0.22)";
+    for (const p of [0, w / 2]) {
+      g.fillRect(p, 0, 1.5, h);
+      g.fillRect(0, p, w, 1.5);
     }
   });
   t.wrapS = t.wrapT = THREE.RepeatWrapping;

@@ -23,10 +23,11 @@ const C = {
   metal: "#2C3037",
   steel: "#A9AEB6",
   fabric: "#D9D4CC",
-  leafA: "#4F8F5F",
-  leafB: "#3D7650",
-  leafC: "#70AC77",
-  pot: "#ECE7E0",
+  leafA: "#3E6E4B",
+  leafB: "#2F5A3C",
+  leafC: "#6E9A66",
+  leafD: "#527F55",
+  pot: "#E9E4DC",
   terracotta: "#C98463",
   potDark: "#3B3B3D",
   ink: "#1E2229",
@@ -42,16 +43,17 @@ export interface Furnished {
 
 // ─────────────────────────────────────────────── material shortcuts
 const fx = (c: Ctx, color: string, rough = 0.7, metal = 0) => c.R.m("fixed", c.room, c.color, { color, rough, metal });
-const accent = (c: Ctx, rough = 0.75) => c.R.m("accent", c.room, c.color, { rough });
-const accentSoft = (c: Ctx, rough = 0.85) => c.R.m("accentSoft", c.room, c.color, { rough });
+// two finishes per accent role (lacquer / fabric) keep the draw-call count low after baking
+const accent = (c: Ctx, rough = 0.75) => c.R.m("accent", c.room, c.color, { rough: rough < 0.6 ? 0.42 : 0.85 });
+const accentSoft = (c: Ctx, rough = 0.85) => c.R.m("accentSoft", c.room, c.color, { rough: rough < 0.6 ? 0.5 : 0.9 });
 const screen = (c: Ctx, t: THREE.Texture) => c.R.m("screen", c.room, c.color, { map: t });
 const lampShade = (c: Ctx) => c.R.m("lamp", c.room, c.color, { color: "#FBF4E6", rough: 0.5 });
 
 function shadowRect(c: Ctx, w: number, d: number, pos: P3, parent?: THREE.Object3D, o = 0.32, rotY = 0) {
-  c.B.decal(w, d, c.R.m("shadow", c.room, c.color, { map: softRectTex(), opacity: Math.min(0.6, o * 1.45) }), [pos[0], 0.006, pos[2]], parent, rotY);
+  c.B.decal(w, d, c.R.m("shadow", c.room, c.color, { map: softRectTex(), opacity: Math.min(0.72, o * 1.9) }), [pos[0], 0.006, pos[2]], parent, rotY);
 }
 function shadowRound(c: Ctx, r: number, pos: P3, parent?: THREE.Object3D, o = 0.3) {
-  c.B.decal(r * 2, r * 2, c.R.m("shadow", c.room, c.color, { map: radialTex(), opacity: Math.min(0.6, o * 1.45), key: "round" }), [pos[0], 0.007, pos[2]], parent);
+  c.B.decal(r * 2, r * 2, c.R.m("shadow", c.room, c.color, { map: radialTex(), opacity: Math.min(0.72, o * 1.9), key: "round" }), [pos[0], 0.007, pos[2]], parent);
 }
 function pool(c: Ctx, r: number, pos: P3, parent?: THREE.Object3D, o = 0.5) {
   c.B.decal(r * 2, r * 2, c.R.m("pool", c.room, c.color, { map: radialTex(), opacity: o }), [pos[0], 0.012, pos[2]], parent);
@@ -59,39 +61,81 @@ function pool(c: Ctx, r: number, pos: P3, parent?: THREE.Object3D, o = 0.5) {
 
 // ─────────────────────────────────────────────── pieces (built facing +Z, origin on the floor)
 
+let plantSeed = 1;
+function prng() {
+  plantSeed = (plantSeed * 16807) % 2147483647;
+  return (plantSeed - 1) / 2147483646;
+}
+
+/** One leaf: a flattened ellipsoid pointing along +Z of its own frame, tilted up by `pitch`, around Y by `yaw`. */
+function leaf(c: Ctx, parent: THREE.Object3D, m: THREE.Material, at: P3, yaw: number, pitch: number, len: number, wid: number) {
+  const g = c.B.sub(at, yaw, parent);
+  const l = c.B.sphere(1, m, [0, 0, 0], 10, g);
+  l.scale.set(wid, 0.012 + wid * 0.08, len);
+  l.position.set(0, Math.sin(pitch) * len, Math.cos(pitch) * len);
+  l.rotation.x = -pitch;
+  return l;
+}
+
 export function plant(c: Ctx, parent: THREE.Object3D, pos: P3, kind: "tall" | "bush" | "small" | "palm" = "bush", pot = C.pot) {
   const { B } = c;
-  const g = B.sub(pos, 0, parent);
-  const leaves = [fx(c, C.leafA, 0.8), fx(c, C.leafB, 0.8), fx(c, C.leafC, 0.8)];
-  const potM = fx(c, pot, 0.6);
+  plantSeed = 7 + Math.abs(Math.round(pos[0] * 131 + pos[2] * 71 + kind.length * 13)) + c.room.length * 101;
+  const g = B.sub(pos, prng() * Math.PI * 2, parent);
+  const leaves = [fx(c, C.leafA, 0.62), fx(c, C.leafB, 0.62), fx(c, C.leafC, 0.62), fx(c, C.leafD, 0.62)];
+  const potM = fx(c, pot, 0.75);
+  const soil = fx(c, "#4A3B2F", 1);
+  const pick = () => leaves[Math.floor(prng() * leaves.length)]!;
   if (kind === "tall") {
-    B.cyl(0.17, 0.14, 0.42, potM, [0, 0.21, 0], 24, g);
-    B.cyl(0.155, 0.155, 0.02, fx(c, "#5B4636", 1), [0, 0.415, 0], 20, g);
-    B.cyl(0.015, 0.02, 0.7, fx(c, C.oakDark), [0, 0.75, 0], 6, g);
-    B.blob(0.24, leaves[0]!, [0, 1.15, 0], 1, g);
-    B.blob(0.2, leaves[1]!, [0.15, 1.36, 0.05], 1, g);
-    B.blob(0.18, leaves[2]!, [-0.13, 1.4, -0.06], 1, g);
-    B.blob(0.15, leaves[0]!, [0.02, 1.58, 0.02], 1, g);
-    shadowRound(c, 0.42, [0, 0, 0], g, 0.28);
-  } else if (kind === "palm") {
-    B.cyl(0.2, 0.17, 0.36, potM, [0, 0.18, 0], 24, g);
-    for (let i = 0; i < 7; i++) {
-      const a = (i / 7) * Math.PI * 2;
-      const leaf = B.box(0.09, 0.62, 0.02, leaves[i % 3]!, [Math.sin(a) * 0.16, 0.66, Math.cos(a) * 0.16], 0.01, g);
-      leaf.rotation.set(Math.cos(a) * 0.55, a, -Math.sin(a) * 0.0);
+    // olive / fig standard: tapered pot, slim trunk, three tiers of glossy leaves
+    B.cyl(0.17, 0.13, 0.44, potM, [0, 0.22, 0], 28, g);
+    B.cyl(0.175, 0.175, 0.025, potM, [0, 0.43, 0], 28, g);
+    B.cyl(0.155, 0.155, 0.02, soil, [0, 0.432, 0], 20, g);
+    B.cyl(0.012, 0.02, 0.95, fx(c, "#6B5442", 0.8), [0, 0.9, 0], 6, g);
+    const tiers: Array<[number, number, number]> = [[1.05, 0.24, 9], [1.3, 0.2, 8], [1.52, 0.14, 6]];
+    for (const [y, rad, n] of tiers) {
+      for (let i = 0; i < n; i++) {
+        const a = (i / n) * Math.PI * 2 + prng() * 0.6;
+        leaf(c, g, pick(), [Math.sin(a) * rad * 0.35, y + (prng() - 0.5) * 0.1, Math.cos(a) * rad * 0.35], a, 0.15 + prng() * 0.5, 0.12 + prng() * 0.05, 0.07);
+      }
     }
-    shadowRound(c, 0.45, [0, 0, 0], g, 0.28);
+    shadowRound(c, 0.45, [0, 0, 0], g, 0.32);
+  } else if (kind === "palm") {
+    // sansevieria: upright sword leaves in two greens
+    B.cyl(0.19, 0.16, 0.36, potM, [0, 0.18, 0], 28, g);
+    B.cyl(0.175, 0.175, 0.02, soil, [0, 0.355, 0], 20, g);
+    for (let i = 0; i < 11; i++) {
+      const a = (i / 11) * Math.PI * 2 + prng() * 0.5;
+      const h = 0.42 + prng() * 0.42;
+      const r = 0.03 + prng() * 0.09;
+      const bl = B.box(0.055, h, 0.012, pick(), [Math.sin(a) * r, 0.36 + h / 2 - 0.02, Math.cos(a) * r], 0.006, g);
+      bl.rotation.set(Math.cos(a) * (0.08 + r), a + prng(), -Math.sin(a) * (0.08 + r));
+    }
+    shadowRound(c, 0.45, [0, 0, 0], g, 0.32);
   } else if (kind === "small") {
-    B.cyl(0.08, 0.065, 0.13, potM, [0, 0.065, 0], 18, g);
-    B.blob(0.11, leaves[2]!, [0, 0.22, 0], 1, g);
-    B.blob(0.075, leaves[0]!, [0.05, 0.29, 0.03], 1, g);
+    // succulent rosette in a small ceramic pot
+    B.cyl(0.075, 0.06, 0.12, potM, [0, 0.06, 0], 20, g);
+    B.cyl(0.068, 0.068, 0.01, soil, [0, 0.118, 0], 16, g);
+    for (let i = 0; i < 9; i++) {
+      const a = (i / 9) * Math.PI * 2 * 1.618;
+      leaf(c, g, i % 3 === 0 ? leaves[2]! : leaves[3]!, [0, 0.13, 0], a, 0.35 + (i / 9) * 0.6, 0.05 + (i % 3) * 0.008, 0.03);
+    }
+    shadowRound(c, 0.14, [0, 0, 0], g, 0.25);
   } else {
-    B.cyl(0.19, 0.15, 0.34, potM, [0, 0.17, 0], 24, g);
-    B.blob(0.23, leaves[0]!, [0, 0.52, 0], 1, g);
-    B.blob(0.18, leaves[1]!, [0.15, 0.63, 0.04], 1, g);
-    B.blob(0.17, leaves[2]!, [-0.14, 0.66, -0.05], 1, g);
-    B.blob(0.13, leaves[1]!, [0.02, 0.8, 0.02], 1, g);
-    shadowRound(c, 0.42, [0, 0, 0], g, 0.28);
+    // monstera-ish bush: big leaves on long stems radiating from the pot
+    B.cyl(0.2, 0.15, 0.34, potM, [0, 0.17, 0], 28, g);
+    B.cyl(0.205, 0.205, 0.025, potM, [0, 0.335, 0], 28, g);
+    B.cyl(0.185, 0.185, 0.02, soil, [0, 0.338, 0], 20, g);
+    const n = 13;
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 + prng() * 0.4;
+      const up = 0.35 + prng() * 0.55;
+      const stem = 0.18 + prng() * 0.32;
+      const sx = Math.sin(a) * stem * Math.cos(up) * 0.7, sz = Math.cos(a) * stem * Math.cos(up) * 0.7, sy = 0.34 + Math.sin(up) * stem;
+      const st = B.cyl(0.006, 0.008, stem, leaves[1]!, [sx / 2, 0.34 + (sy - 0.34) / 2, sz / 2], 5, g);
+      st.rotation.set(Math.cos(a) * (Math.PI / 2 - up) * 0.7, 0, -Math.sin(a) * (Math.PI / 2 - up) * 0.7);
+      leaf(c, g, pick(), [sx, sy, sz], a, 0.1 + prng() * 0.35, 0.13 + prng() * 0.05, 0.11);
+    }
+    shadowRound(c, 0.5, [0, 0, 0], g, 0.32);
   }
   return g;
 }
@@ -593,6 +637,8 @@ export function furnish(c: Ctx, r: RoomDef, g: THREE.Group): Furnished {
     case "rae": raeSet(c, g); break;
     case "pip": pipSet(c, g); break;
   }
+  // evening room glow: one broad warm pool (fakes the interior lamps on every quality level)
+  c.B.decal(4.6, 3.8, c.R.m("pool", c.room, c.color, { map: radialTex(), opacity: 0.22, key: "roomglow" }), [back ? 0 : 0.3, 0.011, back ? -0.3 : 0.3], g);
   // working light: a soft dept-coloured pool around the workstation
   const wp = back ? [r.seat.x, 0, -1.4] : [-1.9, 0, r.seat.z];
   c.B.decal(3.0, 2.6, c.R.m("workPool", c.room, c.color, { map: radialTex(), opacity: 0.55 }), [wp[0]!, 0.014, wp[2]!], g);

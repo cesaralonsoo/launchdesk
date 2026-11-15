@@ -1,12 +1,12 @@
 // F2: the free example pack. One finished, read-only project (id "example", slug "pausa") seeded at boot.
-// Content: WS4's EXAMPLE_PROJECT when mocks.ts exports it, else the mock answers run through sanitize()
+// Content: mocks.exampleProject() run through the real sanitizers, else the mock answers run through sanitize()
 // exactly like a real run. Nothing here is a payment: the rows use "dev-" txids, which the receipt shows as
 // "Sample run · nothing was charged" and /api/stats never counts.
 import { sanitize, type AiDept } from "../ai.js";
 import { config } from "../config.js";
 import { exec } from "../db.js";
 import * as mocks from "../mocks.js";
-import { STAGE_DEPTS, type DeptResults, type Project, type Stage, type WorkDept } from "../types.js";
+import { STAGE_DEPTS, type DeptResults, type Stage, type WorkDept } from "../types.js";
 
 export const EXAMPLE_ID = "example";
 const WANT_SLUG = "pausa";
@@ -15,8 +15,9 @@ const DEPTS: WorkDept[] = [...STAGE_DEPTS.validate, ...STAGE_DEPTS.build];
 const stageOf = (d: WorkDept): Stage => (STAGE_DEPTS.validate.includes(d) ? "validate" : "build");
 
 function exampleResults(): { idea: string; results: DeptResults } {
-  const seeded = (mocks as unknown as { EXAMPLE_PROJECT?: Project }).EXAMPLE_PROJECT;
-  if (seeded?.results?.leo && seeded.results.nova) return { idea: seeded.idea, results: structuredClone(seeded.results) };
+  // v6: built with the real sanitizers, so the example carries the same derived extras as a live run.
+  const seeded = mocks.exampleProject(Date.now(), sanitize);
+  if (seeded.results.leo && seeded.results.nova) return { idea: seeded.idea, results: structuredClone(seeded.results) };
   const idea = config.sampleIdeas[0] ?? mocks.MOCK_IDEA;
   const results: DeptResults = {};
   for (const d of DEPTS) {
@@ -57,8 +58,10 @@ export async function seedExample(): Promise<void> {
   await exec("DELETE FROM payments WHERE project_id = ?", [EXAMPLE_ID]);
   let t = created + 2_000;
   for (const d of DEPTS) {
-    const json = (results as Record<string, unknown>)[d];
+    let json = (results as Record<string, unknown>)[d];
     if (!json) continue;
+    // R7: the memo is stored with Sam's result, exactly like a live run (normalize() exposes it as results.memo).
+    if (d === "sam" && results.memo) json = { ...(json as object), memo: results.memo };
     const start = t;
     t += 4_000;
     await exec(

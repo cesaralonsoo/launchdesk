@@ -1,6 +1,9 @@
-// Background department jobs. Within a stage departments run one after another; each result is
-// saved as soon as it is ready so the office can animate while the rest of the team works.
-import { runDept, runMemo, type AiDept } from "./ai.js";
+// Background department jobs. A stage runs in dependency groups (v6): departments inside a group run in
+// parallel, groups run one after another. Each result is saved as soon as it is ready so the office can animate
+// while the rest of the team works.
+//   validate: Leo's web research starts with Mia (it only needs the idea) -> [mia] -> [leo] -> [sam + memo]
+//   build:    [nova] -> [dex, rae] (both sell Sam's launch offer, neither needs the other) -> [pip]
+import { research as webResearch, runDept, runMemo, type AiDept, type Research, type RunOpts } from "./ai.js";
 import { config } from "./config.js";
 import { exec, getProject, getProjectRow, stageDone } from "./db.js";
 import { DEFAULT_FONTS, DEFAULT_WORDMARK, fmtMoney, STAGE_DEPTS, type DexDesign, type NovaBrand, type PipLive, type Project, type RaeLaunch, type Stage, type WorkDept } from "./types.js";
@@ -55,36 +58,58 @@ export async function prepareStage(projectId: string, stage: Stage) {
   await prepare(projectId, stage, !isRunning(projectId, stage));
 }
 
+/** v6: dependency groups per stage (each department appears once; STAGE_DEPTS order is preserved). */
+export const STAGE_GROUPS: Record<Stage, WorkDept[][]> = {
+  validate: [["mia"], ["leo"], ["sam"]],
+  build: [["nova"], ["dex", "rae"], ["pip"]],
+};
+
 async function runStage(projectId: string, stage: Stage) {
   // Nothing else runs this stage in this process (startStage is deduplicated).
   await prepare(projectId, stage, true);
-
-  for (const dept of STAGE_DEPTS[stage]) {
-    const cur = await exec("SELECT status FROM jobs WHERE project_id = ? AND dept = ?", [projectId, dept]);
-    if (cur.rows[0]?.status === "done") continue;
-    await exec("UPDATE jobs SET status = 'working', started_at = ?, error = NULL WHERE project_id = ? AND dept = ?", [Date.now(), projectId, dept]);
-    let ok = false;
-    for (let attempt = 1; attempt <= 2 && !ok; attempt++) {
-      await exec("UPDATE jobs SET attempts = attempts + 1 WHERE project_id = ? AND dept = ?", [projectId, dept]);
-      try {
-        const out = await withDeadline(runOne(projectId, dept), DEPT_DEADLINE_MS);
-        await exec(
-          "UPDATE jobs SET status = 'done', json = ?, model = ?, usage = ?, finished_at = ? WHERE project_id = ? AND dept = ?",
-          [JSON.stringify(out.json), out.model, out.usage ? JSON.stringify(out.usage) : null, Date.now(), projectId, dept],
-        );
-        ok = true;
-      } catch (e) {
-        const msg = (e as Error).message || "Something went wrong";
-        console.error(`[jobs] ${projectId} ${dept} (attempt ${attempt}):`, msg);
-        if (attempt === 1) {
-          await new Promise((r) => setTimeout(r, AUTO_RETRY_MS)); // R18: one automatic retry
-          continue;
-        }
-        await exec("UPDATE jobs SET status = 'error', error = ?, finished_at = ? WHERE project_id = ? AND dept = ?", [msg, Date.now(), projectId, dept]);
-      }
+  const opts: RunOpts = {};
+  if (stage === "validate") {
+    // v6: Leo's web research (the slowest step) runs while Mia writes the plan.
+    const leo = await exec("SELECT status FROM jobs WHERE project_id = ? AND dept = 'leo'", [projectId]);
+    const p = await getProject(projectId);
+    if (p && leo.rows[0]?.status !== "done") {
+      const t0 = Date.now();
+      const found: Promise<Research | null> = webResearch(p.idea, p.results.mia?.market ?? null).catch(() => null);
+      void found.then((r) => r && console.log(`[jobs] ${projectId} research ready after ${Date.now() - t0}ms`));
+      opts.research = found;
     }
-    if (!ok) return; // later departments stay queued; retryDept / POST /run continue from here
   }
+  for (const group of STAGE_GROUPS[stage]) {
+    const ok = await Promise.all(group.map((dept) => runJob(projectId, dept, opts)));
+    if (ok.includes(false)) return; // later departments stay queued; retryDept / POST /run continue from here
+  }
+}
+
+/** Runs one department with one automatic retry (R18). Resolves true when it is done. */
+async function runJob(projectId: string, dept: WorkDept, opts: RunOpts): Promise<boolean> {
+  const cur = await exec("SELECT status FROM jobs WHERE project_id = ? AND dept = ?", [projectId, dept]);
+  if (cur.rows[0]?.status === "done") return true;
+  await exec("UPDATE jobs SET status = 'working', started_at = ?, error = NULL WHERE project_id = ? AND dept = ?", [Date.now(), projectId, dept]);
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    await exec("UPDATE jobs SET attempts = attempts + 1 WHERE project_id = ? AND dept = ?", [projectId, dept]);
+    try {
+      const out = await withDeadline(runOne(projectId, dept, opts), DEPT_DEADLINE_MS);
+      await exec(
+        "UPDATE jobs SET status = 'done', json = ?, model = ?, usage = ?, finished_at = ? WHERE project_id = ? AND dept = ?",
+        [JSON.stringify(out.json), out.model, out.usage ? JSON.stringify(out.usage) : null, Date.now(), projectId, dept],
+      );
+      return true;
+    } catch (e) {
+      const msg = (e as Error).message || "Something went wrong";
+      console.error(`[jobs] ${projectId} ${dept} (attempt ${attempt}):`, msg);
+      if (attempt === 1) {
+        await new Promise((r) => setTimeout(r, AUTO_RETRY_MS)); // R18: one automatic retry
+        continue;
+      }
+      await exec("UPDATE jobs SET status = 'error', error = ?, finished_at = ? WHERE project_id = ? AND dept = ?", [msg, Date.now(), projectId, dept]);
+    }
+  }
+  return false;
 }
 
 /**
@@ -158,11 +183,11 @@ function placeholder(p: Project, dept: "nova" | "dex" | "rae"): NovaBrand | DexD
   return { start_date: new Date(Date.now() + 86_400_000).toISOString().slice(0, 10), posts: [], first_posts: [], handle: "@" + name.toLowerCase().replace(/[^a-z0-9]+/g, "") };
 }
 
-async function runOne(projectId: string, dept: WorkDept): Promise<{ json: unknown; model: string; usage: unknown }> {
+async function runOne(projectId: string, dept: WorkDept, opts: RunOpts = {}): Promise<{ json: unknown; model: string; usage: unknown }> {
   const p = await getProject(projectId);
   if (!p) throw new Error("Project not found");
   if (dept === "pip") return { json: await publish(projectId), model: "none", usage: null };
-  const out = await runDept(dept as AiDept, p.idea, p.results);
+  const out = await runDept(dept as AiDept, p.idea, p.results, opts);
   if (dept === "sam") {
     // R7: the memo runs inside Sam's working beat and is stored with Sam's result (normalize() exposes it as
     // results.memo). It never fails Sam: without it the Summary is assembled from the other results.

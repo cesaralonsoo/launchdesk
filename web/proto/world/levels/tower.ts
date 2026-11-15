@@ -56,17 +56,17 @@ export function createTower(opts: { quality: "low" | "high"; env: THREE.Texture 
     const nx = Math.round((GX * 2) / FIN);
     for (let k = 1; k < nx; k++) {
       const x = -GX + k * ((GX * 2) / nx);
-      list.push(at(new THREE.BoxGeometry(0.16, h, 0.7), x, h / 2, GZ + 0.35));
-      list.push(at(new THREE.BoxGeometry(0.16, h, 0.7), x, h / 2, -GZ - 0.35));
+      list.push(at(new THREE.BoxGeometry(0.11, h, 0.5), x, h / 2, GZ + 0.25));
+      list.push(at(new THREE.BoxGeometry(0.11, h, 0.5), x, h / 2, -GZ - 0.25));
     }
     const nz = Math.max(2, Math.round((GZ * 2) / FIN));
     for (let k = 1; k < nz; k++) {
       const z = -GZ + k * ((GZ * 2) / nz);
-      list.push(at(new THREE.BoxGeometry(0.7, h, 0.16), GX + 0.35, h / 2, z));
-      list.push(at(new THREE.BoxGeometry(0.7, h, 0.16), -GX - 0.35, h / 2, z));
+      list.push(at(new THREE.BoxGeometry(0.5, h, 0.11), GX + 0.25, h / 2, z));
+      list.push(at(new THREE.BoxGeometry(0.5, h, 0.11), -GX - 0.25, h / 2, z));
     }
-    // solid corner pilasters
-    for (const sx of [-1, 1]) for (const sz of [-1, 1]) list.push(at(new THREE.BoxGeometry(0.75, h, 0.75), sx * (GX + 0.2), h / 2, sz * (GZ + 0.2)));
+    // slim corner posts: glass corners read premium
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) list.push(at(new THREE.BoxGeometry(0.34, h, 0.34), sx * (GX + 0.1), h / 2, sz * (GZ + 0.1)));
     return merge(list);
   }
   const finG = finsGeo(FLOOR_H);
@@ -100,7 +100,7 @@ export function createTower(opts: { quality: "low" | "high"; env: THREE.Texture 
   // ── upper floors
   type Floor = { g: THREE.Group; glass: THREE.MeshStandardMaterial; band: THREE.MeshStandardMaterial; light: number; boost: number };
   const floors: Floor[] = [];
-  const bandG = rbox(SX * 2, 0.42, SZ * 2, 0.05);
+  const bandG = rbox(SX * 2 - 0.2, 0.3, SZ * 2 - 0.2, 0.04);
   const glassG = uvBox(GX * 2, FLOOR_H - 0.55, GZ * 2, curtain.modW, curtain.modH * ((FLOOR_H - 0.55) / FLOOR_H));
   for (let i = 1; i < FLOORS; i++) {
     const g = new THREE.Group();
@@ -108,7 +108,7 @@ export function createTower(opts: { quality: "low" | "high"; env: THREE.Texture 
     const band = stone.clone();
     const gm = new THREE.MeshStandardMaterial({
       map: curtain.map, emissiveMap: curtain.lit, emissive: new THREE.Color("#FFE6C4"), emissiveIntensity: 0,
-      roughness: 0.18, metalness: 0.35, envMap: opts.env,
+      roughness: 0.12, metalness: 0.45, envMap: opts.env,
     });
     const b = mk(bandG, band);
     b.position.y = 0.34;
@@ -196,7 +196,7 @@ export function createTower(opts: { quality: "low" | "high"; env: THREE.Texture 
     homeMat.opacity = 0.9 * easeOut(win(g, 0.05, 0.3));
     floors.forEach((f, idx) => {
       const i = idx + 1;
-      const a = 0.1 + (0.62 * (i - 1)) / (FLOORS - 2);
+      const a = 0.15 + (0.6 * (i - 1)) / (FLOORS - 2); // a beat with the office alone as a glass floor first
       const k = easeOut(win(g, a, 0.13));
       f.g.visible = k > 0;
       f.g.scale.y = Math.max(1e-3, k);
@@ -210,7 +210,7 @@ export function createTower(opts: { quality: "low" | "high"; env: THREE.Texture 
   }
 
   function paintLights() {
-    const base = 0.12 + 1.0 * litLevel;
+    const base = Math.max(0, litLevel - 0.1) * 1.05; // 0 by day: glass reads as glass, not as lit rooms
     for (const f of floors) {
       f.glass.emissiveIntensity = f.light * base + f.boost * 1.6;
       f.band.emissive.copy(lightCol).multiplyScalar(f.boost * 0.35);

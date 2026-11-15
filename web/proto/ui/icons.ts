@@ -21,6 +21,10 @@ export const I = {
   pack: (n = 20) => s(`<rect x="3.5" y="6" width="13" height="10.5" rx="1.8"/><path d="M7.5 6V4.8c0-.7.5-1.3 1.2-1.3h2.6c.7 0 1.2.6 1.2 1.3V6M3.5 10.5h13"/>`, n),
   report: (n = 20) => s(`<rect x="4.5" y="3" width="11" height="14" rx="1.8"/><path d="M7.5 13v-2M10 13V8.5M12.5 13V10"/>`, n),
   brand: (n = 20) => s(`<rect x="3.5" y="3.5" width="13" height="13" rx="3.5"/><circle cx="10" cy="10" r="3"/>`, n),
+  info: (n = 20) => s(`<circle cx="10" cy="10" r="7"/><path d="M10 9.2v4.3M10 6.6v.1"/>`, n),
+  grid: (n = 20) => s(`<rect x="3.5" y="3.5" width="5.5" height="5.5" rx="1.4"/><rect x="11" y="3.5" width="5.5" height="5.5" rx="1.4"/><rect x="3.5" y="11" width="5.5" height="5.5" rx="1.4"/><rect x="11" y="11" width="5.5" height="5.5" rx="1.4"/>`, n),
+  back: (n = 20) => s(`<path d="M16 10H4M9 5l-5 5 5 5"/>`, n),
+  sun: (n = 20) => s(`<circle cx="10" cy="10" r="3.2"/><path d="M10 2.8v1.6M10 15.6v1.6M2.8 10h1.6M15.6 10h1.6M4.9 4.9l1.1 1.1M14 14l1.1 1.1M4.9 15.1 6 14M14 6l1.1-1.1"/>`, n),
   pause: (n = 20) => s(`<path d="M7.5 5v10M12.5 5v10"/>`, n),
 };
 

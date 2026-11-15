@@ -1,785 +1,930 @@
 {
- "id": "example",
- "idea": "A specialty coffee kiosk at a Barcelona metro exit, €3 flat whites for commuters",
- "created_at": 1794819300000,
- "payments": {
-  "validate": {
-   "txid": "dev-example-validate",
-   "sats": 0,
-   "cents": 10,
-   "at": 1794819305000
+  "id": "example",
+  "idea": "A specialty coffee kiosk at a Barcelona metro exit, €3 flat whites for commuters",
+  "created_at": 1794648300000,
+  "payments": {
+    "validate": {
+      "txid": "dev-example-validate",
+      "sats": 0,
+      "cents": 10,
+      "at": 1794648305000
+    },
+    "build": {
+      "txid": "dev-example-build",
+      "sats": 0,
+      "cents": 20,
+      "at": 1794648360000
+    }
   },
-  "build": {
-   "txid": "dev-example-build",
-   "sats": 0,
-   "cents": 20,
-   "at": 1794819360000
-  }
- },
- "status": {
-  "mia": "done",
-  "leo": "done",
-  "sam": "done",
-  "nova": "done",
-  "dex": "done",
-  "rae": "done",
-  "pip": "done"
- },
- "results": {
-  "mia": {
-   "title": "Specialty coffee kiosk in Barcelona",
-   "one_liner": "Specialty coffee in 90 seconds at the metro exit, open from 7:00.",
-   "brief": {
-    "concept": "A 40 m² takeaway-only specialty coffee kiosk next to a busy metro exit in Eixample.",
-    "for": "Commuters aged 25 to 45 who buy coffee on the way to work and hate queues.",
-    "goal": "Sell 60 cups at a pop-up cart and collect 30 pre-orders within 4 weeks."
-   },
-   "market": {
-    "city": "Barcelona",
-    "country_iso": "ES",
-    "currency": "€",
-    "language": "en"
-   },
-   "checklist": [
-    {
-     "week": 1,
-     "task": "Count morning footfall at two metro exits",
-     "how": "Stand at each exit from 7:00 to 9:00 on two weekdays and tally passers-by.",
-     "done_when": "Two full counts written down for each exit",
-     "helped_by": null,
-     "est_hours": 4
-    },
-    {
-     "week": 1,
-     "task": "Interview 20 commuters about their last coffee",
-     "how": "Ask what they bought this week and what it cost, never what they would buy.",
-     "done_when": "20 interviews logged, 10 or more buy coffee on the way",
-     "helped_by": "leo",
-     "est_hours": 5
-    },
-    {
-     "week": 1,
-     "task": "List three kiosks under 45 m² for rent",
-     "how": "Search listings and walk the streets around the two exits.",
-     "done_when": "Three kiosks with rent, size and licence status noted",
-     "helped_by": null,
-     "est_hours": 3
-    },
-    {
-     "week": 2,
-     "task": "Run a pop-up cart for two mornings",
-     "how": "Borrow a cart and sell flat whites at €3.20 from 7:00 to 9:30.",
-     "done_when": "60 or more cups sold in two mornings",
-     "helped_by": "sam",
-     "est_hours": 8
-    },
-    {
-     "week": 2,
-     "task": "Get two quotes for an espresso machine lease",
-     "how": "Call two local suppliers and ask for a 24-month lease with service.",
-     "done_when": "Two written quotes in hand",
-     "helped_by": "sam",
-     "est_hours": 2
-    },
-    {
-     "week": 2,
-     "task": "Pick the name and order 50 sample cups",
-     "how": "Choose one of Nova's three names and print a short run of cups.",
-     "done_when": "Name chosen and cups ordered",
-     "helped_by": "nova",
-     "est_hours": 2
-    },
-    {
-     "week": 3,
-     "task": "Send the pre-order page to 50 people",
-     "how": "Message everyone you interviewed and two local neighbourhood groups.",
-     "done_when": "50 people received the link",
-     "helped_by": "pip",
-     "est_hours": 2
-    },
-    {
-     "week": 3,
-     "task": "Publish the first three launch posts",
-     "how": "Post on the planned days and answer every comment the same day.",
-     "done_when": "Three posts live, every comment answered",
-     "helped_by": "rae",
-     "est_hours": 3
-    },
-    {
-     "week": 4,
-     "task": "Collect 30 pre-orders on the page",
-     "how": "Follow up in person with everyone who opened the page.",
-     "done_when": "30 pre-orders paid on-chain",
-     "helped_by": "pip",
-     "est_hours": 6
-    },
-    {
-     "week": 4,
-     "task": "Decide whether to sign the lease",
-     "how": "Compare cart sales and pre-orders with the break-even line.",
-     "done_when": "Go or no-go written down with the numbers",
-     "helped_by": "sam",
-     "est_hours": 2
-    }
-   ]
+  "status": {
+    "mia": "done",
+    "leo": "done",
+    "sam": "done",
+    "nova": "done",
+    "dex": "done",
+    "rae": "done",
+    "pip": "done"
   },
-  "leo": {
-   "score": 7.8,
-   "verdict": "go",
-   "headline": "Win the 7 to 9 am commuter gap.",
-   "summary": "Morning demand at metro exits is strong and few specialty cafés open before 9:00. Commuters accept a premium price if service takes under two minutes.",
-   "signals": [
-    {
-     "name": "Demand",
-     "score": 8.6,
-     "why": "Thousands pass a central metro exit every morning",
-     "source_id": null
-    },
-    {
-     "name": "Competition gap",
-     "score": 7.2,
-     "why": "Few specialty cafés open before 9:00",
-     "source_id": null
-    },
-    {
-     "name": "Price acceptance",
-     "score": 8,
-     "why": "Commuters already pay €3 or more for chain coffee",
-     "source_id": null
-    },
-    {
-     "name": "Channel",
-     "score": 6.6,
-     "why": "Street visibility is free, social reach is unproven",
-     "source_id": null
-    },
-    {
-     "name": "Timing",
-     "score": 8.2,
-     "why": "Office attendance keeps morning traffic steady",
-     "source_id": null
-    }
-   ],
-   "why_go": "Strong morning demand, almost no early-opening specialty cafés and a price commuters already pay.",
-   "risks": [
-    {
-     "risk": "Rent next to metro exits is high.",
-     "mitigation": "Start with a 40 m² takeaway kiosk with no seating.",
-     "severity": "high"
-    },
-    {
-     "risk": "Most sales happen before 10:00.",
-     "mitigation": "Test a 13:00 to 15:00 coffee push during the cart week.",
-     "severity": "med"
-    },
-    {
-     "risk": "Queues kill the morning habit.",
-     "mitigation": "Keep a two-drink morning menu and time every order at the cart.",
-     "severity": "med"
-    }
-   ],
-   "pivot": null,
-   "next_step": "Run a two-morning pop-up cart at the busier exit and count cups sold at €3.20.",
-   "market_facts": [
-    {
-     "fact": "A central metro exit in Eixample can see several thousand people between 7:00 and 9:00.",
-     "source_id": null,
-     "is_estimate": true
-    },
-    {
-     "fact": "Specialty flat whites in central Barcelona usually cost €3.00 to €3.80.",
-     "source_id": null,
-     "is_estimate": true
-    },
-    {
-     "fact": "Most specialty cafés in the area open at 8:30 or later.",
-     "source_id": null,
-     "is_estimate": true
-    },
-    {
-     "fact": "A takeaway kiosk needs one barista per 60 to 80 drinks an hour at peak.",
-     "source_id": null,
-     "is_estimate": true
-    }
-   ],
-   "competitors": [
-    {
-     "name": "Station chain cafés",
-     "note": "Fast, but generic coffee",
-     "price": 4.5,
-     "differentiation": 2.5,
-     "url": null
-    },
-    {
-     "name": "Third-wave cafés in Eixample",
-     "note": "Great coffee, open after 8:30",
-     "price": 7.5,
-     "differentiation": 8,
-     "url": null
-    },
-    {
-     "name": "Bakery counters",
-     "note": "Cheap, average coffee, long queues",
-     "price": 3,
-     "differentiation": 3.5,
-     "url": null
-    },
-    {
-     "name": "Supermarket grab-and-go",
-     "note": "Cheapest, no fresh espresso",
-     "price": 1.5,
-     "differentiation": 1,
-     "url": null
-    },
-    {
-     "name": "Office coffee machines",
-     "note": "Free, but nobody enjoys it",
-     "price": 0.5,
-     "differentiation": 0.5,
-     "url": null
-    }
-   ],
-   "you": {
-    "price": 6,
-    "differentiation": 8.5
-   },
-   "interviews": {
-    "who": "Commuters leaving the busiest metro exit between 7:00 and 9:00",
-    "where": "At the exit itself and in two nearby co-working spaces",
-    "questions": [
-     "When did you last buy a coffee on the way to work?",
-     "Where did you buy it, and why there?",
-     "How much did you pay for it?",
-     "What annoyed you about it?",
-     "What did you do the last time the queue was too long?"
-    ],
-    "good_sign": "They name a place and a price without thinking, and complain about the queue or the taste.",
-    "target": 20
-   },
-   "sources": []
-  },
-  "sam": {
-   "currency": "€",
-   "canvas": {
-    "customer": "Commuters and office workers at one Eixample metro exit",
-    "value": "Specialty coffee ready in 90 seconds, from 7:00",
-    "revenue": "Flat whites and filter coffee, pastries for one in five",
-    "channels": "The street itself plus an order-ahead page",
-    "costs": "Rent, two baristas, machine lease, beans and milk",
-    "unit_economics": "Each customer leaves about €2.40 after ingredients"
-   },
-   "assumptions": [
-    {
-     "key": "customers_per_day_m1",
-     "label": "Customers per day, month 1",
-     "value": 90,
-     "unit": "per day",
-     "basis": "A new kiosk before word of mouth",
-     "is_estimate": true
-    },
-    {
-     "key": "customers_per_day_m12",
-     "label": "Customers per day, month 12",
-     "value": 330,
-     "unit": "per day",
-     "basis": "About 5% of morning footfall at a busy exit",
-     "is_estimate": true
-    },
-    {
-     "key": "avg_ticket",
-     "label": "Average ticket",
-     "value": 3.4,
-     "unit": "€",
-     "basis": "Flat white at €3.20, pastry for one in five",
-     "is_estimate": true
-    },
-    {
-     "key": "gross_margin_pct",
-     "label": "Gross margin",
-     "value": 70,
-     "unit": "%",
-     "basis": "Usual for specialty coffee after beans, milk and cups",
-     "is_estimate": true
-    },
-    {
-     "key": "fixed_costs_month",
-     "label": "Fixed costs per month",
-     "value": 11500,
-     "unit": "€",
-     "basis": "Rent, two baristas, machine lease, utilities",
-     "is_estimate": true
-    },
-    {
-     "key": "startup_cost",
-     "label": "Start-up cost",
-     "value": 32000,
-     "unit": "€",
-     "basis": "Fit-out, machine deposit, licences, first stock",
-     "is_estimate": true
-    },
-    {
-     "key": "open_days_month",
-     "label": "Open days per month",
-     "value": 26,
-     "unit": "days",
-     "basis": "Monday to Saturday",
-     "is_estimate": true
-    }
-   ],
-   "fixed_costs_breakdown": [
-    {
-     "label": "Kiosk rent",
-     "value": 3800
-    },
-    {
-     "label": "Two baristas, part time",
-     "value": 6200
-    },
-    {
-     "label": "Machine lease and service",
-     "value": 700
-    },
-    {
-     "label": "Utilities, card fees, insurance",
-     "value": 800
-    }
-   ],
-   "months": [
-    {
-     "month": 1,
-     "revenue": 7956,
-     "costs": 13887,
-     "cash": -37931
-    },
-    {
-     "month": 2,
-     "revenue": 8582,
-     "costs": 14075,
-     "cash": -43424
-    },
-    {
-     "month": 3,
-     "revenue": 9635,
-     "costs": 14391,
-     "cash": -48180
-    },
-    {
-     "month": 4,
-     "revenue": 11310,
-     "costs": 14893,
-     "cash": -51763
-    },
-    {
-     "month": 5,
-     "revenue": 13746,
-     "costs": 15624,
-     "cash": -53641
-    },
-    {
-     "month": 6,
-     "revenue": 16864,
-     "costs": 16559,
-     "cash": -53336
-    },
-    {
-     "month": 7,
-     "revenue": 20264,
-     "costs": 17579,
-     "cash": -50651
-    },
-    {
-     "month": 8,
-     "revenue": 23382,
-     "costs": 18515,
-     "cash": -45784
-    },
-    {
-     "month": 9,
-     "revenue": 25818,
-     "costs": 19245,
-     "cash": -39211
-    },
-    {
-     "month": 10,
-     "revenue": 27493,
-     "costs": 19748,
-     "cash": -31466
-    },
-    {
-     "month": 11,
-     "revenue": 28546,
-     "costs": 20064,
-     "cash": -22984
-    },
-    {
-     "month": 12,
-     "revenue": 29172,
-     "costs": 20252,
-     "cash": -14064
-    }
-   ],
-   "price": {
-    "value": 3.4,
-    "display": "€3.40",
-    "note": "Flat white €3.20, average ticket €3.40"
-   },
-   "startup_cost": {
-    "value": 32000,
-    "display": "€32k",
-    "note": "Fit-out, machine deposit, licences, stock"
-   },
-   "cash_needed": {
-    "value": 53641,
-    "display": "€54k",
-    "month": 5
-   },
-   "break_even": {
-    "month": 6,
-    "note": "Revenue covers costs from month 6"
-   },
-   "breakeven_units_per_day": 186,
-   "year1": {
-    "revenue": "€223k",
-    "costs": "€205k",
-    "result": "+€18k",
-    "monthly_profit_m12": "€8.9k",
-    "payback": "About month 14"
-   },
-   "main_risk": "Everything rests on about 190 customers a day: run a two-week pop-up cart at the exit before signing a lease."
-  },
-  "nova": {
-   "names": [
-    {
-     "name": "Pausa",
-     "why": "Says the promise in one word and works in Catalan, Spanish and English.",
-     "tagline": "Your 90-second pause.",
-     "palette": [
-      {
-       "name": "Primary",
-       "hex": "#2B211C"
+  "results": {
+    "mia": {
+      "title": "Specialty coffee kiosk in Barcelona",
+      "one_liner": "Specialty coffee at the metro exit, open from 7:00.",
+      "brief": {
+        "concept": "A 12 m² takeaway-only specialty coffee kiosk at a busy Eixample metro exit, two-drink morning menu, €3 flat whites.",
+        "for": "Office commuters aged 25 to 45 who buy coffee on the way in and leave queues that take over 3 minutes.",
+        "goal": "Prove the pace with a pop-up cart selling 110+ cups a morning, and intent with 100 paid pre-orders, before any lease."
       },
-      {
-       "name": "Accent",
-       "hex": "#C8813A"
+      "market": {
+        "city": "Barcelona",
+        "country_iso": "ES",
+        "currency": "€",
+        "language": "en"
       },
-      {
-       "name": "Background",
-       "hex": "#F4EADF"
+      "gate": {
+        "metric": "paid pre-orders",
+        "target": 100,
+        "by_week": 4
       },
-      {
-       "name": "Extra",
-       "hex": "#6E8B74"
+      "checklist": [
+        {
+          "week": 1,
+          "task": "Count 7:00–9:00 footfall at two metro exits",
+          "how": "Stand at each exit on Tuesday and Thursday and tally everyone leaving, in 15-minute blocks.",
+          "done_when": "Four 2-hour counts logged; busiest exit chosen",
+          "helped_by": null,
+          "est_hours": 8
+        },
+        {
+          "week": 1,
+          "task": "Interview 20 commuters about yesterday's coffee",
+          "how": "Ask where they bought it, what it cost and what annoyed them; never ask if they would buy.",
+          "done_when": "20 logged; 8+ bought coffee on the way in",
+          "helped_by": "leo",
+          "est_hours": 5
+        },
+        {
+          "week": 1,
+          "task": "Shortlist three kiosks or shopfronts under 15 m²",
+          "how": "Walk 300 m around the chosen exit and call every listing for rent, licence and term.",
+          "done_when": "Three options with rent, licence and earliest start",
+          "helped_by": "sam",
+          "est_hours": 4
+        },
+        {
+          "week": 2,
+          "task": "Run a two-morning pop-up cart at the exit",
+          "how": "Rent a cart and machine for two days and sell flat whites at €3.00 from 7:00 to 9:30.",
+          "done_when": "110+ cups each morning; median wait under 2 minutes",
+          "helped_by": "sam",
+          "est_hours": 10
+        },
+        {
+          "week": 2,
+          "task": "Get two espresso machine lease quotes",
+          "how": "Ask two local suppliers for a 24-month lease including service and grinder.",
+          "done_when": "Two written quotes, both under €700 a month",
+          "helped_by": "sam",
+          "est_hours": 2
+        },
+        {
+          "week": 2,
+          "task": "Choose the name and print 200 cup sleeves",
+          "how": "Pick one of Nova's three names after asking ten cart customers which they remember.",
+          "done_when": "Name chosen; sleeves ordered",
+          "helped_by": "nova",
+          "est_hours": 2
+        },
+        {
+          "week": 3,
+          "task": "Send the pre-order page to every contact",
+          "how": "Message all interviewees, cart customers and two neighbourhood groups with the €2.40 offer.",
+          "done_when": "Page sent to 150+ people",
+          "helped_by": "pip",
+          "est_hours": 3
+        },
+        {
+          "week": 3,
+          "task": "Post the pre-order launch on Instagram and email",
+          "how": "Publish Rae's week-3 posts and reply to every comment within the hour.",
+          "done_when": "Offer posted; every comment answered",
+          "helped_by": "rae",
+          "est_hours": 3
+        },
+        {
+          "week": 4,
+          "task": "Reach 100 paid pre-orders",
+          "how": "Hand cards at the exit 7:30–9:00 for three mornings and follow up anyone who opened the page.",
+          "done_when": "100 pre-orders paid on-chain",
+          "helped_by": "pip",
+          "est_hours": 8
+        },
+        {
+          "week": 4,
+          "task": "Decide: sign a lease or stop",
+          "how": "Compare cart sales and pre-orders with Sam's break-even line and Leo's kill criteria.",
+          "done_when": "Decision written down with the numbers",
+          "helped_by": "sam",
+          "est_hours": 2
+        }
+      ]
+    },
+    "leo": {
+      "score": 7.3,
+      "verdict": "go",
+      "headline": "Own the 7–9 am gap before cafés open.",
+      "summary": "Commuters already pay about €3 for coffee, but most specialty cafés nearby open after 8:30. It works if one kiosk can serve a flat white in under two minutes.",
+      "signals": [
+        {
+          "name": "Demand",
+          "score": 7.5,
+          "why": "Thousands leave a central exit every weekday morning",
+          "source_id": null,
+          "weight": 0.3
+        },
+        {
+          "name": "Competition gap",
+          "score": 7.4,
+          "why": "Specialty options mostly open after 8:30",
+          "source_id": null,
+          "weight": 0.2
+        },
+        {
+          "name": "Price acceptance",
+          "score": 7.5,
+          "why": "Commuters already pay €2.50–€3.50 for worse coffee",
+          "source_id": null,
+          "weight": 0.2
+        },
+        {
+          "name": "Channel",
+          "score": 6.4,
+          "why": "The street sells; social reach is unproven",
+          "source_id": null,
+          "weight": 0.15
+        },
+        {
+          "name": "Timing",
+          "score": 7.2,
+          "why": "Office attendance steady midweek, weaker Mondays and Fridays",
+          "source_id": null,
+          "weight": 0.15
+        }
+      ],
+      "why_go": "The demand walks past the door every morning, the price is already accepted, and the best competitors are closed at the moment that matters.",
+      "risks": [
+        {
+          "risk": "Rent beside a metro exit can eat the margin.",
+          "mitigation": "Cap rent at €3,800; a 12 m² takeaway counter, no seating.",
+          "severity": "high"
+        },
+        {
+          "risk": "Queues over 3 minutes break the habit.",
+          "mitigation": "Two-drink menu; time 50 orders at the pop-up cart.",
+          "severity": "high"
+        },
+        {
+          "risk": "Most commuters have never paid in Bitcoin Cash.",
+          "mitigation": "QR on the cart and the sleeve; count reservations and payments separately.",
+          "severity": "med"
+        }
+      ],
+      "pivot": null,
+      "next_step": "Run a two-morning pop-up cart at the busier exit: 110 cups a morning at €3.00 is the bar.",
+      "market_facts": [
+        {
+          "fact": "A central Eixample metro exit typically sees several thousand people leave between 7:00 and 9:00.",
+          "source_id": null,
+          "is_estimate": true
+        },
+        {
+          "fact": "Specialty flat whites in central Barcelona usually cost €2.80 to €3.80.",
+          "source_id": null,
+          "is_estimate": true
+        },
+        {
+          "fact": "Most nearby specialty cafés open between 8:00 and 9:00, after the commuter peak.",
+          "source_id": null,
+          "is_estimate": true
+        },
+        {
+          "fact": "One barista on a two-group machine can serve roughly 60 drinks an hour.",
+          "source_id": null,
+          "is_estimate": true
+        },
+        {
+          "fact": "Takeaway kiosks near busy exits usually rent for €2,500 to €4,500 a month.",
+          "source_id": null,
+          "is_estimate": true
+        }
+      ],
+      "competitors": [
+        {
+          "name": "Station chain cafés",
+          "note": "Fast, but generic coffee",
+          "price": 5,
+          "differentiation": 2.5,
+          "url": null
+        },
+        {
+          "name": "Third-wave cafés in Eixample",
+          "note": "Great coffee, open after 8:30",
+          "price": 7.5,
+          "differentiation": 8.5,
+          "url": null
+        },
+        {
+          "name": "Bakery counters",
+          "note": "Cheap, average coffee, long queues",
+          "price": 3,
+          "differentiation": 3.5,
+          "url": null
+        },
+        {
+          "name": "Supermarket grab-and-go",
+          "note": "Cheapest, no fresh espresso",
+          "price": 1.5,
+          "differentiation": 1,
+          "url": null
+        },
+        {
+          "name": "Office coffee machine",
+          "note": "Free, but nobody looks forward to it",
+          "price": 0.5,
+          "differentiation": 0.5,
+          "url": null
+        }
+      ],
+      "you": {
+        "price": 5.5,
+        "differentiation": 8
+      },
+      "interviews": {
+        "who": "Commuters leaving the busiest exit between 7:00 and 9:00",
+        "where": "At the exit itself and in two nearby co-working lobbies",
+        "questions": [
+          "Where did you get coffee yesterday morning, if anywhere?",
+          "What did it cost?",
+          "How long did you wait for it?",
+          "When did you last skip coffee because of a queue?",
+          "What did you have instead?"
+        ],
+        "good_sign": "They name a place and a price instantly, and have skipped coffee because of a queue this month.",
+        "target": 20
+      },
+      "kill_criteria": [
+        "Stop if fewer than 8 of 20 commuters bought coffee on the way in yesterday.",
+        "Stop if the cart sells under 95 cups a morning, half the break-even pace.",
+        "Stop if no kiosk near the exit rents for under €4,500 a month."
+      ],
+      "score_math": "0.30×7.5 + 0.20×7.4 + 0.20×7.5 + 0.15×6.4 + 0.15×7.2 = 7.3",
+      "verdict_rule": "Go from 7.0 with no signal at 3 or below · Pivot 5.0–6.9 · No-go under 5.0",
+      "confidence": {
+        "level": "low",
+        "note": "Desk estimates only, no web sources: signals capped at 7.5. Interviews decide."
+      },
+      "sources": []
+    },
+    "sam": {
+      "currency": "€",
+      "canvas": {
+        "customer": "Office commuters at one Eixample metro exit, 7:00 to 10:00",
+        "value": "Specialty flat white in under two minutes, before cafés open",
+        "revenue": "Flat whites at €3.00; a pastry with one sale in five",
+        "channels": "The exit itself, pre-orders, a loyalty stamp card",
+        "costs": "Rent, founder and one barista, machine lease, beans and milk",
+        "unit_economics": "Each sale leaves about €2.38 after beans, milk and cup"
+      },
+      "assumptions": [
+        {
+          "key": "customers_per_day_m1",
+          "label": "Sales a day, month 1",
+          "value": 90,
+          "unit": "per day",
+          "basis": "New kiosk, no word of mouth yet",
+          "is_estimate": true
+        },
+        {
+          "key": "customers_per_day_m12",
+          "label": "Sales a day, month 12",
+          "value": 300,
+          "unit": "per day",
+          "basis": "Two at the bar: ~120 an hour at peak",
+          "is_estimate": true
+        },
+        {
+          "key": "avg_ticket",
+          "label": "Average ticket",
+          "value": 3.4,
+          "unit": "€",
+          "basis": "€3.00 flat white plus some pastries",
+          "is_estimate": true
+        },
+        {
+          "key": "gross_margin_pct",
+          "label": "Gross margin",
+          "value": 70,
+          "unit": "%",
+          "basis": "Typical after beans, milk, cups, card fees",
+          "is_estimate": true
+        },
+        {
+          "key": "fixed_costs_month",
+          "label": "Fixed costs a month",
+          "value": 11500,
+          "unit": "€",
+          "basis": "Sum of the four lines below",
+          "is_estimate": true
+        },
+        {
+          "key": "startup_cost",
+          "label": "Start-up cost",
+          "value": 32000,
+          "unit": "€",
+          "basis": "Fit-out, machine deposit, licences, stock",
+          "is_estimate": true
+        },
+        {
+          "key": "open_days_month",
+          "label": "Open days a month",
+          "value": 26,
+          "unit": "days",
+          "basis": "Monday to Saturday",
+          "is_estimate": true
+        }
+      ],
+      "fixed_costs_breakdown": [
+        {
+          "label": "Kiosk rent",
+          "value": 3800
+        },
+        {
+          "label": "Founder and one barista, employer cost",
+          "value": 6200
+        },
+        {
+          "label": "Machine lease and service",
+          "value": 700
+        },
+        {
+          "label": "Utilities, insurance, fees",
+          "value": 800
+        }
+      ],
+      "months": [
+        {
+          "month": 1,
+          "revenue": 7956,
+          "costs": 13887,
+          "cash": -37931
+        },
+        {
+          "month": 2,
+          "revenue": 8504,
+          "costs": 14051,
+          "cash": -43478
+        },
+        {
+          "month": 3,
+          "revenue": 9425,
+          "costs": 14328,
+          "cash": -48381
+        },
+        {
+          "month": 4,
+          "revenue": 10891,
+          "costs": 14767,
+          "cash": -52257
+        },
+        {
+          "month": 5,
+          "revenue": 13022,
+          "costs": 15407,
+          "cash": -54642
+        },
+        {
+          "month": 6,
+          "revenue": 15750,
+          "costs": 16225,
+          "cash": -55117
+        },
+        {
+          "month": 7,
+          "revenue": 18726,
+          "costs": 17118,
+          "cash": -53509
+        },
+        {
+          "month": 8,
+          "revenue": 21454,
+          "costs": 17936,
+          "cash": -49991
+        },
+        {
+          "month": 9,
+          "revenue": 23585,
+          "costs": 18576,
+          "cash": -44982
+        },
+        {
+          "month": 10,
+          "revenue": 25051,
+          "costs": 19015,
+          "cash": -38946
+        },
+        {
+          "month": 11,
+          "revenue": 25972,
+          "costs": 19292,
+          "cash": -32266
+        },
+        {
+          "month": 12,
+          "revenue": 26520,
+          "costs": 19456,
+          "cash": -25202
+        }
+      ],
+      "price": {
+        "value": 3.4,
+        "display": "€3.40",
+        "note": "Flat white €3.00; average ticket €3.40"
+      },
+      "startup_cost": {
+        "value": 32000,
+        "display": "€32k",
+        "note": "Fit-out, machine deposit, licences, stock"
+      },
+      "cash_needed": {
+        "value": 55117,
+        "display": "€55k",
+        "month": 6
+      },
+      "break_even": {
+        "month": 7,
+        "note": "Revenue covers costs from month 7"
+      },
+      "breakeven_units_per_day": 186,
+      "year1": {
+        "revenue": "€207k",
+        "costs": "€200k",
+        "result": "+€6.8k",
+        "monthly_profit_m12": "€7.1k",
+        "payback": "About month 16"
+      },
+      "main_risk": "Below break-even pace the kiosk loses money every month: sell from a pop-up cart for two mornings before signing a lease.",
+      "key_assumption": "customers_per_day_m12",
+      "launch_offer": {
+        "item": "Opening-week flat white",
+        "price": 2.4,
+        "normal_price": 3,
+        "limit": 300,
+        "display": "€2.40",
+        "normal_display": "€3",
+        "discount_pct": 20,
+        "contribution": 1.5,
+        "contribution_display": "€1.50",
+        "revenue_if_sold_out": 720,
+        "revenue_display": "€720"
+      },
+      "unit": {
+        "price": 3.4,
+        "variable_cost": 1.02,
+        "contribution": 2.38,
+        "margin_pct": 70,
+        "line": "€3.40 a sale − €1.02 direct cost = €2.38 left"
+      },
+      "breakeven": {
+        "per_month": 4832,
+        "per_day": 186,
+        "formula": "€11,500 fixed ÷ €2.38 per sale ÷ 26 days = 186 sales a day"
+      },
+      "headroom": {
+        "m12_per_day": 300,
+        "breakeven_per_day": 186,
+        "multiple": 1.6,
+        "note": "Month-12 plan is 1.6× break-even"
+      },
+      "sensitivity": [
+        {
+          "key": "customers_per_day_m12",
+          "label": "Sales a day",
+          "low": {
+            "value": 240,
+            "year1_result": -22160,
+            "break_even_month": 8,
+            "breakeven_per_day": 186,
+            "cash_needed": 65306
+          },
+          "base": {
+            "value": 300,
+            "year1_result": 6798,
+            "break_even_month": 7,
+            "breakeven_per_day": 186,
+            "cash_needed": 55117
+          },
+          "high": {
+            "value": 360,
+            "year1_result": 35759,
+            "break_even_month": 6,
+            "breakeven_per_day": 186,
+            "cash_needed": 47670
+          },
+          "swing": 57919,
+          "line": "Sales a day ±20%: year 1 from −€22k to +€36k"
+        },
+        {
+          "key": "fixed_costs_month",
+          "label": "Fixed costs a month",
+          "low": {
+            "value": 9200,
+            "year1_result": 34398,
+            "break_even_month": 6,
+            "breakeven_per_day": 149,
+            "cash_needed": 43142
+          },
+          "base": {
+            "value": 11500,
+            "year1_result": 6798,
+            "break_even_month": 7,
+            "breakeven_per_day": 186,
+            "cash_needed": 55117
+          },
+          "high": {
+            "value": 13800,
+            "year1_result": -20802,
+            "break_even_month": 8,
+            "breakeven_per_day": 224,
+            "cash_needed": 69609
+          },
+          "swing": 55200,
+          "line": "Fixed costs a month ±20%: year 1 from −€21k to +€34k"
+        },
+        {
+          "key": "gross_margin_pct",
+          "label": "Gross margin",
+          "low": {
+            "value": 60,
+            "year1_result": -13886,
+            "break_even_month": 8,
+            "breakeven_per_day": 217,
+            "cash_needed": 61935
+          },
+          "base": {
+            "value": 70,
+            "year1_result": 6798,
+            "break_even_month": 7,
+            "breakeven_per_day": 186,
+            "cash_needed": 55117
+          },
+          "high": {
+            "value": 80,
+            "year1_result": 27486,
+            "break_even_month": 6,
+            "breakeven_per_day": 163,
+            "cash_needed": 49661
+          },
+          "swing": 41372,
+          "line": "Gross margin ±10 pts: year 1 from −€14k to +€27k"
+        }
+      ]
+    },
+    "memo": {
+      "purpose": "A takeaway specialty coffee kiosk at an Eixample metro exit, for commuters who want good coffee before 9:00.",
+      "problem": "Between 7:00 and 9:00 commuters choose between fast generic coffee and good coffee that opens too late. Long bakery queues make many skip it.",
+      "insight": "The best competitors are closed at the exact moment demand peaks. A fast two-drink menu can own that window without competing on seating or food.",
+      "verdict_line": "Go, to test: it needs 186 sales a day to break even, and the plan reaches 300 by month 12.",
+      "next_7_days": [
+        "Count 7:00–9:00 footfall at two metro exits",
+        "Interview 20 commuters about yesterday's coffee",
+        "Book a pop-up cart for two mornings"
+      ]
+    },
+    "nova": {
+      "names": [
+        {
+          "name": "Pausa",
+          "why": "The short stop before the train, named. Same word in Catalan, Spanish and Italian.",
+          "tagline": "A proper pause before the train.",
+          "palette": [
+            {
+              "name": "Primary",
+              "hex": "#2B211C"
+            },
+            {
+              "name": "Accent",
+              "hex": "#C8813A"
+            },
+            {
+              "name": "Background",
+              "hex": "#F4EADF"
+            },
+            {
+              "name": "Extra",
+              "hex": "#6E8B74"
+            }
+          ]
+        },
+        {
+          "name": "Andén",
+          "why": "The platform: where the morning ritual starts. Local, short, unusual for coffee.",
+          "tagline": "Coffee for the platform.",
+          "palette": [
+            {
+              "name": "Primary",
+              "hex": "#1E2A38"
+            },
+            {
+              "name": "Accent",
+              "hex": "#E0A43B"
+            },
+            {
+              "name": "Background",
+              "hex": "#F6F3EE"
+            },
+            {
+              "name": "Extra",
+              "hex": "#B5523B"
+            }
+          ]
+        },
+        {
+          "name": "Siete",
+          "why": "Open at seven: the one reason commuters will switch, as the name.",
+          "tagline": "Open at seven. Sharp.",
+          "palette": [
+            {
+              "name": "Primary",
+              "hex": "#20302A"
+            },
+            {
+              "name": "Accent",
+              "hex": "#D9653B"
+            },
+            {
+              "name": "Background",
+              "hex": "#F3EFE6"
+            },
+            {
+              "name": "Extra",
+              "hex": "#9AA88C"
+            }
+          ]
+        }
+      ],
+      "chosen": 0,
+      "positioning": "For Eixample commuters who want real coffee before work, Pausa is the takeaway kiosk at the metro exit that opens at 7:00, before the cafés.",
+      "typography": {
+        "display": "Fraunces",
+        "body": "Instrument Sans"
+      },
+      "voice": {
+        "traits": [
+          "Warm",
+          "Exact",
+          "Local",
+          "Quick"
+        ],
+        "rules": "Talk like the barista who knows your order: short lines, real times, one action.",
+        "sample": "Open at 7:00. Your flat white, before your train."
       }
-     ]
     },
-    {
-     "name": "Andén",
-     "why": "The platform: where the morning ritual happens.",
-     "tagline": "Coffee for the platform.",
-     "palette": [
-      {
-       "name": "Primary",
-       "hex": "#1E2A38"
-      },
-      {
-       "name": "Accent",
-       "hex": "#E0A43B"
-      },
-      {
-       "name": "Background",
-       "hex": "#F6F3EE"
-      },
-      {
-       "name": "Extra",
-       "hex": "#B5523B"
+    "dex": {
+      "logos": [
+        {
+          "concept": "Two rounded pause bars in amber before a tight lowercase serif name: the breather, as a sign.",
+          "icon": "cup",
+          "shape": "emblem",
+          "monogram": "P",
+          "glyph": "pause",
+          "wordmark": {
+            "weight": 600,
+            "letter_spacing_em": -0.03,
+            "case": "lower",
+            "mark": "none",
+            "placement": "left"
+          }
+        },
+        {
+          "concept": "A metro-style roundel: amber ring, dark bar carrying the P, wide capitals below.",
+          "icon": "cup",
+          "shape": "monogram",
+          "monogram": "P",
+          "glyph": "roundel",
+          "wordmark": {
+            "weight": 700,
+            "letter_spacing_em": 0.1,
+            "case": "upper",
+            "mark": "monogram",
+            "placement": "above"
+          }
+        },
+        {
+          "concept": "Wordmark only, ending in an amber full stop: a pause written as punctuation.",
+          "icon": "cup",
+          "shape": "wordmark",
+          "monogram": "PA",
+          "glyph": "stop",
+          "wordmark": {
+            "weight": 600,
+            "letter_spacing_em": -0.02,
+            "case": "title",
+            "mark": "none",
+            "placement": "left"
+          }
+        }
+      ],
+      "landing": {
+        "headline": "Great coffee before your train.",
+        "subheadline": "Specialty flat whites at the metro exit in Eixample, from 7:00, Monday to Saturday, ready before your train.",
+        "bullets": [
+          "Two drinks, made properly",
+          "Open 7:00, Monday to Saturday",
+          "Full refund if we don't open"
+        ],
+        "cta": "Pre-order for €2.40",
+        "offer": "First 300 opening-week flat whites at €2.40",
+        "offer_price": 2.4,
+        "normal_price": 3,
+        "price_hint_usd": 2.6,
+        "faq": [
+          {
+            "q": "What do I get, and when?",
+            "a": "One flat white during opening week. Show your receipt at the counter; we message you the date."
+          },
+          {
+            "q": "What if you never open?",
+            "a": "We open only after 100 pre-orders. If we don't, we refund every pre-order in full."
+          },
+          {
+            "q": "Will I miss my train?",
+            "a": "We keep two drinks on the menu and time every order. The pop-up cart tests a 2-minute wait first."
+          }
+        ],
+        "where_when": "Eixample, Monday to Saturday from 7:00"
       }
-     ]
     },
-    {
-     "name": "Siete",
-     "why": "Open at seven, the reason commuters choose it.",
-     "tagline": "Open at seven. Sharp.",
-     "palette": [
-      {
-       "name": "Primary",
-       "hex": "#20302A"
-      },
-      {
-       "name": "Accent",
-       "hex": "#D9653B"
-      },
-      {
-       "name": "Background",
-       "hex": "#F3EFE6"
-      },
-      {
-       "name": "Extra",
-       "hex": "#9AA88C"
-      }
-     ]
+    "rae": {
+      "start_date": "2026-11-16",
+      "handle": "@pausa.bcn",
+      "posts": [
+        {
+          "day": 1,
+          "channel": "instagram",
+          "time": "08:15",
+          "format": "post",
+          "hook": "Where do you get coffee before 8?",
+          "caption": "We're counting who leaves two Eixample metro exits between 7:00 and 9:00. Tell us where you buy coffee now.",
+          "cta": "Answer in the poll"
+        },
+        {
+          "day": 3,
+          "channel": "tiktok",
+          "time": "19:00",
+          "format": "reel",
+          "hook": "Why we'd open at seven, not nine",
+          "caption": "Most cafés here open after 8:30. Trains don't wait. The 7–9 gap in 20 seconds.",
+          "cta": "Follow the build"
+        },
+        {
+          "day": 5,
+          "channel": "instagram",
+          "time": "08:15",
+          "format": "story",
+          "hook": "Flat white or cortado? You decide.",
+          "caption": "The morning menu has room for two drinks. Vote and we'll pour the winner first.",
+          "cta": "Vote in the poll"
+        },
+        {
+          "day": 8,
+          "channel": "instagram",
+          "time": "07:00",
+          "format": "post",
+          "hook": "Pop-up cart at the exit today, 7:00–9:30",
+          "caption": "Two drinks, €3.00, every order timed. Taste it before we sign anything.",
+          "cta": "Come by before work"
+        },
+        {
+          "day": 9,
+          "channel": "tiktok",
+          "time": "19:00",
+          "format": "reel",
+          "hook": "We timed every order this morning",
+          "caption": "Stopwatch on the counter, every cup. What slowed us down and what we changed.",
+          "cta": "Follow the build"
+        },
+        {
+          "day": 11,
+          "channel": "instagram",
+          "time": "08:15",
+          "format": "carousel",
+          "hook": "Two mornings at the cart, in numbers",
+          "caption": "Cups sold, median wait, the most-asked question. Straight from the notebook, good or bad.",
+          "cta": "Follow for the result"
+        },
+        {
+          "day": 15,
+          "channel": "instagram",
+          "time": "08:15",
+          "format": "post",
+          "hook": "Pre-orders are open: €2.40 flat whites",
+          "caption": "The first 300 opening-week flat whites at €2.40. We open only at 100 pre-orders; if not, full refund.",
+          "cta": "Pre-order yours"
+        },
+        {
+          "day": 16,
+          "channel": "email",
+          "time": "08:00",
+          "format": "email",
+          "hook": "Pre-orders are open",
+          "caption": "You told us where you buy coffee now. Here's the €2.40 opening-week offer and the refund rule.",
+          "cta": "Pre-order now"
+        },
+        {
+          "day": 18,
+          "channel": "linkedin",
+          "time": "08:45",
+          "format": "post",
+          "hook": "Why we're testing before signing a lease",
+          "caption": "Footfall counts, 20 interviews, a two-morning cart, 100 pre-orders. Deciding with numbers, not hope.",
+          "cta": "Read the method"
+        },
+        {
+          "day": 22,
+          "channel": "instagram",
+          "time": "08:15",
+          "format": "story",
+          "hook": "Countdown to 100",
+          "caption": "Every pre-order moves the bar. At 100 we sign; under 100 everyone is refunded.",
+          "cta": "Pre-order yours"
+        },
+        {
+          "day": 24,
+          "channel": "tiktok",
+          "time": "19:00",
+          "format": "reel",
+          "hook": "6:30 to 9:30 behind a coffee cart",
+          "caption": "Set-up, the 8:15 rush, the last cup. One cart morning, sped up.",
+          "cta": "Pre-order yours"
+        },
+        {
+          "day": 26,
+          "channel": "email",
+          "time": "08:00",
+          "format": "email",
+          "hook": "Last week at €2.40",
+          "caption": "Pre-orders close on Saturday. After that a flat white is €3.00 like every other day.",
+          "cta": "Pre-order now"
+        }
+      ],
+      "first_posts": [
+        {
+          "kind": "Question",
+          "title": "Where do you get coffee before 8?",
+          "text": "We're counting who leaves two Eixample metro exits between 7:00 and 9:00, and asking where they buy coffee now. Tell us yours in the poll.",
+          "date": "2026-11-16T08:15",
+          "channel": "instagram"
+        },
+        {
+          "kind": "Why seven",
+          "title": "Open before your train",
+          "text": "Most cafés around here open after 8:30. A lot of trains leave earlier. So we want to open at 7:00, with two drinks done properly. Follow the build.",
+          "date": "2026-11-18T19:00",
+          "channel": "tiktok"
+        },
+        {
+          "kind": "Pop-up test",
+          "title": "Find the cart today",
+          "text": "Pop-up cart at the metro exit today, 7:00 to 9:30. Flat white €3.00, every order timed. Taste it and tell us straight: should we open here?",
+          "date": "2026-11-23T07:00",
+          "channel": "instagram"
+        }
+      ]
+    },
+    "pip": {
+      "slug": "pausa",
+      "url": "/s/pausa",
+      "live_at": "2026-11-14T09:26:20.000Z"
     }
-   ],
-   "chosen": 0,
-   "typography": {
-    "display": "Fraunces",
-    "body": "Instrument Sans"
-   },
-   "voice": {
-    "traits": [
-     "Warm",
-     "Clear",
-     "Local",
-     "Quick"
-    ],
-    "rules": "Talk like a neighbour behind the counter: short sentences, real details, one action.",
-    "sample": "Open at 7:00. Your flat white is already on its way."
-   }
   },
-  "dex": {
-   "logos": [
-    {
-     "concept": "The name in a warm serif with a small cup to the left.",
-     "icon": "cup",
-     "shape": "wordmark",
-     "monogram": "P",
-     "wordmark": {
-      "weight": 600,
-      "letter_spacing_em": -0.02,
-      "case": "title",
-      "mark": "icon",
-      "placement": "left"
-     }
+  "timings": {
+    "validate": {
+      "started": 1794648305000,
+      "finished": 1794648341000
     },
-    {
-     "concept": "A bold P monogram above the name, like a metro sign.",
-     "icon": "cup",
-     "shape": "monogram",
-     "monogram": "P",
-     "wordmark": {
-      "weight": 700,
-      "letter_spacing_em": 0.06,
-      "case": "upper",
-      "mark": "monogram",
-      "placement": "above"
-     }
-    },
-    {
-     "concept": "A steaming cup in a round badge, name in lowercase.",
-     "icon": "cup",
-     "shape": "emblem",
-     "monogram": "PA",
-     "wordmark": {
-      "weight": 500,
-      "letter_spacing_em": -0.01,
-      "case": "lower",
-      "mark": "icon",
-      "placement": "above"
-     }
+    "build": {
+      "started": 1794648360000,
+      "finished": 1794648402000
     }
-   ],
-   "landing": {
-    "headline": "Great coffee before your train.",
-    "subheadline": "Specialty coffee ready in 90 seconds at the metro exit in Eixample, from 7:00.",
-    "bullets": [
-     "Ready in 90 seconds, order ahead",
-     "Beans roasted in Barcelona",
-     "Open from 7:00, Monday to Saturday"
-    ],
-    "cta": "Pre-order for €2.50",
-    "offer": "First 300 opening-week flat whites at €2.50",
-    "offer_price": 2.5,
-    "normal_price": 3.2,
-    "price_hint_usd": 2.7,
-    "faq": [
-     {
-      "q": "What do I get?",
-      "a": "One flat white during opening week, ready when you show the receipt."
-     },
-     {
-      "q": "When do you open?",
-      "a": "We open as soon as 30 pre-orders are in. We'll message you the date."
-     },
-     {
-      "q": "Can I get my money back?",
-      "a": "Yes. If we don't open, write to us and we send it back."
-     }
-    ],
-    "where_when": "Eixample, Monday to Saturday from 7:00"
-   }
   },
-  "rae": {
-   "start_date": "2026-11-16",
-   "handle": "@pausa.bcn",
-   "posts": [
-    {
-     "day": 1,
-     "channel": "instagram",
-     "time": "08:30",
-     "format": "post",
-     "hook": "Something is brewing at the metro exit",
-     "caption": "Doors will open at 7:00, before your train. Pre-order your first flat white for €2.50.",
-     "cta": "Pre-order"
-    },
-    {
-     "day": 3,
-     "channel": "tiktok",
-     "time": "19:00",
-     "format": "reel",
-     "hook": "Why we open at seven, not nine",
-     "caption": "The 7 to 9 gap in 20 seconds, filmed at the exit.",
-     "cta": "Follow for opening day"
-    },
-    {
-     "day": 5,
-     "channel": "instagram",
-     "time": "08:30",
-     "format": "story",
-     "hook": "Flat white or cortado? Vote",
-     "caption": "Help us pick the two drinks on the morning menu.",
-     "cta": "Vote in the poll"
-    },
-    {
-     "day": 6,
-     "channel": "tiktok",
-     "time": "19:00",
-     "format": "reel",
-     "hook": "Meet the beans roasted 6 km away",
-     "caption": "Who roasts them, how they taste, why it matters at 7 am.",
-     "cta": "Link in bio"
-    },
-    {
-     "day": 8,
-     "channel": "instagram",
-     "time": "07:00",
-     "format": "post",
-     "hook": "Pop-up cart at the metro exit, Mon–Tue from 7:00",
-     "caption": "Two drinks, 90 seconds, €3.20. Come taste it before we sign a lease.",
-     "cta": "Come by from 7:00"
-    },
-    {
-     "day": 10,
-     "channel": "instagram",
-     "time": "07:30",
-     "format": "carousel",
-     "hook": "90 seconds from order to cup",
-     "caption": "We timed 50 orders at the pop-up cart. Here is how.",
-     "cta": "Pre-order yours"
-    },
-    {
-     "day": 11,
-     "channel": "email",
-     "time": "08:00",
-     "format": "email",
-     "hook": "Your pre-order is reserved",
-     "caption": "Your €2.50 flat white is held for opening week. We'll email the date and what to show at the counter.",
-     "cta": "Reply with a question"
-    },
-    {
-     "day": 16,
-     "channel": "linkedin",
-     "time": "09:00",
-     "format": "post",
-     "hook": "What two mornings of 7 am coffee taught us",
-     "caption": "Real numbers from the cart and what we changed.",
-     "cta": "Read the numbers"
-    },
-    {
-     "day": 19,
-     "channel": "instagram",
-     "time": "08:30",
-     "format": "post",
-     "hook": "Your first reviews, unedited",
-     "caption": "What commuters said at the pop-up cart.",
-     "cta": "Tag a friend who needs this"
-    },
-    {
-     "day": 22,
-     "channel": "tiktok",
-     "time": "19:00",
-     "format": "reel",
-     "hook": "A morning behind the cart",
-     "caption": "From 6:30 set-up to the 8:15 rush.",
-     "cta": "Follow along"
-    },
-    {
-     "day": 25,
-     "channel": "instagram",
-     "time": "08:30",
-     "format": "story",
-     "hook": "Ask us anything about Pausa",
-     "caption": "Live Q&A on Instagram at 8:30.",
-     "cta": "Send a question"
-    },
-    {
-     "day": 26,
-     "channel": "email",
-     "time": "08:00",
-     "format": "email",
-     "hook": "Last week to pre-order at €2.50",
-     "caption": "After Sunday the opening-week pre-order goes back to €3.20.",
-     "cta": "Pre-order now"
-    }
-   ],
-   "first_posts": [
-    {
-     "kind": "Teaser",
-     "title": "Opening at 7:00 sharp",
-     "text": "Something is brewing at the metro exit. Doors will open at 7:00, before your train. Pre-order your first flat white for €2.50.",
-     "date": "2026-11-16T08:30",
-     "channel": "instagram"
-    },
-    {
-     "kind": "Behind the scenes",
-     "title": "Why seven, not nine",
-     "text": "Most cafés here open at 8:30. Your train doesn't wait. That's why we'll open at 7:00. Follow for opening day.",
-     "date": "2026-11-18T19:00",
-     "channel": "tiktok"
-    },
-    {
-     "kind": "Pop-up test",
-     "title": "Pop-up cart, Mon–Tue from 7:00",
-     "text": "Find our cart at the metro exit on Monday and Tuesday from 7:00. Two drinks, 90 seconds, €3.20. Tell us what you think.",
-     "date": "2026-11-23T07:00",
-     "channel": "instagram"
-    }
-   ]
+  "models": {
+    "mia": "mock",
+    "leo": "mock",
+    "sam": "mock",
+    "nova": "mock",
+    "dex": "mock",
+    "rae": "mock",
+    "pip": "none"
   },
-  "pip": {
-   "slug": "pausa",
-   "url": "/s/pausa",
-   "live_at": "2026-11-16T08:59:00.000Z"
-  },
-  "memo": {
-   "purpose": "A takeaway specialty coffee kiosk at a metro exit in Eixample, for commuters who want good coffee before 9:00.",
-   "problem": "Between 7:00 and 9:00 commuters pick between fast generic coffee and good coffee that opens too late. Queues at bakery counters make many skip it.",
-   "insight": "Almost no specialty café is open before 8:30, and commuters already pay €3 or more. A two-drink menu served in 90 seconds owns that window.",
-   "verdict_line": "Leo scores it 7.8/10: go, if you can reach about 186 customers a day.",
-   "next_7_days": [
-    "Count footfall at two exits from 7:00 to 9:00",
-    "Interview 20 commuters about their last coffee",
-    "Book a pop-up cart for two mornings next week"
-   ]
-  }
- },
- "timings": {
-  "validate": {
-   "started": 1794819305000,
-   "finished": 1794819321000
-  },
-  "build": {
-   "started": 1794819360000,
-   "finished": 1794819378000
-  }
- },
- "models": {
-  "mia": "mock",
-  "leo": "mock",
-  "sam": "mock",
-  "nova": "mock",
-  "dex": "mock",
-  "rae": "mock",
-  "pip": "none"
- },
- "share_id": null,
- "example": true
+  "share_id": null,
+  "example": true
 }

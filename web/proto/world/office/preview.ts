@@ -8,6 +8,8 @@
 //   focus  = overview | lobby | mia | … | pip
 //   tm     = aces | neutral      tone mapping (WS-B's stub uses neutral)
 //   still=1  no idle motion       bar=0 hide the buttons       cheer=<room> fire a celebration after load
+//   time   = dawn | day | golden | dusk | night | 0..1   v6 day cycle: an interpolated preset (overrides atmo)
+//   cycle  = <seconds>           run the whole day cycle (applyAtmosphere every 100 ms, like the world clock)
 import * as THREE from "three";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { GTAOPass } from "three/examples/jsm/postprocessing/GTAOPass.js";
@@ -71,17 +73,74 @@ if (quality === "high" && qp.get("ao") !== "0") {
   composer.addPass(new SMAAPass());
 }
 
+// ── v6 day cycle keyframes (dev stand-in for the world clock; t: 0 = midnight, 0.5 = noon)
+const KF: Array<{ t: number; p: AtmospherePreset }> = (() => {
+  const night = THEMES.midnight.atmosphere, golden = THEMES.ivory.atmosphere, day = THEMES.graphite.atmosphere;
+  const surf = day.surfaces;
+  const dawn: AtmospherePreset = {
+    timeOfDay: "golden", sky: ["#E9DCE0", "#F2D8C6"], fog: { color: "#F0DACB", near: 60, far: 220 },
+    key: { color: "#FFC9A0", intensity: 2.1, azimuth: -70, elevation: 14, shadows: true },
+    ambient: { sky: "#E8E2F0", ground: "#A89A92", intensity: 0.6 }, ground: "#E6DED6", exposure: 1.02, surfaces: surf, accentStrength: 0.88, lightsOn: 0.45 as unknown as boolean,
+  };
+  const dusk: AtmospherePreset = {
+    timeOfDay: "night", sky: ["#2A2E4A", "#9C7272"], fog: { color: "#7E6470", near: 55, far: 210 },
+    key: { color: "#FF9A66", intensity: 1.15, azimuth: 82, elevation: 7, shadows: true },
+    ambient: { sky: "#7C7EA8", ground: "#3A3038", intensity: 0.55 }, ground: "#5E5258", exposure: 1.04, surfaces: surf, accentStrength: 0.9, lightsOn: 0.9 as unknown as boolean,
+  };
+  const n = { ...night, surfaces: surf, lightsOn: 1 as unknown as boolean };
+  return [
+    { t: 0, p: n }, { t: 0.2, p: n }, { t: 0.27, p: dawn }, { t: 0.38, p: { ...day, lightsOn: 0 as unknown as boolean } },
+    { t: 0.62, p: { ...day, lightsOn: 0 as unknown as boolean } }, { t: 0.72, p: { ...golden, surfaces: surf, lightsOn: 0.4 as unknown as boolean } },
+    { t: 0.8, p: dusk }, { t: 0.87, p: n }, { t: 1, p: n },
+  ];
+})();
+const NAMED: Record<string, number> = { dawn: 0.27, day: 0.5, golden: 0.72, dusk: 0.8, night: 0.0 };
+const cA = new THREE.Color(), cB = new THREE.Color();
+const lc = (a: string, b: string, k: number) => "#" + cA.set(a).lerp(cB.set(b), k).getHexString();
+const ln = (a: number, b: number, k: number) => a + (b - a) * k;
+function dayPreset(t: number): AtmospherePreset {
+  t = ((t % 1) + 1) % 1;
+  let i = 0;
+  while (i < KF.length - 2 && KF[i + 1]!.t <= t) i++;
+  const A = KF[i]!, B = KF[i + 1]!;
+  const raw = (t - A.t) / Math.max(1e-6, B.t - A.t);
+  const k = raw * raw * (3 - 2 * raw);
+  const a = A.p, b = B.p;
+  const sky = (p: AtmospherePreset, j: number) => p.sky[Math.min(j, p.sky.length - 1)]!;
+  const fa = a.fog!, fb = b.fog!;
+  return {
+    timeOfDay: k < 0.5 ? a.timeOfDay : b.timeOfDay,
+    sky: [lc(sky(a, 0), sky(b, 0), k), lc(sky(a, 1), sky(b, 1), k)],
+    fog: { color: lc(fa.color, fb.color, k), near: ln(fa.near, fb.near, k), far: ln(fa.far, fb.far, k) },
+    key: { color: lc(a.key.color, b.key.color, k), intensity: ln(a.key.intensity, b.key.intensity, k), azimuth: ln(a.key.azimuth, b.key.azimuth, k), elevation: ln(a.key.elevation, b.key.elevation, k), shadows: true },
+    ambient: { sky: lc(a.ambient.sky, b.ambient.sky, k), ground: lc(a.ambient.ground, b.ambient.ground, k), intensity: ln(a.ambient.intensity, b.ambient.intensity, k) },
+    ground: lc(a.ground, b.ground, k),
+    exposure: ln(a.exposure, b.exposure, k),
+    surfaces: a.surfaces,
+    accentStrength: ln(a.accentStrength ?? 1, b.accentStrength ?? 1, k),
+    lightsOn: ln(Number(a.lightsOn ?? 0), Number(b.lightsOn ?? 0), k) as unknown as boolean,
+  };
+}
+
+const fog = new THREE.Fog("#ffffff", 100, 400);
 function applyAtmosphere(a: AtmospherePreset) {
   const [top, bottom = top] = a.sky;
-  scene.background = new THREE.Color(bottom);
+  scene.background = cA.set(bottom).clone();
   document.body.style.background = `linear-gradient(${top}, ${bottom})`;
-  scene.fog = a.fog ? new THREE.Fog(a.fog.color, a.fog.near, a.fog.far) : null;
+  if (a.fog) {
+    fog.color.set(a.fog.color);
+    fog.near = a.fog.near;
+    fog.far = a.fog.far;
+  }
+  scene.fog = a.fog ? fog : null;
   hemi.color.set(a.ambient.sky);
   hemi.groundColor.set(a.ambient.ground);
   hemi.intensity = a.ambient.intensity;
   key.color.set(a.key.color);
   key.intensity = a.key.intensity;
-  const az = THREE.MathUtils.degToRad(Number(qp.get("keyaz") ?? a.key.azimuth)), el = THREE.MathUtils.degToRad(Number(qp.get("keyel") ?? a.key.elevation));
+  // same rule as WS-B: a sun within ±40° of the camera yaw (34°) is swung to the left so shadows show
+  const sunAz = Math.abs(a.key.azimuth - 34) < 40 ? -35 + (a.key.azimuth - 34) * 0.3 : a.key.azimuth;
+  const az = THREE.MathUtils.degToRad(Number(qp.get("keyaz") ?? sunAz)), el = THREE.MathUtils.degToRad(Number(qp.get("keyel") ?? a.key.elevation));
   key.position.set(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el)).multiplyScalar(40);
   key.castShadow = a.key.shadows && quality === "high";
   (ground.material as THREE.MeshStandardMaterial).color.set(a.ground);
@@ -142,7 +201,12 @@ function applyStates(spec: string, instant: boolean) {
   for (const [d, s] of pairs) office.setDeptState(d, s, { instant });
 }
 
-applyAtmosphere(THEMES[ATMO[atmoKey]!].atmosphere);
+const timeQ = qp.get("time");
+const cycleSec = Number(qp.get("cycle") ?? 0);
+let dayT = timeQ == null ? -1 : timeQ in NAMED ? NAMED[timeQ]! : Number(timeQ);
+if (cycleSec > 0 && dayT < 0) dayT = 0.5;
+if (dayT >= 0) applyAtmosphere(dayPreset(dayT));
+else applyAtmosphere(THEMES[ATMO[atmoKey]!].atmosphere);
 applyStates(qp.get("states") ?? "locked", true);
 frame(focus, true);
 
@@ -156,7 +220,8 @@ const btn = (label: string, on: () => void, pressed = false) => {
   bar.appendChild(b);
   return b;
 };
-for (const k of Object.keys(ATMO)) btn(k, () => applyAtmosphere(THEMES[ATMO[k]!].atmosphere), k === atmoKey);
+for (const k of Object.keys(ATMO)) btn(k, () => applyAtmosphere(THEMES[ATMO[k]!].atmosphere), k === atmoKey && dayT < 0);
+for (const k of Object.keys(NAMED)) btn(`t:${k}`, () => applyAtmosphere(dayPreset(NAMED[k]!)));
 for (const k of Object.keys(PRESETS)) btn(k, () => applyStates(k, false));
 for (const f of ["overview", ...ALL_ROOMS] as const) btn(f, () => frame(f));
 btn("cheer", () => office.cheer(focus === "overview" ? undefined : focus));
@@ -172,6 +237,7 @@ renderer.domElement.addEventListener("click", (e) => {
 // ── loop
 const clock = new THREE.Clock();
 let frames = 0;
+let cycleAcc = 0;
 const cheerRoom = qp.get("cheer") as Room | null;
 function tick() {
   requestAnimationFrame(tick);
@@ -182,6 +248,14 @@ function tick() {
   camD += (goal.d - camD) * k;
   camera.position.copy(camT).addScaledVector(dir, camD);
   camera.lookAt(camT);
+  if (cycleSec > 0) {
+    dayT += dt / cycleSec;
+    cycleAcc += dt;
+    if (cycleAcc >= 0.1) {
+      cycleAcc = 0;
+      applyAtmosphere(dayPreset(dayT));
+    }
+  }
   office.update(dt, t);
   if (composer) composer.render(dt);
   else renderer.render(scene, camera);
@@ -192,4 +266,4 @@ function tick() {
   }
 }
 tick();
-(window as unknown as { __office: unknown }).__office = { office, renderer, scene, camera, frame, applyStates, gtao };
+(window as unknown as { __office: unknown }).__office = { office, renderer, scene, camera, frame, applyStates, gtao, applyAtmosphere, dayPreset };

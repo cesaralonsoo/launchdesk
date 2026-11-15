@@ -1,0 +1,915 @@
+{
+  "id": "pX7bk2Lq9e",
+  "idea": "An online shop for restored vintage road bikes, around €450 each",
+  "created_at": 1793611800000,
+  "payments": {
+    "validate": {
+      "txid": "dev-pX7bk2Lq9e-validate",
+      "sats": 0,
+      "cents": 10,
+      "at": 1793611805000
+    },
+    "build": {
+      "txid": "dev-pX7bk2Lq9e-build",
+      "sats": 0,
+      "cents": 20,
+      "at": 1793611860000
+    }
+  },
+  "status": {
+    "mia": "done",
+    "leo": "done",
+    "sam": "done",
+    "nova": "done",
+    "dex": "done",
+    "rae": "done",
+    "pip": "done"
+  },
+  "results": {
+    "mia": {
+      "title": "Restored vintage road bikes online",
+      "one_liner": "Classic steel road bikes, restored with every hour and part documented.",
+      "brief": {
+        "concept": "A two-person workshop restoring 1970s–1990s steel road bikes and selling up to 26 a month online at about €460.",
+        "for": "Riders aged 30 to 55 who want a classic steel bike but not the risk or the hours of restoring one.",
+        "goal": "Restore three bikes, log the true hours, and sell 3 paid pre-orders at €395 in four weeks."
+      },
+      "market": {
+        "city": null,
+        "country_iso": "ES",
+        "currency": "€",
+        "language": "en"
+      },
+      "gate": {
+        "metric": "paid bike pre-orders",
+        "target": 3,
+        "by_week": 4
+      },
+      "checklist": [
+        {
+          "week": 1,
+          "task": "Price 20 recently sold vintage road bikes",
+          "how": "Record final sale prices of sold listings, not asking prices, by size and groupset.",
+          "done_when": "A table of 20 sale prices",
+          "helped_by": "sam",
+          "est_hours": 3
+        },
+        {
+          "week": 1,
+          "task": "Buy three donor frames under €120 each",
+          "how": "Inspect frames in person for cracks and rust; check sizes riders ask for most.",
+          "done_when": "Three donors bought for €360 or less",
+          "helped_by": null,
+          "est_hours": 6
+        },
+        {
+          "week": 1,
+          "task": "Interview 10 riders who bought a used bike",
+          "how": "Ask in two cycling clubs what they bought, what it cost, what failed in month one.",
+          "done_when": "10 logged; 5+ paid for repairs after",
+          "helped_by": "leo",
+          "est_hours": 4
+        },
+        {
+          "week": 2,
+          "task": "Restore bike one and log every hour",
+          "how": "Time each step and record every part with its price.",
+          "done_when": "Bike ready; hours and parts cost written down",
+          "helped_by": "sam",
+          "est_hours": 12
+        },
+        {
+          "week": 2,
+          "task": "Photograph bike one in daylight",
+          "how": "Twelve shots: both sides, groupset, frame number, every repaired detail.",
+          "done_when": "Twelve photos ready",
+          "helped_by": "nova",
+          "est_hours": 2
+        },
+        {
+          "week": 2,
+          "task": "Get two boxed-bike shipping quotes",
+          "how": "Ask two couriers for door-to-door prices within Spain, with insurance.",
+          "done_when": "Two written quotes, both under €60",
+          "helped_by": null,
+          "est_hours": 1
+        },
+        {
+          "week": 3,
+          "task": "Share the pre-order page in two clubs",
+          "how": "Post bike one's before-and-after with the hours log and the €395 launch slots.",
+          "done_when": "Page shared with 100+ riders",
+          "helped_by": "pip",
+          "est_hours": 2
+        },
+        {
+          "week": 3,
+          "task": "Publish the first three launch posts",
+          "how": "Show the restoration of bike one, step by step.",
+          "done_when": "Three posts live; every question answered",
+          "helped_by": "rae",
+          "est_hours": 3
+        },
+        {
+          "week": 4,
+          "task": "Sell three paid pre-orders",
+          "how": "Offer the next three restorations at €395, sized to the buyer.",
+          "done_when": "Three pre-orders paid on-chain",
+          "helped_by": "pip",
+          "est_hours": 4
+        },
+        {
+          "week": 4,
+          "task": "Decide on workshop space",
+          "how": "Compare hours per bike and margin with break-even before renting.",
+          "done_when": "Decision written down with the numbers",
+          "helped_by": "sam",
+          "est_hours": 2
+        }
+      ]
+    },
+    "leo": {
+      "score": 7.1,
+      "verdict": "go",
+      "headline": "Sell the documented restoration, not just the bike.",
+      "summary": "Demand for classic steel bikes is steady, and buyers fear hidden faults in private listings. A shop that shows every hour and part can charge for that certainty.",
+      "signals": [
+        {
+          "name": "Demand",
+          "score": 6.8,
+          "why": "Steady niche interest in classic steel road bikes",
+          "source_id": null,
+          "weight": 0.3
+        },
+        {
+          "name": "Competition gap",
+          "score": 7.4,
+          "why": "Private listings rarely document the restoration",
+          "source_id": null,
+          "weight": 0.2
+        },
+        {
+          "name": "Price acceptance",
+          "score": 7.2,
+          "why": "Restored bikes sell well above donor prices",
+          "source_id": null,
+          "weight": 0.2
+        },
+        {
+          "name": "Channel",
+          "score": 7.5,
+          "why": "Clubs and restoration videos reach riders cheaply",
+          "source_id": null,
+          "weight": 0.15
+        },
+        {
+          "name": "Timing",
+          "score": 6.6,
+          "why": "Spring peaks; winter is slow",
+          "source_id": null,
+          "weight": 0.15
+        }
+      ],
+      "why_go": "Riders pay for certainty: a documented restoration and a 14-day return turn a risky used purchase into an easy one.",
+      "risks": [
+        {
+          "risk": "Restoration hours eat the margin.",
+          "mitigation": "Time bike one; cap labour at 10 hours a bike.",
+          "severity": "high"
+        },
+        {
+          "risk": "Bikes get damaged in shipping.",
+          "mitigation": "Test one insured boxed delivery to a friend.",
+          "severity": "med"
+        },
+        {
+          "risk": "Sales slow sharply in winter.",
+          "mitigation": "Offer restoration of customers' own bikes from November.",
+          "severity": "low"
+        }
+      ],
+      "pivot": null,
+      "next_step": "Restore one bike this week and log every hour and part: under 10 hours is the bar.",
+      "market_facts": [
+        {
+          "fact": "Unrestored steel road frames often sell second-hand for under €150.",
+          "source_id": null,
+          "is_estimate": true
+        },
+        {
+          "fact": "Fully restored classic road bikes commonly sell for €350 to €700.",
+          "source_id": null,
+          "is_estimate": true
+        },
+        {
+          "fact": "A full restoration takes an experienced mechanic roughly 8 to 12 hours.",
+          "source_id": null,
+          "is_estimate": true
+        },
+        {
+          "fact": "Boxed bike courier delivery within Spain usually costs €40 to €70.",
+          "source_id": null,
+          "is_estimate": true
+        }
+      ],
+      "competitors": [
+        {
+          "name": "Private second-hand listings",
+          "note": "Cheap, but faults are hidden",
+          "price": 2.5,
+          "differentiation": 2,
+          "url": null
+        },
+        {
+          "name": "Local bike workshops",
+          "note": "Skilled, rarely sell restored bikes",
+          "price": 6,
+          "differentiation": 6,
+          "url": null
+        },
+        {
+          "name": "Collector auctions",
+          "note": "Rare frames at collector prices",
+          "price": 9,
+          "differentiation": 7.5,
+          "url": null
+        },
+        {
+          "name": "New entry-level road bikes",
+          "note": "Reliable, but no character",
+          "price": 5,
+          "differentiation": 3,
+          "url": null
+        }
+      ],
+      "you": {
+        "price": 5.5,
+        "differentiation": 8
+      },
+      "interviews": {
+        "who": "Riders who bought a used road bike in the last two years",
+        "where": "Two cycling clubs and one Sunday group ride",
+        "questions": [
+          "Tell me about the last used bike you bought.",
+          "Where did you find it?",
+          "What did you pay, and what did you spend after?",
+          "What went wrong in the first month?",
+          "How did you check it before paying?"
+        ],
+        "good_sign": "They spent money on repairs after buying and say it unprompted.",
+        "target": 10
+      },
+      "kill_criteria": [
+        "Stop if bike one takes more than 10 hours to restore.",
+        "Stop if fewer than 2 of 3 launch slots sell in 30 days."
+      ],
+      "score_math": "0.30×6.8 + 0.20×7.4 + 0.20×7.2 + 0.15×7.5 + 0.15×6.6 = 7.1",
+      "verdict_rule": "Go from 7.0 with no signal at 3 or below · Pivot 5.0–6.9 · No-go under 5.0",
+      "confidence": {
+        "level": "low",
+        "note": "Desk estimates only, no web sources: signals capped at 7.5. Interviews decide."
+      },
+      "sources": []
+    },
+    "sam": {
+      "currency": "€",
+      "canvas": {
+        "customer": "Riders aged 30 to 55 across Spain",
+        "value": "A classic steel bike, restored, documented, ready to ride",
+        "revenue": "Restored bikes at about €460; owner restorations later",
+        "channels": "Own shop page, cycling clubs, restoration videos",
+        "costs": "Donor frames, parts, founder and helper, workshop, ads",
+        "unit_economics": "Each bike leaves about €200 after donor and parts"
+      },
+      "assumptions": [
+        {
+          "key": "customers_per_day_m1",
+          "label": "Bikes sold a day, month 1",
+          "value": 0.15,
+          "unit": "per day",
+          "basis": "About one bike a week at launch",
+          "is_estimate": true
+        },
+        {
+          "key": "customers_per_day_m12",
+          "label": "Bikes sold a day, month 12",
+          "value": 0.87,
+          "unit": "per day",
+          "basis": "26 a month: 260 h, founder plus helper",
+          "is_estimate": true
+        },
+        {
+          "key": "avg_ticket",
+          "label": "Average sale price",
+          "value": 460,
+          "unit": "€",
+          "basis": "Middle of recent sold prices",
+          "is_estimate": true
+        },
+        {
+          "key": "gross_margin_pct",
+          "label": "Margin after donor and parts",
+          "value": 44,
+          "unit": "%",
+          "basis": "Donor ~€120, parts ~€140; buyer pays shipping",
+          "is_estimate": true
+        },
+        {
+          "key": "fixed_costs_month",
+          "label": "Fixed costs a month",
+          "value": 4900,
+          "unit": "€",
+          "basis": "Sum of the six lines below",
+          "is_estimate": true
+        },
+        {
+          "key": "startup_cost",
+          "label": "Start-up cost",
+          "value": 12500,
+          "unit": "€",
+          "basis": "First 20 donors, tools, shop set-up",
+          "is_estimate": true
+        },
+        {
+          "key": "open_days_month",
+          "label": "Selling days a month",
+          "value": 30,
+          "unit": "days",
+          "basis": "Online, every day",
+          "is_estimate": true
+        }
+      ],
+      "fixed_costs_breakdown": [
+        {
+          "label": "Founder, minimum pay",
+          "value": 1600
+        },
+        {
+          "label": "Helper, part-time, 100 h",
+          "value": 900
+        },
+        {
+          "label": "Workshop rent",
+          "value": 850
+        },
+        {
+          "label": "Ads and photography",
+          "value": 700
+        },
+        {
+          "label": "Platform and payment fees",
+          "value": 450
+        },
+        {
+          "label": "Tools, consumables, insurance",
+          "value": 400
+        }
+      ],
+      "months": [
+        {
+          "month": 1,
+          "revenue": 2070,
+          "costs": 6059,
+          "cash": -16489
+        },
+        {
+          "month": 2,
+          "revenue": 2363,
+          "costs": 6223,
+          "cash": -20349
+        },
+        {
+          "month": 3,
+          "revenue": 2857,
+          "costs": 6500,
+          "cash": -23992
+        },
+        {
+          "month": 4,
+          "revenue": 3641,
+          "costs": 6939,
+          "cash": -27290
+        },
+        {
+          "month": 5,
+          "revenue": 4781,
+          "costs": 7577,
+          "cash": -30086
+        },
+        {
+          "month": 6,
+          "revenue": 6242,
+          "costs": 8396,
+          "cash": -32240
+        },
+        {
+          "month": 7,
+          "revenue": 7834,
+          "costs": 9287,
+          "cash": -33693
+        },
+        {
+          "month": 8,
+          "revenue": 9295,
+          "costs": 10105,
+          "cash": -34503
+        },
+        {
+          "month": 9,
+          "revenue": 10435,
+          "costs": 10744,
+          "cash": -34812
+        },
+        {
+          "month": 10,
+          "revenue": 11219,
+          "costs": 11183,
+          "cash": -34776
+        },
+        {
+          "month": 11,
+          "revenue": 11713,
+          "costs": 11459,
+          "cash": -34522
+        },
+        {
+          "month": 12,
+          "revenue": 12006,
+          "costs": 11623,
+          "cash": -34139
+        }
+      ],
+      "price": {
+        "value": 460,
+        "display": "€460",
+        "note": "Restored road bike; average €460"
+      },
+      "startup_cost": {
+        "value": 12500,
+        "display": "€13k",
+        "note": "20 donor frames, tools, shop set-up"
+      },
+      "cash_needed": {
+        "value": 34812,
+        "display": "€35k",
+        "month": 9
+      },
+      "break_even": {
+        "month": 10,
+        "note": "Revenue covers costs from month 10"
+      },
+      "breakeven_units_per_day": 0.9,
+      "year1": {
+        "revenue": "€84k",
+        "costs": "€106k",
+        "result": "−€22k",
+        "monthly_profit_m12": "€383",
+        "payback": "About month 102"
+      },
+      "main_risk": "Hours per bike decide everything; over 10 h the two of you can't reach break-even: time bike one first.",
+      "key_assumption": "fixed_costs_month",
+      "launch_offer": {
+        "item": "Launch restoration slot",
+        "price": 395,
+        "normal_price": 460,
+        "limit": 3,
+        "display": "€395",
+        "normal_display": "€460",
+        "discount_pct": 14,
+        "contribution": 137.4,
+        "contribution_display": "€137",
+        "revenue_if_sold_out": 1185,
+        "revenue_display": "€1.2k"
+      },
+      "unit": {
+        "price": 460,
+        "variable_cost": 257.6,
+        "contribution": 202.4,
+        "margin_pct": 44,
+        "line": "€460 a sale − €258 direct cost = €202 left"
+      },
+      "breakeven": {
+        "per_month": 25,
+        "per_day": 0.9,
+        "formula": "€4,900 fixed ÷ €202 per sale = 25 sales a month"
+      },
+      "headroom": {
+        "m12_per_day": 0.87,
+        "breakeven_per_day": 0.9,
+        "multiple": 1,
+        "note": "Thin: month 12 is only 1× break-even"
+      },
+      "sensitivity": [
+        {
+          "key": "fixed_costs_month",
+          "label": "Fixed costs a month",
+          "low": {
+            "value": 3920,
+            "year1_result": -9879,
+            "break_even_month": 8,
+            "breakeven_per_day": 0.7,
+            "cash_needed": 26833
+          },
+          "base": {
+            "value": 4900,
+            "year1_result": -21639,
+            "break_even_month": 10,
+            "breakeven_per_day": 0.9,
+            "cash_needed": 34812
+          },
+          "high": {
+            "value": 5880,
+            "year1_result": -33399,
+            "break_even_month": null,
+            "breakeven_per_day": 1,
+            "cash_needed": 45899
+          },
+          "swing": 23520,
+          "line": "Fixed costs a month ±20%: year 1 from −€33k to −€9.9k"
+        },
+        {
+          "key": "gross_margin_pct",
+          "label": "Margin after donor and parts",
+          "low": {
+            "value": 34,
+            "year1_result": -30086,
+            "break_even_month": null,
+            "breakeven_per_day": 1.1,
+            "cash_needed": 42586
+          },
+          "base": {
+            "value": 44,
+            "year1_result": -21639,
+            "break_even_month": 10,
+            "breakeven_per_day": 0.9,
+            "cash_needed": 34812
+          },
+          "high": {
+            "value": 54,
+            "year1_result": -13194,
+            "break_even_month": 8,
+            "breakeven_per_day": 0.7,
+            "cash_needed": 30714
+          },
+          "swing": 16892,
+          "line": "Margin after donor and parts ±10 pts: year 1 from −€30k to −€13k"
+        },
+        {
+          "key": "customers_per_day_m12",
+          "label": "Bikes sold a day",
+          "low": {
+            "value": 0.7,
+            "year1_result": -29072,
+            "break_even_month": null,
+            "breakeven_per_day": 0.9,
+            "cash_needed": 41572
+          },
+          "base": {
+            "value": 0.87,
+            "year1_result": -21639,
+            "break_even_month": 10,
+            "breakeven_per_day": 0.9,
+            "cash_needed": 34812
+          },
+          "high": {
+            "value": 1.04,
+            "year1_result": -14208,
+            "break_even_month": 8,
+            "breakeven_per_day": 0.9,
+            "cash_needed": 31072
+          },
+          "swing": 14864,
+          "line": "Bikes sold a day ±20%: year 1 from −€29k to −€14k"
+        }
+      ]
+    },
+    "memo": {
+      "purpose": "An online shop for restored classic steel road bikes, for riders who want character without the risk.",
+      "problem": "Used bikes from private listings often hide faults that cost money in the first month. Riders who love classic frames rarely have the time or tools to restore one.",
+      "insight": "Buyers pay for certainty, not nostalgia. Publishing the hours and parts of every restoration makes a used bike feel as safe as a new one.",
+      "verdict_line": "Thin but testable: break-even is 27 bikes a month and the plan reaches 26, only if a restoration stays under 10 hours.",
+      "next_7_days": [
+        "Time a full restoration of one donor bike",
+        "Price 20 recently sold vintage bikes",
+        "Interview 10 riders who bought a used bike"
+      ]
+    },
+    "nova": {
+      "names": [
+        {
+          "name": "Segunda Vuelta",
+          "why": "A second lap: an old bike's second life, and the rider's next ride.",
+          "tagline": "Classic steel, second life.",
+          "palette": [
+            {
+              "name": "Primary",
+              "hex": "#1C2433"
+            },
+            {
+              "name": "Accent",
+              "hex": "#C2412D"
+            },
+            {
+              "name": "Background",
+              "hex": "#F2EEE6"
+            },
+            {
+              "name": "Extra",
+              "hex": "#8A9A86"
+            }
+          ]
+        },
+        {
+          "name": "Lugged",
+          "why": "Names the craft detail fans look for in a steel frame.",
+          "tagline": "Restored by hand.",
+          "palette": [
+            {
+              "name": "Primary",
+              "hex": "#20282A"
+            },
+            {
+              "name": "Accent",
+              "hex": "#B8862F"
+            },
+            {
+              "name": "Background",
+              "hex": "#F4F1EC"
+            },
+            {
+              "name": "Extra",
+              "hex": "#6F7F8A"
+            }
+          ]
+        },
+        {
+          "name": "Rueda Lenta",
+          "why": "Slow wheel: riding for pleasure, not for watts.",
+          "tagline": "Bikes with a past.",
+          "palette": [
+            {
+              "name": "Primary",
+              "hex": "#2A2A28"
+            },
+            {
+              "name": "Accent",
+              "hex": "#2F6F8F"
+            },
+            {
+              "name": "Background",
+              "hex": "#F6F2EA"
+            },
+            {
+              "name": "Extra",
+              "hex": "#D9B26A"
+            }
+          ]
+        }
+      ],
+      "chosen": 0,
+      "positioning": "For riders who love classic steel but not the gamble, Segunda Vuelta is the restoration shop that documents every hour and every part.",
+      "typography": {
+        "display": "Space Grotesk",
+        "body": "IBM Plex Sans"
+      },
+      "voice": {
+        "traits": [
+          "Precise",
+          "Honest",
+          "Nerdy",
+          "Calm"
+        ],
+        "rules": "Write like a mechanic's notebook: part names, hours, what we fixed.",
+        "sample": "1987 frame, new bearings, 11 hours. Rides like it's new."
+      }
+    },
+    "dex": {
+      "logos": [
+        {
+          "concept": "A race-number roundel: red ring, dark bar carrying SV, spaced capitals below.",
+          "icon": "bike",
+          "shape": "monogram",
+          "monogram": "SV",
+          "glyph": "roundel",
+          "wordmark": {
+            "weight": 600,
+            "letter_spacing_em": 0.1,
+            "case": "upper",
+            "mark": "monogram",
+            "placement": "above"
+          }
+        },
+        {
+          "concept": "A lap arrow closing its own circle, then a firm grotesque name: the second lap.",
+          "icon": "bike",
+          "shape": "emblem",
+          "monogram": "S",
+          "glyph": "loop",
+          "wordmark": {
+            "weight": 700,
+            "letter_spacing_em": -0.01,
+            "case": "title",
+            "mark": "none",
+            "placement": "left"
+          }
+        },
+        {
+          "concept": "Wordmark only in firm capitals, ending in a red full stop, like a frame decal.",
+          "icon": "bike",
+          "shape": "wordmark",
+          "monogram": "SV",
+          "glyph": "stop",
+          "wordmark": {
+            "weight": 700,
+            "letter_spacing_em": 0.04,
+            "case": "upper",
+            "mark": "none",
+            "placement": "left"
+          }
+        }
+      ],
+      "landing": {
+        "headline": "A classic bike, without the gamble.",
+        "subheadline": "Restored 1970s–1990s steel road bikes, every hour and part documented, shipped boxed across Spain at cost.",
+        "bullets": [
+          "Hours log and parts list with every bike",
+          "14-day return, full refund",
+          "Sized to you before we start"
+        ],
+        "cta": "Pre-order for €395",
+        "offer": "First 3 launch restoration slots at €395",
+        "offer_price": 395,
+        "normal_price": 460,
+        "price_hint_usd": 425,
+        "faq": [
+          {
+            "q": "What do I get, and when?",
+            "a": "A restored bike in your size, shipped about two weeks after you pre-order."
+          },
+          {
+            "q": "What if it doesn't fit?",
+            "a": "Send it back within 14 days in the same box and we refund you in full."
+          },
+          {
+            "q": "How do I know it's sound?",
+            "a": "You get the hours log, parts list and photos of every repaired detail before it ships."
+          }
+        ],
+        "where_when": null
+      }
+    },
+    "rae": {
+      "start_date": "2026-11-09",
+      "handle": "@segundavuelta.bikes",
+      "posts": [
+        {
+          "day": 1,
+          "channel": "instagram",
+          "time": "19:00",
+          "format": "carousel",
+          "hook": "A €110 frame, before we touch it",
+          "caption": "Bike one as we bought it: rust, seized bearings, good bones. Watch it come back.",
+          "cta": "Follow the build"
+        },
+        {
+          "day": 3,
+          "channel": "tiktok",
+          "time": "19:30",
+          "format": "reel",
+          "hook": "Stripping a 1985 frame in 30 seconds",
+          "caption": "Every bolt, sped up. Next week: bearings and paint.",
+          "cta": "Follow along"
+        },
+        {
+          "day": 5,
+          "channel": "instagram",
+          "time": "19:00",
+          "format": "story",
+          "hook": "Which frame should we restore next?",
+          "caption": "Three donors, you choose.",
+          "cta": "Vote in the poll"
+        },
+        {
+          "day": 10,
+          "channel": "instagram",
+          "time": "19:00",
+          "format": "post",
+          "hook": "Bike one: done",
+          "caption": "1985 steel, size 56, new bearings and tyres. The hours log is in the comments.",
+          "cta": "Follow for launch slots"
+        },
+        {
+          "day": 12,
+          "channel": "linkedin",
+          "time": "09:00",
+          "format": "post",
+          "hook": "What a restored bike really costs",
+          "caption": "Donor, parts, hours: every euro from bike one.",
+          "cta": "Read the numbers"
+        },
+        {
+          "day": 14,
+          "channel": "tiktok",
+          "time": "19:30",
+          "format": "reel",
+          "hook": "How we box a bike so it arrives safe",
+          "caption": "The packing, step by step.",
+          "cta": "Save this"
+        },
+        {
+          "day": 15,
+          "channel": "email",
+          "time": "09:00",
+          "format": "email",
+          "hook": "Three launch slots at €395",
+          "caption": "We'll restore three bikes in your size at the launch price. Normally €460.",
+          "cta": "Reserve a slot"
+        },
+        {
+          "day": 17,
+          "channel": "x",
+          "time": "18:00",
+          "format": "post",
+          "hook": "Three mistakes we made on bike one",
+          "caption": "And what we'll do differently on bike two.",
+          "cta": "Read the thread"
+        },
+        {
+          "day": 20,
+          "channel": "instagram",
+          "time": "19:00",
+          "format": "post",
+          "hook": "Bike two on the stand",
+          "caption": "1989 lugged steel, size 54. Here's the plan and the parts list.",
+          "cta": "Pre-order yours"
+        },
+        {
+          "day": 24,
+          "channel": "tiktok",
+          "time": "19:30",
+          "format": "reel",
+          "hook": "The 10-hour rule",
+          "caption": "Why every restoration has a time budget, and what happens when we blow it.",
+          "cta": "Follow along"
+        },
+        {
+          "day": 28,
+          "channel": "email",
+          "time": "09:00",
+          "format": "email",
+          "hook": "Last launch slot",
+          "caption": "After this one, restorations are €460.",
+          "cta": "Pre-order now"
+        }
+      ],
+      "first_posts": [
+        {
+          "kind": "Before",
+          "title": "A €110 frame",
+          "text": "Bike one as we bought it: a 1985 steel frame for €110, rust and seized bearings, but good bones. Follow along as we bring it back, hour by hour.",
+          "date": "2026-11-09T19:00",
+          "channel": "instagram"
+        },
+        {
+          "kind": "Behind the scenes",
+          "title": "Stripped in 30 seconds",
+          "text": "Every bolt, every bearing, sped up. This is the first hour of a restoration you can follow from start to finish.",
+          "date": "2026-11-11T19:30",
+          "channel": "tiktok"
+        },
+        {
+          "kind": "Bike one",
+          "title": "Bike one is ready",
+          "text": "1985 steel, size 56, new bearings, cables and tyres. The full hours log is in the comments. Launch slots open next week.",
+          "date": "2026-11-18T19:00",
+          "channel": "instagram"
+        }
+      ]
+    },
+    "pip": {
+      "slug": "segunda-vuelta",
+      "url": "/s/segunda-vuelta",
+      "live_at": "2026-11-02T09:31:20.000Z"
+    }
+  },
+  "timings": {
+    "validate": {
+      "started": 1793611805000,
+      "finished": 1793611841000
+    },
+    "build": {
+      "started": 1793611860000,
+      "finished": 1793611902000
+    }
+  },
+  "models": {
+    "mia": "mock",
+    "leo": "mock",
+    "sam": "mock",
+    "nova": "mock",
+    "dex": "mock",
+    "rae": "mock",
+    "pip": "none"
+  },
+  "share_id": null
+}

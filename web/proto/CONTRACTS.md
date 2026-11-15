@@ -192,3 +192,93 @@ Additive only. Nothing in `contracts.ts` changed.
 - **Idea popup**: headline, one muted line ("Seven AI specialists turn it into a live business."), field, "Validate · $0.10", and a 3-item outcome strip (Report · Brand · Live site). Only the real sample exists (no other example chips). If the typed idea differs from the sample, the pay sheet says "Demo shows a sample: Pausa, coffee kiosk."
 - **Verdict**: Pivot only when Leo says pivot; above "Build it" the four Build avatars + "Brand · Site · Launch plan".
 - **Themes**: the UI theme never tints the world. Ivory = paper UI + golden-hour light (Newsreader for titles/numbers, Geist text). Forest = green-black glass UI, lime only on the primary action, overcast morning. Mono = zero-chroma office. Graphite = neutral studio.
+
+## v6 notes (WS-C intelligence & content)
+
+- `data/pausa.json` was regenerated from the v6 mocks. **Pausa's numbers changed** (the §2 Data list above is v5):
+  Leo **7.7/10 go**, price €3.40, cash needed **€55k** (month 6), break-even **month 7 at 186 sales/day**,
+  year 1 **+€6.8k**, launch offer **€2.40** (normally €3), gate **100 paid pre-orders**, 10 tasks, 12 posts, `/s/pausa`.
+  `PREORDER_GOAL` now reads Mia's gate (100). Read numbers from the data, never from this note.
+- New optional fields on the stored results (gate, kill criteria, score maths, confidence, launch offer, unit,
+  break-even formula, headroom, sensitivity, positioning): see `data/DATA.md` (field list + hero number per card)
+  and `data/v6.ts` (`v6(project)` typed accessor).
+- `PAST_PROJECTS` is filled (Miga · Go · level 2, Ronda · Pivot · level 1, Segunda Vuelta · Go · level 3, all
+  full `Project` payloads). `toPast(project)` builds a row from any stored project for the visitor's own runs.
+
+## v6 notes (ws-a2, office art)
+
+Only `world/office/**` changed. `OfficeModel` API, coordinates, `bounds()`/`roomBounds()`, `anchor()`, `office-ground-shadow` are unchanged.
+
+- **Day cycle input.** `applyAtmosphere(a)` is allocation-free (≈0.07 ms) and safe at 10×/s. It never rebuilds materials or geometry. It derives three continuous factors from whatever preset it gets, so an interpolated preset fades smoothly and `timeOfDay` may be a rounded label:
+  - `dark` (0 day … 1 night) from the luminance of the bottom `sky` colour (and a weak key-light intensity),
+  - `warm` (golden hour / dawn) from the key-light colour and elevation,
+  - `lamps` from `lightsOn`: a number 0..1 is used as a fade; `true` = on (strength scaled by `dark`), `false` = off, missing = derived from `dark`.
+  Surfaces strings are only re-parsed when they change.
+- **Interior light (quality-aware, fixed count, no shader recompiles):** high = 4 warm `PointLight`s named `lamp:col0..3` (one per room column, over the corridor) + 1 dept-coloured `lamp:work` that moves to the working room. Low = 0 lights; emissive shades, additive lamp pools and a broad warm "room glow" pool per room do the work. The old 8 `lamp:<room>` lights are gone. Note for WS-A1: `world/index.ts` also has its own `workLight`; with both on, the working room is a bit stronger. Drop one if it looks too strong.
+- **Defensive `update(dt)`:** dt is clamped to 0..0.1. On the first frame `world/index.ts` can pass a large negative dt: the rAF timestamp is older than `last = performance.now()` taken after a slow build. Before the clamp this froze agents in odd poses. WS-A1 may want to clamp at the source too.
+- **`still` fallback:** `createOfficeModel({ quality })` without `still` now reads `?still=1` / `prefers-reduced-motion`, so deep links snap agent poses (sit, walk) instead of animating them over many slow frames.
+- **Draw calls:** fixed-colour props are merged per room into vertex-coloured materials (3 finishes: matte / satin / metal; one shared shader program with a desaturation uniform for locked rooms and mono). Contact-shadow decals are merged per room into one material per mask, with strength in vertex alpha. Each figure's limbs are one mesh per bone. Office meshes went from 641 to 350, and calls per frame (incl. the shadow pass) from about 1040 to 510.
+- **Characters:** slimmer (~6.5 heads), tailored tops in the dept colour, per-person trousers and shoes, no head icons. Idle: breathing, weight shift, glances, sometimes turning to a colleague. Working: types (the room's screens pulse), and every ~12 s walks to the room's board, points, and walks back. Done: leans back in the chair, hands behind the head. Locked: asleep at the desk. Fixed a v5 bug where seated agents dipped every frame (`sit` decayed when already at its target).
+- **Preview harness:** `preview.html?time=dawn|day|golden|dusk|night|0..1` (an interpolated preset, like the world clock) and `&cycle=<s>` (the full day, `applyAtmosphere` every 100 ms). The preview applies WS-B's sun-swing rule so shadows show.
+
+## v6 notes (ws-b)
+
+- **Layout**: center only. The old layout/theme switcher is now dev tools, shown only with `?switcher=1` (time scrub + phase marks, cycle 4 min / 1 min / 20 s / Hold, logo candidates, speed, jump, replay). Extra params read by `main.ts` only: `?mark=quadrant|horizon|stack` (logo candidate), `?projects=1` (opens "Your projects" at boot).
+- **Clock**: boot calls `world.setClock({mode:'cycle', periodSec: params.cycle ?? 240})` or `{mode:'fixed', t: params.time}` (`still=1` with no `time` means `t = DAY_TIMES.day`). If the world lacks `setClock/onClock/getClock`, `main.ts` runs a local 10 Hz clock with the same landmarks (`themes/day.ts#clockInfo`) and steps `world.setAtmosphere` per phase (day → graphite, dawn/golden → ivory, dusk/night → midnight).
+- **UI tokens** follow `onClock` (`themes/day.ts#applyDayTokens`): `--c-bg --c-sky --c-glass --c-glass-strong --c-surface --c-ink --c-muted --c-line --c-fill --c-accent --c-accent-ink --c-money --c-positive --c-warning --c-negative --glass-border --glass-shadow --glass-hi --daylight --warmth`, plus `html[data-scheme=light|dark][data-phase=<name>]`. Ink/muted/status colours are solved for WCAG AA against glass over the expected sky across the whole cycle (sweep minimum is 4.6:1).
+- **Flow**: the UI no longer auto-advances result cards; each card waits for Next (→ / Enter). The flow still owns the step order.
+- **Projects**: runs are stored in `localStorage["launchdesk.proto.projects.v1"]` (wrapped in try/catch) at submit, verdict, level-up, live and scale, and merged with `PAST_PROJECTS` seeds. The UI calls `world.setPortfolio?.(items)` on every change.
+- **Level semantics (needs alignment with ws-c)**: `data/index.ts#levelOf` gives level 2 to a "go" project that has not been built. The flow's own runs use 1 at verdict, 2 at live and 3 at scale. The drawer shows each project's stored level as is.
+- **World (for the world workstream)**: at night with `quality=low`, the lamp light pools render as overexposed yellow discs. Pip's level-1 framing on mobile is also small.
+
+## v6 notes (ws-a1, world & day cycle)
+
+- **Clock.** `World.setClock/getClock/onClock` are implemented in `world/daycycle.ts` and `world/index.ts`. The world reads `?time` and `?cycle` itself at boot, so it also works when nobody calls `setClock`. It is frozen at the local time under `reducedMotion` unless `setClock` is called.
+  - **Keyframes:** night 0 → pre-dawn .17 → first light .235 → dawn .275 → morning .40 → day .50 → afternoon .64 → golden .72 → sunset .775 → dusk .82 → blue hour .88.
+  - **Interpolation:** every field is smoothstep-lerped between keyframes, colours in linear space. `sample()` allocates nothing.
+  - **Sun:** rises at .23 and sets at .80, with a 60° peak. Its azimuth sweeps 132° → 70° and never passes the camera azimuth, so shadows always read. Below the horizon the key light hands over to a cool moon (−32°, 48°) while both lights are near zero, so the handover is invisible.
+  - **Pace:** deep night runs about 2.2× faster than daylight, so night is about 24 % of a cycle. `periodSec` is still the average length of one day.
+  - **`onClock`:** fires at most every 100 ms and only while `t` changes, plus once on subscribe and on every `setClock`. `setClock(..., {animate:true})` glides along the shortest arc in 2.4 s.
+- **Atmosphere modulation.** The clock owns the lighting, sky, fog, exposure, level palettes and office surfaces: Graphite by day, Ivory at golden hour and Midnight at night, blended. `setAtmosphere(preset)` still works, but only its `accentStrength` and `key.shadows` are used now. The theme no longer tints the world.
+- **What the office receives** (WS-A2), through `office.applyAtmosphere(a)` at ≤ 10 Hz and only while the clock moves. The full `AtmospherePreset` is filled in, plus these extra fields on the same object:
+  - `lightLevel`: 0..1 fade for lamps and lit windows. The boolean `lightsOn` is still set, as `lightLevel > 0.3`.
+  - `daylight` and `warmth`: 0..1.
+  - `clockT`: the current time of day.
+  - `timeOfDay`: kept discrete (night if daylight < .32, golden if warmth > .5, else day/studio). **Recommendation:** read `lightLevel`/`daylight` instead of the discrete `timeOfDay`/`lightsOn`. Today the lamps switch on and `ENV_BY_TIME` steps at those thresholds.
+- **Sky.** The CSS sky on the host is now a gradient plus a horizon glow on the sun's or moon's side of the camera, plus a soft daylight bloom. A star layer (`.world-stars` div, prepended to the host) fades in at night. The canvas gets `position: relative` so it stays above the stars.
+- **Shadows.** The shadow camera is texel-snapped in light space, so shadows don't shimmer while the camera drifts. The invisible studio floor stops catching shadows once the sun is below 20°, which stops long shadows from running onto the sky.
+- **District (level 3).** It now shares one architectural language with the hero tower, in `world/levels/arch.ts`: stone floor bands, slim fins on a 3.6 m rhythm, curtain or ribbon glass, parapet and plant box.
+  - Ten buildings with varied massing, all well below the hero.
+  - The base is smaller (196 × 136).
+  - **Default changed:** the district now starts **built** (real materials, lit at night). `?built=0` or `setDistrictBuilt(0)` gives the white planned maquette, which uses the same massing and fins.
+  - Cars (12) have head and tail lamps, and at night additive light trails. Street lamps cast soft radial pools.
+- **Portfolio.** `setPortfolio(items)` puts up to 6 past projects on reserved plots near the tower, in order (index 0 is nearest).
+  - Size by level: 1 = glass pavilion, 2 = podium plus a 5-floor tower, 3 = podium plus a 7-floor tower.
+  - They are always built and lit, and carry a thin BCH-green line on the roof parapet ("yours"). Free plots show a dashed outline.
+  - Label anchors: `world.portfolioScreenPoints(): {id, x, y}[]` (CSS px, canvas-relative; empty below level 3) is an extra in `WorldExtras`. Call it from `onCameraChange`.
+  - It is safe to call at any time, before the levels are built included. It rebuilds only the portfolio group.
+- **Tower.** It now reads as a premium glass tower: slimmer fins (0.11 × 0.5), slim corner posts instead of pilasters, 0.3 floor bands, and more reflective glass. Glass doesn't glow by day (emissive is 0 until dusk). During the pull-back from level 1, the office now sits inside its glass plinth for a beat before the upper floors stack.
+- **Dev harness.** `/proto/world/harness.html` is world-only and needs no UI or theme. Params: `scene`, `time`, `cycle`, `still`, `quality`, `portfolio=0..6`, `labels=1`, `clock=1`, `built=0`.
+- **Performance** (headless Chrome on Apple M3, Metal, 1440×900 @2×, quality=high): 60 fps in office, building and district while the clock cycles, worst frame about 19 ms.
+
+## v6 notes (integrate, port 5264)
+
+- **Level rule (one rule now):** level = how far the business got, same as the flow. 1 office = validated, any verdict, not built · 2 tower = built and live (the flow's `level-up`/`live`) · 3 district = live and grown (`scale`). `data/index.ts#levelOf` is `pip ? 3 : 1`. So Miga (Go, not built) is now level 1, a glass pavilion in the district, and the reader no longer says "Built and live" for it.
+- **Portfolio:** the run on screen is excluded from `setPortfolio` (it is the hero tower, not a second building). At `scale` on desktop, the UI puts clickable name + score tags over each past-project building (`world.portfolioScreenPoints()` from `onCameraChange`); nearer tags win and farther ones step up to avoid overlap. A tag opens that project's report. Seed titles drop a trailing "in <City>" in tags.
+- **Fixed:** every click inside the overlay (reader tabs, Back, Close) was swallowed: the overlay root carries `data-open="1"`, so `closest("[data-open]")` matched it first. Now `button[data-open]`.
+- **Fixed:** the "Projects" pill (desktop) and the top-bar projects button (mobile) had no click handler.
+- **Office lamps** read the world's continuous `lightLevel` first (then `lightsOn`), so lamps fade with the clock instead of switching at 0.3.
+- **Break-even pace:** under one sale a day, cards say "N sales a month" (from `sam.breakeven.per_month`) instead of "0.4 customers a day"; the verdict fact is "Sales a day/month to break even". Prices ≥ 100 show no cents.
+- **Scale panel:** "Level 3 · District / Your district / N projects, one building each", and the progress row is the live project's gate ("Pausa · pre-orders by week 4 · 0 / 100").
+
+## v6 notes (polish, port 5268)
+
+- **Output quality (server/ai.ts + server/mocks.ts):** signals without a `source_id` are capped at 7.5 (`UNSOURCED_SIGNAL_CAP`), so desk-only research can't read as an 8.5; low-confidence Go is labelled "Go · to test" (`verdictText`). Memo lines quote the break-even pace; kill lines are ≥ half of break-even; every cost table has a founder line; no "guarantee" bullets; Rae's offer only from the pre-order week. New No-go sample `games` (validate-only). Invariants live in `test/quality.test.ts`.
+- **Logos are drawn, not described:** Dex returns `glyph` (`LOGO_GLYPHS`); `ui/brandmark.ts` renders glyph + name in the brand face (`brandLogoHtml`, `mode:"mark"` = app icon). Dex card shows the chosen logo on paper, on a dark tile, as an app icon and as a favicon tab; the three candidates are clickable (`data-logo`).
+- **Verdict:** gauge simplified (ticks at 5 and 7), `paceBar` (month 1 → break-even → month 12), facts are Cash to start / Profitable from / Cash back, build list is one muted line; no Build for No-go.
+- **Sam:** "Year 1 operating" (start-up shown apart), "Cash back ~Month N", chart tags say "Profitable from here" and "Cash back ~MN".
+- **Site preview:** hero mark, offer card, pre-order gate with refund note, FAQ accordion, footer.
+- **Your projects:** bottom shelf of cards (horizontal on desktop, vertical list on phones), "New idea" first. Own prototype runs don't get district buildings (the hero tower already is that run). `store.start` happens on paying for validation, not on typing the idea.
+- **Day cycle:** default is a 30-minute day starting at 0.64 (late afternoon). UI tokens come in two families (light DAY↔GOLDEN, dark NIGHT↔EMBER) with hysteresis; the light/dark swap waits up to 45 s and is applied on the next panel change (`commitScheme`) with a 1.3 s crossfade, so the UI never flips under the user's eyes. `?cycle=<sec>`, `?time=<0..1|dawn|day|golden|dusk|night>`, `?switcher=1`.
+- **Light:** golden-hour key retuned (low raking sun, warm sky), crisper day, interior darkening delayed, more lit windows at night.
+- **Mobile:** sticky verdict actions, top scrim under the wordmark, scrollable card tabs, projects as a list.

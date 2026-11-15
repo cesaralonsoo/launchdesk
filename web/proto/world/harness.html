@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>World harness</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #e9ecf0; overflow: hidden; }
+      #world { position: fixed; inset: 0; }
+      #world canvas { display: block; width: 100%; height: 100%; }
+      #labels { position: fixed; inset: 0; pointer-events: none; font: 500 11px/1.2 system-ui, sans-serif; }
+      #labels span { position: absolute; transform: translate(-50%, -100%); padding: 3px 7px; border-radius: 99px; background: rgba(20,22,28,.72); color: #fff; white-space: nowrap; }
+      #clock { position: fixed; left: 12px; bottom: 10px; font: 500 11px system-ui; color: rgba(127,127,127,.9); }
+    </style>
+  </head>
+  <body>
+    <div id="world" aria-hidden="true"></div>
+    <div id="labels"></div>
+    <div id="clock"></div>
+    <script type="module" src="./harness.ts"></script>
+  </body>
+</html>

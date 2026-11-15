@@ -129,3 +129,29 @@ export function applyTheme(t: ThemeTokens, root: HTMLElement = document.document
   root.dataset.theme = t.id;
   root.style.colorScheme = t.scheme;
 }
+
+// ───────────────────────────── v6: one product skin
+/** v6 typography, the only one: Inter Tight for display and numbers (tabular), Inter for text. */
+export const PRODUCT_FONTS = {
+  href: G("family=Inter+Tight:wght@500;600;700&family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600"),
+  display: `"Inter Tight", "Inter", system-ui, sans-serif`,
+  text: `"Inter", system-ui, sans-serif`,
+  numbers: `"Inter Tight", "Inter", system-ui, sans-serif`,
+};
+
+/** Fonts, radii and glass physics. Colours come from themes/day.ts (they follow the day cycle). */
+export function applyBase(root: HTMLElement = document.documentElement): void {
+  if (!document.head.querySelector("link[data-font='product']")) {
+    const l = document.createElement("link");
+    l.rel = "stylesheet";
+    l.href = PRODUCT_FONTS.href;
+    l.dataset.font = "product";
+    document.head.appendChild(l);
+  }
+  const v: Record<string, string> = {
+    "--font-display": PRODUCT_FONTS.display, "--font-text": PRODUCT_FONTS.text, "--font-num": PRODUCT_FONTS.numbers,
+    "--r-sm": "10px", "--r-md": "16px", "--r-lg": "26px", "--r-pill": "999px", "--glass-blur": "30px", "--glass-sat": "1.4",
+  };
+  for (const [k, val] of Object.entries(v)) root.style.setProperty(k, val);
+  root.dataset.theme = "product";
+}

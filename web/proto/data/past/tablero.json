@@ -1,0 +1,575 @@
+{
+  "id": "pG2nt6Hc8w",
+  "idea": "A board-game café in a town of about 9,000 people, €4 a table plus drinks",
+  "created_at": 1793871000000,
+  "payments": {
+    "validate": {
+      "txid": "dev-pG2nt6Hc8w-validate",
+      "sats": 0,
+      "cents": 10,
+      "at": 1793871005000
+    }
+  },
+  "status": {
+    "mia": "done",
+    "leo": "done",
+    "sam": "done"
+  },
+  "results": {
+    "mia": {
+      "title": "Board-game café in a small town",
+      "one_liner": "A warm place to play, with 300 games and someone to teach them.",
+      "brief": {
+        "concept": "A 90 m² café with a 300-game library, €4 table fee plus drinks, open Tuesday to Sunday afternoons and evenings.",
+        "for": "Friends and couples aged 20 to 40 in town who play at home and have nowhere to go on weeknights.",
+        "goal": "Sell 40 paid tickets to one games night in a bar before looking at any premises."
+      },
+      "market": {
+        "city": null,
+        "country_iso": "ES",
+        "currency": "€",
+        "language": "en"
+      },
+      "gate": {
+        "metric": "paid games-night tickets",
+        "target": 40,
+        "by_week": 4
+      },
+      "checklist": [
+        {
+          "week": 1,
+          "task": "Count evening footfall on the main square",
+          "how": "Tally people passing 18:00–22:00 on a Tuesday, Friday and Sunday.",
+          "done_when": "Three evening counts logged",
+          "helped_by": "leo",
+          "est_hours": 6
+        },
+        {
+          "week": 1,
+          "task": "Interview 15 people who play board games",
+          "how": "Ask where they last played, with whom, and what they spent that evening.",
+          "done_when": "15 logged; 6+ spent money on a night out",
+          "helped_by": "leo",
+          "est_hours": 5
+        },
+        {
+          "week": 2,
+          "task": "Agree a games night with one bar",
+          "how": "Offer a Thursday 19:00–23:00 night; the bar keeps drinks, you keep the €8 entry.",
+          "done_when": "Date agreed in writing",
+          "helped_by": "sam",
+          "est_hours": 3
+        },
+        {
+          "week": 2,
+          "task": "Price three empty premises near the square",
+          "how": "Ask rent, licence for food and drink, and fit-out needed.",
+          "done_when": "Three quotes with rent and licence",
+          "helped_by": "sam",
+          "est_hours": 3
+        },
+        {
+          "week": 3,
+          "task": "Sell tickets for the first games night",
+          "how": "Message everyone interviewed and two local groups; ask each to bring a friend.",
+          "done_when": "Ticket page shared with 120+ people",
+          "helped_by": "pip",
+          "est_hours": 3
+        },
+        {
+          "week": 4,
+          "task": "Run the games night and count",
+          "how": "Teach three games, log who came, what they spent, who asks for the next one.",
+          "done_when": "Attendance and spend per person logged",
+          "helped_by": null,
+          "est_hours": 6
+        },
+        {
+          "week": 4,
+          "task": "Decide: monthly nights, or stop",
+          "how": "Compare tickets sold and spend per head with Sam's break-even.",
+          "done_when": "Decision written down with the numbers",
+          "helped_by": "sam",
+          "est_hours": 2
+        }
+      ]
+    },
+    "leo": {
+      "score": 4.6,
+      "verdict": "no-go",
+      "headline": "The town is too small for a full-time café.",
+      "summary": "People play at home and would come to a good night, but a town this size fills a games café a few nights a month, not six days a week. It only works as an event, not as premises.",
+      "signals": [
+        {
+          "name": "Demand",
+          "score": 4.2,
+          "why": "A town of ~9,000 gives few regular players",
+          "source_id": null,
+          "weight": 0.3
+        },
+        {
+          "name": "Competition gap",
+          "score": 5.5,
+          "why": "No games café, but bars already host quiz nights",
+          "source_id": null,
+          "weight": 0.2
+        },
+        {
+          "name": "Price acceptance",
+          "score": 4,
+          "why": "Table fees are unusual; people expect to pay for drinks only",
+          "source_id": null,
+          "weight": 0.2
+        },
+        {
+          "name": "Channel",
+          "score": 5,
+          "why": "Word of mouth works; nothing else reaches players",
+          "source_id": null,
+          "weight": 0.15
+        },
+        {
+          "name": "Timing",
+          "score": 4.5,
+          "why": "Busy on weekends, quiet Tuesday to Thursday",
+          "source_id": null,
+          "weight": 0.15
+        }
+      ],
+      "why_go": "What would have to be true: 40+ people paying for a games night every month for three months, in a town with no other evening venue.",
+      "risks": [
+        {
+          "risk": "Weeknights stay empty while rent runs every day.",
+          "mitigation": "Test one night a month in a bar; no lease.",
+          "severity": "high"
+        },
+        {
+          "risk": "Players buy the games and stay home.",
+          "mitigation": "Count who returns to the second night.",
+          "severity": "high"
+        },
+        {
+          "risk": "A €4 table fee feels like paying to sit down.",
+          "mitigation": "Try a drinks-included €8 entry instead.",
+          "severity": "med"
+        }
+      ],
+      "pivot": {
+        "idea": "A monthly games night in an existing bar, €8 entry, no premises.",
+        "why": "Fixes demand and price: one full night a month needs 40 players, not 31 every day."
+      },
+      "next_step": "Run one games night in a bar this month: 40 paid tickets is the bar.",
+      "market_facts": [
+        {
+          "fact": "Board-game cafés usually rely on a large town or a city centre with a student population.",
+          "source_id": null,
+          "is_estimate": true
+        },
+        {
+          "fact": "Table fees in games cafés are commonly €3 to €6 a person.",
+          "source_id": null,
+          "is_estimate": true
+        },
+        {
+          "fact": "A games café of about 90 m² typically seats 40 to 50 people.",
+          "source_id": null,
+          "is_estimate": true
+        },
+        {
+          "fact": "Bars in small towns often host one themed night a week to fill quiet evenings.",
+          "source_id": null,
+          "is_estimate": true
+        }
+      ],
+      "competitors": [
+        {
+          "name": "Playing at home with friends",
+          "note": "Free, and the games are already there",
+          "price": 0.5,
+          "differentiation": 3,
+          "url": null
+        },
+        {
+          "name": "Bar quiz and themed nights",
+          "note": "Cheap, social, one night a week",
+          "price": 3,
+          "differentiation": 4,
+          "url": null
+        },
+        {
+          "name": "Games cafés in the nearest city",
+          "note": "Great library, 40 minutes away",
+          "price": 6,
+          "differentiation": 8,
+          "url": null
+        },
+        {
+          "name": "Online board games",
+          "note": "Always on, but nobody in the room",
+          "price": 1,
+          "differentiation": 2,
+          "url": null
+        }
+      ],
+      "you": {
+        "price": 5,
+        "differentiation": 6.5
+      },
+      "interviews": {
+        "who": "People in town who own three or more board games",
+        "where": "The main square in the evening and two local social groups",
+        "questions": [
+          "When did you last play a board game, and where?",
+          "Who did you play with?",
+          "What did you spend that evening?",
+          "When did you last travel to play or to a games event?",
+          "What stopped you from playing more often last month?"
+        ],
+        "good_sign": "They travelled or paid to play in the last three months and say it unprompted.",
+        "target": 15
+      },
+      "kill_criteria": [
+        "Stop if fewer than 6 of 15 players spent money on a games night last month.",
+        "Stop if the first games night sells under 25 tickets."
+      ],
+      "score_math": "0.30×4.2 + 0.20×5.5 + 0.20×4.0 + 0.15×5.0 + 0.15×4.5 = 4.6",
+      "verdict_rule": "Go from 7.0 with no signal at 3 or below · Pivot 5.0–6.9 · No-go under 5.0",
+      "confidence": {
+        "level": "low",
+        "note": "Desk estimates only, no web sources: signals capped at 7.5. Interviews decide."
+      },
+      "sources": []
+    },
+    "sam": {
+      "currency": "€",
+      "canvas": {
+        "customer": "Friends and couples in town who already play at home",
+        "value": "Somewhere to play on weeknights, with someone to teach",
+        "revenue": "€4 table fee plus drinks and snacks",
+        "channels": "Word of mouth, local groups, the square",
+        "costs": "Rent, founder, evening staff, library, utilities",
+        "unit_economics": "Each visitor leaves about €5.85 after drinks and snacks"
+      },
+      "assumptions": [
+        {
+          "key": "customers_per_day_m1",
+          "label": "Visitors a day, month 1",
+          "value": 14,
+          "unit": "per day",
+          "basis": "Opening curiosity, friends of friends",
+          "is_estimate": true
+        },
+        {
+          "key": "customers_per_day_m12",
+          "label": "Visitors a day, month 12",
+          "value": 24,
+          "unit": "per day",
+          "basis": "Busy weekends, quiet weeknights",
+          "is_estimate": true
+        },
+        {
+          "key": "avg_ticket",
+          "label": "Average spend per visitor",
+          "value": 9,
+          "unit": "€",
+          "basis": "€4 table fee plus one or two drinks",
+          "is_estimate": true
+        },
+        {
+          "key": "gross_margin_pct",
+          "label": "Margin after drinks and snacks",
+          "value": 65,
+          "unit": "%",
+          "basis": "Typical for drinks with a table fee",
+          "is_estimate": true
+        },
+        {
+          "key": "fixed_costs_month",
+          "label": "Fixed costs a month",
+          "value": 4700,
+          "unit": "€",
+          "basis": "Sum of the five lines below",
+          "is_estimate": true
+        },
+        {
+          "key": "startup_cost",
+          "label": "Start-up cost",
+          "value": 26000,
+          "unit": "€",
+          "basis": "Fit-out, 300 games, licence, furniture",
+          "is_estimate": true
+        },
+        {
+          "key": "open_days_month",
+          "label": "Open days a month",
+          "value": 26,
+          "unit": "days",
+          "basis": "Tuesday to Sunday",
+          "is_estimate": true
+        }
+      ],
+      "fixed_costs_breakdown": [
+        {
+          "label": "Founder, minimum pay",
+          "value": 1600
+        },
+        {
+          "label": "Rent near the square",
+          "value": 1400
+        },
+        {
+          "label": "Evening staff, part-time",
+          "value": 1100
+        },
+        {
+          "label": "Utilities and insurance",
+          "value": 450
+        },
+        {
+          "label": "Game library upkeep",
+          "value": 150
+        }
+      ],
+      "months": [
+        {
+          "month": 1,
+          "revenue": 3276,
+          "costs": 5847,
+          "cash": -28571
+        },
+        {
+          "month": 2,
+          "revenue": 3345,
+          "costs": 5871,
+          "cash": -31097
+        },
+        {
+          "month": 3,
+          "revenue": 3461,
+          "costs": 5911,
+          "cash": -33547
+        },
+        {
+          "month": 4,
+          "revenue": 3646,
+          "costs": 5976,
+          "cash": -35877
+        },
+        {
+          "month": 5,
+          "revenue": 3915,
+          "costs": 6070,
+          "cash": -38032
+        },
+        {
+          "month": 6,
+          "revenue": 4258,
+          "costs": 6190,
+          "cash": -39964
+        },
+        {
+          "month": 7,
+          "revenue": 4634,
+          "costs": 6322,
+          "cash": -41652
+        },
+        {
+          "month": 8,
+          "revenue": 4977,
+          "costs": 6442,
+          "cash": -43117
+        },
+        {
+          "month": 9,
+          "revenue": 5246,
+          "costs": 6536,
+          "cash": -44407
+        },
+        {
+          "month": 10,
+          "revenue": 5431,
+          "costs": 6601,
+          "cash": -45577
+        },
+        {
+          "month": 11,
+          "revenue": 5547,
+          "costs": 6641,
+          "cash": -46671
+        },
+        {
+          "month": 12,
+          "revenue": 5616,
+          "costs": 6666,
+          "cash": -47721
+        }
+      ],
+      "price": {
+        "value": 9,
+        "display": "€9.00",
+        "note": "€4 table fee; average spend €9 with drinks"
+      },
+      "startup_cost": {
+        "value": 26000,
+        "display": "€26k",
+        "note": "Fit-out, 300 games, licence, furniture"
+      },
+      "cash_needed": {
+        "value": 47721,
+        "display": "€48k",
+        "month": 12
+      },
+      "break_even": {
+        "month": null,
+        "note": "Not within the first 12 months"
+      },
+      "breakeven_units_per_day": 31,
+      "year1": {
+        "revenue": "€53k",
+        "costs": "€75k",
+        "result": "−€22k",
+        "monthly_profit_m12": "−€1.1k",
+        "payback": "Not in year 1"
+      },
+      "main_risk": "Weeknight visitors decide everything: run one paid games night in a bar before signing any lease.",
+      "key_assumption": "fixed_costs_month",
+      "launch_offer": {
+        "item": "First games-night ticket",
+        "price": 6,
+        "normal_price": 8,
+        "limit": 40,
+        "display": "€6",
+        "normal_display": "€8",
+        "discount_pct": 25,
+        "contribution": 3.2,
+        "contribution_display": "€3.20",
+        "revenue_if_sold_out": 240,
+        "revenue_display": "€240"
+      },
+      "unit": {
+        "price": 9,
+        "variable_cost": 3.15,
+        "contribution": 5.85,
+        "margin_pct": 65,
+        "line": "€9 a sale − €3.15 direct cost = €5.85 left"
+      },
+      "breakeven": {
+        "per_month": 804,
+        "per_day": 31,
+        "formula": "€4,700 fixed ÷ €5.85 per sale ÷ 26 days = 31 sales a day"
+      },
+      "headroom": {
+        "m12_per_day": 24,
+        "breakeven_per_day": 31,
+        "multiple": 0.8,
+        "note": "Month-12 plan stays under break-even"
+      },
+      "sensitivity": [
+        {
+          "key": "fixed_costs_month",
+          "label": "Fixed costs a month",
+          "low": {
+            "value": 3760,
+            "year1_result": -10441,
+            "break_even_month": null,
+            "breakeven_per_day": 25,
+            "cash_needed": 36441
+          },
+          "base": {
+            "value": 4700,
+            "year1_result": -21721,
+            "break_even_month": null,
+            "breakeven_per_day": 31,
+            "cash_needed": 47721
+          },
+          "high": {
+            "value": 5640,
+            "year1_result": -33001,
+            "break_even_month": null,
+            "breakeven_per_day": 38,
+            "cash_needed": 59001
+          },
+          "swing": 22560,
+          "line": "Fixed costs a month ±20%: year 1 from −€33k to −€10k"
+        },
+        {
+          "key": "customers_per_day_m12",
+          "label": "Visitors a day",
+          "low": {
+            "value": 19.2,
+            "year1_result": -28655,
+            "break_even_month": null,
+            "breakeven_per_day": 31,
+            "cash_needed": 54655
+          },
+          "base": {
+            "value": 24,
+            "year1_result": -21721,
+            "break_even_month": null,
+            "breakeven_per_day": 31,
+            "cash_needed": 47721
+          },
+          "high": {
+            "value": 28.8,
+            "year1_result": -14789,
+            "break_even_month": null,
+            "breakeven_per_day": 31,
+            "cash_needed": 40789
+          },
+          "swing": 13866,
+          "line": "Visitors a day ±20%: year 1 from −€29k to −€15k"
+        },
+        {
+          "key": "gross_margin_pct",
+          "label": "Margin after drinks and snacks",
+          "low": {
+            "value": 55,
+            "year1_result": -27056,
+            "break_even_month": null,
+            "breakeven_per_day": 37,
+            "cash_needed": 53056
+          },
+          "base": {
+            "value": 65,
+            "year1_result": -21721,
+            "break_even_month": null,
+            "breakeven_per_day": 31,
+            "cash_needed": 47721
+          },
+          "high": {
+            "value": 75,
+            "year1_result": -16388,
+            "break_even_month": null,
+            "breakeven_per_day": 27,
+            "cash_needed": 42388
+          },
+          "swing": 10668,
+          "line": "Margin after drinks and snacks ±10 pts: year 1 from −€27k to −€16k"
+        }
+      ]
+    },
+    "memo": {
+      "purpose": "A board-game café for a town of about 9,000 people.",
+      "problem": "Players in town have nowhere to play on weeknights except home, and the nearest games café is 40 minutes away.",
+      "insight": "The demand is real but monthly, not daily. An event fills a room; premises need people every evening.",
+      "verdict_line": "No-go as a café: it needs 31 visitors a day to break even, and the town gives about 24. Test a monthly games night first.",
+      "next_7_days": [
+        "Count evening footfall on the main square",
+        "Interview 15 people who play board games",
+        "Agree a games night with one bar"
+      ]
+    }
+  },
+  "timings": {
+    "validate": {
+      "started": 1793871005000,
+      "finished": 1793871041000
+    }
+  },
+  "models": {
+    "mia": "mock",
+    "leo": "mock",
+    "sam": "mock"
+  },
+  "share_id": null
+}

@@ -15,7 +15,7 @@ export const reducedMotion = () =>
 export const isMobile = () => matchMedia("(max-width: 640px)").matches;
 
 /** Counts every [data-count] inside root from 0 to its value. Keeps prefix/suffix and decimals of the original text. */
-export function countUp(root: HTMLElement, ms = 900): void {
+export function countUp(root: HTMLElement, ms = 600): void {
   const nodes = root.querySelectorAll<HTMLElement>("[data-count]");
   for (const n of nodes) {
     const target = Number(n.dataset.count);

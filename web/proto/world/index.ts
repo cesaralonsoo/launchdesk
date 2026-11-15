@@ -4,14 +4,16 @@
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import {
-  READY_ATTR, ROOM_META, type AtmospherePreset, type CreateWorld, type Dept, type DeptState, type FocusTarget, type Insets, type Level, type Room, type World, type WorldOptions,
+  READY_ATTR, ROOM_META, readParams, type AtmospherePreset, type ClockMode, type DayClockInfo, type PortfolioItem, type CreateWorld, type Dept, type DeptState, type FocusTarget, type Insets, type Level, type Room, type World, type WorldOptions,
 } from "../contracts";
 import { Drift, FOV, applyShot, cloneShot, easeInOut, easeLevel, easeOutward, fitShot, levelAngles, lerpShot, roomAngles, type Shot } from "./camera";
 import { createBase, createDistrict, type District } from "./levels/district";
 import { Y0, clamp01, disposeFacades, win } from "./levels/kit";
-import { lerpPalette, paletteFor, type Palette } from "./levels/palette";
+import type { Palette } from "./levels/palette";
 import { createTower, type Tower } from "./levels/tower";
 import { createOfficeModel } from "./office";
+import { DayClock, clockInfo, createDayCycle, type DayState } from "./daycycle";
+import { createSky } from "./sky";
 
 /** Additive extras on top of the frozen World contract (see CONTRACTS.md, "Changes by ws-b-levels"). */
 export interface WorldExtras {
@@ -24,6 +26,10 @@ export interface WorldExtras {
   renderedLevel(): Level;
   /** Screen point (CSS px) under the office floor of the tower, for the "Your office · Floor 1" tag; null at level 1. */
   officeScreenPoint(): { x: number; y: number } | null;
+  /** v6: past projects in the district — screen points (CSS px) above each portfolio building, for DOM labels. Empty below level 3. */
+  portfolioScreenPoints(): { id: string; x: number; y: number }[];
+  /** v6: the clock mode currently in force (cycle or fixed). */
+  clockMode(): ClockMode;
   /** Debug handles for scripts (not for product code). */
   readonly debug: { renderer: THREE.WebGLRenderer; scene: THREE.Scene; key: THREE.DirectionalLight; state(): unknown };
 }
@@ -87,6 +93,7 @@ export function createWorldX(host: HTMLElement, opts: WorldOptions): World & Wor
     district.applyPalette(pal);
     district.setBuilt(builtK);
     tower.setBeacon(beacon, false);
+    district.setPortfolio(portfolio);
     paintGrowth();
   }
   const officeShadow = office.root.getObjectByName("office-ground-shadow");
@@ -124,79 +131,136 @@ export function createWorldX(host: HTMLElement, opts: WorldOptions): World & Wor
   type Anim = { from: Shot; to: Shot; t0: number; ms: number; ease: (k: number) => number; arc: number; done: () => void; g0?: Growth; g1?: Growth; up?: boolean };
   let anim: Anim | null = null;
   let builtAnim: { from: number; to: number; t0: number; ms: number; done: () => void } | null = null;
-  let builtK = q.get("built") === "1" ? 1 : 0;
+  let builtK = q.get("built") === "0" ? 0 : 1; // v6: the district is a real (built, lit) city by default
   let beacon = false;
+  let portfolio: PortfolioItem[] = [];
+  const _pp = new THREE.Vector3();
   let pendingSweep = false;
   const drift = new Drift();
   drift.enabled = !reduced;
   const clickCbs = new Set<(r: Room) => void>();
   const camCbs = new Set<() => void>();
 
-  // ── atmosphere (tweened)
-  let atmFrom: AtmospherePreset = opts.atmosphere;
-  let atmTo: AtmospherePreset = opts.atmosphere;
-  let palFrom: Palette = paletteFor(opts.atmosphere);
-  let palTo: Palette = palFrom;
-  let pal: Palette = lerpPalette(palFrom, palTo, 1);
-  let atmK = 1, atmT0 = 0;
-  const ATM_MS = 1100;
-  const cA = new THREE.Color(), cB = new THREE.Color();
-  const lerpC = (a: string, b: string, k: number, out: THREE.Color) => out.set(a).lerp(cB.set(b), k);
+  // ── atmosphere = day cycle (lighting, sky, fog, palettes) × base preset (office surfaces, accent strength)
   const n = (a: number, b: number, k: number) => a + (b - a) * k;
+  const P = readParams();
+  const cycle = createDayCycle();
+  const startMode: ClockMode = P.time != null ? { mode: "fixed", t: P.time } : { mode: "cycle", periodSec: P.cycle ?? 1800, startAt: 0.64 };
+  const clock = new DayClock(performance.now(), startMode, reduced && P.time == null);
+  let baseAtm: AtmospherePreset = opts.atmosphere;
+  let day: DayState = cycle.sample(clock.value(performance.now()));
+  let pal: Palette = day.palette;
+  const sky = createSky(host);
+  /** What the office receives (≤ 10 Hz). Extra fields beyond AtmospherePreset: lightLevel/daylight/warmth (0..1). */
+  type OfficeAtm = AtmospherePreset & { lightLevel: number; daylight: number; warmth: number; clockT: number };
+  const officeAtm: OfficeAtm = {
+    ...opts.atmosphere, sky: ["#000000", "#000000"], fog: { color: "#000000", near: 60, far: 220 }, key: { ...opts.atmosphere.key }, ambient: { ...opts.atmosphere.ambient },
+    lightLevel: 0, daylight: 1, warmth: 0, clockT: 0.5,
+  };
+  const info: DayClockInfo = { t: 0.5, name: "day", daylight: 1, warmth: 0 };
+  const clockCbs = new Set<(i: DayClockInfo) => void>();
+  let lastSlow = -1e9;
   let fogNear = 60, fogFar = 220;
+  const hex = (c: THREE.Color) => `#${c.getHexString()}`;
+  // office surfaces follow the day: Graphite by day, Ivory at golden hour, Midnight at night (blended, ≤ 10 Hz)
+  const SURF = {
+    day: { floor: "#F2F3F5", wall: "#FAFAFB", slab: "#D5DAE1", glass: "#DDEBFA", corridor: "#E9ECF0" },
+    golden: { floor: "#F2EFEA", wall: "#FBFAF8", slab: "#C9C3BA", glass: "#E8EEF2", corridor: "#E9E4DC" },
+    night: { floor: "#D9D4CB", wall: "#E7E3DC", slab: "#2A3140", glass: "#9DB7D8", corridor: "#CFCAC1" },
+  } as const;
+  type SurfKey = keyof typeof SURF.day;
+  const surfC = Object.fromEntries((Object.keys(SURF) as (keyof typeof SURF)[]).map((k) => [k, Object.fromEntries((Object.keys(SURF[k]) as SurfKey[]).map((f) => [f, new THREE.Color(SURF[k][f])]))])) as Record<keyof typeof SURF, Record<SurfKey, THREE.Color>>;
+  const _sc = new THREE.Color();
+  const surfOut: Record<SurfKey, string> = { ...SURF.day };
+  function surfacesAt(s: DayState) {
+    // interiors stay in their day colours until the light really goes (daylight < 0.45): dusk = warm lamps against a pink sky
+    const x = Math.min(1, s.daylight / 0.45), warm = Math.min(1, s.warmth * 1.1), dl = x * x * (3 - 2 * x);
+    for (const f of Object.keys(surfOut) as SurfKey[]) {
+      _sc.copy(surfC.day[f]).lerp(surfC.golden[f], warm);
+      _sc.lerp(surfC.night[f], 1 - dl);
+      surfOut[f] = hex(_sc);
+    }
+    return surfOut;
+  }
 
-  function paintAtmosphere(k: number) {
-    const A = atmFrom, B = atmTo;
-    pal = lerpPalette(palFrom, palTo, k, pal);
-    const top = `#${pal.skyTop.getHexString()}`, bottom = `#${pal.skyBottom.getHexString()}`;
-    const night = (B.timeOfDay === "night" ? k : 0) + (A.timeOfDay === "night" ? 1 - k : 0);
-    const glowA = (0.42 * (1 - night)).toFixed(3);
-    host.style.background = `radial-gradient(120% 80% at 50% 38%, rgba(255,255,255,${glowA}) 0%, rgba(255,255,255,0) 60%), linear-gradient(180deg, ${top} 0%, ${bottom} 100%)`;
-    const fa = A.fog ?? { color: A.sky[A.sky.length - 1], near: 400, far: 4000 };
-    const fb = B.fog ?? { color: B.sky[B.sky.length - 1], near: 400, far: 4000 };
-    if (!scene.fog) scene.fog = new THREE.Fog(fb.color, fb.near, fb.far);
-    lerpC(fa.color, fb.color, k, (scene.fog as THREE.Fog).color);
-    fogNear = n(fa.near, fb.near, k);
-    fogFar = n(fa.far, fb.far, k);
-    lerpC(A.ambient.sky, B.ambient.sky, k, hemi.color);
-    lerpC(A.ambient.ground, B.ambient.ground, k, hemi.groundColor);
-    hemi.intensity = n(A.ambient.intensity, B.ambient.intensity, k);
-    lerpC(A.key.color, B.key.color, k, key.color);
-    key.intensity = n(A.key.intensity, B.key.intensity, k);
-    fill.color.copy(hemi.color).lerp(cA.set("#8FA6CC"), night);
-    fill.intensity = 0.3 + 0.35 * night; // moonlight keeps night shapes readable
-    renderer.toneMappingExposure = n(A.exposure, B.exposure, k);
-    // key direction: interpolate azimuth/elevation
-    // A sun at the camera's own azimuth (34°) hides every shadow behind its object and flattens the office.
-    // Presets within ±40° of it are swung to the left (≈ −35°); the others (night −30°, golden 70°) are kept.
-    const sunAz = (p: AtmospherePreset) => (Math.abs(p.key.azimuth - 34) < 40 ? -35 + (p.key.azimuth - 34) * 0.3 : p.key.azimuth);
-    const az = THREE.MathUtils.degToRad(n(sunAz(A), sunAz(B), k)), el = THREE.MathUtils.degToRad(n(A.key.elevation, B.key.elevation, k));
-    keyDir.set(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el)).normalize();
+  /** Per frame: lights, fog, exposure. Cheap and allocation-free. */
+  function paintLights(s: DayState) {
+    hemi.color.copy(s.ambSky);
+    hemi.groundColor.copy(s.ambGround);
+    hemi.intensity = s.ambI;
+    key.color.copy(s.keyColor);
+    key.intensity = s.keyI;
+    keyDir.copy(s.keyDir);
     fillDir.set(-keyDir.x, 0.6, -keyDir.z).normalize();
-    key.castShadow = high && B.key.shadows;
+    fill.color.copy(hemi.color).lerp(moonFill, s.night);
+    fill.intensity = 0.28 + 0.4 * s.night; // moonlight keeps night shapes readable
+    renderer.toneMappingExposure = s.exposure;
+    if (!scene.fog) scene.fog = new THREE.Fog(0xffffff, 60, 220);
+    (scene.fog as THREE.Fog).color.copy(s.fog);
+    fogNear = s.fogNear;
+    fogFar = s.fogFar;
+  }
+  const moonFill = new THREE.Color("#8FA6CC");
+
+  /** ≤ 10 Hz: level palettes, CSS sky, office atmosphere, clock listeners. */
+  function paintSlow(s: DayState) {
     base.applyPalette(pal);
     tower?.applyPalette(pal);
     district?.applyPalette(pal);
-    lightsChanged = true;
+    sky.paint(s, camera);
+    const o = officeAtm;
+    o.timeOfDay = s.daylight < 0.32 ? "night" : s.warmth > 0.5 ? "golden" : baseAtm.timeOfDay === "studio" && s.daylight > 0.95 ? "studio" : "day";
+    o.sky = [hex(s.skyTop), hex(s.skyBottom)];
+    o.fog = { color: hex(s.fog), near: s.fogNear, far: s.fogFar };
+    o.key = { color: hex(s.keyColor), intensity: s.keyI, azimuth: s.sunEl > 0 ? s.sunAz : -32, elevation: s.sunEl > 0 ? Math.max(6, s.sunEl) : 48, shadows: true };
+    o.ambient = { sky: hex(s.ambSky), ground: hex(s.ambGround), intensity: s.ambI };
+    o.ground = hex(s.ground);
+    o.exposure = s.exposure;
+    o.surfaces = surfacesAt(s);
+    o.accentStrength = baseAtm.accentStrength;
+    o.lightsOn = s.lights > 0.3;
+    o.lightLevel = s.lights;
+    o.daylight = s.daylight;
+    o.warmth = s.warmth;
+    o.clockT = s.t;
+    office.applyAtmosphere(o);
+    clockInfo(s, info);
+    for (const cb of clockCbs) cb(info);
   }
+
+  let lastT = -1, slowT = -1;
+  function stepDay(now: number, force = false) {
+    const t = clock.value(now);
+    if (!force && t === lastT) {
+      // clock at rest: settle the last slow paint once, then only the sky glow follows the camera
+      if (slowT !== t && now - lastSlow >= 100) {
+        lastSlow = now;
+        slowT = t;
+        paintSlow(day);
+      } else if (camMoved && now - lastSlow >= 100) {
+        lastSlow = now;
+        sky.paint(day, camera);
+      }
+      return;
+    }
+    lastT = t;
+    day = cycle.sample(t);
+    pal = day.palette;
+    paintLights(day);
+    if (force || (now - lastSlow >= 100 && t !== slowT)) {
+      lastSlow = now;
+      slowT = t;
+      paintSlow(day);
+    }
+  }
+  let camMoved = false;
   const keyDir = new THREE.Vector3(0.5, 0.8, 0.5), fillDir = new THREE.Vector3();
   let lightsChanged = true;
 
-  function setAtmosphere(a: AtmospherePreset, animate: boolean) {
-    palFrom = lerpPalette(pal, pal, 0); // snapshot of the colours on screen (safe mid-tween)
-    atmFrom = atmTo; // light scalars restart from the last target preset
-    atmTo = a;
-    palTo = paletteFor(a);
-    office.applyAtmosphere(a);
-    if (!animate || reduced) {
-      atmFrom = a;
-      palFrom = palTo;
-      atmK = 1;
-      paintAtmosphere(1);
-    } else {
-      atmK = 0;
-      atmT0 = performance.now();
-    }
+  function setAtmosphere(a: AtmospherePreset) {
+    baseAtm = a;
+    key.castShadow = high && a.key.shadows;
+    stepDay(performance.now(), true);
   }
 
   // ── framing
@@ -220,6 +284,7 @@ export function createWorldX(host: HTMLElement, opts: WorldOptions): World & Wor
   }
 
   let pose = { dYaw: 0, dPitch: 0 };
+  const _lx = new THREE.Vector3(), _ly = new THREE.Vector3(), _lz = new THREE.Vector3(), _snap = new THREE.Vector3();
   const lastCam = new THREE.Matrix4();
   function sync() {
     applyShot(camera, cur, pose.dYaw, pose.dPitch);
@@ -234,8 +299,18 @@ export function createWorldX(host: HTMLElement, opts: WorldOptions): World & Wor
     // shadow frustum hugs what the camera sees
     const vh = 2 * cur.dist * Math.tan(THREE.MathUtils.degToRad(FOV) / 2);
     const ext = Math.max(16, vh * Math.max(1, w / h) * 0.75);
-    key.position.copy(cur.target).addScaledVector(keyDir, cur.dist + ext + 40);
-    key.target.position.copy(cur.target);
+    // texel-snapped shadow camera: the frustum moves in whole shadow-map texels in light space, so shadows never
+    // shimmer while the camera drifts; the sun itself turns slowly enough (≤ 0.4°/s at the default 240 s day).
+    const texel = (2 * ext) / key.shadow.mapSize.x;
+    _lz.copy(keyDir);
+    _lx.set(0, 1, 0).cross(_lz);
+    if (_lx.lengthSq() < 1e-6) _lx.set(1, 0, 0);
+    _lx.normalize();
+    _ly.crossVectors(_lz, _lx);
+    const sx = Math.round(cur.target.dot(_lx) / texel) * texel, sy = Math.round(cur.target.dot(_ly) / texel) * texel, sz = cur.target.dot(_lz);
+    _snap.set(0, 0, 0).addScaledVector(_lx, sx).addScaledVector(_ly, sy).addScaledVector(_lz, sz);
+    key.position.copy(_snap).addScaledVector(keyDir, cur.dist + ext + 40);
+    key.target.position.copy(_snap);
     fill.position.copy(cur.target).addScaledVector(fillDir, 50);
     fill.target.position.copy(cur.target);
     const sc = key.shadow.camera;
@@ -244,7 +319,8 @@ export function createWorldX(host: HTMLElement, opts: WorldOptions): World & Wor
       sc.updateProjectionMatrix();
       lightsChanged = false;
     }
-    if (!lastCam.equals(camera.matrixWorld)) {
+    camMoved = !lastCam.equals(camera.matrixWorld);
+    if (camMoved) {
       lastCam.copy(camera.matrixWorld);
       for (const cb of camCbs) cb();
     }
@@ -266,7 +342,7 @@ export function createWorldX(host: HTMLElement, opts: WorldOptions): World & Wor
   function growthAt(g0: Growth, g1: Growth, k: number, up: boolean): Growth {
     if (up)
       return {
-        tower: n(g0.tower, g1.tower, win(k, 0.0, 0.62)),
+        tower: n(g0.tower, g1.tower, win(k, 0.02, 0.68)),
         ground: n(g0.ground, g1.ground, win(k, 0.0, 0.45)),
         city: n(g0.city, g1.city, g0.tower < 1 ? win(k, 0.45, 0.5) : win(k, 0.0, 0.5)),
         solid: n(g0.solid, g1.solid, win(k, 0.25, 0.6)),
@@ -353,14 +429,7 @@ export function createWorldX(host: HTMLElement, opts: WorldOptions): World & Wor
     const dt = Math.min(0.1, (now - last) / 1000);
     last = now;
     const t = (now - clock0) / 1000;
-    if (atmK < 1) {
-      atmK = Math.min(1, (now - atmT0) / ATM_MS);
-      paintAtmosphere(easeInOut(atmK));
-      if (atmK >= 1) {
-        atmFrom = atmTo;
-        palFrom = palTo;
-      }
-    }
+    stepDay(now);
     if (builtAnim) {
       const k = Math.min(1, (now - builtAnim.t0) / builtAnim.ms);
       builtK = n(builtAnim.from, builtAnim.to, easeInOut(k));
@@ -420,8 +489,8 @@ export function createWorldX(host: HTMLElement, opts: WorldOptions): World & Wor
   };
 
   // ── boot
-  setAtmosphere(opts.atmosphere, false);
   resize();
+  setAtmosphere(opts.atmosphere);
   setGrowthNow(GROWTH[level]);
   void go(shotFor("overview"), { animate: false });
   raf = requestAnimationFrame(tick);
@@ -471,10 +540,39 @@ export function createWorldX(host: HTMLElement, opts: WorldOptions): World & Wor
         const c = b.getCenter(new THREE.Vector3());
         workLight.position.set(c.x, 2.4, c.z);
         workLight.color.set(ROOM_META[working].color);
-        workTarget = atmTo.timeOfDay === "night" ? 5 : 3.2;
+        workTarget = 3.2 + 1.8 * day.night;
       } else workTarget = 0;
     },
-    setAtmosphere: (a, o) => setAtmosphere(a, o?.animate ?? true),
+    setAtmosphere: (a) => setAtmosphere(a),
+    setClock(c, o) {
+      const now = performance.now();
+      clock.frozen = false;
+      clock.set(c, now, (o?.animate ?? true) && !reduced);
+      stepDay(now, true);
+    },
+    getClock() {
+      return clockInfo(day, { t: 0, name: "day", daylight: 1, warmth: 0 });
+    },
+    onClock(cb) {
+      clockCbs.add(cb);
+      cb(clockInfo(day, { t: 0, name: "day", daylight: 1, warmth: 0 }));
+      return () => clockCbs.delete(cb);
+    },
+    setPortfolio(items: PortfolioItem[]) {
+      portfolio = items.slice();
+      district?.setPortfolio(portfolio);
+    },
+    portfolioScreenPoints() {
+      if (!district || growth.city < 0.5) return [];
+      const out: { id: string; x: number; y: number }[] = [];
+      for (const a of district.portfolioAnchors()) {
+        _pp.copy(a.p).project(camera);
+        if (_pp.z > 1 || Math.abs(_pp.x) > 1 || Math.abs(_pp.y) > 1) continue;
+        out.push({ id: a.id, x: ((_pp.x + 1) / 2) * w, y: ((1 - _pp.y) / 2) * h });
+      }
+      return out;
+    },
+    clockMode: () => clock.current,
     setInsets(i) {
       if (i.left === insets.left && i.right === insets.right && i.top === insets.top && i.bottom === insets.bottom) return;
       insets = { ...i };
@@ -560,6 +658,8 @@ export function createWorldX(host: HTMLElement, opts: WorldOptions): World & Wor
       tower?.dispose();
       district?.dispose();
       base.dispose();
+      sky.dispose();
+      clockCbs.clear();
       disposeFacades();
       env.dispose();
       renderer.dispose();

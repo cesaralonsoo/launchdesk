@@ -1,9 +1,13 @@
 // WS-A · createOfficeModel(): the level-1 office as a pure THREE graph (no renderer, camera, DOM labels or RAF).
 // Contract: OfficeModel in ../../contracts.ts. Coordinates as layout.ts (X ±12.45, Z ±6.25, floor top y = 0).
 //
-// Look: an architectural-model diorama. Warm plaster walls with darker cut caps, ribbon windows, glass corridor
-// partitions, microcement floors, oak furniture. Each department reads by its feature wall, rug, upholstery and
-// props — no neon strips. Static geometry is baked to ~one draw call per material.
+// Look: an architectural-model diorama. Matte plaster walls with charcoal section-cut caps, ribbon windows, frosted
+// glass partitions with thin black mullions, warm oak plank rooms around a pale stone corridor, a thick refined
+// plinth. Each department reads by its feature wall, rug, upholstery and props — no neon strips. Baked contact
+// shadows / fake AO everywhere (gradient decals). Static geometry is baked to ~one draw call per material.
+//
+// Day cycle (v6): applyAtmosphere() may be called ~10×/s with an interpolated preset. It is allocation-free: it
+// derives three continuous factors (dark, warm, lamps) and mutates existing material colours / intensities.
 //
 // Environment light: the office brings its own image-based lighting (RoomEnvironment → PMREM), generated lazily
 // the first time it is rendered, so it looks right inside any renderer WS-B sets up. See officeRenderHints().
@@ -12,7 +16,7 @@ import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment
 import type { AtmospherePreset, Dept, DeptState, OfficeModel, Quality, Room } from "../../contracts";
 import { ROOM_META } from "../../contracts";
 import { Agent, Cheer } from "./agents";
-import { bake, Builder, DEFAULT_SURFACES, Registry, type Look, type RoomMix } from "./kit";
+import { bake, Builder, hexInto, makeLook, Registry, setSurfaces, type RoomMix } from "./kit";
 import { HALF_X, HALF_Z, ROOMS, ROOM_D, ROOM_W, SLAB_PAD, type RoomDef } from "./layout";
 import { furnish } from "./props";
 import { buildShell, EXT_H } from "./shell";
@@ -47,18 +51,29 @@ export const officeRenderHints = {
   shadowNormalBias: 0.02,
 } as const;
 
-const ENV_BY_TIME: Record<Look["time"], number> = { day: 0.22, studio: 0.24, golden: 0.16, night: 0.08 };
+const clamp01 = (x: number) => (x < 0 ? 0 : x > 1 ? 1 : x);
+const smoothstep = (a: number, b: number, x: number) => {
+  const t = clamp01((x - a) / (b - a));
+  return t * t * (3 - 2 * t);
+};
+const _c = new THREE.Color();
+/** Relative luminance of an sRGB hex string (allocation-free). */
+function lum(hex: string) {
+  hexInto(_c, hex).convertLinearToSRGB();
+  return 0.2126 * _c.r + 0.7152 * _c.g + 0.0722 * _c.b;
+}
 
 export function createOfficeModel(opts: OfficeOptions): OfficeModelExt {
   const q = opts.quality;
-  const still = !!opts.still;
+  // WS-B does not pass `still` yet: fall back to ?still=1 / prefers-reduced-motion so deep links snap poses
+  const still = opts.still ?? (typeof location !== "undefined" && (/[?&]still=1\b/.test(location.search) || !!globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches));
   const R = new Registry(q);
   const root = new THREE.Group();
   root.name = "office";
 
   // ── build
   const shell = buildShell(R, q);
-  root.add(bake(shell.shared));
+  root.add(bake(shell.shared, R));
   const groundShadow = root.getObjectByName("office-ground-shadow");
   const spinners: THREE.Object3D[] = [];
   const agents = new Map<Room, Agent>();
@@ -70,7 +85,7 @@ export function createOfficeModel(opts: OfficeOptions): OfficeModelExt {
     const f = furnish({ R, B, room: r.id, color: r.color }, r, B.group);
     spinners.push(...f.spinners);
     g.add(B.group);
-    const baked = bake(g);
+    const baked = bake(g, R);
     baked.name = `room:${r.id}`;
     root.add(baked);
     roomGroups.set(r.id, baked);
@@ -80,25 +95,53 @@ export function createOfficeModel(opts: OfficeOptions): OfficeModelExt {
   }
   if (groundShadow) groundShadow.name = "office-ground-shadow";
 
-  // ── interior lamps: one soft warm point light per room (high quality only). Always present so that
-  //    switching themes never recompiles shaders; intensity 0 when the lights are off.
-  const roomLights = new Map<Room, THREE.PointLight>();
+  // ── interior light (high quality only; low = emissive shades + additive pools, no lights).
+  //    Fixed count so the day cycle never recompiles shaders: 4 warm lamps (one per column of rooms, hung over
+  //    the corridor glass line so both rooms of the column catch it) + 1 dept-coloured accent light that moves
+  //    to the room that is working. All at intensity 0 by day.
+  const warmLights: THREE.PointLight[] = [];
+  let workLight: THREE.PointLight | null = null;
   if (q === "high") {
-    for (const r of ROOMS) {
-      const l = new THREE.PointLight("#FFC48A", 0, 7.5, 1.6);
-      l.position.set(r.cx + (r.row === "back" ? 0.8 : 0.6), 1.95, r.cz + (r.row === "back" ? -0.2 : 0.4));
+    for (let col = 0; col < 4; col++) {
+      const back = ROOMS.find((r) => r.row === "back" && r.col === col)!;
+      const l = new THREE.PointLight("#FFC27E", 0, 9, 1.7);
+      l.position.set(back.cx + 0.6, 1.9, 0);
       l.castShadow = false;
-      l.name = `lamp:${r.id}`;
+      l.name = `lamp:col${col}`;
       root.add(l);
-      roomLights.set(r.id, l);
+      warmLights.push(l);
     }
+    workLight = new THREE.PointLight("#ffffff", 0, 5.2, 1.8);
+    workLight.name = "lamp:work";
+    workLight.castShadow = false;
+    root.add(workLight);
   }
-  const lampLevel = () => (!look.lightsOn ? 0 : look.time === "night" ? 5.5 : look.time === "golden" ? 1.6 : 1.0);
-  const syncLights = (only?: Room) => {
-    for (const [room, l] of roomLights) {
-      if (only && room !== only) continue;
-      const m = mixes.get(room)!;
-      l.intensity = lampLevel() * (1 - m.locked) * (1 + 0.25 * m.work);
+  let workRoom: Room | null = null;
+  const syncLights = () => {
+    const lv = look.lamps * (0.3 + 16 * look.dark * look.dark + 2.5 * look.warm);
+    for (let i = 0; i < warmLights.length; i++) {
+      const l = warmLights[i]!;
+      // a column is dimmer when its rooms are locked
+      l.intensity = lv * colOpen[i]!;
+    }
+    if (workLight) {
+      let best: Room | null = null, bw = 0.01;
+      for (const [room, m] of mixes) if (room !== "lobby" && m.work > bw) (bw = m.work), (best = room);
+      if (best && best !== workRoom) {
+        workRoom = best;
+        const r = roomDef(best);
+        workLight.position.set(r.cx + (r.row === "back" ? -1.2 : -1.6), 1.45, r.cz + (r.row === "back" ? -1.1 : 0.2));
+        hexInto(workLight.color, r.color);
+      }
+      workLight.intensity = workRoom ? mixes.get(workRoom)!.work * (0.6 + 7 * look.dark) : 0;
+    }
+  };
+  const colOpen = [1, 1, 1, 1];
+  const syncCols = () => {
+    for (let col = 0; col < 4; col++) {
+      let open = 0;
+      for (const r of ROOMS) if (r.col === col) open += 1 - mixes.get(r.id)!.locked;
+      colOpen[col] = 0.25 + 0.375 * open;
     }
   };
 
@@ -137,7 +180,7 @@ export function createOfficeModel(opts: OfficeOptions): OfficeModelExt {
   root.add(probe);
 
   // ── state
-  const look: Look = { s: { ...DEFAULT_SURFACES }, acc: 1, lightsOn: false, time: "studio", env: ENV_BY_TIME.studio };
+  const look = makeLook();
   const mixes = new Map<Room, RoomMix>();
   const targets = new Map<Room, RoomMix>();
   const states = new Map<Dept, DeptState>();
@@ -160,17 +203,37 @@ export function createOfficeModel(opts: OfficeOptions): OfficeModelExt {
     if (instant) {
       Object.assign(mixes.get(d)!, tg);
       R.resolve(look, mixes, d);
-      syncLights(d);
+      syncCols();
+      syncLights();
     }
     agents.get(d)!.setState(s, instant);
   }
 
   function applyAtmosphere(a: AtmospherePreset) {
-    look.s = { ...DEFAULT_SURFACES, ...(a.surfaces ?? {}) } as Look["s"];
+    setSurfaces(look, a.surfaces);
     look.acc = a.accentStrength ?? 1;
-    look.lightsOn = a.lightsOn ?? (a.timeOfDay === "night" || a.timeOfDay === "golden");
-    look.time = a.timeOfDay;
-    look.env = ENV_BY_TIME[a.timeOfDay];
+    // dark: from the sky (bottom colour) luminance, so any interpolated preset fades smoothly
+    const sky = a.sky[a.sky.length - 1]!;
+    const skyDark = 1 - smoothstep(0.06, 0.42, lum(sky));
+    const keyDark = 1 - smoothstep(0.6, 1.8, a.key.intensity);
+    look.dark = clamp01(Math.max(skyDark, keyDark * 0.85));
+    // warm: a low, orange key light
+    hexInto(_c, a.key.color).convertLinearToSRGB();
+    const warmHue = clamp01((_c.r - _c.b - 0.06) / 0.26);
+    look.warm = warmHue * (1 - smoothstep(30, 60, a.key.elevation) * 0.6) * (1 - look.dark);
+    const lo = a.lightsOn as unknown;
+    const ll = (a as { lightLevel?: unknown }).lightLevel; // v6 world clock: continuous lamp fade (integrate)
+    look.lamps =
+      typeof ll === "number"
+        ? clamp01(ll)
+        : typeof lo === "number"
+        ? clamp01(lo)
+        : lo === true
+          ? Math.max(0.3, look.dark, look.warm * 0.7)
+          : lo === false
+            ? 0
+            : clamp01(look.dark * 1.2 + look.warm * 0.4);
+    look.env = 0.24 - 0.15 * look.dark - 0.06 * look.warm;
     R.resolve(look, mixes);
     syncLights();
   }
@@ -203,8 +266,11 @@ export function createOfficeModel(opts: OfficeOptions): OfficeModelExt {
     applyAtmosphere,
     cheer,
     update(dt, t) {
+      // defensive: a host may hand us a negative / huge first-frame dt (rAF timestamp older than its own clock)
+      dt = dt > 0 ? (dt < 0.1 ? dt : 0.1) : 0;
       let busy = !still;
       const k = 1 - Math.exp(-dt * 4.5);
+      let moved = false;
       for (const [room, m] of mixes) {
         const tg = targets.get(room)!;
         const dl = tg.locked - m.locked, dw = tg.work - m.work, dd = tg.done - m.done;
@@ -214,10 +280,19 @@ export function createOfficeModel(opts: OfficeOptions): OfficeModelExt {
           m.done += dd * k;
           if (Math.abs(dl) + Math.abs(dw) + Math.abs(dd) < 4e-3) Object.assign(m, tg);
           R.resolve(look, mixes, room);
-          syncLights(room);
+          moved = true;
           busy = true;
         }
       }
+      if (moved) {
+        syncCols();
+        syncLights();
+      }
+      // working rooms: screens breathe (a slow glow pulse, no geometry or colour work)
+      if (!still)
+        for (const [room, m] of mixes) {
+          if (m.work > 0.02) R.pulse(room, 1 + m.work * (0.22 * Math.sin(t * 2.4 + room.length) + 0.08 * Math.sin(t * 7.1)));
+        }
       for (const a of agents.values()) busy = a.update(dt, t, still) || busy;
       if (!still) for (const s of spinners) s.rotation.y += dt * 0.35;
       for (const c of cheers) busy = c.update(dt) || busy;

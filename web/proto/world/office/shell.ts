@@ -4,7 +4,7 @@ import * as THREE from "three";
 import type { Room } from "../../contracts";
 import { Builder, type Registry } from "./kit";
 import { CORRIDOR, HALF_X, HALF_Z, ROOMS, ROOM_D, ROOM_W, SLAB_PAD, type RoomDef } from "./layout";
-import { fadeTex, planksTex, plasterTex, softRectTex } from "./textures";
+import { fadeTex, planksTex, plasterTex, softRectTex, stoneTex } from "./textures";
 
 export const WALL_T = 0.16;
 export const EXT_H = 1.86; // exterior walls (back row, left end) with a ribbon window
@@ -13,6 +13,7 @@ const SILL = 1.26;
 const HEAD = 1.68;
 const GLASS_H = 1.04;
 const NEUTRAL = "#B9BCC2";
+const MULLION = "#1D2024"; // thin black architectural metal
 
 function uvScale(m: THREE.Mesh, su: number, sv: number) {
   const uv = m.geometry.attributes.uv as THREE.BufferAttribute;
@@ -54,15 +55,15 @@ function ribbonWall(B: Builder, R: Registry, room: Room | null, accent: string, 
   const pane = B.box(dir === "x" ? len : 0.02, gh, dir === "x" ? 0.02 : len, R.m("window", room, accent, {}), [cx, SILL + gh / 2, cz], 0, undefined, false);
   pane.receiveShadow = false;
   // mullions + sill ledge (dark metal)
-  const metal = R.m("fixed", room, accent, { color: "#C3C7CD", rough: 0.35, metal: 0.5 });
-  const n = Math.max(2, Math.round(len / 2.0));
+  const metal = R.m("fixed", room, accent, { color: MULLION, rough: 0.4, metal: 0.6 });
+  const n = Math.max(2, Math.round(len / 1.5));
   for (let i = 0; i <= n; i++) {
     const t = -len / 2 + (i / n) * len;
     const px = dir === "x" ? cx + t : cx;
     const pz = dir === "x" ? cz : cz + t;
-    B.box(dir === "x" ? 0.025 : WALL_T * 0.5, gh, dir === "x" ? WALL_T * 0.5 : 0.025, metal, [px, SILL + gh / 2, pz]);
+    B.box(dir === "x" ? 0.018 : WALL_T * 0.5, gh, dir === "x" ? WALL_T * 0.5 : 0.018, metal, [px, SILL + gh / 2, pz]);
   }
-  B.box(dir === "x" ? len : WALL_T + 0.08, 0.03, dir === "x" ? WALL_T + 0.08 : len, R.m("wallCap", room, accent, { rough: 0.6, shade: 1.03 }), [cx, SILL + 0.015, cz]);
+  B.box(dir === "x" ? len : WALL_T + 0.06, 0.025, dir === "x" ? WALL_T + 0.06 : len, R.m("trim", room, accent, { rough: 0.5, shade: 1.06 }), [cx, SILL + 0.0125, cz]);
   B.box(dir === "x" ? len : WALL_T * 0.7, 0.025, dir === "x" ? WALL_T * 0.7 : len, metal, [cx, HEAD - 0.012, cz], 0, undefined, false);
 }
 
@@ -75,25 +76,29 @@ function accentPanel(B: Builder, R: Registry, room: Room, accent: string, normal
 }
 
 function skirting(B: Builder, R: Registry, room: Room | null, accent: string, normal: "+z" | "+x", len: number, x: number, z: number) {
-  const m = R.m("wallCap", room, accent, { rough: 0.7, shade: 1.02 });
+  const m = R.m("trim", room, accent, { rough: 0.7 });
   if (normal === "+z") B.box(len, 0.07, 0.016, m, [x, 0.035, z + 0.008], 0, undefined, false);
   else B.box(0.016, 0.07, len, m, [x + 0.008, 0.035, z], 0, undefined, false);
 }
 
 /** Baked ambient occlusion where floor meets wall. */
-function aoStrip(B: Builder, R: Registry, room: Room | null, len: number, x: number, z: number, along: "x" | "z", strength = 0.2) {
+function aoStrip(B: Builder, R: Registry, room: Room | null, len: number, x: number, z: number, along: "x" | "z", strength = 0.2, side: 1 | -1 = 1) {
   const m = R.m("shadow", room, NEUTRAL, { map: fadeTex(), opacity: strength });
-  const w = 0.42;
-  if (along === "x") B.decal(len, w, m, [x, 0.004, z + w / 2], undefined, 0);
-  else B.decal(len, w, m, [x + w / 2, 0.004, z], undefined, Math.PI / 2);
+  const w = 0.5;
+  // fadeTex is opaque at v=0 (the wall); flip the decal for the −side
+  if (along === "x") B.decal(len, w, m, [x, 0.004, z + (side * w) / 2], undefined, side === 1 ? 0 : Math.PI);
+  else B.decal(len, w, m, [x + (side * w) / 2, 0.004, z], undefined, side === 1 ? Math.PI / 2 : -Math.PI / 2);
 }
 
+/** Frosted glass partition: clear pane, a frosted manifestation band, thin black mullions every ~0.9 m. */
 function glassPartition(B: Builder, R: Registry, room: Room, accent: string, len: number, cx: number, cz: number) {
-  const metal = R.m("fixed", room, accent, { color: "#BFC3C9", rough: 0.35, metal: 0.5 });
-  B.box(len, GLASS_H, 0.02, R.m("glass", room, accent, {}), [cx, GLASS_H / 2, cz], 0, undefined, false).receiveShadow = false;
-  B.box(len, 0.025, 0.045, metal, [cx, GLASS_H, cz]);
-  B.box(len, 0.04, 0.05, metal, [cx, 0.02, cz]);
-  for (const ex of [-len / 2, len / 2]) B.box(0.03, GLASS_H, 0.045, metal, [cx + ex, GLASS_H / 2, cz]);
+  const metal = R.m("fixed", room, accent, { color: MULLION, rough: 0.4, metal: 0.6 });
+  B.box(len, GLASS_H, 0.012, R.m("glass", room, accent, { rough: 0.12, opacity: 0.14 }), [cx, GLASS_H / 2, cz], 0, undefined, false).receiveShadow = false;
+  B.box(len - 0.02, 0.42, 0.016, R.m("glass", room, accent, { rough: 0.7, opacity: 0.3, key: "frost" }), [cx, 0.52, cz], 0, undefined, false).receiveShadow = false;
+  B.box(len, 0.018, 0.035, metal, [cx, GLASS_H, cz]);
+  B.box(len, 0.03, 0.035, metal, [cx, 0.015, cz]);
+  const n = Math.max(1, Math.round(len / 0.9));
+  for (let i = 0; i <= n; i++) B.box(i === 0 || i === n ? 0.022 : 0.012, GLASS_H, 0.03, metal, [cx - len / 2 + (i / n) * len, GLASS_H / 2, cz]);
 }
 
 export interface ShellOut {
@@ -109,24 +114,28 @@ export function buildShell(R: Registry, q: "low" | "high"): ShellOut {
   // ── base slab: an architectural model plinth
   const sw = HALF_X * 2 + SLAB_PAD * 2;
   const sd = HALF_Z * 2 + SLAB_PAD * 2;
-  const body = S.box(sw, 0.47, sd, R.m("slab", null, NEU, { rough: 0.75 }), [0, -0.55 + 0.235, 0], 0.07);
+  // a crisp light top plate, a deep body and a recessed dark plinth so the model floats with a clean edge
+  S.box(sw, 0.05, sd, R.m("slabCap", null, NEU, { rough: 0.55 }), [0, -0.05 - 0.025, 0], 0.012).castShadow = true;
+  S.box(sw - 0.004, 0.006, sd - 0.004, R.m("slab", null, NEU, { rough: 0.9, shade: 0.62 }), [0, -0.103, 0], 0, undefined, false);
+  const body = S.box(sw - 0.02, 0.36, sd - 0.02, R.m("slab", null, NEU, { rough: 0.7 }), [0, -0.106 - 0.18, 0], 0.01);
   body.castShadow = true;
-  S.box(sw - 0.06, 0.07, sd - 0.06, R.m("slabCap", null, NEU, { rough: 0.6 }), [0, -0.075 - 0.002, 0], 0.025).castShadow = false;
-  // a thin reveal line between cap and body
-  S.box(sw - 0.12, 0.012, sd - 0.12, R.m("slab", null, NEU, { rough: 0.9, shade: 0.72 }), [0, -0.115, 0], 0, undefined, false);
+  S.box(sw - 0.34, 0.09, sd - 0.34, R.m("slab", null, NEU, { rough: 0.9, shade: 0.45 }), [0, -0.55 + 0.045, 0], 0, undefined, false);
 
   // ── corridor: light oak planks
-  const cor = S.box(HALF_X * 2, 0.05, CORRIDOR, R.m("corridor", null, NEU, { map: plasterTex(), rough: 0.8 }), [0, -0.025, 0], 0, undefined, false);
+  const cor = S.box(HALF_X * 2, 0.05, CORRIDOR, R.m("corridor", null, NEU, { map: stoneTex(), rough: 0.55 }), [0, -0.025, 0], 0, undefined, false);
   uvScale(cor, (HALF_X * 2) / 3.2, CORRIDOR / 3.2);
+  void plasterTex;
   // thresholds into the back rooms
   for (const r of ROOMS) {
     if (r.row !== "back") continue;
-    S.box(1.3, 0.012, 0.06, R.m("wallCap", r.id, r.color, { rough: 0.5 }), [r.cx, 0.002, -CORRIDOR / 2], 0, undefined, false);
+    S.box(ROOM_W, 0.008, 0.03, R.m("fixed", r.id, r.color, { color: "#8C8F94", rough: 0.35, metal: 0.8 }), [r.cx, 0.001, -CORRIDOR / 2], 0, undefined, false);
   }
   // ── left exterior wall (runs the whole depth, ribbon window)
   ribbonWall(S, R, null, NEU, "z", HALF_Z * 2 + WALL_T, -HALF_X - WALL_T / 2 + 0.04, 0);
   skirting(S, R, null, NEU, "+x", HALF_Z * 2, -HALF_X + 0.04, 0);
-  aoStrip(S, R, null, HALF_Z * 2, -HALF_X + 0.05, 0, "z", 0.22);
+  aoStrip(S, R, null, HALF_Z * 2, -HALF_X + 0.05, 0, "z", 0.28);
+  // corridor side of the front glass
+  aoStrip(S, R, null, HALF_X * 2, 0, CORRIDOR / 2 - 0.01, "x", 0.1, -1);
   // ── corridor end caps on the right: none (cut-away)
 
   // ── soft ground shadow under the plinth (contact with whatever floor WS-B puts under it)
@@ -141,8 +150,8 @@ export function buildShell(R: Registry, q: "low" | "high"): ShellOut {
     const col = r.color;
 
     // floor: microcement with a faint dept tint
-    const floor = B.box(ROOM_W, 0.05, ROOM_D, R.m("floor", room, col, { map: planksTex(), rough: 0.6 }), [r.cx, -0.025, r.cz], 0, undefined, false);
-    uvScale(floor, ROOM_W / 4, ROOM_D / 4);
+    const floor = B.box(ROOM_W, 0.05, ROOM_D, R.m("floor", room, col, { map: planksTex(), rough: 0.55 }), [r.cx, -0.025, r.cz], 0, undefined, false);
+    uvScale(floor, ROOM_W / 2.2, ROOM_D / 2.2);
     // seam lines between rooms (subtle reveal)
     B.box(ROOM_W, 0.004, 0.012, R.m("wallCap", room, col, { shade: 0.85 }), [r.cx, 0.001, back ? z1 - 0.006 : z0 + 0.006], 0, undefined, false);
 
@@ -152,21 +161,23 @@ export function buildShell(R: Registry, q: "low" | "high"): ShellOut {
       ribbonWall(B, R, room, col, "x", ROOM_W, r.cx, wz);
       accentPanel(B, R, room, col, "+z", ROOM_W - (r.col === 0 ? 0.04 : WALL_T / 2), SILL - 0.1, r.cx + (r.col === 0 ? 0.02 : WALL_T / 4), wz + WALL_T / 2);
       skirting(B, R, room, col, "+z", ROOM_W, r.cx, wz + WALL_T / 2 + 0.008);
-      aoStrip(B, R, room, ROOM_W, r.cx, wz + WALL_T / 2, "x", 0.24);
+      aoStrip(B, R, room, ROOM_W, r.cx, wz + WALL_T / 2, "x", 0.3);
     } else {
       // glass partition to the corridor with a central door
       const door = 1.3;
       const seg = (ROOM_W - door) / 2;
       glassPartition(B, R, room, col, seg - 0.04, x0 + seg / 2 + 0.02, z0 + 0.02);
       glassPartition(B, R, room, col, seg - 0.04, r.cx + door / 2 + seg / 2 - 0.02, z0 + 0.02);
-      aoStrip(B, R, room, ROOM_W, r.cx, z0 + 0.05, "x", 0.12);
+      aoStrip(B, R, room, ROOM_W, r.cx, z0 + 0.03, "x", 0.14);
     }
     // left partition (interior) — col 0 rooms use the shared exterior wall
     if (r.col > 0) {
       const len = ROOM_D + (back ? WALL_T / 2 : 0);
       wallSeg(B, R, room, col, "z", len, PART_H, x0, r.cz - (back ? WALL_T / 4 : 0));
       skirting(B, R, room, col, "+x", ROOM_D, x0 + WALL_T / 2, r.cz);
-      aoStrip(B, R, room, ROOM_D, x0 + WALL_T / 2, r.cz, "z", 0.2);
+      aoStrip(B, R, room, ROOM_D, x0 + WALL_T / 2, r.cz, "z", 0.24);
+      // the neighbour's side of the same partition
+      aoStrip(B, R, room, ROOM_D, x0 - WALL_T / 2, r.cz, "z", 0.24, -1);
       if (!back) accentPanel(B, R, room, col, "+x", ROOM_D - 0.02, PART_H - 0.16, x0 + WALL_T / 2, r.cz);
     } else if (!back) {
       // lobby: feature wall on the exterior wall face, below the window

@@ -75,9 +75,9 @@ export function paletteFor(a: AtmospherePreset): Palette {
     water: night ? C("#1B2B40") : golden ? mix("#A9BCC0", top, 0.3) : g(C("#A9C8D6")),
     stone: night ? mix(wall, "#8C8F96", 0.35) : mix(wall, "#EEE9E1", 0.35),
     stoneDark: night ? C("#3B4150") : mix(slab, "#B9B3AA", 0.3),
-    glass: night ? C("#1A2232") : golden ? mix("#53616D", glassTint, 0.12) : g(mix("#4C627A", glassTint, 0.12)),
+    glass: night ? C("#1A2232") : golden ? mix("#66727E", glassTint, 0.14) : g(mix("#5E7894", glassTint, 0.16)),
     glassClear: night ? C("#9DB7D8") : C(glassTint),
-    windowLit: night ? C("#FFD7A6") : golden ? C("#FFD3A0") : C("#FFF1DC"),
+    windowLit: night ? C("#FFE6C8") : golden ? C("#FFE0BC") : C("#FFF3E4"),
     clay: night ? C("#4A5466") : golden ? C("#FBF6EE") : mix(wall, "#F1F2F4", 0.5),
     marking: night ? C("#5B6372") : C("#FFFFFF"),
     roof: night ? C("#262C38") : mix(slab, "#C9CDD3", 0.5),
@@ -91,10 +91,13 @@ export function paletteFor(a: AtmospherePreset): Palette {
   };
 }
 
-/** out = lerp(a, b, k) for every field. */
+let KEYS: (keyof Palette)[] | null = null;
+/** out = lerp(a, b, k) for every field. Allocation-free when `out` is given (after its first fill). */
 export function lerpPalette(a: Palette, b: Palette, k: number, out?: Palette): Palette {
   const o = (out ?? ({} as Palette)) as unknown as Record<string, THREE.Color | number>;
-  for (const key of Object.keys(a) as (keyof Palette)[]) {
+  const keys = (KEYS ??= Object.keys(a) as (keyof Palette)[]);
+  for (let i = 0; i < keys.length; i++) {
+    const key = keys[i]!;
     const va = a[key], vb = b[key];
     if (typeof va === "number") o[key] = va + ((vb as number) - va) * k;
     else {

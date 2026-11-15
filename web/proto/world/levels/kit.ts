@@ -63,20 +63,29 @@ export function facade(kind: "curtain" | "punched" | "ribbon" | "shop", seed = 1
   e.fillStyle = "#000";
   e.fillRect(0, 0, W, H);
 
+  // lit interiors: mostly warm, some neutral office white, a few cool screens-blue; brightness varies, blinds half-down
+  const TINTS: [number, number, number][] = [[255, 198, 138], [255, 222, 178], [255, 240, 222], [206, 222, 255]];
   const lightWin = (x: number, y: number, w: number, h: number, on: boolean) => {
     if (!on) return;
-    const warm = 0.75 + r() * 0.25;
+    const pick = r();
+    const [cr, cg, cb] = TINTS[pick < 0.38 ? 0 : pick < 0.64 ? 1 : pick < 0.84 ? 2 : 3]!;
+    const warm = 0.3 + r() * 0.7;
     const gr = e.createLinearGradient(0, y, 0, y + h);
-    gr.addColorStop(0, `rgba(255,255,255,${warm})`);
-    gr.addColorStop(0.18, `rgba(255,236,205,${warm * 0.95})`);
-    gr.addColorStop(1, `rgba(255,214,160,${warm * 0.55})`);
+    gr.addColorStop(0, `rgba(${cr},${cg},${cb},${warm})`);
+    gr.addColorStop(0.25, `rgba(${cr},${cg},${cb},${warm * 0.92})`);
+    gr.addColorStop(1, `rgba(${cr},${Math.round(cg * 0.9)},${Math.round(cb * 0.8)},${warm * 0.5})`);
     e.fillStyle = gr;
     e.fillRect(x, y, w, h);
     // ceiling light strip
-    e.fillStyle = `rgba(255,255,255,${0.9})`;
-    e.fillRect(x + w * 0.1, y + h * 0.06, w * 0.8, Math.max(2, h * 0.035));
+    e.fillStyle = `rgba(255,250,240,${0.55 + warm * 0.4})`;
+    e.fillRect(x + w * 0.1, y + h * 0.06, w * 0.8, Math.max(2, h * 0.03));
+    // blinds pulled down on some windows
+    if (r() < 0.25) {
+      e.fillStyle = "rgba(0,0,0,0.55)";
+      e.fillRect(x, y, w, h * (0.2 + r() * 0.35));
+    }
     // desk / people silhouettes
-    e.fillStyle = "rgba(40,30,20,0.55)";
+    e.fillStyle = "rgba(30,24,18,0.6)";
     const n = Math.floor(r() * 3);
     for (let i = 0; i < n; i++) {
       const sx = x + r() * w * 0.8;
@@ -103,7 +112,7 @@ export function facade(kind: "curtain" | "punched" | "ribbon" | "shop", seed = 1
       m.lineTo(x, H);
       m.closePath();
       m.fill();
-      lightWin(x + 3, 6, mw - 6, H - 12, r() < 0.82);
+      lightWin(x + 3, 6, mw - 6, H - 12, r() < 0.5);
     }
     m.fillStyle = "rgb(250,250,250)";
     for (let i = 0; i <= N; i++) m.fillRect(i * mw - 2, 0, 4, H); // mullions
@@ -125,7 +134,7 @@ export function facade(kind: "curtain" | "punched" | "ribbon" | "shop", seed = 1
         m.fillStyle = "rgb(225,227,230)";
         m.fillRect(x - 1, wy, 3, wh);
       }
-      lightWin(wx + 2, wy + 2, ww - 4, wh - 4, r() < 0.7);
+      lightWin(wx + 2, wy + 2, ww - 4, wh - 4, r() < 0.46);
     }
     m.fillStyle = "rgba(0,0,0,0.06)";
     m.fillRect(0, H - 6, W, 6); // floor line

@@ -62,9 +62,11 @@ function validate(s: S, v: unknown, path: string): void {
   }
 }
 
+const { sampleIdea } = await import("../server/mocks.js");
+const KEYS = ["coffee", "dog", "bikes", "bread"] as const;
 for (const [dept, schema] of Object.entries(SCHEMAS)) {
   checkSchema(schema, dept);
-  validate(schema, mockFor(dept as keyof typeof SCHEMAS), dept);
+  for (const k of KEYS) validate(schema, mockFor(dept as keyof typeof SCHEMAS, sampleIdea(k)), `${k}.${dept}`);
 }
 assert.deepEqual((SCHEMAS.dex as S).properties.logos.items.properties.icon.enum, [...LOGO_ICONS]);
 
@@ -90,7 +92,9 @@ assert.equal(rae.first_posts.length, 3);
 
 // sanitizers
 const l2 = sanitize("leo", { ...mockFor("leo"), score: 12.345, signals: [{ name: "Timing", score: -3, why: "x", source_id: 4 }] });
-assert.equal(l2.score, 10);
+assert.equal(l2.score, 6.4, "v6: missing signals take the clamped score (10), capped at 7.5 with no source; Timing 0 → 0.85 × 7.5");
+assert.equal(l2.verdict, "pivot", "a signal at 3 or below blocks a go");
+assert.ok(l2.pivot, "a pivot is always present when the verdict is not go");
 assert.deepEqual(l2.signals.map((s) => s.name), [...SIGNAL_NAMES]);
 assert.equal(l2.signals[4]!.score, 0);
 assert.equal(l2.signals[4]!.source_id, null, "no web sources yet: ids are dropped");
@@ -98,6 +102,7 @@ assert.deepEqual(l2.sources, []);
 
 const s2 = mockFor("sam");
 s2.assumptions = s2.assumptions.map((a) => (a.key === "fixed_costs_month" ? { ...a, value: 1e9 } : a));
+s2.fixed_costs_breakdown = [{ label: "Everything", value: 1e9 }]; // v6: the breakdown is the source of truth
 const s2s = sanitize("sam", s2);
 assert.deepEqual(s2s.months.map((m) => m.month), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
 assert.equal(s2s.break_even.month, null, "no break-even in year 1");
@@ -163,4 +168,5 @@ const { slugify } = await import("../server/jobs.js");
 assert.equal(slugify("Cafè Andén!"), "cafe-anden");
 assert.equal(slugify("   "), "");
 
+await import("./quality.test.js");
 console.log("schemas and sanitizers: all passed");

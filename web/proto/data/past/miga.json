@@ -1,0 +1,588 @@
+{
+  "id": "pB9sd3Vk7t",
+  "idea": "Weekend sourdough baking classes in Valencia, €45 a seat",
+  "created_at": 1794475800000,
+  "payments": {
+    "validate": {
+      "txid": "dev-pB9sd3Vk7t-validate",
+      "sats": 0,
+      "cents": 10,
+      "at": 1794475805000
+    }
+  },
+  "status": {
+    "mia": "done",
+    "leo": "done",
+    "sam": "done"
+  },
+  "results": {
+    "mia": {
+      "title": "Weekend sourdough classes in Valencia",
+      "one_liner": "Bake your first real sourdough in three hours, and take the starter home.",
+      "brief": {
+        "concept": "Three-hour hands-on sourdough classes for 8 people, Friday evening and weekends, in a rented shared kitchen in Ruzafa, €45 a seat.",
+        "for": "Valencians aged 25 to 45 who bake at home, follow bread accounts, and have failed a starter at least once.",
+        "goal": "Sell 24 paid seats across three test classes before committing to a monthly kitchen slot."
+      },
+      "market": {
+        "city": "Valencia",
+        "country_iso": "ES",
+        "currency": "€",
+        "language": "en"
+      },
+      "gate": {
+        "metric": "paid class seats",
+        "target": 24,
+        "by_week": 4
+      },
+      "checklist": [
+        {
+          "week": 1,
+          "task": "Interview 15 home bakers about their last loaf",
+          "how": "Ask in two baking groups what they baked last, what failed, what they paid to learn.",
+          "done_when": "15 logged; 6+ paid for a class or kit",
+          "helped_by": "leo",
+          "est_hours": 4
+        },
+        {
+          "week": 1,
+          "task": "Price three shared kitchens in Ruzafa",
+          "how": "Ask for weekend half-day rates, oven count and equipment included.",
+          "done_when": "Three quotes; one under €40 an hour",
+          "helped_by": "sam",
+          "est_hours": 3
+        },
+        {
+          "week": 1,
+          "task": "Bake the class recipe four times, timed",
+          "how": "Run the full 3-hour class plan at home with a stopwatch.",
+          "done_when": "Four loaves; plan fits 3 hours",
+          "helped_by": null,
+          "est_hours": 8
+        },
+        {
+          "week": 2,
+          "task": "Run a free pilot class for six friends",
+          "how": "Teach the full class and ask each person what they would change.",
+          "done_when": "Six loaves baked; feedback written",
+          "helped_by": null,
+          "est_hours": 5
+        },
+        {
+          "week": 2,
+          "task": "Choose the name and photograph the pilot",
+          "how": "Pick one of Nova's names; shoot hands, dough and the finished loaves.",
+          "done_when": "Name chosen; 20 photos ready",
+          "helped_by": "nova",
+          "est_hours": 2
+        },
+        {
+          "week": 3,
+          "task": "Open three dated classes for booking",
+          "how": "Publish one Friday evening and two Saturday morning dates on the page.",
+          "done_when": "Three classes bookable",
+          "helped_by": "pip",
+          "est_hours": 2
+        },
+        {
+          "week": 3,
+          "task": "Publish the first three launch posts",
+          "how": "Show the pilot class, the starter, and the dates.",
+          "done_when": "Three posts live; every DM answered",
+          "helped_by": "rae",
+          "est_hours": 3
+        },
+        {
+          "week": 4,
+          "task": "Sell 24 paid seats",
+          "how": "Message interviewees and pilot guests; ask each to bring one friend.",
+          "done_when": "24 seats paid on-chain",
+          "helped_by": "pip",
+          "est_hours": 5
+        },
+        {
+          "week": 4,
+          "task": "Decide: book a monthly kitchen slot",
+          "how": "Compare seats sold and repeat interest with break-even.",
+          "done_when": "Decision written down with the numbers",
+          "helped_by": "sam",
+          "est_hours": 2
+        }
+      ]
+    },
+    "leo": {
+      "score": 7.3,
+      "verdict": "go",
+      "headline": "Sell the starter that survives, not the lesson.",
+      "summary": "Home bakers already spend on kits and flour, and most failed sourdough fails at the starter. A small hands-on class that sends you home with a living starter answers that exact failure.",
+      "signals": [
+        {
+          "name": "Demand",
+          "score": 7.5,
+          "why": "Home baking stayed a common weekend hobby",
+          "source_id": null,
+          "weight": 0.3
+        },
+        {
+          "name": "Competition gap",
+          "score": 7,
+          "why": "Few small hands-on classes; most are demos",
+          "source_id": null,
+          "weight": 0.2
+        },
+        {
+          "name": "Price acceptance",
+          "score": 7.4,
+          "why": "€40–€60 is typical for a 3-hour food class",
+          "source_id": null,
+          "weight": 0.2
+        },
+        {
+          "name": "Channel",
+          "score": 7.5,
+          "why": "Bread content travels well on social video",
+          "source_id": null,
+          "weight": 0.15
+        },
+        {
+          "name": "Timing",
+          "score": 6.8,
+          "why": "Summer heat slows classes in July and August",
+          "source_id": null,
+          "weight": 0.15
+        }
+      ],
+      "why_go": "The failure point (the starter) is the product: a class that ends with a living starter and a support chat has a clear reason to pay.",
+      "risks": [
+        {
+          "risk": "Kitchen rent rises with weekend demand.",
+          "mitigation": "Book a fixed monthly slot only after 24 seats sell.",
+          "severity": "med"
+        },
+        {
+          "risk": "Bakers learn once and never return.",
+          "mitigation": "Test a €30 follow-up class on shaping and scoring.",
+          "severity": "med"
+        },
+        {
+          "risk": "Summer heat empties July and August.",
+          "mitigation": "Plan a two-month summer break into the numbers.",
+          "severity": "low"
+        }
+      ],
+      "pivot": null,
+      "next_step": "Interview 15 home bakers this week: 6 who already paid to learn is the bar.",
+      "market_facts": [
+        {
+          "fact": "Hands-on food classes in Spanish cities commonly cost €40 to €60 for about three hours.",
+          "source_id": null,
+          "is_estimate": true
+        },
+        {
+          "fact": "Shared commercial kitchens are usually rented by the hour or half-day.",
+          "source_id": null,
+          "is_estimate": true
+        },
+        {
+          "fact": "Classes of 6 to 10 people are typical when everyone works their own dough.",
+          "source_id": null,
+          "is_estimate": true
+        },
+        {
+          "fact": "Most beginner sourdough failures trace back to an inactive starter.",
+          "source_id": null,
+          "is_estimate": true
+        }
+      ],
+      "competitors": [
+        {
+          "name": "Online video courses",
+          "note": "Cheap, but nobody checks your dough",
+          "price": 2,
+          "differentiation": 3,
+          "url": null
+        },
+        {
+          "name": "Bakery demonstration events",
+          "note": "You watch, you don't bake",
+          "price": 4,
+          "differentiation": 4,
+          "url": null
+        },
+        {
+          "name": "Culinary school short courses",
+          "note": "Thorough, pricey, weekday hours",
+          "price": 8.5,
+          "differentiation": 7,
+          "url": null
+        },
+        {
+          "name": "Learning alone from books",
+          "note": "Free, slow, many failed starters",
+          "price": 1,
+          "differentiation": 1.5,
+          "url": null
+        }
+      ],
+      "you": {
+        "price": 5,
+        "differentiation": 7.5
+      },
+      "interviews": {
+        "who": "Home bakers in Valencia who have tried sourdough",
+        "where": "Two local baking groups and a weekend flour market",
+        "questions": [
+          "Tell me about the last bread you baked.",
+          "What went wrong the last time a loaf failed?",
+          "What have you paid to learn baking so far?",
+          "Where did you look for help when it failed?",
+          "What happened to your last starter?"
+        ],
+        "good_sign": "They describe a dead starter in detail and have already paid for a course or kit.",
+        "target": 15
+      },
+      "kill_criteria": [
+        "Stop if fewer than 6 of 15 bakers have paid to learn before.",
+        "Stop if under 12 of 24 seats sell in two weeks of promotion."
+      ],
+      "score_math": "0.30×7.5 + 0.20×7.0 + 0.20×7.4 + 0.15×7.5 + 0.15×6.8 = 7.3",
+      "verdict_rule": "Go from 7.0 with no signal at 3 or below · Pivot 5.0–6.9 · No-go under 5.0",
+      "confidence": {
+        "level": "low",
+        "note": "Desk estimates only, no web sources: signals capped at 7.5. Interviews decide."
+      },
+      "sources": []
+    },
+    "sam": {
+      "currency": "€",
+      "canvas": {
+        "customer": "Home bakers aged 25 to 45 in Valencia",
+        "value": "Your first real sourdough, and a starter that lives",
+        "revenue": "€45 seats; starter kits and flour as add-ons",
+        "channels": "Bread videos, baking groups, guests bringing friends",
+        "costs": "Kitchen slot, ingredients, aprons, insurance, ads",
+        "unit_economics": "Each seat leaves about €35 after ingredients and kit"
+      },
+      "assumptions": [
+        {
+          "key": "customers_per_day_m1",
+          "label": "Seats a class day, month 1",
+          "value": 5,
+          "unit": "per day",
+          "basis": "Friends and interviewees first",
+          "is_estimate": true
+        },
+        {
+          "key": "customers_per_day_m12",
+          "label": "Seats a class day, month 12",
+          "value": 14,
+          "unit": "per day",
+          "basis": "Two classes of 7 a class day",
+          "is_estimate": true
+        },
+        {
+          "key": "avg_ticket",
+          "label": "Average spend per seat",
+          "value": 48,
+          "unit": "€",
+          "basis": "€45 seat plus some kit add-ons",
+          "is_estimate": true
+        },
+        {
+          "key": "gross_margin_pct",
+          "label": "Margin after ingredients and kit",
+          "value": 72,
+          "unit": "%",
+          "basis": "Flour, starter jar, take-home box",
+          "is_estimate": true
+        },
+        {
+          "key": "fixed_costs_month",
+          "label": "Fixed costs a month",
+          "value": 2800,
+          "unit": "€",
+          "basis": "Sum of the five lines below",
+          "is_estimate": true
+        },
+        {
+          "key": "startup_cost",
+          "label": "Start-up cost",
+          "value": 4800,
+          "unit": "€",
+          "basis": "Bannetons, scales, aprons, page, pilot",
+          "is_estimate": true
+        },
+        {
+          "key": "open_days_month",
+          "label": "Class days a month",
+          "value": 9,
+          "unit": "days",
+          "basis": "Fridays and weekends",
+          "is_estimate": true
+        }
+      ],
+      "fixed_costs_breakdown": [
+        {
+          "label": "Kitchen slot, weekends",
+          "value": 1100
+        },
+        {
+          "label": "Founder, teaching and prep",
+          "value": 900
+        },
+        {
+          "label": "Ads and photography",
+          "value": 400
+        },
+        {
+          "label": "Equipment wear",
+          "value": 220
+        },
+        {
+          "label": "Insurance and booking software",
+          "value": 180
+        }
+      ],
+      "months": [
+        {
+          "month": 1,
+          "revenue": 2160,
+          "costs": 3405,
+          "cash": -6045
+        },
+        {
+          "month": 2,
+          "revenue": 2275,
+          "costs": 3437,
+          "cash": -7207
+        },
+        {
+          "month": 3,
+          "revenue": 2468,
+          "costs": 3491,
+          "cash": -8230
+        },
+        {
+          "month": 4,
+          "revenue": 2775,
+          "costs": 3577,
+          "cash": -9032
+        },
+        {
+          "month": 5,
+          "revenue": 3221,
+          "costs": 3702,
+          "cash": -9513
+        },
+        {
+          "month": 6,
+          "revenue": 3792,
+          "costs": 3862,
+          "cash": -9583
+        },
+        {
+          "month": 7,
+          "revenue": 4416,
+          "costs": 4036,
+          "cash": -9203
+        },
+        {
+          "month": 8,
+          "revenue": 4987,
+          "costs": 4196,
+          "cash": -8412
+        },
+        {
+          "month": 9,
+          "revenue": 5433,
+          "costs": 4321,
+          "cash": -7300
+        },
+        {
+          "month": 10,
+          "revenue": 5740,
+          "costs": 4407,
+          "cash": -5967
+        },
+        {
+          "month": 11,
+          "revenue": 5933,
+          "costs": 4461,
+          "cash": -4495
+        },
+        {
+          "month": 12,
+          "revenue": 6048,
+          "costs": 4493,
+          "cash": -2940
+        }
+      ],
+      "price": {
+        "value": 48,
+        "display": "€48.00",
+        "note": "Three-hour class seat €45; average €48"
+      },
+      "startup_cost": {
+        "value": 4800,
+        "display": "€4.8k",
+        "note": "Equipment, aprons, page, pilot class"
+      },
+      "cash_needed": {
+        "value": 9583,
+        "display": "€9.6k",
+        "month": 6
+      },
+      "break_even": {
+        "month": 7,
+        "note": "Revenue covers costs from month 7"
+      },
+      "breakeven_units_per_day": 9.1,
+      "year1": {
+        "revenue": "€49k",
+        "costs": "€47k",
+        "result": "+€1.9k",
+        "monthly_profit_m12": "€1.6k",
+        "payback": "About month 14"
+      },
+      "main_risk": "Seats per class decide everything: sell three dated classes before booking a monthly kitchen slot.",
+      "key_assumption": "customers_per_day_m12",
+      "launch_offer": {
+        "item": "Founding class seat",
+        "price": 36,
+        "normal_price": 45,
+        "limit": 24,
+        "display": "€36",
+        "normal_display": "€45",
+        "discount_pct": 20,
+        "contribution": 23.4,
+        "contribution_display": "€23.40",
+        "revenue_if_sold_out": 864,
+        "revenue_display": "€864"
+      },
+      "unit": {
+        "price": 48,
+        "variable_cost": 13.44,
+        "contribution": 34.56,
+        "margin_pct": 72,
+        "line": "€48 a sale − €13.44 direct cost = €34.56 left"
+      },
+      "breakeven": {
+        "per_month": 82,
+        "per_day": 9.1,
+        "formula": "€2,800 fixed ÷ €34.56 per sale ÷ 9 days = 9.1 sales a day"
+      },
+      "headroom": {
+        "m12_per_day": 14,
+        "breakeven_per_day": 9.1,
+        "multiple": 1.5,
+        "note": "Month-12 plan is 1.5× break-even"
+      },
+      "sensitivity": [
+        {
+          "key": "customers_per_day_m12",
+          "label": "Seats a class day",
+          "low": {
+            "value": 11.2,
+            "year1_result": -5235,
+            "break_even_month": 8,
+            "breakeven_per_day": 9.1,
+            "cash_needed": 12245
+          },
+          "base": {
+            "value": 14,
+            "year1_result": 1860,
+            "break_even_month": 7,
+            "breakeven_per_day": 9.1,
+            "cash_needed": 9583
+          },
+          "high": {
+            "value": 16.8,
+            "year1_result": 8950,
+            "break_even_month": 6,
+            "breakeven_per_day": 9.1,
+            "cash_needed": 7655
+          },
+          "swing": 14185,
+          "line": "Seats a class day ±20%: year 1 from −€5.2k to +€8.9k"
+        },
+        {
+          "key": "fixed_costs_month",
+          "label": "Fixed costs a month",
+          "low": {
+            "value": 2240,
+            "year1_result": 8580,
+            "break_even_month": 5,
+            "breakeven_per_day": 7.3,
+            "cash_needed": 6792
+          },
+          "base": {
+            "value": 2800,
+            "year1_result": 1860,
+            "break_even_month": 7,
+            "breakeven_per_day": 9.1,
+            "cash_needed": 9583
+          },
+          "high": {
+            "value": 3360,
+            "year1_result": -4860,
+            "break_even_month": 8,
+            "breakeven_per_day": 11,
+            "cash_needed": 13123
+          },
+          "swing": 13440,
+          "line": "Fixed costs a month ±20%: year 1 from −€4.9k to +€8.6k"
+        },
+        {
+          "key": "gross_margin_pct",
+          "label": "Margin after ingredients and kit",
+          "low": {
+            "value": 62,
+            "year1_result": -3068,
+            "break_even_month": 8,
+            "breakeven_per_day": 11,
+            "cash_needed": 11315
+          },
+          "base": {
+            "value": 72,
+            "year1_result": 1860,
+            "break_even_month": 7,
+            "breakeven_per_day": 9.1,
+            "cash_needed": 9583
+          },
+          "high": {
+            "value": 82,
+            "year1_result": 6781,
+            "break_even_month": 6,
+            "breakeven_per_day": 8,
+            "cash_needed": 8224
+          },
+          "swing": 9849,
+          "line": "Margin after ingredients and kit ±10 pts: year 1 from −€3.1k to +€6.8k"
+        }
+      ]
+    },
+    "memo": {
+      "purpose": "Hands-on weekend sourdough classes for home bakers in Valencia, ending with your own loaf and a living starter.",
+      "problem": "Home bakers try sourdough, the starter dies, and they give up. Videos can't look at your dough, and pro courses run on weekdays at school prices.",
+      "insight": "The starter is where beginners fail, so it is the product. A small class that sends you home with a living one solves the exact failure.",
+      "verdict_line": "Go, to test: break-even is 9.1 seats a class day, and the plan reaches 14 by month 12.",
+      "next_7_days": [
+        "Interview 15 home bakers about their last loaf",
+        "Price three shared kitchens in Ruzafa",
+        "Bake the class recipe four times, timed"
+      ]
+    }
+  },
+  "timings": {
+    "validate": {
+      "started": 1794475805000,
+      "finished": 1794475841000
+    }
+  },
+  "models": {
+    "mia": "mock",
+    "leo": "mock",
+    "sam": "mock"
+  },
+  "share_id": null
+}
