@@ -1,0 +1,407 @@
+// WP4: the Launch kit orchestrator. One paid step after the report: Nova writes the brand, then logo, website and
+// 30-day plan are made in parallel (Promise.allSettled). Each part is retried once, then degrades to a plain
+// fallback so the founder never sees an error screen. A per-kit spend guard (cost.ts Budget) refuses work past
+// KIT_SPEND_CAP_CENTS. Status is saved after every change; the UI polls GET /api/projects/:id/kit (kit-routes.ts).
+//
+// The parts come from other packages, loaded lazily so the kit runs (with fallbacks) before they exist:
+//   WP1 server/site/plan.ts       planSite(input: KitInput): Promise<SiteSpec>
+//   WP2 server/brand/draw.ts      drawLogos(brand: KitBrand, avoid: string[]): Promise<LogoOption[]>
+//   WP3 server/marketing/plan.ts  planMarketing(input: KitInput): Promise<MarketingResult>
+import { runDept } from "./ai.js";
+import { config } from "./config.js";
+import { Budget, BudgetError, costOf, costScope } from "./cost.js";
+import { exec, getProject, getProjectRow } from "./db.js";
+import { slugify } from "./jobs.js";
+import { loadV7 } from "./jobs-v7.js";
+import type { Kit, KitBrand, KitInput, LogoOption, LogoResult, MarketingResult, ReportDigest, SiteResult, SiteTemplate } from "./kit-contract.js";
+import type { NovaBrand, Project } from "./types.js";
+import type { ResultsV7 } from "./v7.js";
+
+export type KitPart = "logo" | "site" | "marketing";
+export const KIT_PARTS: readonly KitPart[] = ["logo", "site", "marketing"];
+export const SITE_TEMPLATES: readonly SiteTemplate[] = ["editorial", "bold", "warm"];
+
+/** Reservation estimates per part (PLAN.md §4, list prices). */
+export const KIT_EST = { brand: 0.04, logo: 0.09, site: 0.045, marketing: 0.115 } as const;
+
+export interface KitDeps {
+  brand(p: Project): Promise<NovaBrand>;
+  logos(brand: KitBrand, avoid: string[], ctx?: { idea: string; report?: ReportDigest }): Promise<LogoOption[]>;
+  site(input: KitInput): Promise<unknown>;
+  marketing(input: KitInput): Promise<MarketingResult>;
+}
+
+// ───────────────────────────────────────────── storage (one row per project)
+let tableReady: Promise<unknown> | null = null;
+const ensureTable = () =>
+  (tableReady ??= exec("CREATE TABLE IF NOT EXISTS kits (project_id TEXT PRIMARY KEY, json TEXT NOT NULL, updated_at INTEGER NOT NULL)"));
+
+export async function loadKit(projectId: string): Promise<Kit | null> {
+  await ensureTable();
+  const r = await exec("SELECT json FROM kits WHERE project_id = ?", [projectId]);
+  const j = r.rows[0]?.json;
+  return j ? (JSON.parse(String(j)) as Kit) : null;
+}
+export async function saveKit(projectId: string, kit: Kit) {
+  await ensureTable();
+  await exec(
+    "INSERT INTO kits (project_id, json, updated_at) VALUES (?, ?, ?) ON CONFLICT(project_id) DO UPDATE SET json = excluded.json, updated_at = excluded.updated_at",
+    [projectId, JSON.stringify(kit), Date.now()],
+  );
+}
+
+// ───────────────────────────────────────────── inputs
+const PALETTE_DEFAULT = { primary: "#1F2937", accent: "#0AC18E", bg: "#F8FAFC", ink: "#111827" };
+const LANG_OF: Record<string, string> = { es: "es", spanish: "es", español: "es", en: "en", english: "en", fr: "fr", french: "fr", de: "de", german: "de", it: "it", pt: "pt", ca: "ca" };
+
+export function kitBrandFrom(nova: NovaBrand | undefined, p: Project): KitBrand {
+  const n = nova?.names[nova.chosen] ?? nova?.names[0];
+  const hex = (role: string, i: number) => n?.palette.find((c) => c.name === role)?.hex ?? n?.palette[i]?.hex;
+  const market = p.results.mia?.market;
+  const lang = LANG_OF[(market?.language ?? "en").trim().toLowerCase()] ?? (market?.language ?? "en").slice(0, 2).toLowerCase();
+  const fallbackName = (p.results.mia?.title ?? "My business").split(/\s+/).slice(0, 2).join(" ");
+  return {
+    name: n?.name ?? fallbackName,
+    tagline: n?.tagline ?? "",
+    voice: nova ? `${nova.voice.traits.join(", ")}. ${nova.voice.rules}` : "Clear and direct.",
+    palette: {
+      primary: hex("Primary", 0) ?? PALETTE_DEFAULT.primary,
+      accent: hex("Accent", 1) ?? PALETTE_DEFAULT.accent,
+      bg: hex("Background", 2) ?? PALETTE_DEFAULT.bg,
+      ink: hex("Primary", 0) ?? PALETTE_DEFAULT.ink,
+    },
+    fonts: { display: nova?.typography.display ?? "Fraunces", text: nova?.typography.body ?? "Inter" },
+    lang: lang || "en",
+    ...(market?.city ? { city: market.city } : {}),
+    currency: p.results.sam?.currency ?? market?.currency ?? "€",
+  };
+}
+
+/** The report, reduced to what the kit needs. Stats only with a real source link. */
+export function digestOf(p: Project, v7: ResultsV7 | null): ReportDigest {
+  const sam = p.results.sam as (Project["results"]["sam"] & { launch_offer?: { item: string; price: number; normal_price: number; limit: number } }) | undefined;
+  const lo = sam?.launch_offer;
+  const stats: ReportDigest["stats"] = [];
+  for (const b of v7?.blocks ?? []) for (const k of b.keyNumbers ?? []) if (k.source?.url && stats.length < 6) stats.push({ value: k.value, label: k.label, sourceUrl: k.source.url });
+  if (!stats.length)
+    for (const w of v7?.work ?? []) for (const f of w.findings) if (f.source?.url && f.display && stats.length < 6) stats.push({ value: f.display, label: f.text.slice(0, 80), sourceUrl: f.source.url });
+  const competitors: ReportDigest["competitors"] = [];
+  for (const w of v7?.work ?? []) for (const f of w.findings) if (f.competitor?.named && competitors.length < 5) competitors.push({ name: f.competitor.name, gap: f.competitor.note });
+  if (!competitors.length) for (const c of p.results.leo?.competitors ?? []) if (competitors.length < 5) competitors.push({ name: c.name, gap: (c as { gap?: string; weakness?: string }).gap ?? (c as { weakness?: string }).weakness ?? "" });
+  const risks = (v7?.report?.weaknesses.map((w) => w.text) ?? p.results.leo?.risks.map((r) => r.risk) ?? []).slice(0, 4);
+  return {
+    customer: p.results.mia?.brief.for ?? "",
+    pain: p.results.memo?.problem ?? v7?.report?.verdictLine ?? "",
+    offer: lo ? { what: lo.item, price: lo.price, normal: lo.normal_price, limit: lo.limit } : { what: p.results.mia?.title ?? p.idea, price: sam?.price.value ?? 0 },
+    stats,
+    competitors,
+    risks,
+  };
+}
+
+// ───────────────────────────────────────────── fallbacks (no AI)
+const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+const initials = (name: string) =>
+  (name.match(/\p{L}[\p{L}\p{N}]*/gu) ?? ["L"]).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("").slice(0, 2) || "L";
+
+/** Three plain marks from the brand's own colours and initials: used when no drawn logo survives. */
+export function fallbackLogos(brand: KitBrand): LogoOption[] {
+  const { primary: p, accent: a, bg } = brand.palette;
+  const m = esc(initials(brand.name));
+  const t = (y: number, size: number, fill: string) => `<text x="32" y="${y}" text-anchor="middle" font-family="${esc(brand.fonts.display)}, serif" font-size="${size}" font-weight="700" fill="${fill}">${m}</text>`;
+  return [
+    { id: "fb-tile", family: "monogram", idea: "Your initials on a rounded tile, in your main colour.", svg: `<rect x="4" y="4" width="56" height="56" rx="14" fill="${p}"/>${t(42, m.length > 1 ? 24 : 30, bg)}` },
+    { id: "fb-ring", family: "geometric", idea: "A ring with an accent dot: simple, works small.", svg: `<circle cx="32" cy="32" r="24" fill="none" stroke="${p}" stroke-width="6"/><circle cx="46" cy="18" r="6" fill="${a}"/>` },
+    { id: "fb-stop", family: "literal", idea: "Your first letter with an accent full stop.", svg: `${t(46, 38, p).replace(`>${m}<`, `>${esc(m[0] ?? "L")}<`)}<circle cx="50" cy="42" r="5" fill="${a}"/>` },
+  ];
+}
+
+function fallbackSite(input: KitInput): unknown {
+  return {
+    fallback: true,
+    lang: input.brand.lang,
+    hero: { title: input.brand.name, subtitle: input.brand.tagline || input.idea, cta: "Reserve" },
+    sections: [{ kind: "offer", title: input.report.offer.what, price: input.report.offer.price }],
+  };
+}
+
+async function fallbackMarketing(p: Project): Promise<MarketingResult> {
+  const tasks = p.results.mia?.checklist ?? [];
+  return {
+    plan: {
+      fallback: true,
+      goal: (p.results.mia as { gate?: { metric?: string } } | undefined)?.gate?.metric || "Your first paying customers",
+      weeks: [1, 2, 3, 4].map((w) => ({ week: w, tasks: tasks.filter((t) => t.week === w).map((t) => ({ task: t.task, done_when: t.done_when })) })),
+    },
+    sources: [],
+  };
+}
+
+// ───────────────────────────────────────────── default parts (lazy imports of WP1–3)
+async function tryImport<T>(path: string): Promise<T | null> {
+  try {
+    return (await import(path)) as T;
+  } catch (e) {
+    if ((e as { code?: string }).code === "ERR_MODULE_NOT_FOUND" || /Cannot find module/.test(String(e))) return null;
+    throw e;
+  }
+}
+const SITE_MOD = "./site/plan.js";
+const LOGO_MOD = "./brand/draw.js";
+const MKT_MOD = "./marketing/plan.js";
+
+export const defaultDeps: KitDeps = {
+  async brand(p) {
+    if (p.results.nova) return p.results.nova; // already written (old build path or a resumed kit)
+    return (await runDept("nova", p.idea, p.results)).json;
+  },
+  async logos(brand, avoid, ctx) {
+    // WP2 returns { options, failed, ... } (DrawOut); an array is accepted too.
+    const m = await tryImport<{ drawLogos(b: KitBrand, avoid: string[], ctx?: { idea: string; report?: ReportDigest }): Promise<LogoOption[] | { options: LogoOption[] }> }>(LOGO_MOD);
+    if (!m) throw new NotReady("logo");
+    const out = await m.drawLogos(brand, avoid, ctx ?? { idea: brand.tagline });
+    return Array.isArray(out) ? out : out.options;
+  },
+  async site(input) {
+    const m = await tryImport<{ planSite(i: KitInput): Promise<unknown> }>(SITE_MOD);
+    if (!m) throw new NotReady("site");
+    return m.planSite(input);
+  },
+  async marketing(input) {
+    const m = await tryImport<{ planMarketing(i: KitInput): Promise<MarketingResult> }>(MKT_MOD);
+    if (!m) throw new NotReady("marketing");
+    return m.planMarketing(input);
+  },
+};
+/** A part whose module is not installed yet: go straight to the fallback, no retry. */
+class NotReady extends Error {
+  constructor(part: string) {
+    super(`${part} module not installed`);
+  }
+}
+
+// ───────────────────────────────────────────── spend guard
+export const KIT_CAP_USD = config.kitSpendCapCents / 100;
+
+/** Budget synced with the project's real cost ledger (parallel parts share one ledger, so we read the total). */
+function kitGuard(projectId: string, stage: string, cap = KIT_CAP_USD) {
+  const b = new Budget(cap);
+  return {
+    budget: b,
+    reserve(label: string, est: number) {
+      b.spent = costOf(projectId, stage).usd;
+      return b.reserve(label, est);
+    },
+  };
+}
+
+// ───────────────────────────────────────────── run
+const running = new Map<string, Promise<Kit>>();
+
+async function once<T>(label: string, fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch (e) {
+    if (e instanceof NotReady || e instanceof BudgetError) throw e;
+    console.error(`[kit] ${label} failed, retrying once:`, (e as Error).message);
+    return fn();
+  }
+}
+
+/** Picks 3 options to show from the drawn ones (one per family when possible). */
+export function pickThree(options: LogoOption[]): LogoOption[] {
+  const out: LogoOption[] = [];
+  for (const fam of ["literal", "monogram", "geometric"] as const) {
+    const o = options.find((x) => x.family === fam && !out.includes(x));
+    if (o) out.push(o);
+  }
+  for (const o of options) if (out.length < 3 && !out.includes(o)) out.push(o);
+  return out.slice(0, 3);
+}
+
+/**
+ * Runs the kit for a paid project. Idempotent: parts already done are kept; a running kit is not started twice.
+ * Never throws for a part: a failed part ends as "done" with a fallback, or "error" only if even that fails.
+ */
+export function runKit(projectId: string, deps: KitDeps = defaultDeps, stage = "build"): Promise<Kit> {
+  const cur = running.get(projectId);
+  if (cur) return cur;
+  const run = runKitInner(projectId, deps, stage).finally(() => running.delete(projectId));
+  running.set(projectId, run);
+  return run;
+}
+export const kitRunning = (projectId: string) => running.has(projectId);
+
+async function runKitInner(projectId: string, deps: KitDeps, stage: string): Promise<Kit> {
+  const p = await getProject(projectId);
+  if (!p) throw new Error("Project not found");
+  const guard = kitGuard(projectId, stage);
+  let kit: Kit = (await loadKit(projectId)) ?? {
+    brand: kitBrandFrom(p.results.nova, p),
+    status: { brand: "queued", logo: "queued", site: "queued", marketing: "queued" },
+  };
+  // A part interrupted by a restart, or one that errored, is run again.
+  for (const k of Object.keys(kit.status) as Array<keyof Kit["status"]>) if (kit.status[k] !== "done") kit.status[k] = "queued";
+  const save = () => saveKit(projectId, kit);
+  const set = async (part: keyof Kit["status"], s: Kit["status"][typeof part]) => {
+    kit.status[part] = s;
+    await save();
+  };
+
+  // 1. Brand (Nova). Without it the parts still run on a plain brand from the report.
+  if (kit.status.brand !== "done") {
+    await set("brand", "working");
+    try {
+      const settle = guard.reserve("brand", p.results.nova ? 0 : KIT_EST.brand);
+      const nova = await once("brand", () => deps.brand(p));
+      settle();
+      await saveNovaJob(projectId, nova);
+      p.results.nova = nova;
+      kit.brand = kitBrandFrom(nova, p);
+    } catch (e) {
+      console.error(`[kit] ${projectId} brand fell back:`, (e as Error).message);
+      kit.brand = kitBrandFrom(undefined, p);
+    }
+    await set("brand", "done");
+  }
+
+  const row = await getProjectRow(projectId);
+  const slug = await reserveSlug(projectId, kit.brand.name);
+  const input: KitInput = { projectId, idea: p.idea, brand: kit.brand, report: digestOf(p, await loadV7(projectId)), founderAddress: row?.founder_address ?? "", slug };
+
+  // 2. Logo, website and plan in parallel.
+  const part = async <R>(name: KitPart, est: number, make: () => Promise<R>, fallback: () => R | Promise<R>, put: (r: R) => void) => {
+    if (kit.status[name] === "done") return;
+    await set(name, "working");
+    let r: R;
+    try {
+      const settle = guard.reserve(name, est);
+      try {
+        r = await once(name, make);
+      } finally {
+        settle();
+      }
+    } catch (e) {
+      if (!(e instanceof NotReady)) console.error(`[kit] ${projectId} ${name} fell back:`, (e as Error).message);
+      try {
+        r = await fallback();
+      } catch {
+        await set(name, "error");
+        return;
+      }
+    }
+    put(r);
+    await set(name, "done");
+  };
+  await Promise.allSettled([
+    part<LogoResult>(
+      "logo",
+      KIT_EST.logo,
+      async () => {
+        const drawn = pickThree(await deps.logos(kit.brand, [], { idea: p.idea, report: input.report }));
+        if (drawn.length < 3) throw new Error(`only ${drawn.length} logos survived`);
+        return { options: drawn, chosen: drawn[0]!.id, fallback: false };
+      },
+      () => {
+        const fb = fallbackLogos(kit.brand);
+        return { options: fb, chosen: fb[0]!.id, fallback: true };
+      },
+      (r) => (kit.logo = r),
+    ),
+    part<SiteResult>("site", KIT_EST.site, async () => ({ spec: await deps.site(input), template: "editorial" }), () => ({ spec: fallbackSite(input), template: "editorial" }), (r) => (kit.site = r)),
+    part<MarketingResult>("marketing", KIT_EST.marketing, () => deps.marketing(input), () => fallbackMarketing(p), (r) => (kit.marketing = r)),
+  ]);
+  await save();
+  return kit;
+}
+
+/** Nova's brand is stored as the "nova" job too, so the rest of the app (old pages, getProject) sees it. */
+async function saveNovaJob(projectId: string, nova: NovaBrand) {
+  await exec(
+    "INSERT INTO jobs (project_id, dept, stage, status, json, model, queued_at, finished_at) VALUES (?, 'nova', 'build', 'done', ?, 'kit', ?, ?) ON CONFLICT(project_id, dept) DO UPDATE SET status = 'done', json = excluded.json, finished_at = excluded.finished_at, error = NULL",
+    [projectId, JSON.stringify(nova), Date.now(), Date.now()],
+  );
+}
+
+/** The website address: reserved once, from the brand name. */
+export async function reserveSlug(projectId: string, name: string): Promise<string> {
+  const row = await getProjectRow(projectId);
+  if (row?.slug) return row.slug;
+  const base = slugify(name) || "launch";
+  for (const c of [base, `${base}-${projectId.slice(0, 4).toLowerCase()}`, `${base}-${projectId.toLowerCase()}`]) {
+    if ((await exec("SELECT 1 FROM projects WHERE slug = ?", [c])).rows.length) continue;
+    try {
+      await exec("UPDATE projects SET slug = ? WHERE id = ? AND slug IS NULL", [c, projectId]);
+    } catch {
+      continue;
+    }
+    const s = (await getProjectRow(projectId))?.slug;
+    if (s) return s;
+  }
+  throw new Error("Could not reserve a website address");
+}
+
+/** The full public link of the website (absolute when PUBLIC_URL is set; the UI prefixes location.origin otherwise). */
+export const siteUrl = (slug: string, origin = config.publicUrl) => `${origin}/s/${slug}`;
+
+/**
+ * Hook for jobs.ts (stage=build): runs the kit and then marks the old build departments done, so stageDone(),
+ * timings and the project polling keep working. dex/rae get no result (the kit replaces them); pip gets the link.
+ */
+export async function runKitStage(projectId: string, deps: KitDeps = defaultDeps): Promise<Kit> {
+  const kit = await runKit(projectId, deps, "build");
+  const slug = (await getProjectRow(projectId))?.slug;
+  const now = Date.now();
+  for (const dept of ["nova", "dex", "rae", "pip"] as const) {
+    const json = dept === "pip" && slug ? JSON.stringify({ slug, url: siteUrl(slug), live_at: new Date().toISOString() }) : null;
+    await exec(
+      "INSERT INTO jobs (project_id, dept, stage, status, json, model, queued_at, finished_at) VALUES (?, ?, 'build', 'done', ?, 'kit', ?, ?) ON CONFLICT(project_id, dept) DO UPDATE SET status = 'done', error = NULL, finished_at = excluded.finished_at, json = COALESCE(jobs.json, excluded.json)",
+      [projectId, dept, json, now, now],
+    );
+  }
+  return kit;
+}
+
+// ───────────────────────────────────────────── founder choices (no AI unless "more logos")
+export async function chooseLogo(projectId: string, id: string): Promise<Kit> {
+  const kit = await loadKit(projectId);
+  if (!kit?.logo) throw new Error("Your logo is not ready yet.");
+  if (!kit.logo.options.some((o) => o.id === id)) throw new Error("That logo is not one of your options.");
+  kit.logo.chosen = id;
+  await saveKit(projectId, kit);
+  return kit;
+}
+
+export async function chooseTemplate(projectId: string, template: string): Promise<Kit> {
+  if (!SITE_TEMPLATES.includes(template as SiteTemplate)) throw new Error("Unknown design.");
+  const kit = await loadKit(projectId);
+  if (!kit?.site) throw new Error("Your website is not ready yet.");
+  kit.site.template = template as SiteTemplate;
+  await saveKit(projectId, kit);
+  return kit;
+}
+
+/** "Show 3 more": one new draw, avoiding the ideas already shown. One free redraw per kit. */
+export async function moreLogos(projectId: string, deps: KitDeps = defaultDeps): Promise<Kit> {
+  const kit = await loadKit(projectId);
+  if (!kit?.logo) throw new Error("Your logo is not ready yet.");
+  const shown = kit.logo.options.length;
+  if (shown >= 6) throw new Error("You have already seen 6 logo options.");
+  return costScope(projectId, "kit-more", async () => {
+    const guard = kitGuard(projectId, "kit-more", KIT_EST.logo * 1.5);
+    const settle = guard.reserve("logo-more", KIT_EST.logo);
+    try {
+      const fresh = pickThree(await deps.logos(kit.brand, kit.logo!.options.map((o) => o.idea), { idea: (await getProject(projectId))?.idea ?? kit.brand.tagline }));
+      if (!fresh.length) throw new Error("No new logos this time. Please try again later.");
+      const ids = new Set(kit.logo!.options.map((o) => o.id));
+      kit.logo!.options.push(...fresh.map((o) => (ids.has(o.id) ? { ...o, id: `${o.id}-2` } : o)));
+      await saveKit(projectId, kit);
+      return kit;
+    } catch (e) {
+      if (e instanceof NotReady) throw new Error("More logo options are not available yet.");
+      throw e;
+    } finally {
+      settle();
+    }
+  });
+}

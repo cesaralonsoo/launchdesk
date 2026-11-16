@@ -1,0 +1,47 @@
+pragma cashscript ^0.14.0;
+
+// LaunchDesk "Pay only if it delivers" escrow. One contract (one P2SH32 address) per order.
+//
+// The customer's wallet sends the price to this address (a plain send, no special signing).
+// From there the coins can only move in two ways:
+//   release(): LaunchDesk delivered the report. Needs the LaunchDesk release key AND a report signature over
+//              orderId ++ reportHash. The whole amount (minus a capped fee) must go to the merchant address and
+//              the second output must be OP_RETURN "LD1" <reportHash>: the exact report is fingerprinted on chain.
+//   refund():  nothing was delivered in time. After `timeout` blocks anyone may broadcast it (no signature),
+//              but the whole amount (minus a capped fee) must go back to the customer's own address.
+contract LaunchDeskEscrow(
+    bytes20 merchantPkh,   // where a release pays out (the LaunchDesk merchant wallet, P2PKH)
+    pubkey releasePk,      // server hot key that signs the release transaction
+    pubkey oraclePk,       // key that signs "this report was delivered for this order" (may equal releasePk)
+    bytes20 refundPkh,     // the customer's own address (P2PKH) for the refund
+    int timeout,           // refund unlocks after this many blocks since funding (6 = about 1 hour)
+    bytes32 orderId        // sha256 of the order reference; also makes every order address unique
+) {
+    function release(sig releaseSig, datasig reportSig, bytes32 reportHash) {
+        require(checkSig(releaseSig, releasePk));
+        require(checkDataSig(reportSig, orderId + reportHash, oraclePk));
+
+        require(tx.inputs.length == 1);
+        require(tx.outputs.length == 2);
+
+        int amount = tx.inputs[this.activeInputIndex].value;
+        require(tx.outputs[0].lockingBytecode == new LockingBytecodeP2PKH(merchantPkh));
+        require(tx.outputs[0].value >= amount - 2000);
+        require(tx.outputs[0].tokenCategory == 0x);
+
+        require(tx.outputs[1].value == 0);
+        require(tx.outputs[1].lockingBytecode == new LockingBytecodeNullData([0x4c4431, reportHash]));
+    }
+
+    function refund() {
+        require(this.age >= timeout);
+
+        require(tx.inputs.length == 1);
+        require(tx.outputs.length == 1);
+
+        int amount = tx.inputs[this.activeInputIndex].value;
+        require(tx.outputs[0].lockingBytecode == new LockingBytecodeP2PKH(refundPkh));
+        require(tx.outputs[0].value >= amount - 2000);
+        require(tx.outputs[0].tokenCategory == 0x);
+    }
+}

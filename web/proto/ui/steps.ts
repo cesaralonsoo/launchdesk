@@ -2,7 +2,7 @@
 // Rules: one headline + one action per step; findings one at a time; the score only in the report and only built from
 // the factor bars; every number traces back to a finding, its source, or says "Estimate".
 import {
-  BUILD_TEAM, LEVEL_META, ROLE_LIBRARY, ROOM_META, scoreDisplay,
+  BLOCK_IDS, BLOCK_LIBRARY, BUILD_TEAM, LEVEL_META, ROLE_LIBRARY, ROOM_META, hasBlocks, scoreDisplay,
   type Analyst, type AnalystRole, type BuildDept, type Finding, type FindingKind, type IdeaReport, type ReportPage,
   type ScalePath, type SteerChange, type SteerResult, type WorldLevel,
 } from "../contracts";
@@ -13,11 +13,15 @@ import { ldMark } from "./logo";
 import { badge, levelGlyph } from "./pixel";
 import { usd } from "./view";
 import { statusLine } from "../live/adapter";
+import { kitOfferHtml } from "./kit-screen";
+
+/** WP4: the Launch kit price, in cents (server config.priceCents.build). */
+export const KIT_CENTS = 50;
 
 export const KIND_LABEL: Record<FindingKind, string> = { fact: "Fact", number: "Number", competitor: "Competitor", risk: "Risk", strength: "Strength", estimate: "Estimate" };
 const VERDICT = { go: "Go", pivot: "Pivot", "no-go": "No-go" } as const;
-export const BUILD_DOING: Record<BuildDept, string> = { nova: "Naming your brand", dex: "Drawing your logo and site", rae: "Planning launch month", pip: "Putting it live" };
-const BUILD_ROLE: Record<BuildDept, string> = { nova: "Brand", dex: "Logo & site", rae: "Launch plan", pip: "Goes live" };
+export const BUILD_DOING: Record<BuildDept, string> = { nova: "Choosing your name and colours", dex: "Drawing your logo", rae: "Writing your 30-day plan", pip: "Putting your website online" };
+const BUILD_ROLE: Record<BuildDept, string> = { nova: "Brand", dex: "Logo", rae: "30-day plan", pip: "Website" };
 
 export const who = (f: ProtoFlowV7, id: AnalystRole): Analyst =>
   f.roster.find((a) => a.id === id) ?? { id, role: id, name: ROLE_LIBRARY[id].name, color: ROLE_LIBRARY[id].color, mission: ROLE_LIBRARY[id].mission, why: "", weight: 0 };
@@ -54,35 +58,40 @@ export function ideaHtml(placeholder: string, value: string, end = false): strin
 
 // ───────────────────────────── pay
 export function payHtml(f: ProtoFlowV7, stage: 1 | 2, customIdea: boolean): string {
-  const cents = stage === 1 ? 10 : 20;
+  const cents = stage === 1 ? 10 : KIT_CENTS;
   const avs = stage === 1 ? f.roster.map((a) => badge(a.name, a.color, 26)).join("") : BUILD_TEAM.map((b) => builderBadge(b, 26)).join("");
-  const title = stage === 1 ? "Validate your idea" : "Build and launch";
-  const line = stage === 1 ? `${f.roster.length} analysts picked for this idea` : "Brand · logo and site · launch plan · live";
+  const title = stage === 1 ? "Validate your idea" : "Launch kit";
+  const line = stage === 1 ? `${f.roster.length} analysts picked for this idea` : "Your logo · your website · your 30-day plan";
   return `
   <section class="pay">
     <header class="pay-top" data-st><span class="pay-merchant">${ldMark(18, undefined, true)}<b>LaunchDesk</b></span><span class="tag">Prototype · no payment</span></header>
     <div class="pay-amount" data-st><b class="huge">${usd(cents)}</b><span>in Bitcoin Cash</span></div>
     <div class="pay-line" data-st><div class="pay-avs">${avs}</div><div><b>${title}</b><span>${esc(line)}</span></div></div>
-    <button class="btn btn-primary btn-pay" data-act="approve" type="button" data-st${f.paidCents >= (stage === 1 ? 10 : 30) ? ' data-state="done"' : ""}>
+    <button class="btn btn-primary btn-pay" data-act="approve" type="button" data-st${f.paidCents >= (stage === 1 ? 10 : 30) /* flow/index.ts counts 10 + 20; see .notes/next/hookup.md */ ? ' data-state="done"' : ""}>
       <span class="b-lbl">Approve</span><span class="spin" aria-hidden="true"></span>
       <span class="tick" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M5 12.5l4.5 4.5L19 7.5" pathLength="1"/></svg></span>
     </button>
-    ${stage === 1 && customIdea ? `<p class="pay-note" data-st>This prototype plays a sample run: ${esc(f.project.title)}.</p>` : `<p class="pay-foot" data-st>${stage === 1 ? "You get a report. Building is a second step." : "Paid from your wallet. LaunchDesk never holds your keys."}</p>`}
+    ${stage === 1 && customIdea ? `<p class="pay-note" data-st>This prototype plays a sample run: ${esc(f.project.title)}.</p>` : `<p class="pay-foot" data-st>${stage === 1 ? "You get a report. Your launch kit is a second step." : "Paid from your wallet. LaunchDesk never holds your keys."}</p>`}
   </section>`;
 }
 
 // ───────────────────────────── hire
+/** The analyst's team name: the report section it writes (block contract), else its classic department. */
+const deptOf = (f: ProtoFlowV7, a: Analyst) => {
+  const b = hasBlocks((f.live?.project ?? f.project).v7) ? BLOCK_IDS.find((id) => BLOCK_LIBRARY[id].role === a.role) : undefined;
+  return b ? BLOCK_LIBRARY[b].label : ROLE_LIBRARY[a.role].dept;
+};
 export function hireHtml(f: ProtoFlowV7): string {
   return `
   <section class="v-hire">
     <header class="v-head" data-st><span class="eyebrow px-eb">Hiring</span><h2 class="t-display">A team for this idea</h2></header>
-    ${f.roster.length ? `<ol class="hires">${f.roster.map((a, i) => hireRow(a, i < f.hired)).join("")}</ol>` : `<div class="ev-wait">${f.live?.error ? esc(f.live.error) : "Picking analysts for your idea"}<span class="dots"><i></i><i></i><i></i></span></div>`}
+    ${f.roster.length ? `<ol class="hires">${f.roster.map((a, i) => hireRow(a, i < f.hired, deptOf(f, a))).join("")}</ol>` : `<div class="ev-wait">${f.live?.error ? esc(f.live.error) : "Picking analysts for your idea"}<span class="dots"><i></i><i></i><i></i></span></div>`}
   </section>`;
 }
-const hireRow = (a: Analyst, on: boolean) => `
+const hireRow = (a: Analyst, on: boolean, dept: string) => `
   <li class="hire" data-on="${on ? 1 : 0}" data-id="${a.id}">
     ${badge(a.name, a.color, 34)}
-    <div><b>${esc(a.name)} <em>${esc(ROLE_LIBRARY[a.role].dept)}</em></b><span>${esc(a.mission)}</span></div>
+    <div><b>${esc(a.name)} <em>${esc(dept)}</em></b><span>${esc(a.mission)}</span></div>
   </li>`;
 
 // ───────────────────────────── evidence: one finding at a time
@@ -95,7 +104,7 @@ export function evidenceHtml(f: ProtoFlowV7, i: number): string {
   <section class="v-ev">
     <header class="ev-who">
       ${badge(a.name, a.color, 34)}
-      <div><b>${esc(a.name)} <em>${esc(ROLE_LIBRARY[a.role].dept)}</em></b><span>${esc(a.mission)}</span></div>
+      <div><b>${esc(a.name)} <em>${esc(deptOf(f, a))}</em></b><span>${esc(a.mission)}</span></div>
       <span class="ev-k num">${k}<small>/${mine.length}</small></span>
     </header>
     <div class="ev-slot">${fd && i < f.revealed ? findingCard(fd) : evWait(f)}</div>
@@ -341,18 +350,13 @@ function diffChip(f: ProtoFlowV7, c: SteerChange): string {
 }
 
 // ───────────────────────────── growth moments
+/** WP4: the old "BOOM" moment is now the Launch kit offer (one clear card after the report). */
 export function boomHtml(): string {
-  return `<section class="boom"><b class="boom-w" aria-hidden="true">BOOM</b><p>You've outgrown your room.</p></section>`;
+  return kitOfferHtml(KIT_CENTS);
 }
-export function floorHtml(f: ProtoFlowV7): string {
-  return `
-  <section class="v-lvl">
-    <div class="lv-g" data-st>${levelGlyph(1, 30)}</div>
-    <div class="lv-t" data-st><span class="eyebrow px-eb">Level 1 · ${LEVEL_META[1].name}</span><h2 class="t-display">Welcome to your office</h2>
-      <p>Your research team moved in. The build team is waiting.</p></div>
-    <button class="btn btn-primary" data-act="next" type="button" data-st><span>Build it</span><span class="btn-price">${usd(20)}</span></button>
-  </section>
-  ${scalePaths(f.report)[0] ? `<p class="lv-cap" data-st>${I.arrow(12)}<span>Best way to scale: <b>${esc(scalePaths(f.report)[0]!.label)}</b> · ${esc(easeWord(f.report!.scalability.score))}</span></p>` : ""}`;
+/** WP4: after the report, one card that says what the Launch kit gives you and what it costs. */
+export function floorHtml(_f: ProtoFlowV7): string {
+  return kitOfferHtml(KIT_CENTS);
 }
 export function workTag(b: BuildDept): string {
   return `${builderBadge(b, 30)}<span class="wt-t"><b>${ROOM_META[b].name} <em>${BUILD_ROLE[b]}</em></b><span>${BUILD_DOING[b]}<span class="dots"><i></i><i></i><i></i></span></span></span>`;
@@ -361,8 +365,17 @@ export function analystTag(a: Analyst): string {
   return `<i style="background:${a.color}"></i><span>${esc(a.name)}</span>`;
 }
 
-/** Building / district: the level reached, or the honest cap with what would make it scale. Never a dead end. */
-export function levelHtml(f: ProtoFlowV7, l: 2 | 3, brand: string): string {
+/** WP4: no building / district levels in the founder's path. One calm "what's next" card instead. */
+export function levelHtml(_f: ProtoFlowV7, _l: 2 | 3, brand: string): string {
+  return `
+  <section class="v-lvl">
+    <div class="lv-t" data-st><span class="eyebrow">What's next</span><h2 class="t-display">${esc(brand)} is ready to launch</h2>
+      <p>Your logo, your website and your 30-day plan are done. Your offices open tomorrow.</p></div>
+    <button class="btn btn-primary" data-act="next" type="button" data-st><span>Finish</span>${I.arrow(16)}</button>
+  </section>`;
+}
+/** Old building / district card (kept for reference, no longer shown). */
+export function levelHtmlOld(f: ProtoFlowV7, l: 2 | 3, brand: string): string {
   const cap = f.cap;
   const S = f.report?.scalability;
   if (cap >= l) {
@@ -426,7 +439,7 @@ export function officesHtml(f: ProtoFlowV7): string {
     return `<li><button type="button" data-act="switch" data-id="${esc(p.id)}" aria-current="${cur}">
         <span class="of-g">${levelGlyph(l, 22)}</span>
         <span class="of-t"><b>${esc(p.title)}${example ? `<span class="of-tag">Example</span>` : ""}</b><span>${esc(p.idea)}</span></span>
-        <span class="of-r"><b class="num">${r ? one(r.score) : "–"}</b><em>${LEVEL_META[l].short}${r && scoreDisplay(r) !== "hero" ? " · provisional" : ""}</em></span>
+        <span class="of-r"><b class="num">${r ? one(r.score) : "–"}</b><em>${r ? "score" : ""}${r && scoreDisplay(r) !== "hero" ? " · provisional" : ""}</em></span>
       </button></li>`;
   };
   const mine = f.projects.filter((p) => !f.isSample(p.id));
@@ -434,7 +447,7 @@ export function officesHtml(f: ProtoFlowV7): string {
   return `
   <section class="offices">
     <header class="of-head"><h2 class="t-display">Your offices</h2><button class="btn btn-ghost btn-icon ov-x" data-act="close" type="button" aria-label="Close">${I.close(16)}</button></header>
-    <p class="of-sub">One world per idea.</p>
+    <p class="of-sub">One office per idea.</p>
     ${mine.length ? `<ul class="of-list">${mine.map((p) => row(p, false)).join("")}</ul>` : `<p class="of-sub">Your ideas will live here. Nothing yet.</p>`}
     <p class="of-sec">Examples</p>
     <ul class="of-list">${samples.map((p) => row(p, true)).join("")}</ul>
@@ -451,8 +464,8 @@ export function noBuildHtml(b: BuildDept | null): string {
   return `
   <section class="v-lvl">
     <div class="lv-g" data-st>${b ? builderBadge(b, 30) : levelGlyph(1, 30)}</div>
-    <div class="lv-t" data-st><span class="eyebrow px-eb">${b ? `${ROOM_META[b].name} · ${BUILD_ROLE[b]}` : "Build"}</span><h2 class="t-display">Not built in this example</h2>
-      <p>This sample stops at the report. The coffee kiosk shows a full build.</p></div>
+    <div class="lv-t" data-st><span class="eyebrow px-eb">${b ? BUILD_ROLE[b] : "Launch kit"}</span><h2 class="t-display">No launch kit in this example</h2>
+      <p>This example stops at the report. The coffee kiosk shows a full launch kit.</p></div>
     <button class="btn btn-primary" data-act="next" type="button" data-st><span>Next</span>${I.arrow(16)}</button>
   </section>`;
 }

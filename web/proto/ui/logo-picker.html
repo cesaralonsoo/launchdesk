@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Logo picker</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="./logo-picker.css">
+<style>
+body { margin: 0; background: #f2f1ee; font: 15px Inter, system-ui, sans-serif; color: #14161c; }
+main { max-width: 1040px; margin: 0 auto; padding: 32px 16px 64px; }
+nav { display: flex; gap: 8px; margin-bottom: 20px; font-size: 13px; }
+nav a { color: #646b78; }
+</style></head>
+<body><main><nav id="nav"></nav><div id="host"></div></main>
+<script type="module">
+// Dev preview of the logo picker on the saved real fixtures (no API calls). /proto/ui/logo-picker.html?b=ronda
+import { mountLogoPicker } from "./logo-picker.ts";
+import { remapPalette } from "../../../server/brand/compose.ts";
+const FX = import.meta.glob("../../../server/brand/fixtures/*.json", { eager: true, import: "default" });
+const all = Object.values(FX);
+const id = new URLSearchParams(location.search).get("b") || all[0].id;
+document.getElementById("nav").innerHTML = all.map((f) => `<a href="?b=${f.id}">${f.brand.name}</a>`).join(" · ");
+const fx = all.find((f) => f.id === id) || all[0];
+const brand = fx.brand;
+let result = { options: fx.options, chosen: fx.options[0].id, fallback: false };
+let round = 0;
+mountLogoPicker(document.getElementById("host"), {
+  brand,
+  result,
+  onChoose: async (cid) => { result = { ...result, chosen: cid }; console.log("chosen", cid); },
+  onMore: async () => {
+    await new Promise((r) => setTimeout(r, 900));
+    const other = all.filter((f) => f.id !== fx.id)[round++ % Math.max(1, all.length - 1)] || fx;
+    const extra = other.options.slice(0, 3).map((o) => ({ ...o, id: o.id + "-x" + round, svg: remapPalette(o.svg, other.brand.palette, brand.palette) }));
+    result = { ...result, options: [...result.options, ...extra] };
+    return result;
+  },
+});
+</script></body></html>

@@ -1,0 +1,133 @@
+{
+  "id": "pausa",
+  "promptVersion": 3,
+  "model": "claude-sonnet-5-5",
+  "usd": 0.01819,
+  "idea": "A specialty coffee kiosk at a Barcelona metro exit, €3 flat whites for commuters",
+  "brand": {
+    "name": "Pausa",
+    "tagline": "A proper pause before the train.",
+    "voice": "Warm, exact, local, quick. Talk like the barista who knows your order.",
+    "palette": {
+      "primary": "#2B211C",
+      "accent": "#C8813A",
+      "bg": "#F4EADF",
+      "ink": "#2B211C"
+    },
+    "fonts": {
+      "display": "Fraunces",
+      "text": "Instrument Sans"
+    },
+    "lang": "en",
+    "city": "Barcelona",
+    "currency": "€"
+  },
+  "candidates": [
+    {
+      "family": "literal",
+      "construction": "Ink circle r24 at center 32,32; background-colour vertical pause bars cut 6 wide at x25 and x33 from y20 to y44; accent small bar? No: right bar accent.",
+      "idea": "A pause symbol inside a round disc, one bar glowing like a warm light.",
+      "svg": "<circle cx=\"32\" cy=\"32\" r=\"26\" fill=\"#2B211C\"/><rect x=\"21\" y=\"19\" width=\"8\" height=\"26\" fill=\"#F4EADF\"/><rect x=\"35\" y=\"19\" width=\"8\" height=\"26\" fill=\"#C8813A\"/>"
+    },
+    {
+      "family": "literal",
+      "construction": "Ink half circle r26 dome (metro arch exit) from y34 up, base bar 52x8 at y44; accent circle r7 at 32,30 as rising sun-coffee.",
+      "idea": "A metro tunnel arch with a warm sun waiting inside: coffee at the exit.",
+      "svg": "<path d=\"M6 46A26 26 0 0 1 58 46Z\" fill=\"#2B211C\"/><circle cx=\"32\" cy=\"38\" r=\"10\" fill=\"#C8813A\"/><rect x=\"4\" y=\"46\" width=\"56\" height=\"10\" fill=\"#2B211C\"/><rect x=\"28\" y=\"46\" width=\"8\" height=\"10\" fill=\"#F4EADF\"/>"
+    },
+    {
+      "family": "monogram",
+      "construction": "Ink stem bar x12-24, y6-58; ink bowl as half-disc r20 centred 28,24 on right of stem; accent bar cut 6 high through the bowl as a pause/two bars.",
+      "idea": "A P whose stem and bowl hold a warm pause bar, like a bar of light.",
+      "svg": "<rect x=\"10\" y=\"6\" width=\"14\" height=\"52\" fill=\"#2B211C\"/><path d=\"M24 6H34A18 18 0 0 1 34 42H24Z\" fill=\"#2B211C\"/><rect x=\"34\" y=\"18\" width=\"8\" height=\"12\" fill=\"#C8813A\"/>"
+    },
+    {
+      "family": "monogram",
+      "construction": "Two vertical ink bars (pause) 10 wide at x10 and x26, y8-56; right bar topped by ink half-disc r... bowl; accent semicircle fills the bowl hollow.",
+      "idea": "A P built from a pause sign: two bars, the second one rounding into a bowl.",
+      "svg": "<rect x=\"10\" y=\"8\" width=\"10\" height=\"48\" fill=\"#2B211C\"/><path d=\"M26 8H34A16 16 0 0 1 34 40H26Z\" fill=\"#2B211C\"/><circle cx=\"34\" cy=\"24\" r=\"6\" fill=\"#C8813A\"/>"
+    },
+    {
+      "family": "geometric",
+      "construction": "Ink square 52 at 6,6 with background circle r14 cut at 32,32; accent half-disc fills the lower half of the cut.",
+      "idea": "A solid block with a warm half-filled round hole: a cup-sized pause in the day.",
+      "svg": "<rect x=\"6\" y=\"6\" width=\"52\" height=\"52\" fill=\"#2B211C\"/><circle cx=\"32\" cy=\"32\" r=\"15\" fill=\"#F4EADF\"/><path d=\"M17 32A15 15 0 0 0 47 32Z\" fill=\"#C8813A\"/>"
+    },
+    {
+      "family": "geometric",
+      "construction": "Ink quarter circle r52 from corner 6,58 sweeping up; second smaller background quarter cut; accent circle r6 at the arc's end.",
+      "idea": "A rising arc like a sunrise commute, ending in a warm dot.",
+      "svg": "<path d=\"M6 58V6A52 52 0 0 1 58 58Z\" fill=\"#2B211C\"/><path d=\"M6 58V28A30 30 0 0 1 36 58Z\" fill=\"#F4EADF\"/><circle cx=\"44\" cy=\"44\" r=\"7\" fill=\"#C8813A\"/>"
+    }
+  ],
+  "lint": [
+    {
+      "ok": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "ok": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "ok": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "ok": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "ok": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "ok": true,
+      "errors": [],
+      "warnings": []
+    }
+  ],
+  "options": [
+    {
+      "id": "pausa-1",
+      "family": "literal",
+      "idea": "A pause symbol inside a round disc, one bar glowing like a warm light.",
+      "svg": "<g transform=\"translate(-2.46 -2.46) scale(1.08)\"><circle cx=\"32\" cy=\"32\" r=\"26\" fill=\"#2B211C\"/><rect x=\"21\" y=\"19\" width=\"8\" height=\"26\" fill=\"#F4EADF\"/><rect x=\"35\" y=\"19\" width=\"8\" height=\"26\" fill=\"#C8813A\"/></g>"
+    },
+    {
+      "id": "pausa-3",
+      "family": "monogram",
+      "idea": "A P whose stem and bowl hold a warm pause bar, like a bar of light.",
+      "svg": "<g transform=\"translate(-1.38 -2.46) scale(1.08)\"><rect x=\"10\" y=\"6\" width=\"14\" height=\"52\" fill=\"#2B211C\"/><path d=\"M24 6H34A18 18 0 0 1 34 42H24Z\" fill=\"#2B211C\"/><rect x=\"34\" y=\"18\" width=\"8\" height=\"12\" fill=\"#C8813A\"/></g>"
+    },
+    {
+      "id": "pausa-5",
+      "family": "geometric",
+      "idea": "A solid block with a warm half-filled round hole: a cup-sized pause in the day.",
+      "svg": "<g transform=\"translate(-2.46 -2.46) scale(1.08)\"><rect x=\"6\" y=\"6\" width=\"52\" height=\"52\" fill=\"#2B211C\"/><circle cx=\"32\" cy=\"32\" r=\"15\" fill=\"#F4EADF\"/><path d=\"M17 32A15 15 0 0 0 47 32Z\" fill=\"#C8813A\"/></g>"
+    },
+    {
+      "id": "pausa-2",
+      "family": "literal",
+      "idea": "A metro tunnel arch with a warm sun waiting inside: coffee at the exit.",
+      "svg": "<g transform=\"translate(0 -6) scale(1)\"><path d=\"M6 46A26 26 0 0 1 58 46Z\" fill=\"#2B211C\"/><circle cx=\"32\" cy=\"38\" r=\"10\" fill=\"#C8813A\"/><rect x=\"4\" y=\"46\" width=\"56\" height=\"10\" fill=\"#2B211C\"/><rect x=\"28\" y=\"46\" width=\"8\" height=\"10\" fill=\"#F4EADF\"/></g>"
+    },
+    {
+      "id": "pausa-4",
+      "family": "monogram",
+      "idea": "A P built from a pause sign: two bars, the second one rounding into a bowl.",
+      "svg": "<g transform=\"translate(-3 -5.33) scale(1.17)\"><rect x=\"10\" y=\"8\" width=\"10\" height=\"48\" fill=\"#2B211C\"/><path d=\"M26 8H34A16 16 0 0 1 34 40H26Z\" fill=\"#2B211C\"/><circle cx=\"34\" cy=\"24\" r=\"6\" fill=\"#C8813A\"/></g>"
+    },
+    {
+      "id": "pausa-6",
+      "family": "geometric",
+      "idea": "A rising arc like a sunrise commute, ending in a warm dot.",
+      "svg": "<g transform=\"translate(-2.46 -2.46) scale(1.08)\"><path d=\"M6 58V6A52 52 0 0 1 58 58Z\" fill=\"#2B211C\"/><path d=\"M6 58V28A30 30 0 0 1 36 58Z\" fill=\"#F4EADF\"/><circle cx=\"44\" cy=\"44\" r=\"7\" fill=\"#C8813A\"/></g>"
+    }
+  ]
+}

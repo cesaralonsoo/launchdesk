@@ -1,0 +1,61 @@
+{
+  "input": {
+    "projectId": "fx-bakery",
+    "idea": "Panadería de masa madre en Gràcia con pan recién hecho a las 7:30 y suscripción semanal",
+    "slug": "miga-gracia",
+    "founderAddress": "bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy",
+    "brand": {
+      "name": "Miga",
+      "tagline": "Pan de masa madre, cada mañana en Gràcia",
+      "voice": "cercana, honesta, sin prisa",
+      "palette": { "primary": "#9a3f1c", "accent": "#e7a94b", "bg": "#f7f1e8", "ink": "#2a1d14" },
+      "fonts": { "display": "Instrument Serif", "text": "Inter" },
+      "lang": "es",
+      "city": "Barcelona",
+      "currency": "€"
+    },
+    "report": {
+      "customer": "Vecinos de Gràcia de 28 a 45 años que compran pan a diario antes de trabajar",
+      "pain": "El pan bueno se acaba pronto y el del súper no dura ni un día",
+      "offer": { "what": "Bono Mañanas: 20 hogazas de masa madre", "price": 29, "normal": 39, "limit": 100 },
+      "stats": [
+        { "value": "72 h", "label": "de fermentación lenta en cada hogaza, frente a las 2–3 h del pan industrial", "sourceUrl": "https://www.example.org/masa-madre" },
+        { "value": "3", "label": "panaderías de masa madre abren antes de las 8:00 en todo el barrio", "sourceUrl": "https://www.example.org/gracia-panaderias" },
+        { "value": "41%", "label": "de los compradores de pan dice que elige panadería por cercanía", "sourceUrl": "not-a-url" }
+      ],
+      "competitors": [{ "name": "Forn del barri", "gap": "Abre a las 9:00" }],
+      "risks": ["Coste de la harina ecológica"]
+    }
+  },
+  "logos": [
+    { "id": "lg1", "family": "literal", "idea": "Hogaza con greña", "svg": "<rect width=\"64\" height=\"64\" rx=\"18\" fill=\"#9a3f1c\"/><path d=\"M14 38c0-10 8-18 18-18s18 8 18 18c0 3-2 5-5 5H19c-3 0-5-2-5-5z\" fill=\"#f7f1e8\"/><path d=\"M24 30c3 2 5 5 6 8M33 27c3 2 5 6 6 10\" stroke=\"#9a3f1c\" stroke-width=\"2.6\" stroke-linecap=\"round\" fill=\"none\"/>" }
+  ],
+  "model": {
+    "seo": { "title": "Miga · Pan de masa madre en Gràcia", "description": "Hogazas de masa madre recién hechas a las 7:30 en Gràcia. Reserva tu Bono Mañanas: 20 hogazas por 29 €." },
+    "hero": { "eyebrow": "Gràcia · Barcelona", "headline": "Pan de verdad, caliente antes de las ocho", "sub": "Masa madre con 72 horas de fermentación, horneada cada mañana a las 7:30 a dos calles de tu casa. Pásate, recoge y a trabajar.", "cta": "Reserva tu bono", "secondary": "Cómo funciona" },
+    "offer": { "title": "El Bono Mañanas", "item": "20 hogazas de masa madre", "bullets": ["Recoge una hogaza cuando quieras, de lunes a sábado", "Recién hecha a las 7:30, todos los días", "Para los 100 primeros vecinos"], "note": "Enseña tu reserva en el mostrador y te la descontamos al momento." },
+    "how": { "title": "Tu pan, sin colas", "steps": [
+      { "icon": "wallet", "title": "Reserva tu bono", "body": "Paga en un minuto desde el móvil y guarda el comprobante." },
+      { "icon": "clock", "title": "Pásate de camino", "body": "Desde las 7:30 tu hogaza te espera, aún caliente." },
+      { "icon": "bread", "title": "Disfruta toda la semana", "body": "La masa madre se conserva tierna hasta cuatro días." }
+    ] },
+    "services": { "title": "En el mostrador", "intro": "Pocas cosas, hechas despacio y bien.", "items": [
+      { "icon": "bread", "title": "Hogaza de campo", "body": "Trigo y un toque de centeno, corteza crujiente y miga abierta." },
+      { "icon": "leaf", "title": "Integral de espelta", "body": "Harina ecológica molida a la piedra, sabor suave y tostado." },
+      { "icon": "cake", "title": "Brioche del domingo", "body": "Solo los domingos, con mantequilla y un poco de naranja." },
+      { "icon": "coffee", "title": "Café para llevar", "body": "Para acompañar el pan de camino al trabajo." }
+    ] },
+    "about": { "title": "Por qué Miga", "body": "Queríamos pan bueno a la hora en que de verdad lo compramos: antes de ir a trabajar. Así que horneamos de madrugada, con harinas de aquí y sin aditivos, para que el pan del barrio vuelva a ser el mejor de la semana." },
+    "local": { "title": "Dónde estamos", "body": "En el corazón de Gràcia, a cinco minutos de Fontana.", "area": "Gràcia, Barcelona", "hours": "Lunes a sábado, de 7:30 a 14:00" },
+    "faq": { "title": "Lo que nos preguntáis", "items": [
+      { "q": "¿Cuándo puedo recoger el pan?", "a": "De lunes a sábado desde las 7:30 hasta que se acabe, normalmente a mediodía." },
+      { "q": "¿Caduca el bono?", "a": "Tienes tres meses para usar las 20 hogazas, a tu ritmo." },
+      { "q": "¿Puedo compartirlo con mi familia?", "a": "Sí, cualquiera de casa puede recoger una hogaza con tu reserva." },
+      { "q": "¿Cómo pago?", "a": "Con Bitcoin Cash desde el móvil: escaneas el código y listo, sin datos de tarjeta." }
+    ] },
+    "proof": { "title": "Por qué sabe distinto", "picks": [0, 1, 2, 7] },
+    "order": ["how-it-works-for-customer", "menu-or-services", "proof-stats", "offer", "about", "local", "faq"],
+    "finalCta": { "headline": "Mañana a las 7:30, tu hogaza", "sub": "Quedan pocas reservas del Bono Mañanas a precio de apertura.", "cta": "Reserva tu bono" },
+    "footer": { "tagline": "Pan de masa madre en Gràcia" }
+  }
+}

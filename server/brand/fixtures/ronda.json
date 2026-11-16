@@ -1,0 +1,133 @@
+{
+  "id": "ronda",
+  "promptVersion": 3,
+  "model": "claude-sonnet-5-5",
+  "usd": 0.03953,
+  "idea": "A dog-walking app for busy Madrid professionals, €12 a walk",
+  "brand": {
+    "name": "Ronda",
+    "tagline": "Same walker, every weekday.",
+    "voice": "Friendly, reliable, local, plain. Write like the walker texting the owner.",
+    "palette": {
+      "primary": "#1F3A2E",
+      "accent": "#E07A3F",
+      "bg": "#F5F1E8",
+      "ink": "#1F3A2E"
+    },
+    "fonts": {
+      "display": "Bricolage Grotesque",
+      "text": "Inter"
+    },
+    "lang": "en",
+    "city": "Madrid",
+    "currency": "€"
+  },
+  "candidates": [
+    {
+      "family": "literal",
+      "construction": "Ink ring, radius 22, stroke 8, centred. Accent disc radius 7 sits on the ring at upper right (47.5,16.5), like a walker on the loop.",
+      "idea": "A round route with one walker on it: the same loop, every day.",
+      "svg": "<circle cx=\"32\" cy=\"32\" r=\"22\" fill=\"none\" stroke=\"#1F3A2E\" stroke-width=\"8\"/><circle cx=\"47.5\" cy=\"16.5\" r=\"7\" fill=\"#E07A3F\"/>"
+    },
+    {
+      "family": "literal",
+      "construction": "Five ink bars, 8 wide, 40 tall, on a 10 pitch from x=8. One accent band 8 high crosses all five at midday, y=28 to 36.",
+      "idea": "Five weekdays, one midday walk cutting through every one.",
+      "svg": "<rect x=\"8\" y=\"12\" width=\"8\" height=\"40\" fill=\"#1F3A2E\"/><rect x=\"20\" y=\"12\" width=\"8\" height=\"40\" fill=\"#1F3A2E\"/><rect x=\"32\" y=\"12\" width=\"8\" height=\"40\" fill=\"#1F3A2E\"/><rect x=\"44\" y=\"12\" width=\"8\" height=\"40\" fill=\"#1F3A2E\"/><rect x=\"4\" y=\"28\" width=\"56\" height=\"8\" fill=\"#E07A3F\"/>"
+    },
+    {
+      "family": "monogram",
+      "construction": "Ink stem 10x44 at x=14. Bowl is a half ring: stroked path radius 11, weight 10. Accent diagonal leg as a polygon, a stepping stride.",
+      "idea": "An R whose leg is mid-stride: your walker coming through the door.",
+      "svg": "<rect x=\"14\" y=\"10\" width=\"10\" height=\"44\" fill=\"#1F3A2E\"/><path d=\"M24 15H32A11 11 0 0 1 32 37H24\" fill=\"none\" stroke=\"#1F3A2E\" stroke-width=\"10\"/><polygon points=\"28,42 40,42 54,54 42,54\" fill=\"#E07A3F\"/>"
+    },
+    {
+      "family": "monogram",
+      "construction": "Ink stem 10x44 at x=10. Bowl is a full ring, centre (38,26), radius 14, stroke 9. Accent diagonal leg stroked 9 from (34,42) to (52,55).",
+      "idea": "An R with a round bowl, the ronda loop, and a walking leg.",
+      "svg": "<rect x=\"10\" y=\"10\" width=\"10\" height=\"44\" fill=\"#1F3A2E\"/><circle cx=\"38\" cy=\"26\" r=\"14\" fill=\"none\" stroke=\"#1F3A2E\" stroke-width=\"9\"/><line x1=\"34\" y1=\"42\" x2=\"52\" y2=\"55\" stroke=\"#E07A3F\" stroke-width=\"9\"/>"
+    },
+    {
+      "family": "geometric",
+      "construction": "Ink disc radius 26 centred. A background ring, radius 14 and stroke 4, is cut into it as a track. Accent disc radius 6 sits on the track at top.",
+      "idea": "A circuit track with one runner on it: same route, same walker.",
+      "svg": "<circle cx=\"32\" cy=\"32\" r=\"26\" fill=\"#1F3A2E\"/><circle cx=\"32\" cy=\"32\" r=\"14\" fill=\"none\" stroke=\"#F5F1E8\" stroke-width=\"4\"/><circle cx=\"32\" cy=\"18\" r=\"6\" fill=\"#E07A3F\"/>"
+    },
+    {
+      "family": "geometric",
+      "construction": "Circle radius 24 split into two half discs with a 6 gap at y=32. Lower half is ink, upper half is accent, as the midday sun.",
+      "idea": "A day split in two, with midday as the sun-coloured half.",
+      "svg": "<path d=\"M8 35A24 24 0 0 0 56 35Z\" fill=\"#1F3A2E\"/><path d=\"M8 29A24 24 0 0 1 56 29Z\" fill=\"#E07A3F\"/>"
+    }
+  ],
+  "lint": [
+    {
+      "ok": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "ok": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "ok": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "ok": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "ok": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "ok": true,
+      "errors": [],
+      "warnings": []
+    }
+  ],
+  "options": [
+    {
+      "id": "ronda-1",
+      "family": "literal",
+      "idea": "A round route with one walker on it: the same loop, every day.",
+      "svg": "<g transform=\"translate(-2.46 -2.46) scale(1.08)\"><circle cx=\"32\" cy=\"32\" r=\"22\" fill=\"none\" stroke=\"#1F3A2E\" stroke-width=\"8\"/><circle cx=\"47.5\" cy=\"16.5\" r=\"7\" fill=\"#E07A3F\"/></g>"
+    },
+    {
+      "id": "ronda-3",
+      "family": "monogram",
+      "idea": "An R whose leg is mid-stride: your walker coming through the door.",
+      "svg": "<g transform=\"translate(-11.27 -8.73) scale(1.27)\"><rect x=\"14\" y=\"10\" width=\"10\" height=\"44\" fill=\"#1F3A2E\"/><path d=\"M24 15H32A11 11 0 0 1 32 37H24\" fill=\"none\" stroke=\"#1F3A2E\" stroke-width=\"10\"/><polygon points=\"28,42 40,42 54,54 42,54\" fill=\"#E07A3F\"/></g>"
+    },
+    {
+      "id": "ronda-5",
+      "family": "geometric",
+      "idea": "A circuit track with one runner on it: same route, same walker.",
+      "svg": "<g transform=\"translate(-2.46 -2.46) scale(1.08)\"><circle cx=\"32\" cy=\"32\" r=\"26\" fill=\"#1F3A2E\"/><circle cx=\"32\" cy=\"32\" r=\"14\" fill=\"none\" stroke=\"#F5F1E8\" stroke-width=\"4\"/><circle cx=\"32\" cy=\"18\" r=\"6\" fill=\"#E07A3F\"/></g>"
+    },
+    {
+      "id": "ronda-2",
+      "family": "literal",
+      "idea": "Five weekdays, one midday walk cutting through every one.",
+      "svg": "<rect x=\"8\" y=\"12\" width=\"8\" height=\"40\" fill=\"#1F3A2E\"/><rect x=\"20\" y=\"12\" width=\"8\" height=\"40\" fill=\"#1F3A2E\"/><rect x=\"32\" y=\"12\" width=\"8\" height=\"40\" fill=\"#1F3A2E\"/><rect x=\"44\" y=\"12\" width=\"8\" height=\"40\" fill=\"#1F3A2E\"/><rect x=\"4\" y=\"28\" width=\"56\" height=\"8\" fill=\"#E07A3F\"/>"
+    },
+    {
+      "id": "ronda-4",
+      "family": "monogram",
+      "idea": "An R with a round bowl, the ronda loop, and a walking leg.",
+      "svg": "<g transform=\"translate(-3.81 -4.08) scale(1.08)\"><rect x=\"10\" y=\"10\" width=\"10\" height=\"44\" fill=\"#1F3A2E\"/><circle cx=\"38\" cy=\"26\" r=\"14\" fill=\"none\" stroke=\"#1F3A2E\" stroke-width=\"9\"/><line x1=\"34\" y1=\"42\" x2=\"52\" y2=\"55\" stroke=\"#E07A3F\" stroke-width=\"9\"/></g>"
+    },
+    {
+      "id": "ronda-6",
+      "family": "geometric",
+      "idea": "A day split in two, with midday as the sun-coloured half.",
+      "svg": "<path d=\"M8 35A24 24 0 0 0 56 35Z\" fill=\"#1F3A2E\"/><path d=\"M8 29A24 24 0 0 1 56 29Z\" fill=\"#E07A3F\"/>"
+    }
+  ]
+}

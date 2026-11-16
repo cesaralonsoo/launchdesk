@@ -364,7 +364,7 @@ export const MODELS: Record<AiDept, { model: string; effort: Effort }> = {
   mia: { model: env("MODEL_MIA", "claude-haiku-5-5"), effort: "low" },
   leo: { model: env("MODEL_LEO", "claude-sonnet-5-5"), effort: "low" },
   sam: { model: env("MODEL_SAM", "claude-haiku-5-5"), effort: "low" },
-  nova: { model: env("MODEL_NOVA", "claude-opus-5-5"), effort: "low" },
+  nova: { model: env("MODEL_NOVA", "claude-sonnet-5-5"), effort: "low" }, // WP4: Sonnet for the Launch kit brand
   dex: { model: env("MODEL_DEX", "claude-opus-5-5"), effort: "low" },
   rae: { model: env("MODEL_RAE", "claude-sonnet-5-5"), effort: "low" },
 };

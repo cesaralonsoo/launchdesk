@@ -187,6 +187,8 @@ export type Memo = { purpose: string; problem: string; insight: string; verdict_
 export type DeptResults = {
   mia?: MiaPlan; leo?: LeoOpportunity; sam?: SamModel; memo?: Memo;
   nova?: NovaBrand; dex?: DexDesign; rae?: RaeLaunch; pip?: PipLive;
+  /** WP4 Launch kit (server/kit-contract.ts). Server-side additive; served by GET /api/projects/:id/kit. */
+  kit?: import("./kit-contract.js").Kit;
 };
 
 // ---------- project ----------

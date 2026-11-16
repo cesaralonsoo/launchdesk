@@ -321,6 +321,9 @@ export function brandLogo(v: View, i: number, px: number, opts: { dark?: boolean
   return brandLogoHtml(L, brandInk(v, opts.dark), v.brand?.name ?? v.name, px, v.fonts.display, { mode: opts.mode });
 }
 
+/** A full https link for people (the server may store a relative path). */
+export const absUrl = (u: string) => (!u || /^https?:/.test(u) ? u : (typeof location !== "undefined" ? location.origin : "") + u);
+
 export function sitePreview(v: View, full = false, bullets = false): string {
   const D = v.dex!;
   const L = D.landing;
@@ -330,11 +333,11 @@ export function sitePreview(v: View, full = false, bullets = false): string {
   const offer = O
     ? `<div class="site-offer"><div><b>${esc(O.display)}</b><s>${esc(O.normal_display)}</s></div><span>${esc(L.offer)}</span></div>`
     : `<div class="site-offer"><span>${esc(L.offer)}</span></div>`;
-  const gate = goal
-    ? `<div class="site-gate"><div class="sg-row"><span>We open at ${goal} pre-orders</span><b>0 / ${goal}</b></div><span class="sg-bar"><i></i></span><span class="sg-note">Not enough? Every pre-order is refunded in full.</span></div>`
-    : "";
+  // WP4: no fake "0 / goal" bar and no refund promise (nothing enforces either).
+  void goal;
+  const gate = "";
   return `<div class="site ${full ? "full" : ""}" style="--s-bg:${v.pal("Background")};--s-ink:${v.pal("Primary")};--s-acc:${v.pal("Accent")};--s-x:${v.pal("Extra")};--s-font:${stackOf(v.fonts.display)};--s-body:${stackOf(v.fonts.body)}">
-    <div class="site-bar"><i></i><i></i><i></i><span class="site-url">${I.lock(10)}<span>${esc(v.pip?.url ?? "")}</span></span></div>
+    <div class="site-bar"><i></i><i></i><i></i><span class="site-url">${I.lock(10)}<span>${esc(absUrl(v.pip?.url ?? "").replace(/^https?:\/\//, ""))}</span></span></div>
     <div class="site-body">
       <div class="site-nav">${brandLogo(v, 0, full ? 18 : 14)}<span>${esc(L.where_when ?? "")}</span></div>
       <div class="site-hero">
@@ -376,7 +379,7 @@ function dex(v: View): { tabs: Array<[string, string]>; body: string } {
         : fact("Opening offer", `<span class="dd-text">${esc(D.landing.offer)}</span>`)}
     </dl>`;
   const site = `<div class="site-in-card">${sitePreview(v, true)}</div>`;
-  return { tabs: [["sum", "Logo"], ["site", "Landing page"]], body: pane("sum", sum, true) + pane("site", site) };
+  return { tabs: [["sum", "Logo"], ["site", "Website"]], body: pane("sum", sum, true) + pane("site", site) };
 }
 
 // ───────────────────────────── Rae · launch
@@ -410,17 +413,17 @@ function rae(v: View): { tabs: Array<[string, string]>; body: string } {
   return { tabs: [["sum", "Plan"], ["posts", "First posts"], ["cal", "All 30 days"]], body: pane("sum", sum, true) + pane("posts", posts) + pane("cal", cal) };
 }
 
-// ───────────────────────────── Pip · live
+// ───────────────────────────── your website is live
 function pip(v: View): { tabs: Array<[string, string]>; body: string } {
   const P = v.pip!;
   const at = new Date(P.live_at);
+  const url = absUrl(P.url);
   const sum = `
-    <div class="c-hero" data-st><div class="live-url"><span class="live-dot"></span><b>${esc(P.url)}</b></div></div>
-    <p class="c-take" data-st>Your page is public and takes pre-orders in Bitcoin Cash, paid straight to your wallet.</p>
-    <ul class="checks" data-st>${[`${P.url} reserved and published`, `${v.dex?.landing.cta ?? "Pre-orders"} is live`, "Payments go straight to your wallet"].map((l) => `<li>${I.check(14)}<span>${esc(l)}</span></li>`).join("")}</ul>
-    <dl class="facts f3" data-st>
+    <div class="c-hero" data-st><div class="live-url"><span class="live-dot"></span><b>${esc(url)}</b></div></div>
+    <p class="c-take" data-st>Your website is live. Customers can reserve and pay in Bitcoin Cash, straight to your wallet.</p>
+    <ul class="checks" data-st>${["Your website is online", `${v.dex?.landing.cta ?? "Reservations"} is open`, "Payments go straight to your wallet"].map((l) => `<li>${I.check(14)}<span>${esc(l)}</span></li>`).join("")}</ul>
+    <dl class="facts f2" data-st>
       ${fact("Live since", esc(at.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })), "", fmtDate(P.live_at))}
-      ${fact("Pre-orders", `${num(0)}${v.preorderGoal ? `<small> / ${v.preorderGoal}</small>` : ""}`, "", "Counted on-chain")}
       ${fact("Offer", esc(v.dex?.landing.cta.replace(/^Pre-order for /, "") ?? "–"), "", "Opening week")}
     </dl>`;
   return { tabs: [["sum", "Live"]], body: pane("sum", sum, true) };

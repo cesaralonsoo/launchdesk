@@ -1,0 +1,31 @@
+{
+  "projectId": "fixture-bakery-es",
+  "idea": "A neighbourhood sourdough bakery in Gràcia, Barcelona, €4.50 loaves, six mornings a week",
+  "brand": {
+    "name": "Forn Molla",
+    "tagline": "Pan de masa madre del barrio, por encargo",
+    "voice": "cercano, de barrio, sin prisa, frases cortas",
+    "palette": { "primary": "#7a3e1d", "accent": "#e8a33d", "bg": "#fbf6ef", "ink": "#2a1d14" },
+    "fonts": { "display": "Young Serif", "text": "Work Sans" },
+    "lang": "es",
+    "city": "Barcelona",
+    "currency": "EUR"
+  },
+  "report": {
+    "customer": "Vecinos de Gràcia de 28 a 55 años que ya compran pan de calidad y quieren masa madre de verdad sin hacer cola",
+    "pain": "El pan bueno se acaba pronto o hay que cruzar el barrio; el del súper es barato pero no es masa madre",
+    "offer": { "what": "Caja de fin de semana por encargo: 2 hogazas de masa madre y 1 pieza dulce, recogida el sábado por la mañana", "price": 18, "limit": 40 },
+    "stats": [
+      { "value": "27,82 kg", "label": "Consumo de pan por persona en España en 2025 (34,9 kg en 2015)", "sourceUrl": "https://es.euronews.com/2025/11/08/el-pan-desaparece-de-la-mesa-espanola-del-kilo-diario-a-la-extincion-cultural" },
+      { "value": "+40%", "label": "Crecimiento previsto del consumo de masa madre en 2025 (estudio Puratos)", "sourceUrl": "https://www.interempresas.net/Alimentaria/581665-La-masa-madre-lidera-el-sector-de-la-panaderia-con-un-crecimiento-global-del-40-por.html" },
+      { "value": "72%", "label": "Panaderos artesanos con problemas para contratar personal cualificado", "sourceUrl": "https://www.corresponsables.com/actualidad/crisis-de-relevo-en-la-panaderia-artesanal-el-45-ve-dificil-encontrar-personal-en-la-proxima-decada/" }
+    ],
+    "competitors": [
+      { "name": "Pan de supermercado (bake-off)", "gap": "Barato y abierto tarde, pero no es masa madre" },
+      { "name": "Panaderías artesanas del barrio", "gap": "Colas y se agotan pronto; no hay encargo semanal" }
+    ],
+    "risks": ["Se consume menos pan cada año", "Difícil contratar panaderos", "Sin local: depende de un obrador compartido"]
+  },
+  "founderAddress": "bitcoincash:qfixturebakeryaddress0000000000000000000",
+  "slug": "forn-molla"
+}

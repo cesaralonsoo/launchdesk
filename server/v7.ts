@@ -65,6 +65,8 @@ export interface IdeaReport {
   weaknesses: Array<{ text: string; finding: string }>;
   nextSteps: string[];
   pivot?: { idea: string; why: string } | null;
+  /** Additive (written report): the Verdict section's reason bullets, full sentences. */
+  reasons?: string[];
 }
 export interface SteerChange { what: "score" | "factor" | "scalability" | "verdict" | "finding" | "roster"; key?: string; before: string | number | null; after: string | number | null; why: string }
 export interface SteerResult {
@@ -84,9 +86,56 @@ export interface ResultsV7 {
   /** Number of web sources the shared research found (0 in demo mode). */
   researched?: number;
   /** Server-only diagnostics: AI cost of the stage, total and first-finding latency (ms after the run started). */
-  cost?: { usd: number; calls: number };
+  cost?: { usd: number; calls: number; searches?: number; fetches?: number };
   ms?: number;
   firstFindingMs?: number;
+  /** "4 blocks" analysis (additive, optional). Present only on projects validated with the block contract; old
+   *  projects and data/v7/*.json past projects have no `blocks` and render from roster / work / report as before.
+   *  Each block's evidence lives in work[block.role].findings (so the findings stream and buildReport keep working);
+   *  the block itself holds the idea-specific title, the prose and the key numbers. Order = BLOCK_IDS. */
+  blocks?: ReportBlock[];
+  /** Server-only, additive (block contract): the written report around the 4 blocks. Absent on old projects. */
+  brief?: ReportBrief;
+  /** Server-only, additive: real progress notes per analyst for speech bubbles (search queries actually issued,
+   *  page titles actually fetched, the block's own one-line summary). `at` = ms after the run started. */
+  notes?: AgentNote[];
+  /** Server-only, additive (V1 report): the full shipped Markdown report (sources list included). */
+  reportMd?: string;
+  /** Server-only, additive: unit economics computed in code from the writer's inputs, or why it failed. */
+  econ?: EconSummary | null;
+  econErr?: string;
+}
+
+/** Unit economics computed in code (null figures = an input was missing, see `missing`). Lines carry their source. */
+export interface EconSummary {
+  unit: string;
+  price: number;
+  vatRate: number;
+  shareKept: number;
+  net: number;
+  variable: number | null;
+  contribution: number | null;
+  fixedMonthly: number | null;
+  breakEven: number | null;
+  startupCapital: number | null;
+  /** Inputs the writer left at €0 or empty: the figures that depend on them are not shown as facts. */
+  missing?: string[];
+  lines?: Array<{ group: "variable" | "fixed" | "startup"; item: string; eur: number; source: SourceRef | null }>;
+}
+export interface AgentNote { analyst: AnalystRole; kind: "search" | "read" | "found" | "status"; text: string; at: number }
+export const NOTES_MAX = 60;
+/** One thing to validate first: what, how to test it cheaply, and the pass mark (≤ 3). */
+export interface ValidateFirst { what: string; how: string; passIf: string }
+export interface ReportBrief {
+  /** Working title, ≤ 6 words. */
+  title: string;
+  /** Executive summary, ≤ 110 words. */
+  summary: string;
+  /** Market the research assumed (city / country / currency), when the report names one. */
+  market?: string;
+  validateFirst: ValidateFirst[];
+  /** ISO date the research ran. */
+  researchedAt: string;
 }
 
 export const STEER_LIMIT = 3;
@@ -230,18 +279,35 @@ export function pickRosterByKeywords(idea: string): AnalystRole[] {
 
 /** What the judge (AI or mock) decides; everything numeric is recomputed here. */
 export interface JudgeDraft {
+  /** Server-only: written report (V1 writer) → keep full sentences (caps only guard runaway text). Classic roster: short caps. */
+  fullText?: boolean;
   verdictLine: string;
   scalability: { parts: Partial<Record<ScalePart, number>>; why: string; wouldScale: string[]; reach?: string };
   strengths: Array<{ text: string; finding: string }>;
   weaknesses: Array<{ text: string; finding: string }>;
   nextSteps: string[];
   pivot?: { idea: string; why: string } | null;
+  /** Written report only: the Verdict section's reason bullets. */
+  reasons?: string[];
 }
 
 export function scalabilityScore(parts: Partial<Record<ScalePart, number>>): number {
   return r1(SCALE_PARTS.reduce((t, p) => t + SCALE_WEIGHTS[p] * clamp(parts[p] ?? 0, 0, 10), 0));
 }
 export const reachLabel = (reach: number) => (reach <= 3 ? "Neighbourhood" : reach <= 5 ? "City" : reach <= 7.5 ? "Country" : "Global");
+
+export const VERDICT_WORD: Record<IdeaReport["verdict"], string> = { go: "Go", pivot: "Pivot", "no-go": "No-go" };
+const WRITER_VERDICT = /^\s*(?:\*\*)?\s*(?:go with conditions|conditional go|no[- ]go|not decided|pivot|go)\b\s*(?:\*\*)?\s*[.:—–-]*\s*/i;
+/** The written report's own verdict word ("GO WITH CONDITIONS: …") replaced by the computed verdict, so the line
+ *  under the badge never contradicts it. A line without a verdict word gets the computed one in front. */
+export function alignVerdictLine(line: string, verdict: IdeaReport["verdict"]): string {
+  const m = WRITER_VERDICT.exec(line);
+  const rest = line.replace(WRITER_VERDICT, "").trim();
+  if (!rest) return VERDICT_WORD[verdict];
+  // "NO-GO on committing savings now." reads on; "GO WITH CONDITIONS: Demand …" takes a colon
+  if (m && !/[.:—–-]\s*$/.test(m[0].replace(/\*\*/g, "").trim()) && /^[a-z]/.test(rest)) return `${VERDICT_WORD[verdict]} ${rest}`;
+  return `${VERDICT_WORD[verdict]}: ${rest.charAt(0).toUpperCase()}${rest.slice(1)}`;
+}
 
 export function verdictFor(score: number, factors: readonly { score: number }[]): IdeaReport["verdict"] {
   if (score < VERDICT_BANDS_V7.pivot) return "no-go";
@@ -251,6 +317,7 @@ export function verdictFor(score: number, factors: readonly { score: number }[])
 
 /** Builds the full, internally consistent report from the roster, the analysts' work and the judge's draft. */
 export function buildReport(roster: readonly Analyst[], work: readonly AnalystWork[], judge: JudgeDraft): IdeaReport {
+  const cap = judge.fullText ? { point: 40, verdict: 45, why: 40, scale: 24, step: 90 } : { point: 14, verdict: 16, why: 20, scale: 12, step: 12 };
   const scored = roster.filter((a) => a.weight > 0);
   const workOf = (r: AnalystRole) => work.find((w) => w.analyst === r);
   const factors: ScoreFactor[] = scored.map((a) => {
@@ -279,10 +346,10 @@ export function buildReport(roster: readonly Analyst[], work: readonly AnalystWo
   const ids = new Set(all.map((f) => f.id));
   const byImpact = [...all].sort((a, b) => (b.impact ?? 0) - (a.impact ?? 0) || Number(isSourced(b)) - Number(isSourced(a)));
   const pick = (given: JudgeDraft["strengths"], pool: Finding[]) => {
-    const out = given.filter((s) => ids.has(s.finding) && s.text.trim()).slice(0, 3).map((s) => ({ text: capWords(s.text, 14), finding: s.finding }));
+    const out = given.filter((s) => ids.has(s.finding) && s.text.trim()).slice(0, 3).map((s) => ({ text: capWords(s.text, cap.point), finding: s.finding }));
     for (const f of pool) {
       if (out.length >= 3) break;
-      if (!out.some((s) => s.finding === f.id)) out.push({ text: capWords(f.text, 14), finding: f.id });
+      if (!out.some((s) => s.finding === f.id)) out.push({ text: capWords(f.text, cap.point), finding: f.id });
     }
     return out;
   };
@@ -291,7 +358,7 @@ export function buildReport(roster: readonly Analyst[], work: readonly AnalystWo
   return {
     score,
     verdict,
-    verdictLine: capWords(judge.verdictLine, 16),
+    verdictLine: capWords(judge.fullText ? alignVerdictLine(judge.verdictLine, verdict) : judge.verdictLine, cap.verdict),
     factors,
     math: factors.map((f) => `${f.weight.toFixed(2)}×${f.score.toFixed(1)}`).join(" + ") + ` = ${score.toFixed(1)}`,
     evidence: { total: all.length, sourced, sourcedShare: share, sources },
@@ -300,14 +367,15 @@ export function buildReport(roster: readonly Analyst[], work: readonly AnalystWo
       score: sScore,
       cap: levelCapFor(sScore, verdict),
       reach: judge.scalability.reach || reachLabel(parts[0]!.score),
-      why: capWords(judge.scalability.why, 20),
-      wouldScale: judge.scalability.wouldScale.filter((x) => x.trim()).slice(0, 3).map((x) => capWords(x, 12)),
+      why: capWords(judge.scalability.why, cap.why),
+      wouldScale: judge.scalability.wouldScale.filter((x) => x.trim()).slice(0, 3).map((x) => capWords(x, cap.scale)),
       parts,
     },
     strengths,
     weaknesses,
-    nextSteps: judge.nextSteps.slice(0, 3).map((x) => capWords(x, 12)),
+    nextSteps: judge.nextSteps.slice(0, 3).map((x) => capWords(x, cap.step)),
     pivot: verdict === "go" ? null : (judge.pivot ?? null),
+    ...(judge.reasons?.length ? { reasons: judge.reasons.slice(0, 5).map((x) => capWords(x, 60)) } : {}),
   };
 }
 
@@ -352,7 +420,7 @@ export function diffReports(before: IdeaReport, after: IdeaReport, ctx: { findin
 /** Applies a finished steer to the stored results (pure). `fresh` = the rerun / hired analysts' new findings by role. */
 export function applySteer(
   prev: ResultsV7,
-  s: { id: string; note: string; plan: SteerPlan; fresh: Partial<Record<AnalystRole, { findings: Finding[]; headline?: string }>>; judge: JudgeDraft; at: string; why?: Partial<Record<string, string>> },
+  s: { id: string; note: string; plan: SteerPlan; fresh: Partial<Record<AnalystRole, { findings: Finding[]; headline?: string }>>; judge: JudgeDraft; at: string; why?: Partial<Record<string, string>>; replace?: readonly AnalystRole[] },
 ): { results: ResultsV7; steer: SteerResult } {
   const before = prev.report!;
   const hired = s.plan.hire.filter((h) => !prev.roster.some((a) => a.role === h.role)).map((h) => hire(h.role, h.mission, h.why));
@@ -369,7 +437,9 @@ export function applySteer(
     // In the merged work the new findings reveal after the kept ones (steer.findings keep rerun-relative t).
     const last = Math.max(0, ...w.findings.map((f) => f.t));
     const shifted = clean.map((f, i) => ({ ...f, t: last + 2600 * (i + 1) }));
-    return finishWork({ ...w, status: "done", findings: mergeFindings(w.findings, shifted), headline: fr.headline ?? w.headline });
+    // Block mode: a re-run block rewrites its whole evidence list (replace), the classic roster merges.
+    const findings = s.replace?.includes(a.role) ? shifted : mergeFindings(w.findings, shifted);
+    return finishWork({ ...w, status: "done", findings, headline: fr.headline ?? w.headline });
   });
   const report = buildReport(roster, work, s.judge);
   const steer: SteerResult = {
@@ -386,4 +456,204 @@ export function applySteer(
     at: s.at,
   };
   return { results: { ...prev, roster, work, report, steers: [...prev.steers.filter((x) => x.id !== s.id), steer] }, steer };
+}
+
+// ───────────────────────────────────────────────────────────── 4 blocks (validate contract v7.1)
+// Exactly 4 blocks per idea, each owned by one existing analyst role so the world (rooms r0–r3, actors, states) and
+// the score maths (factorScore → buildReport → verdict, scalability, levelCapFor) are unchanged. See
+// .notes/quality/contract.md. Mirrored in web/proto/contracts.ts (types, BLOCK_LIBRARY, blockVerdictFor).
+
+export type BlockId = "customers" | "competition" | "money" | "risks";
+/** Display and roster order: viability (risks) last because it reads the other three blocks' evidence. */
+export const BLOCK_IDS: readonly BlockId[] = ["customers", "competition", "money", "risks"];
+export interface BlockMeta {
+  /** The analyst who owns the block (its findings, room, character and factor in the score). */
+  role: AnalystRole;
+  /** Generic label, used when the planner gives no idea-specific title. */
+  label: string;
+  /** What the block must answer, for the planner and the block prompt. */
+  covers: string;
+  /** Research budget per block (Haiku 5.5, server-side tools): 6 searches in all = $0.06 of the $0.10 target. */
+  searches: number;
+  fetches: number;
+}
+/** Identical to contracts.ts BLOCK_LIBRARY (test/v7.test.ts checks it). */
+export const BLOCK_LIBRARY: Record<BlockId, BlockMeta> = {
+  customers: { role: "demand", label: "Customers & demand", covers: "Who buys, how many of them, how often, what they spend and why they would switch", searches: 2, fetches: 2 },
+  competition: { role: "competition", label: "Competition & alternatives", covers: "Named rivals and substitutes, their prices, strengths and the gap left open", searches: 2, fetches: 2 },
+  money: { role: "pricing", label: "Money", covers: "Price you can charge, cost per unit, margin, fixed costs, break-even volume", searches: 1, fetches: 1 },
+  risks: { role: "viability", label: "Risks & how to start", covers: "What kills it (rules, dependencies, timing), the cheapest first test and the path to scale", searches: 1, fetches: 1 },
+};
+export const BLOCK_OF_ROLE: Partial<Record<AnalystRole, BlockId>> = Object.fromEntries(BLOCK_IDS.map((b) => [BLOCK_LIBRARY[b].role, b]));
+/** Word caps. Block evidence is a full sentence; the classic roster keeps 18 words. */
+export const FINDING_WORDS = 18;
+export const BLOCK_EVIDENCE_WORDS = 90;
+/** Generous caps (the V1 writer writes full sentences; a cap only guards against a runaway answer, never cuts a normal one). */
+export const BLOCK_LIMITS = { title: 14, focus: 20, takeaway: 80, meaning: 140, action: 50, keyLabel: 12, keyValue: 12, evidenceMin: 4, evidenceMax: 12, actionsMax: 3, keyNumbersMax: 4, focusMax: 3 } as const;
+
+export type BlockVerdict = "strong" | "mixed" | "weak";
+/** The chip is arithmetic, like the score: the block's factor score in the report's verdict bands. */
+export const blockVerdictFor = (score: number): BlockVerdict => (score >= VERDICT_BANDS_V7.go ? "strong" : score >= VERDICT_BANDS_V7.pivot ? "mixed" : "weak");
+
+/** Planner output (one cheap Haiku call), tailored to the idea. */
+export interface BlockPlan {
+  id: BlockId;
+  /** Idea-specific, ≤ 10 words: "Who buys €25 bread subscriptions in Ruzafa?". */
+  title: string;
+  /** 2–3 questions the block answers, ≤ 16 words each. */
+  focus: string[];
+  /** Web search queries for this block (≤ BLOCK_LIBRARY[id].searches), local language where it helps. */
+  queries: string[];
+}
+
+/** What the block model writes (structured output). Sources are NUMBERS into the block's research citation list;
+ *  the server copies url / title / domain / accessed from that list, never from model text. */
+export interface BlockEvidenceDraft {
+  /** One sentence ≤ 35 words, with a number where the source has one. */
+  text: string;
+  kind: FindingKind;
+  impact: Impact;
+  /** 1-based index into the block's citation list; omitted or 0 = estimate (then `basis` is required). */
+  source?: number;
+  basis?: string;
+  value?: number;
+  unit?: string;
+  display?: string;
+  competitor?: { name: string; price?: string; note: string };
+}
+export interface BlockDraft {
+  takeaway: string;
+  evidence: BlockEvidenceDraft[];
+  meaning: string;
+  actions: string[];
+  keyNumbers?: Array<{ label: string; value: string; source?: number; basis?: string }>;
+  math?: string[];
+}
+
+/** A headline figure of the block. `source` null = an estimate, and `basis` says why. */
+export interface KeyNumber { label: string; value: string; source: SourceRef | null; basis?: string }
+
+/** One block as stored in results.v7.blocks and shown by the UI. */
+export interface ReportBlock {
+  id: BlockId;
+  role: AnalystRole;
+  /** Idea-specific title from the plan (falls back to BLOCK_LIBRARY[id].label). */
+  title: string;
+  focus: string[];
+  status: WorkStatus;
+  /** ≤ 30 words: the one-line answer to the title. "" while working. */
+  takeaway: string;
+  /** factorScore of the block's findings (null while working) and its chip. */
+  score: number | null;
+  verdict: BlockVerdict | null;
+  /** Ids of the evidence findings, in reading order; the findings themselves are in work[role].findings. */
+  evidence: string[];
+  /** ≤ 60 words, second person: "what it means for you". */
+  meaning: string;
+  /** 1–3 concrete next actions, ≤ 16 words each. */
+  actions: string[];
+  keyNumbers?: KeyNumber[];
+  /** The block's distinct sources in citation order: the UI numbers evidence as [1], [2] … by this list. */
+  sources: SourceRef[];
+  /** Server-only, additive: unit-economics arithmetic lines ("€25 − €9.40 cost = €15.60 margin"), each labelled
+   *  with its source number or "(estimate)". Money block mainly; ≤ 6 lines. */
+  math?: string[];
+  /** Server diagnostics: block cost and ms to its first finding / to done (after the run started). */
+  ms?: { first?: number; done?: number };
+}
+
+/** The fixed 4-analyst roster of the block contract (weights normalise to 0.24 / 0.29 / 0.18 / 0.29). */
+export const blockRoster = (plans?: readonly Pick<BlockPlan, "id" | "title">[]): Analyst[] =>
+  weigh(BLOCK_IDS.map((b) => {
+    const mission = plans?.find((p) => p.id === b)?.title || BLOCK_LIBRARY[b].covers;
+    // the block's mission is shown whole on the hiring sheet (hire() caps classic missions at 12 words)
+    return { ...hire(BLOCK_LIBRARY[b].role, mission, BLOCK_LIBRARY[b].label), mission: capWords(mission, 24) };
+  }));
+
+/** Plan without AI (demo mode, planner failure): generic titles and the block's own questions. */
+export function fallbackBlockPlans(idea: string): BlockPlan[] {
+  const short = capWords(idea, 6);
+  const focus: Record<BlockId, string[]> = {
+    customers: ["Who would pay for this, and how many are there?", "How often would they buy, and why switch?"],
+    competition: ["Who do customers use today instead?", "What do they charge, and where are they weak?"],
+    money: ["What price can it charge, and what does one sale cost?", "How many sales a month to break even?"],
+    risks: ["What could stop it: rules, suppliers, timing?", "What is the cheapest first test, and how could it grow?"],
+  };
+  return BLOCK_IDS.map((id) => ({ id, title: BLOCK_LIBRARY[id].label, focus: focus[id], queries: [`${short} ${BLOCK_LIBRARY[id].label.toLowerCase()}`] }));
+}
+
+/** The source list of a block from its findings (first appearance order, deduplicated by url). */
+export function blockSources(findings: readonly Finding[], extra: readonly (SourceRef | null | undefined)[] = []): SourceRef[] {
+  const out: SourceRef[] = [];
+  for (const s of [...findings.filter(isSourced).map((f) => f.source!), ...extra]) if (s && /^https?:\/\//.test(s.url) && !out.some((x) => x.url === s.url)) out.push(s);
+  return out;
+}
+
+/** Turns a block draft into contract findings + the stored block (pure). `cites` = the block's research citation list
+ *  (1-based numbers in the draft). Findings get ids `${role}-${startIndex + i}` and go through enforceSourceRule. */
+export function buildBlock(plan: BlockPlan, draft: BlockDraft, cites: readonly SourceRef[], opts: { startIndex?: number; t0?: number; gap?: number } = {}): { block: ReportBlock; findings: Finding[] } {
+  const role = BLOCK_LIBRARY[plan.id].role;
+  const L = BLOCK_LIMITS;
+  const cite = (n?: number) => (n && n >= 1 && n <= cites.length ? cites[n - 1]! : null);
+  const findings = draft.evidence.slice(0, L.evidenceMax).map((e, i): Finding => {
+    const source = cite(e.source);
+    return enforceSourceRule({
+      id: `${role}-${(opts.startIndex ?? 0) + i}`,
+      analyst: role,
+      kind: e.kind,
+      text: capWords(e.text, BLOCK_EVIDENCE_WORDS),
+      ...(e.value != null && Number.isFinite(e.value) ? { value: e.value } : {}),
+      ...(e.unit ? { unit: capWords(e.unit, 2) } : {}),
+      ...(e.display ? { display: capWords(e.display, 3) } : {}),
+      source,
+      ...(e.basis ? { basis: capWords(e.basis, 24) } : {}),
+      ...(e.competitor ? { competitor: { name: capWords(e.competitor.name, 5), named: !!source, ...(e.competitor.price ? { price: e.competitor.price } : {}), note: capWords(e.competitor.note, 10) } } : {}),
+      impact: e.impact,
+      t: (opts.t0 ?? 0) + i * (opts.gap ?? 0),
+    });
+  });
+  const keyNumbers: KeyNumber[] = (draft.keyNumbers ?? []).slice(0, L.keyNumbersMax).map((k) => {
+    const source = cite(k.source);
+    return { label: capWords(k.label, L.keyLabel), value: capWords(k.value, L.keyValue), source, ...(source ? {} : { basis: capWords(k.basis || "Desk estimate, no web source", 24) }) };
+  });
+  const score = factorScore(findings);
+  const block: ReportBlock = {
+    id: plan.id,
+    role,
+    title: capWords(plan.title || BLOCK_LIBRARY[plan.id].label, L.title),
+    focus: plan.focus.slice(0, L.focusMax).map((q) => capWords(q, L.focus)),
+    status: "done",
+    takeaway: capWords(draft.takeaway, L.takeaway),
+    score,
+    verdict: blockVerdictFor(score),
+    evidence: findings.map((f) => f.id),
+    meaning: capWords(draft.meaning, L.meaning),
+    actions: draft.actions.filter((a) => a.trim()).slice(0, L.actionsMax).map((a) => capWords(a, L.action)),
+    ...(keyNumbers.length ? { keyNumbers } : {}),
+    ...(draft.math?.length ? { math: draft.math.filter((x) => x.trim()).slice(0, 8).map((x) => capWords(x, 40)) } : {}),
+    sources: blockSources(findings, keyNumbers.map((k) => k.source)),
+  };
+  return { block, findings };
+}
+
+/** A block before its draft arrives (queued / working), from the plan. */
+export const pendingBlock = (plan: BlockPlan, status: WorkStatus = "queued"): ReportBlock => ({
+  id: plan.id, role: BLOCK_LIBRARY[plan.id].role, title: capWords(plan.title || BLOCK_LIBRARY[plan.id].label, BLOCK_LIMITS.title), focus: plan.focus.slice(0, BLOCK_LIMITS.focusMax),
+  status, takeaway: "", score: null, verdict: null, evidence: [], meaning: "", actions: [], sources: [],
+});
+
+/** True when results were produced by the block contract (UI: show blocks; else the classic roster view). */
+export const hasBlocks = (r: Pick<ResultsV7, "blocks"> | null | undefined): r is { blocks: ReportBlock[] } => !!r?.blocks?.length;
+/** The source number of a finding inside its block (1-based; 0 = estimate, no source). */
+export const sourceNumber = (b: Pick<ReportBlock, "sources">, f: Pick<Finding, "source">): number => (f.source ? b.sources.findIndex((x) => x.url === f.source!.url) + 1 : 0);
+
+/** After a steer changed the work: each block's evidence ids, score, chip and sources follow its owner's findings
+ *  (prose is kept unless the block was rewritten). Pure. */
+export function refreshBlocks(blocks: readonly ReportBlock[], work: readonly AnalystWork[]): ReportBlock[] {
+  return blocks.map((b) => {
+    const fs = work.find((w) => w.analyst === b.role)?.findings;
+    if (!fs) return b;
+    const score = factorScore(fs);
+    return { ...b, evidence: fs.map((f) => f.id), score, verdict: blockVerdictFor(score), sources: blockSources(fs, (b.keyNumbers ?? []).map((k) => k.source)) };
+  });
 }

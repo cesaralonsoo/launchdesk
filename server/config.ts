@@ -22,7 +22,7 @@ export const config = {
   merchantAddress: env.MERCHANT_ADDRESS || "",
   priceCents: {
     validate: int(env.PRICE_VALIDATE_CENTS, 10),
-    build: int(env.PRICE_BUILD_CENTS, 20),
+    build: int(env.PRICE_BUILD_CENTS, 50), // WP4: the Launch kit (logo, website, 30-day plan)
   } satisfies Record<Stage, number>,
   databaseUrl: env.DATABASE_URL || "file:local.db",
   databaseToken: env.DATABASE_TOKEN || undefined,
@@ -34,6 +34,9 @@ export const config = {
   devSkipPayment: env.DEV_SKIP_PAYMENT === "1" && env.NODE_ENV !== "production",
   /** L3: show the "Built for BCH BLAZE 2026" footer strip. HACKATHON=0 hides it. */
   hackathon: env.HACKATHON !== "0",
+  /** WP4 Launch kit: model for the logo draw (WP2 reads it) and the per-kit AI spend cap in cents (max 60). */
+  modelLogo: env.MODEL_LOGO && /^claude-[a-z0-9-]+$/.test(env.MODEL_LOGO) ? env.MODEL_LOGO : "claude-sonnet-5-5",
+  kitSpendCapCents: Math.min(int(env.KIT_SPEND_CAP_CENTS, 45), 60),
   /** F1: the 3 home chips (full sentences). In mock mode these are the only accepted ideas (WS3 enforces). */
   sampleIdeas: [
     "A specialty coffee kiosk at a Barcelona metro exit, €3 flat whites for commuters",

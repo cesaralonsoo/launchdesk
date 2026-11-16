@@ -1,7 +1,7 @@
 // v6 · The non-result surfaces (WS-B): idea, pay, verdict (credit decision), level toasts, "your business", scale.
 import { ROOM_META, type Dept } from "../contracts";
 import { IDEA } from "../data";
-import { bePace, brandLogo, cashBack, num, est, sitePreview, stackOf, verdictText } from "./cards";
+import { absUrl, bePace, brandLogo, cashBack, num, est, sitePreview, stackOf, verdictText } from "./cards";
 import { esc } from "./dom";
 import { I, avatar } from "./icons";
 import { ldMark } from "./logo";
@@ -19,7 +19,7 @@ export function ideaPanel(idea: string, past = 0): string {
     <ol class="idea-steps" data-st aria-label="What you get">
       <li><i>1</i><span><b>Validate</b> score, plan, money</span><em>${usd(10)}</em></li>
       <li class="is-arrow" aria-hidden="true"></li>
-      <li><i>2</i><span><b>Launch</b> brand, logo, site</span><em>${usd(20)}</em></li>
+      <li><i>2</i><span><b>Launch kit</b> logo, website, 30-day plan</span><em>${usd(50)}</em></li>
     </ol>
     ${past ? `<button type="button" class="idea-past" data-act="projects" data-st>or open one of your ${past} projects</button>` : ""}
   </form>`;
@@ -29,8 +29,8 @@ export function ideaPanel(idea: string, past = 0): string {
 export function payPanel(v: View, stage: "validate" | "build", idea = IDEA): string {
   const depts: Dept[] = stage === "validate" ? ["mia", "leo", "sam"] : ["nova", "dex", "rae", "pip"];
   const cents = v.cents[stage];
-  const title = stage === "validate" ? "Validate the idea" : "Build and launch";
-  const who = stage === "validate" ? "Plan · Market research · Money" : "Brand · Logo & site · Launch · Live page";
+  const title = stage === "validate" ? "Validate the idea" : "Launch kit";
+  const who = stage === "validate" ? "Plan · Market research · Money" : "Your logo · your website · your 30-day plan";
   const sample = stage === "validate" && idea.trim() !== IDEA.trim();
   return `
   <section class="pay" data-stage="${stage}">
@@ -135,8 +135,8 @@ export function verdictPanel(v: View): string {
 export function levelUpPanel(v: View): string {
   return `
   <section class="lvl-toast">
-    <div class="lt-ic" data-st>${I.building(22)}</div>
-    <div class="lt-txt" data-st><span class="eyebrow">Level 2 · Building</span><h2 class="t-display">${esc(v.name)} is live</h2><p class="sub">Your office is now floor 1.</p></div>
+    <div class="lt-ic" data-st>${I.check(22)}</div>
+    <div class="lt-txt" data-st><span class="eyebrow">Launch kit</span><h2 class="t-display">${esc(v.name)} is live</h2><p class="sub">Your logo, your website and your 30-day plan are ready.</p></div>
     <button class="btn btn-primary" data-act="continue" type="button" data-st><span>Continue</span>${I.arrow(16)}</button>
   </section>`;
 }
@@ -152,12 +152,11 @@ export function livePanel(v: View, r7?: { score: number; verdict: string; nextSt
   <section class="biz">
     <div class="biz-site" data-st>${v.dex ? sitePreview(v, false, true) : ""}</div>
     <div class="biz-main">
-      <header class="biz-top" data-st><span class="live-dot"></span><span class="eyebrow">Live at <b>${esc(v.pip?.url ?? "")}</b></span></header>
+      <header class="biz-top" data-st><span class="live-dot"></span><span class="eyebrow">Your website is live · <b>${esc(absUrl(v.pip?.url ?? ""))}</b></span></header>
       <div class="biz-brand" data-st style="--b-font:${stackOf(v.fonts.display)}">${brandLogo(v, 0, 30)}<p>${esc(v.brand?.tagline ?? "")}</p></div>
       <dl class="facts f3" data-st>
         ${r7 ? `<div class="fact"><dt>Score</dt><dd>${num(r7.score, 1)}<small> · ${esc(V7[r7.verdict] ?? r7.verdict)}</small></dd></div>` : L ? `<div class="fact"><dt>Score</dt><dd>${num(L.score, 1)}<small> · ${esc(verdictText(v))}</small></dd></div>` : ""}
         ${S ? `<div class="fact"><dt>Cash to start${est()}</dt><dd>${esc(S.cash_needed.display)}</dd></div>` : ""}
-        <div class="fact"><dt>Pre-orders</dt><dd>${num(0)}${v.preorderGoal ? `<small> / ${v.preorderGoal}</small>` : ""}</dd></div>
       </dl>
       <p class="biz-bch" data-st><i aria-hidden="true">₿</i><span>Your site takes <b>Bitcoin Cash pre-orders</b>, paid straight to your wallet. LaunchDesk never touches the money.</span></p>
       <div class="next7" data-st><span class="lbl">${r7?.nextSteps.length ? "Your next steps" : "Your next 7 days"}</span><ol>${days.map((d, i) => `<li><span class="n7-i">${i + 1}</span><span>${esc(d)}</span></li>`).join("")}</ol></div>
@@ -170,19 +169,13 @@ export function livePanel(v: View, r7?: { score: number; verdict: string; nextSt
   </section>`;
 }
 
-// ───────────────────────────── scale (level 3: your district, every project a building)
+// ───────────────────────────── your projects (WP4: no levels, no fake counters)
 export function scalePanel(v: View, projects: number): string {
-  const goal = v.preorderGoal ?? v.gate?.target ?? 30;
-  const by = v.gate?.by_week;
   return `
   <section class="lvl-toast scale">
-    <div class="lt-ic" data-st>${I.district(22)}</div>
-    <div class="lt-txt" data-st><span class="eyebrow">Level 3 · District</span><h2 class="t-display">Your district</h2>
-      <p class="sub">${projects > 1 ? `${projects} projects, one building each.` : "Every project adds a building."}</p></div>
-    <div class="unlock" data-st>
-      <div class="u-row"><span>${esc(v.name)} · pre-orders${by ? ` by week ${by}` : ""}</span><b>${num(0)} / ${goal}</b></div>
-      <div class="u-bar"><i style="--v:0"></i></div>
-    </div>
+    <div class="lt-ic" data-st>${I.arrow(22)}</div>
+    <div class="lt-txt" data-st><span class="eyebrow">What's next</span><h2 class="t-display">${esc(v.name)} is ready</h2>
+      <p class="sub">${projects > 1 ? `You have ${projects} projects.` : "Start another idea any time."}</p></div>
     <div class="scale-actions" data-st>
       <button class="btn btn-primary" data-act="new" type="button"><span>New idea</span>${I.arrow(16)}</button>
       <button class="btn btn-ghost" data-act="pack" type="button">${I.report(16)}<span>Full report</span></button>

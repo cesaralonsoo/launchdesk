@@ -1,0 +1,594 @@
+{
+ "key": "bakery-es",
+ "input": {
+  "projectId": "fixture-bakery-es",
+  "idea": "A neighbourhood sourdough bakery in Gràcia, Barcelona, €4.50 loaves, six mornings a week",
+  "brand": {
+   "name": "Forn Molla",
+   "tagline": "Pan de masa madre del barrio, por encargo",
+   "voice": "cercano, de barrio, sin prisa, frases cortas",
+   "palette": {
+    "primary": "#7a3e1d",
+    "accent": "#e8a33d",
+    "bg": "#fbf6ef",
+    "ink": "#2a1d14"
+   },
+   "fonts": {
+    "display": "Young Serif",
+    "text": "Work Sans"
+   },
+   "lang": "es",
+   "city": "Barcelona",
+   "currency": "EUR"
+  },
+  "report": {
+   "customer": "Vecinos de Gràcia de 28 a 55 años que ya compran pan de calidad y quieren masa madre de verdad sin hacer cola",
+   "pain": "El pan bueno se acaba pronto o hay que cruzar el barrio; el del súper es barato pero no es masa madre",
+   "offer": {
+    "what": "Caja de fin de semana por encargo: 2 hogazas de masa madre y 1 pieza dulce, recogida el sábado por la mañana",
+    "price": 18,
+    "limit": 40
+   },
+   "stats": [
+    {
+     "value": "27,82 kg",
+     "label": "Consumo de pan por persona en España en 2025 (34,9 kg en 2015)",
+     "sourceUrl": "https://es.euronews.com/2025/11/08/el-pan-desaparece-de-la-mesa-espanola-del-kilo-diario-a-la-extincion-cultural"
+    },
+    {
+     "value": "+40%",
+     "label": "Crecimiento previsto del consumo de masa madre en 2025 (estudio Puratos)",
+     "sourceUrl": "https://www.interempresas.net/Alimentaria/581665-La-masa-madre-lidera-el-sector-de-la-panaderia-con-un-crecimiento-global-del-40-por.html"
+    },
+    {
+     "value": "72%",
+     "label": "Panaderos artesanos con problemas para contratar personal cualificado",
+     "sourceUrl": "https://www.corresponsables.com/actualidad/crisis-de-relevo-en-la-panaderia-artesanal-el-45-ve-dificil-encontrar-personal-en-la-proxima-decada/"
+    }
+   ],
+   "competitors": [
+    {
+     "name": "Pan de supermercado (bake-off)",
+     "gap": "Barato y abierto tarde, pero no es masa madre"
+    },
+    {
+     "name": "Panaderías artesanas del barrio",
+     "gap": "Colas y se agotan pronto; no hay encargo semanal"
+    }
+   ],
+   "risks": [
+    "Se consume menos pan cada año",
+    "Difícil contratar panaderos",
+    "Sin local: depende de un obrador compartido"
+   ]
+  },
+  "founderAddress": "bitcoincash:qfixturebakeryaddress0000000000000000000",
+  "slug": "forn-molla"
+ },
+ "result": {
+  "plan": {
+   "lang": "es",
+   "currency": "EUR",
+   "headline": "Vende 24 cajas de fin de semana de 18 € por encargo en 30 días, hablando con vecinos de Gràcia en persona, por portales y asociaciones, y cobrando cada encargo en la web.",
+   "goal": {
+    "metric": "Cajas de fin de semana pagadas por adelantado (pago en BCH en la web)",
+    "target": 24,
+    "unit": "cajas",
+    "by_day": 30,
+    "why": "Son más de la mitad de las 40 cajas posibles. Si 24 vecinos pagan antes de probar, demuestra que quieren encargar pan cada semana y que no hace falta hacer cola. Son 432 € de ventas.",
+    "how_counted": "Cada encargo es un pago en BCH en la web. Se cuentan los pagos recibidos de 18 € hasta el día 30, una caja por pago."
+   },
+   "customer": {
+    "who": "Vecinos de Gràcia de 28 a 55 años que ya compran pan bueno, quieren masa madre de verdad y no quieren hacer cola ni cruzar el barrio.",
+    "places": [
+     {
+      "place": "Portales y juntas de vecinos de fincas antiguas de Gràcia, donde suele haber portero",
+      "when": "Cuando se reúnen las juntas y a la hora de recoger el correo, a última hora de la tarde",
+      "source": 4
+     },
+     {
+      "place": "Asociación de Vecinos y Comerciantes de la Plaza Lesseps",
+      "when": "Cuando el grupo avise de una reunión o de un correo a socios",
+      "source": 2
+     },
+     {
+      "place": "Consejo de Barrio Vila de Gràcia, abierto a cualquier vecino",
+      "when": "En su próxima reunión",
+      "source": 1
+     },
+     {
+      "place": "Colas de las panaderías artesanas del barrio",
+      "when": "Sábado por la mañana, que es cuando el pan se acaba pronto",
+      "source": null
+     }
+    ]
+   },
+   "channels": [
+    {
+     "name": "Hablar con vecinos en persona en la cola de otras panaderías",
+     "role": "first sales",
+     "why": "Aquí está quien ya compra pan bueno y sufre la cola. Suponemos que el sábado por la mañana es el momento en que más lo notan.",
+     "source": null,
+     "weekly_hours": 4,
+     "cost": 15,
+     "first_action": "El primer sábado, ir a la cola de una panadería artesana de Gràcia con una hogaza para probar y tarjetas con el enlace a la web. Preguntar a cinco vecinos si les gustaría encargar la caja."
+    },
+    {
+     "name": "Portales y juntas de vecinos",
+     "role": "awareness",
+     "why": "En las fincas antiguas hay porteros y las juntas de vecinos tienen mucha participación, así que un aviso llega a muchas casas a la vez.",
+     "source": 4,
+     "weekly_hours": 3,
+     "cost": 10,
+     "first_action": "Pedir al portero de tres fincas de tu zona de Gràcia permiso para dejar una nota en el tablón con una caja de muestra para la junta."
+    },
+    {
+     "name": "Asociaciones y consejo de barrio",
+     "role": "proof",
+     "why": "Gràcia tiene muchas asociaciones y grupos de vecinos, y el Consejo de Barrio admite a cualquier residente. Un vecino que recomienda vale más que un anuncio.",
+     "source": 1,
+     "weekly_hours": 2,
+     "cost": 0,
+     "first_action": "Escribir a la Asociación de Vecinos y Comerciantes de la Plaza Lesseps ofreciendo una caja de prueba a la junta y pidiendo que compartan la oferta con sus socios."
+    },
+    {
+     "name": "Lista de clientes por WhatsApp",
+     "role": "repeat",
+     "why": "Suponemos que quien compra la primera caja querrá repetir si recibe un aviso corto cada semana antes de que se agoten las plazas.",
+     "source": null,
+     "weekly_hours": 1,
+     "cost": 0,
+     "first_action": "Al cobrar la primera caja, pedir al cliente su permiso para añadirlo a una lista de avisos semanales con las plazas que quedan."
+    }
+   ],
+   "rejected": [
+    {
+     "name": "Anuncios de pago en redes",
+     "why_not": "Con 40 cajas y un solo obrador compartido, el anuncio llega a gente de toda Barcelona y no solo a Gràcia. Es dinero que se va sin saber quién es del barrio."
+    },
+    {
+     "name": "TikTok",
+     "why_not": "Exige grabar y editar vídeo a diario. A una persona que también hornea no le queda tiempo, y el vecino que compra aquí se convence más en persona."
+    }
+   ],
+   "budget": {
+    "tiers": [
+     {
+      "amount": 0,
+      "label": "Sin gasto",
+      "lines": [
+       {
+        "channel": "Hablar con vecinos en persona",
+        "amount": 0,
+        "for": "Solo tiempo y una hogaza para probar, hecha con el pan de la tanda"
+       },
+       {
+        "channel": "Portales y juntas",
+        "amount": 0,
+        "for": "Notas escritas a mano"
+       },
+       {
+        "channel": "Asociaciones y consejo",
+        "amount": 0,
+        "for": "Correos y visitas"
+       },
+       {
+        "channel": "Lista de WhatsApp",
+        "amount": 0,
+        "for": "Avisos semanales"
+       }
+      ]
+     },
+     {
+      "amount": 100,
+      "label": "Lo justo",
+      "lines": [
+       {
+        "channel": "Hablar con vecinos en persona",
+        "amount": 30,
+        "for": "Tarjetas con enlace y muestras en trozos"
+       },
+       {
+        "channel": "Portales y juntas",
+        "amount": 25,
+        "for": "Notas impresas para unas 20 fincas"
+       },
+       {
+        "channel": "Asociaciones y consejo",
+        "amount": 20,
+        "for": "Cajas de prueba para repartir"
+       },
+       {
+        "channel": "Reserva",
+        "amount": 10,
+        "for": "Imprevistos"
+       }
+      ]
+     },
+     {
+      "amount": 500,
+      "label": "Con más margen",
+      "lines": [
+       {
+        "channel": "Hablar con vecinos en persona",
+        "amount": 150,
+        "for": "Más muestras y tarjetas, más sábados"
+       },
+       {
+        "channel": "Portales y juntas",
+        "amount": 120,
+        "for": "Notas impresas para más fincas"
+       },
+       {
+        "channel": "Asociaciones y consejo",
+        "amount": 130,
+        "for": "Cajas de prueba para reuniones y grupos"
+       },
+       {
+        "channel": "Reserva",
+        "amount": 60,
+        "for": "Imprevistos"
+       }
+      ]
+     }
+    ],
+    "reserve_pct": 12,
+    "reallocate_rule": "Entre los días 22 y 30, mira de qué canal vino cada pago. Pasa el dinero y las horas del canal con menos pagos al que más trajo. Si un canal no ha traído ninguno, déjalo."
+   },
+   "weeks": [
+    {
+     "n": 1,
+     "theme": "Preparar",
+     "aim": "Dejar lista la página de encargo, las notas y las tarjetas, y avisar a las primeras personas de confianza.",
+     "days": [
+      {
+       "day": 1,
+       "time": "17:00",
+       "channel": "Lista de clientes por WhatsApp",
+       "action": "Revisar que la página de encargo de la web funcione con el pago en BCH de 18 € y que diga 40 plazas y recogida el sábado por la mañana. Hacer un pedido de prueba tú mismo.",
+       "copy": "profile",
+       "hours": 2
+      },
+      {
+       "day": 2,
+       "time": "18:30",
+       "channel": "Portales y juntas de vecinos",
+       "action": "Escribir a mano o imprimir la nota del tablón con el texto del flyer. Preparar tres copias para las tres fincas de tu zona de Gràcia.",
+       "copy": "flyer",
+       "hours": 2
+      },
+      {
+       "day": 4,
+       "time": "19:00",
+       "channel": "Lista de clientes por WhatsApp",
+       "action": "Enviar el mensaje personal a amigos, familia y vecinos que ya conoces en Gràcia, y a un comercio amigo de al lado para que lo comparta.",
+       "copy": "message",
+       "hours": 1
+      },
+      {
+       "day": 6,
+       "time": "10:00",
+       "channel": "Hablar con vecinos en persona en la cola de otras panaderías",
+       "action": "Ir a la cola de una panadería artesana de Gràcia con una hogaza para probar en trozos y tarjetas con el enlace a la web. Preguntar a cinco vecinos si les gustaría encargar la caja.",
+       "copy": "post-1",
+       "hours": 3
+      }
+     ]
+    },
+    {
+     "n": 2,
+     "theme": "Primer lanzamiento suave",
+     "aim": "Poner las notas en las fincas, escribir a la asociación y conseguir los primeros pedidos.",
+     "days": [
+      {
+       "day": 8,
+       "time": "18:30",
+       "channel": "Portales y juntas de vecinos",
+       "action": "Pedir al portero de tres fincas antiguas permiso para dejar la nota en el tablón. Dejar una caja de muestra para la junta si te lo permiten.",
+       "copy": "flyer",
+       "hours": 3
+      },
+      {
+       "day": 10,
+       "time": "12:00",
+       "channel": "Asociaciones y consejo de barrio",
+       "action": "Escribir a la Asociación de Vecinos y Comerciantes de la Plaza Lesseps ofreciendo una caja de prueba a la junta y pidiendo que compartan la oferta con sus socios.",
+       "copy": "press",
+       "hours": 1.5
+      },
+      {
+       "day": 12,
+       "time": "19:00",
+       "channel": "Lista de clientes por WhatsApp",
+       "action": "Añadir a la lista de avisos a quien ya haya pagado, pidiéndole permiso antes. Mandar un aviso corto con las plazas que quedan.",
+       "copy": "post-3",
+       "hours": 1
+      },
+      {
+       "day": 13,
+       "time": "10:00",
+       "channel": "Hablar con vecinos en persona en la cola de otras panaderías",
+       "action": "Segundo sábado en la cola de otra panadería artesana del barrio, con muestras y tarjetas. Apuntar cómo les suena la oferta.",
+       "copy": "post-1",
+       "hours": 3
+      }
+     ]
+    },
+    {
+     "n": 3,
+     "theme": "Oferta",
+     "aim": "Dar a conocer la caja de fin de semana de 18 € en más portales y en la asociación, y enviar el correo a la lista.",
+     "days": [
+      {
+       "day": 15,
+       "time": "19:00",
+       "channel": "Lista de clientes por WhatsApp",
+       "action": "Enviar el correo a quienes se hayan apuntado a la lista de espera.",
+       "copy": "email",
+       "hours": 1.5
+      },
+      {
+       "day": 17,
+       "time": "18:30",
+       "channel": "Portales y juntas de vecinos",
+       "action": "Dejar la nota en tres fincas más. Volver a las tres primeras y hablar con el portero para ver si la nota sigue puesta.",
+       "copy": "flyer",
+       "hours": 3
+      },
+      {
+       "day": 19,
+       "time": "20:00",
+       "channel": "Asociaciones y consejo de barrio",
+       "action": "Mirar cuándo es la próxima reunión del Consejo de Barrio Vila de Gràcia, que está abierto a cualquier vecino. Apuntarte para presentarte como vecino que hornea.",
+       "copy": "post-2",
+       "hours": 2
+      },
+      {
+       "day": 20,
+       "time": "10:00",
+       "channel": "Hablar con vecinos en persona en la cola de otras panaderías",
+       "action": "Tercer sábado en la cola de una panadería de Gràcia. Ofrecer trozos y tarjetas. Preguntar a cada comprador cómo te ha conocido.",
+       "copy": "post-1",
+       "hours": 3
+      }
+     ]
+    },
+    {
+     "n": 4,
+     "theme": "Pruebas y última llamada",
+     "aim": "Ver qué canal trajo más pagos, repartir el esfuerzo y avisar de las últimas plazas.",
+     "days": [
+      {
+       "day": 22,
+       "time": "18:00",
+       "channel": "Lista de clientes por WhatsApp",
+       "action": "Contar los pagos de 18 € y mirar de qué canal vino cada uno. Pasar horas y dinero al canal que más trajo.",
+       "copy": null,
+       "hours": 1.5
+      },
+      {
+       "day": 25,
+       "time": "19:00",
+       "channel": "Lista de clientes por WhatsApp",
+       "action": "Enviar aviso con las plazas que quedan a la lista. Pedir a quienes ya han recogido su caja que lo comenten a sus vecinos.",
+       "copy": "post-3",
+       "hours": 1.5
+      },
+      {
+       "day": 27,
+       "time": "10:00",
+       "channel": "Hablar con vecinos en persona en la cola de otras panaderías",
+       "action": "Último sábado en la cola de una panadería artesana, con aviso de últimas plazas. Contarlo con honestidad: solo hay 40 cajas.",
+       "copy": "post-1",
+       "hours": 3
+      },
+      {
+       "day": 30,
+       "time": "19:00",
+       "channel": "Lista de clientes por WhatsApp",
+       "action": "Contar los pagos totales hasta hoy, apuntar cuántos clientes han repetido y decidir si sigues, ajustas o paras, según el plan.",
+       "copy": null,
+       "hours": 1.5
+      }
+     ]
+    }
+   ],
+   "kpis": [
+    {
+     "name": "Cajas pagadas",
+     "target": "24 el día 30",
+     "how_to_count": "Contar pagos de 18 € recibidos en la web",
+     "count_from": "bch payments"
+    },
+    {
+     "name": "Cajas pagadas cada semana",
+     "target": "Al menos 4 en la primera semana y subiendo",
+     "how_to_count": "Contar los pagos de cada semana y compararlos",
+     "count_from": "bch payments"
+    },
+    {
+     "name": "Cómo nos conoció",
+     "target": "Una respuesta en todos los pedidos",
+     "how_to_count": "Preguntar al cliente al recoger la caja y apuntarlo",
+     "count_from": "by hand"
+    },
+    {
+     "name": "Clientes que repiten",
+     "target": "6 de los primeros compradores piden una segunda caja",
+     "how_to_count": "Contar los pagos de un mismo cliente",
+     "count_from": "bch payments"
+    },
+    {
+     "name": "Visitas a la página de encargo",
+     "target": "Al menos 150",
+     "how_to_count": "Mirar las visitas de la página del pedido",
+     "count_from": "website"
+    }
+   ],
+   "copy": {
+    "posts": [
+     {
+      "channel": "Hablar con vecinos en persona en la cola",
+      "hook": "¿Cuánto rato llevas en la cola?",
+      "body": "Soy de Forn Molla. Hago pan de masa madre aquí, en Gràcia. Sin cola y sin correr. Encargas la caja de fin de semana: 2 hogazas y una pieza dulce. La recoges el sábado por la mañana. 18 €. Solo 40 plazas.",
+      "cta": "Prueba un trozo y encarga en nuestra web."
+     },
+     {
+      "channel": "Asociaciones y consejo de barrio",
+      "hook": "Un vecino que hornea para el barrio",
+      "body": "Soy vecino de Gràcia y hago pan de masa madre en un obrador compartido. Me gustaría que la junta pruebe una caja y me diga qué piensa. Si os gusta, podéis compartirlo con los socios. La caja de fin de semana cuesta 18 € y hay 40 plazas.",
+      "cta": "Escríbeme y os llevo una caja de prueba."
+     },
+     {
+      "channel": "Lista de clientes por WhatsApp",
+      "hook": "Quedan plazas para el sábado",
+      "body": "Hola, vecino. La caja de fin de semana de Forn Molla sigue abierta. Dos hogazas de masa madre y una pieza dulce, por 18 €. La recoges el sábado por la mañana. Hay 40 plazas y se van llenando poco a poco.",
+      "cta": "Encarga la tuya en nuestra web."
+     }
+    ],
+    "message": "Hola. Soy de Forn Molla. Estoy empezando a vender pan de masa madre aquí en Gràcia, por encargo. Hay una caja de fin de semana: 2 hogazas y una pieza dulce, 18 €, recogida el sábado por la mañana. Hay 40 plazas. ¿Me ayudas a que llegue a tus vecinos? Está en nuestra web. Gracias de corazón.",
+    "email": {
+     "subject": "Tu caja de pan de masa madre del sábado",
+     "body": "Hola,\n\nGracias por apuntarte. Soy de Forn Molla y hago pan de masa madre aquí, en Gràcia.\n\nEsta es la caja de fin de semana: 2 hogazas de masa madre y una pieza dulce. Cuesta 18 €. La recoges el sábado por la mañana, sin cola.\n\nHay 40 plazas en total. Se encarga y se paga en nuestra web.\n\nSi tienes dudas, responde a este correo. Sin prisa.\n\nUn abrazo,\nForn Molla"
+    },
+    "flyer": {
+     "headline": "Pan de masa madre del barrio, por encargo",
+     "lines": [
+      "Caja de fin de semana: 2 hogazas y 1 pieza dulce, 18 €.",
+      "Recogida el sábado por la mañana, sin cola. Solo 40 plazas.",
+      "Encarga en nuestra web. Forn Molla, Gràcia."
+     ]
+    },
+    "profile": "Forn Molla hace pan de masa madre en Barcelona, para los vecinos de Gràcia. Pan del barrio, por encargo. Sin cola y sin prisa. Cada fin de semana ofrecemos una caja con 2 hogazas de masa madre y 1 pieza dulce, por 18 €. Se encarga en nuestra web y se recoge el sábado por la mañana. Hay 40 plazas. Horneamos en un obrador compartido y no tenemos tienda abierta al público, así que el pan se prepara solo para quien lo encarga.",
+    "press": "Somos Forn Molla, una panadería de masa madre de Gràcia que trabaja solo por encargo, sin tienda ni cola. Cada fin de semana ofrecemos una caja con 2 hogazas y 1 pieza dulce por 18 €, con recogida el sábado por la mañana y 40 plazas. Si os interesa contarlo a vuestros lectores, os llevo una caja de prueba."
+   },
+   "local": [
+    {
+     "fact": "El Consejo de Barrio Vila de Gràcia se reúne al menos dos veces al año y cualquier vecino puede participar.",
+     "source": 1
+    },
+    {
+     "fact": "El directorio del distrito recoge la Asociación de Vecinos y Comerciantes de la Plaza Lesseps.",
+     "source": 2
+    },
+    {
+     "fact": "Muchos edificios antiguos de Gràcia tienen portero y la participación en las juntas de vecinos es alta.",
+     "source": 4
+    },
+    {
+     "fact": "Origo Bakery tiene tienda en Gràcia y abre de 08:00 a 20:30 entre semana.",
+     "source": 7
+    },
+    {
+     "fact": "El pan de pagès de Barcelona se lista entre 3 y 6 €, y los panes especiales llegan a 7–8 €.",
+     "source": 6
+    }
+   ],
+   "events": [
+    {
+     "name": "Encendido de las luces de Navidad",
+     "date": "Jueves 26 de noviembre de 2026",
+     "where": "Passeig de Gràcia",
+     "source": 10
+    },
+    {
+     "name": "Mostaza Fest, feria local de diseño y artesanía",
+     "date": "5 y 6 de diciembre de 2026",
+     "where": "Barcelona",
+     "source": 9
+    }
+   ],
+   "assumptions": [
+    "El obrador compartido te deja hornear unas 40 cajas por semana en horario fijo.",
+    "Los vecinos de la cola del sábado aceptan hablar con alguien que les ofrece pan.",
+    "Los clientes se sienten cómodos pagando en BCH en la web, o hay otra forma de pago a mano para quien no.",
+    "El sábado por la mañana es el mejor día de recogida para tus clientes.",
+    "Los porteros y las juntas dejan colocar notas de un negocio del barrio."
+   ],
+   "decision": {
+    "scale_if": "Hay 24 o más cajas pagadas y al menos 6 clientes han repetido: sube el límite de plazas y abre una segunda recogida.",
+    "adjust_if": "Hay entre 12 y 23 cajas: quédate con el canal que trajo más pagos, cambia el mensaje del que no funcionó y repite 30 días.",
+    "stop_if": "Hay menos de 12 cajas con los tres canales probados bien: la caja por encargo no engancha como está, y toca hablar con los vecinos para cambiar la oferta antes de seguir."
+   }
+  },
+  "sources": [
+   {
+    "n": 1,
+    "url": "https://www.decidim.barcelona/assemblies/barrivilagracia?locale=es",
+    "title": "Consejo de Barrio Vila de Gràcia - decidim.barcelona"
+   },
+   {
+    "n": 2,
+    "url": "https://www.femgracia.cat/es/negocios/asociaciones",
+    "title": "Asociaciones en el distrito de Gracia, Barcelona - Directorio de ..."
+   },
+   {
+    "n": 3,
+    "url": "https://barcelonasecreta.com/cosas-que-solo-entenderas-si-vives-en-gracia/",
+    "title": "10 cosas que solo sabrás si eres o vives en Gràcia"
+   },
+   {
+    "n": 4,
+    "url": "https://www.merca2.es/2026/03/01/comunidades-de-vecinos-barcelona-2355227/",
+    "title": "Las comunidades de vecinos clásicas y modernas de Barcelona"
+   },
+   {
+    "n": 5,
+    "url": "https://irbarcelona.com/barcelona-en-noviembre/",
+    "title": "BARCELONA NOVIEMBRE 2026 ▷ Qué hacer este mes"
+   },
+   {
+    "n": 6,
+    "url": "https://panselecto.es/",
+    "title": "Las 15 Mejores Panaderías Artesanales de Barcelona - Pan Selecto"
+   },
+   {
+    "n": 7,
+    "url": "https://www.origobakery.com/",
+    "title": "Pan de masa madre, pastelería artesanal y café de especialidad ..."
+   },
+   {
+    "n": 8,
+    "url": "https://www.eldebate.com/espana/cataluna/20261109/barcelona-estrena-navidad-cuatro-mercados-tradicionales-21-noviembre-6-enero_478121.html",
+    "title": "Barcelona estrena la Navidad con cuatro mercados tradicionales: ..."
+   },
+   {
+    "n": 9,
+    "url": "https://bcncoolhunter.com/2025/11/los-mejores-mercados-navidenos-de-barcelona/",
+    "title": "Los mejores Mercados Navideños de Barcelona - edición 2025"
+   },
+   {
+    "n": 10,
+    "url": "https://www.laguiago.com/cataluna/barcelona/navidad-barcelona-2026-2027-luces-ferias-cap-dany-reyes/",
+    "title": "Navidad en Barcelona 2026-2027: luces, ferias, Cap d'Any y Reyes ..."
+   },
+   {
+    "n": 11,
+    "url": "https://es.euronews.com/2025/11/08/el-pan-desaparece-de-la-mesa-espanola-del-kilo-diario-a-la-extincion-cultural",
+    "title": "Consumo de pan por persona en España en 2025 (34,9 kg en 2015)"
+   },
+   {
+    "n": 12,
+    "url": "https://www.interempresas.net/Alimentaria/581665-La-masa-madre-lidera-el-sector-de-la-panaderia-con-un-crecimiento-global-del-40-por.html",
+    "title": "Crecimiento previsto del consumo de masa madre en 2025 (estudio Puratos)"
+   },
+   {
+    "n": 13,
+    "url": "https://www.corresponsables.com/actualidad/crisis-de-relevo-en-la-panaderia-artesanal-el-45-ve-dificil-encontrar-personal-en-la-proxima-decada/",
+    "title": "Panaderos artesanos con problemas para contratar personal cualificado"
+   }
+  ],
+  "warnings": []
+ },
+ "meta": {
+  "model": "claude-sonnet-5-5",
+  "research": "claude-haiku-5-5",
+  "usd": 0.1242,
+  "date": "2026-11-16",
+  "queries": [
+   "grupos vecinos Gràcia Barcelona comunidad barrio",
+   "agenda Barcelona noviembre diciembre 2026 mercados ferias",
+   "panadería artesana Barcelona precio flyer mercado puesto tarifa 2026"
+  ]
+ }
+}

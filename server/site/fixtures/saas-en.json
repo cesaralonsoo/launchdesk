@@ -1,0 +1,62 @@
+{
+  "input": {
+    "projectId": "fx-saas",
+    "idea": "A simple tool that turns a freelancer's unpaid invoices into polite automatic reminders and gets them paid faster",
+    "slug": "nudge-invoices",
+    "founderAddress": "bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy",
+    "brand": {
+      "name": "Nudge",
+      "tagline": "Get paid on time, without the awkward emails",
+      "voice": "clear, calm, a little witty",
+      "palette": { "primary": "#5b5bf0", "accent": "#36d6a3", "bg": "#ffffff", "ink": "#121225" },
+      "fonts": { "display": "Bricolage Grotesque", "text": "Inter" },
+      "lang": "en",
+      "currency": "USD"
+    },
+    "report": {
+      "customer": "Freelance designers and developers who send 5–20 invoices a month",
+      "pain": "Chasing late invoices is awkward, so they wait, and cash runs short",
+      "offer": { "what": "Founder plan: one year of Nudge", "price": 49, "normal": 120, "limit": 200 },
+      "stats": [
+        { "value": "3 emails", "label": "a friendly, a firm and a final reminder, timed for you", "sourceUrl": "https://www.example.org/reminder-sequence" },
+        { "value": "2 min", "label": "to connect your invoices and switch reminders on", "sourceUrl": "https://www.example.org/setup" },
+        { "value": "0", "label": "awkward follow-ups you have to write yourself", "sourceUrl": "https://www.example.org/followups" }
+      ],
+      "competitors": [{ "name": "Accounting suites", "gap": "Reminders are buried and robotic" }],
+      "risks": ["Email deliverability"]
+    }
+  },
+  "logos": [
+    { "id": "nd1", "family": "monogram", "idea": "N with a nudge arrow", "svg": "<rect width=\"64\" height=\"64\" rx=\"18\" fill=\"#5b5bf0\"/><path d=\"M19 44V20l20 24V20\" stroke=\"#fff\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" fill=\"none\"/><circle cx=\"47\" cy=\"44\" r=\"4\" fill=\"#36d6a3\"/>" }
+  ],
+  "model": {
+    "seo": { "title": "Nudge · Polite invoice reminders for freelancers", "description": "Nudge sends friendly, well-timed reminders for your unpaid invoices so you get paid faster without writing awkward emails." },
+    "hero": { "eyebrow": "For freelancers", "headline": "Get paid on time, without the awkward emails", "sub": "Connect your invoices once. Nudge sends polite, well-timed reminders in your voice and stops the moment a client pays.", "cta": "Get the founder plan", "secondary": "See how it works" },
+    "offer": { "title": "Founder plan, one year", "item": "One year of Nudge, every feature", "bullets": ["Unlimited invoices and reminders", "Reminders written in your own tone", "Price locked for life"], "note": "We open to founder members first and set you up personally." },
+    "how": { "title": "Set it up once, then forget it", "steps": [
+      { "icon": "layers", "title": "Connect your invoices", "body": "Add the invoices you've sent, or forward them to your Nudge inbox." },
+      { "icon": "mail", "title": "Pick your tone", "body": "Friendly, firm or final. Nudge times each reminder for you." },
+      { "icon": "check", "title": "Get paid", "body": "Reminders stop the moment the client pays. You just see the money arrive." }
+    ] },
+    "services": { "title": "What's inside", "intro": "Everything you need to stop chasing, nothing you don't.", "items": [
+      { "icon": "bell", "title": "Smart timing", "body": "Reminders go out when clients actually read email." },
+      { "icon": "chat", "title": "Your voice", "body": "Edit every message so it sounds like you, not a robot." },
+      { "icon": "chart", "title": "Clear overview", "body": "See who owes what and what's coming in this month." },
+      { "icon": "shield", "title": "Client-safe", "body": "Polite by default, so relationships stay friendly." },
+      { "icon": "repeat", "title": "Auto stop", "body": "The moment an invoice is paid, the reminders stop." },
+      { "icon": "lock", "title": "Private", "body": "Your client list stays yours. We never email them anything else." }
+    ] },
+    "about": { "title": "Why we built it", "body": "Every freelancer we know has an invoice they're too embarrassed to chase. Nudge does the chasing politely, so you can keep the relationship and still get paid." },
+    "local": { "title": "", "body": "", "area": "", "hours": "" },
+    "faq": { "title": "Questions, answered", "items": [
+      { "q": "Will my clients know it's automatic?", "a": "The emails come from you and use your words. Most clients just see a polite reminder." },
+      { "q": "Which invoicing tools work?", "a": "Any tool that can email a PDF invoice. Forward it to Nudge and you're set." },
+      { "q": "What happens after the first year?", "a": "Founder members keep the founder price for as long as they stay." },
+      { "q": "How do I pay?", "a": "With Bitcoin Cash: scan the code with your wallet and your seat is reserved." }
+    ] },
+    "proof": { "title": "Built to save you time", "picks": [0, 1, 2] },
+    "order": ["how-it-works-for-customer", "proof-stats", "menu-or-services", "offer", "about", "faq"],
+    "finalCta": { "headline": "Stop chasing. Start getting paid.", "sub": "Founder seats are limited to the first 200 freelancers.", "cta": "Get the founder plan" },
+    "footer": { "tagline": "Polite invoice reminders for freelancers" }
+  }
+}

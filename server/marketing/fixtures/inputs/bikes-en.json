@@ -1,0 +1,26 @@
+{
+  "projectId": "fixture-bikes-en",
+  "idea": "An online shop for restored vintage road bikes, around €450 each",
+  "brand": {
+    "name": "Second Wind Cycles",
+    "tagline": "Classic steel road bikes, restored and ready to ride",
+    "voice": "warm, knowledgeable, a bit nerdy about old frames, never snobbish",
+    "palette": { "primary": "#1f3a5f", "accent": "#d9643a", "bg": "#f6f3ec", "ink": "#16202b" },
+    "fonts": { "display": "Fraunces", "text": "Inter" },
+    "lang": "en",
+    "currency": "EUR"
+  },
+  "report": {
+    "customer": "Riders aged 30 to 60 who want a classic steel road bike that rides well today, but have no time or tools to restore one",
+    "pain": "Second-hand listings are a gamble: worn parts, wrong sizes and no one to ask after buying",
+    "offer": { "what": "A restored vintage road bike, fully serviced, sized to the buyer, shipped boxed or picked up", "price": 450, "limit": 6 },
+    "stats": [],
+    "competitors": [
+      { "name": "Private sellers on second-hand marketplaces", "gap": "Cheap but unchecked; no service, no sizing help" },
+      { "name": "Bike shops selling new entry-level road bikes", "gap": "New and guaranteed, but no classic look or story" }
+    ],
+    "risks": ["Few bikes per month: restoring takes hours", "Shipping bikes is costly and can damage them", "Buyers want to see a bike before paying €450"]
+  },
+  "founderAddress": "bitcoincash:qfixturebikesaddress00000000000000000000",
+  "slug": "second-wind-cycles"
+}

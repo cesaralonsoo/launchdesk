@@ -128,13 +128,13 @@ const researchBlock = (r: Research | null) =>
 let client: Anthropic | null = null;
 const getClient = () => (client ??= new Anthropic({ apiKey: config.anthropicKey, maxRetries: 2, timeout: 120_000 }));
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-/** Cost pass (.notes/ai-v7.md): the plan and the steer routing are small classification calls (Haiku); the analysts
- *  and the judge make the decisions (Sonnet 5.5, low effort). Env overrides: MODEL_PLAN, MODEL_ANALYST, MODEL_JUDGE. */
+/** v7.1: every call is Haiku 5.5. New projects use the block pipeline (blocks-v7.ts); this classic roster path only
+ *  serves steers on projects validated before it. Env overrides: MODEL_PLAN, MODEL_ANALYST, MODEL_JUDGE. */
 const envModel = (name: string, d: string) => (process.env[name] && /^claude-[a-z0-9-]+$/.test(process.env[name]!) ? process.env[name]! : d);
 const MODEL = {
   plan: envModel("MODEL_PLAN", "claude-haiku-5-5"),
-  analyst: envModel("MODEL_ANALYST", "claude-sonnet-5-5"),
-  judge: envModel("MODEL_JUDGE", "claude-sonnet-5-5"),
+  analyst: envModel("MODEL_ANALYST", "claude-haiku-5-5"),
+  judge: envModel("MODEL_JUDGE", "claude-haiku-5-5"),
   steer: envModel("MODEL_PLAN", "claude-haiku-5-5"),
 } as const;
 const CALL_TIMEOUT_MS = 60_000;
@@ -484,11 +484,11 @@ const KEYWORD_ROUTES: Array<[RegExp, AnalystRole[]]> = [
 ];
 
 /** Keyword routing (demo mode, and the fallback when the routing call fails). Only analysts on the roster rerun. */
-export function routeByKeywords(note: string, roster: readonly Analyst[], target?: readonly AnalystRole[]): SteerPlan {
+export function routeByKeywords(note: string, roster: readonly Analyst[], target?: readonly AnalystRole[], alias: (r: AnalystRole) => AnalystRole = (r) => r): SteerPlan {
   const t = ` ${note.toLowerCase()} `;
   const have = new Set(roster.map((a) => a.role));
   const want: AnalystRole[] = [...(target ?? [])];
-  for (const [re, roles] of KEYWORD_ROUTES) if (re.test(t)) want.push(...roles);
+  for (const [re, roles] of KEYWORD_ROUTES) if (re.test(t)) want.push(...roles.map(alias));
   const rerun = [...new Set(want)].filter((r) => have.has(r)).slice(0, 3);
   if (!rerun.length) rerun.push("viability");
   const names = rerun.map((r) => ROLE_LIBRARY[r].dept.toLowerCase());
@@ -500,23 +500,25 @@ const raceDeadline = <T>(p: Promise<T>, ms: number): Promise<T> => {
   return Promise.race([p, new Promise<never>((_, rej) => (t = setTimeout(() => rej(new Error("routing timed out")), ms)))]).finally(() => clearTimeout(t));
 };
 
-export async function routeSteer(idea: string, note: string, roster: readonly Analyst[], target?: readonly AnalystRole[]): Promise<SteerPlan> {
+/** `alias` (block mode): maps any library role onto the block owner that covers it (e.g. location → demand). */
+export async function routeSteer(idea: string, note: string, roster: readonly Analyst[], target?: readonly AnalystRole[], opts: { alias?: (r: AnalystRole) => AnalystRole } = {}): Promise<SteerPlan> {
+  const alias = opts.alias ?? ((r: AnalystRole) => r);
   if (config.mockAi) {
     const s = v7SampleFor(idea);
     const p = s?.steers.find((x) => x.match.test(` ${note.toLowerCase()} `));
-    if (p) return structuredClone(p.plan);
-    return routeByKeywords(note, roster, target);
+    if (p) return { ...structuredClone(p.plan), rerun: [...new Set(p.plan.rerun.map(alias))] };
+    return routeByKeywords(note, roster, target, alias);
   }
   try {
     // The POST /steer answer waits for this routing: bounded, and the keyword router answers when it is slow.
     const out = await raceDeadline(callJson<SteerOut>("steer", MODEL.steer, "low", `The founder is the CEO of this team and wrote a note. Decide who re-checks their work.\n\n<idea>${idea}</idea>\n<team>${roster.map((a) => `${a.role} (${a.name}): ${a.mission}`).join("; ")}</team>\n<ceo_note>${note}</ceo_note>${target?.length ? `\nThe CEO addressed: ${target.join(", ")}.` : ""}\n\nack: one line back, max 14 words, saying what you'll re-check. rerun: 1-3 team roles whose findings the note changes. hire: one new role only if the note needs a skill nobody has (else empty). drop: roles the note makes irrelevant (never viability or competition; usually empty).`, SCHEMAS_V7.steer), 12_000);
     const have = new Set(roster.map((a) => a.role));
     const hires = out.hire.filter((h) => !have.has(h.role)).slice(0, 1);
-    const rerun = [...new Set([...(target ?? []), ...out.rerun])].filter((r) => have.has(r) || hires.some((h) => h.role === r)).slice(0, 3);
+    const rerun = [...new Set([...(target ?? []), ...out.rerun].map(alias))].filter((r) => have.has(r) || hires.some((h) => h.role === r)).slice(0, 3);
     return { ack: capWords(out.ack, 14), rerun: rerun.length ? rerun : ["viability"], hire: roster.length + hires.length <= 5 ? hires : [], drop: out.drop.filter((r) => have.has(r) && r !== "viability" && r !== "competition") };
   } catch (e) {
     console.error("[ai7] steer routing failed, using keywords:", (e as Error).message);
-    return routeByKeywords(note, roster, target);
+    return routeByKeywords(note, roster, target, alias);
   }
 }
 

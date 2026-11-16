@@ -4,7 +4,7 @@
 //   validate: Leo's web research starts with Mia (it only needs the idea) -> [mia] -> [leo] -> [sam + memo]
 //   v7:       the analyst team (jobs-v7.ts) runs alongside the validate groups, sharing the research
 //   build:    [nova] -> [dex, rae] (both sell Sam's launch offer, neither needs the other) -> [pip]
-import { researchPacks, runDept, runMemo, type AiDept, type RunOpts } from "./ai.js";
+import { runDept, runMemo, type AiDept, type RunOpts } from "./ai.js";
 import { costScope, endCost } from "./cost.js";
 import { leoFromV7, memoFromV7 } from "./v7-bridge.js";
 import { config } from "./config.js";
@@ -88,13 +88,10 @@ async function runStage(projectId: string, stage: Stage) {
     const v7 = await loadV7(projectId);
     const needV7 = !(v7?.status === "done" && v7.report);
     if (p && (leo.rows[0]?.status !== "done" || needV7)) {
-      const t0 = Date.now();
-      // v7: two small research packs in parallel (the first analysts start on the first pack that lands).
-      const packs = needV7 ? researchPacks(p.idea, p.results.mia?.market ?? null) : null;
-      if (packs) void packs.all.then((r) => r && console.log(`[jobs] ${projectId} research ready after ${Date.now() - t0}ms`));
-      if (packs) opts.research = packs.all;
-      // The analyst team runs in parallel with Mia. It never fails the stage; its status lives in results.v7.
-      if (packs) team = runV7(projectId, p.idea, packs).catch((e) => console.error(`[jobs] ${projectId} v7:`, e));
+      // v7.1: the 4 report blocks do their own research (searches + page fetches), so no shared research packs run
+      // here (that saved 4 searches). The team runs in parallel with Mia and never fails the stage; its status lives
+      // in results.v7. Leo is derived from its report; only if that fails does Leo research on its own.
+      if (needV7) team = runV7(projectId, p.idea, null).catch((e) => console.error(`[jobs] ${projectId} v7:`, e));
     }
     if (v7?.report || needV7) opts.v7 = team;
   }
@@ -213,7 +210,10 @@ async function runOne(projectId: string, dept: WorkDept, opts: StageOpts = {}): 
     await opts.v7;
     const v = await loadV7(projectId);
     if (v?.report) return { json: leoFromV7(v), model: "v7", usage: null };
-    console.warn(`[jobs] ${projectId} no v7 report, Leo runs on its own`);
+    // v7.1: no second, older research pipeline behind a failed v7 run (it cost ~$0.08 of searches + Sonnet and
+    // produced a report the founder never sees). Leo fails; the founder's Retry re-runs v7, which reuses the saved
+    // block research.
+    throw new Error(v?.error || "The report could not be written. Please retry.");
   }
   const p = await getProject(projectId);
   if (!p) throw new Error("Project not found");
@@ -224,6 +224,7 @@ async function runOne(projectId: string, dept: WorkDept, opts: StageOpts = {}): 
     // results.memo). It never fails Sam: without it the Summary is assembled from the other results.
     try {
       const v = await loadV7(projectId);
+      if (!v?.report && opts.v7) return out; // v7 path: the memo is derived from the v7 report only
       const memo = v?.report ? memoFromV7(p.idea, v) : await runMemo(p.idea, { ...p.results, sam: out.json as NonNullable<Project["results"]["sam"]> });
       return { ...out, json: { ...(out.json as object), memo } };
     } catch (e) {

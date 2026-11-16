@@ -8,7 +8,7 @@
 // reveals findings one at a time, build runs each specialist. Every async sequence is cancelled by a new goto.
 // In demo mode (`auto = false`) the flow never moves to the next *step* by itself: the demo script does.
 import {
-  BUILD_TEAM, DEMO_SCRIPT, FLOW_STEPS_V7, STEER_LIMIT, STEP_LEVEL, levelCapFor, scoreDisplay, worldProjectOf,
+  BUILD_TEAM, DEMO_SCRIPT, FLOW_STEPS_V7, STEER_LIMIT, STEP_LEVEL, hasBlocks, levelCapFor, scoreDisplay, worldProjectOf,
   type ActorId, type Analyst, type AnalystRole, type BuildDept, type CompanySign, type Finding, type FlowActionV7,
   type FlowStateV7, type FlowStepV7, type FlowV7, type IdeaReport, type ProjectV7, type ReportPage, type SteerResult,
   type WorldLevel, type WorldV7,
@@ -80,6 +80,11 @@ export interface ProtoFlowV7 extends FlowV7 {
   startLive(p: ProjectV7, mode: "new" | "open"): void;
   /** Last steer error (live), shown in the steer surface. */
   readonly steerError: string | null;
+  /** v7.1 founder direction: a real run (or a 4-block project) does not stream findings one by one. The team works
+   *  in the office (calm progress notes), then one report is delivered. The guided tour keeps the old reveal. */
+  readonly calm: boolean;
+  /** The UI tells the flow while progress notes are still queued, so the report waits (≤ 6 s) for the last ones. */
+  setWorkHold(fn: (() => boolean) | null): void;
 }
 
 const ORDER = FLOW_STEPS_V7;
@@ -155,6 +160,13 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
     ping();
   });
   const isSample = (id: string) => PROJECTS_V7.some((x) => x.id === id);
+  const calm = () => !demo && (!!live || hasBlocks(project.v7));
+  /** Calm mode: each analyst's figure follows its real work status (or its block's). */
+  const workState = (id: AnalystRole): Parameters<WorldV7["setActorState"]>[1] => {
+    const b = project.v7.blocks?.find((x) => x.role === id);
+    const st = b?.status ?? project.v7.work.find((w) => w.analyst === id)?.status ?? "queued";
+    return st === "working" ? "working" : st === "done" || st === "error" ? "done" : "idle";
+  };
   const allProjects = () => [...mine.map((m) => (live && m.id === live.id ? live.project : m)), ...PROJECTS_V7];
 
   let committed: Record<string, number> = {}; // project id → chosen scale path index
@@ -198,6 +210,7 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
       let x: Parameters<WorldV7["setActorState"]>[1] = "done";
       if (preHire) x = "absent";
       else if (st === "hire") x = i < hired ? "idle" : "absent";
+      else if (st === "evidence" && calm()) x = live?.phase1Done ? "done" : workState(a.id);
       else if (st === "evidence") {
         const cur = findings[Math.max(0, revealed - 1)]?.analyst ?? s.analyst;
         const ci = roster.findIndex((r) => r.id === cur);
@@ -248,6 +261,7 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
   }
 
   async function playEvidence(tok: number, animate: boolean) {
+    if (calm()) return playWork(tok);
     if (!animate) return;
     let cur: AnalystRole | null = revealed > 0 ? findings[revealed - 1]!.analyst : null;
     // live: findings land while we reveal; when caught up, wait for the next poll until the report exists
@@ -277,6 +291,30 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
     ping();
     if (live?.error || (live && !report)) return;
     await wait(T.reportTail);
+    if (!alive(tok) || demo) return;
+    enter({ step: "report", page: "score" }, true);
+  }
+
+  let workHold: (() => boolean) | null = null;
+  /** Calm mode: no reveal. Figures follow the real work; the report opens once it exists. */
+  async function playWork(tok: number) {
+    revealed = findings.length;
+    while (live && !live.phase1Done && !live.error) {
+      roster.forEach((a) => world.setActorState(a.id, workState(a.id)));
+      await live.next();
+      if (!alive(tok)) return;
+      revealed = findings.length;
+      ping();
+    }
+    roster.forEach((a) => world.setActorState(a.id, "done"));
+    ping();
+    if (live?.error || !report) return;
+    await wait(T.reportTail);
+    // let the last queued progress notes be read (a quick run otherwise jumps past them), at most 6 s
+    for (let t = 0; t < 6000 && workHold?.(); t += 300) {
+      await wait(300);
+      if (!alive(tok)) return;
+    }
     if (!alive(tok) || demo) return;
     enter({ step: "report", page: "score" }, true);
   }
@@ -361,7 +399,7 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
     paintActors(state);
     workStart = performance.now();
     const focus: ActorId | "overview" =
-      step === "evidence" && analyst ? analyst : step === "build" && builder ? builder : "overview";
+      step === "evidence" && analyst && !calm() ? analyst : step === "build" && builder ? builder : "overview";
     if (!moveAnimated && ask === level) void world.focusActor(focus, { animate: animate && !reduced });
     if (animate && (step === "pay1" || step === "pay2") && prev.step !== step) {
       /* camera already on the founder / lobby */
@@ -502,6 +540,10 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
     get live() { return live; },
     get mine() { return mine; },
     get steerError() { return steerError; },
+    get calm() { return calm(); },
+    setWorkHold(fn) {
+      workHold = fn;
+    },
     isSample,
     startLive(p, mode) {
       attachLive(p, mode);
@@ -718,7 +760,16 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
 
   function decide(c: "grow" | "pivot" | "stop") {
     if (c === "grow") return cap() >= 1 ? enter({ step: "boom" }, true) : undefined;
-    if (c === "pivot") return enter({ step: "idea" }, true);
+    if (c === "pivot") {
+      // a fresh idea is a fresh project: leave the finished run (the address bar goes back to "/")
+      if (live) {
+        detachLive();
+        cancel();
+        useProject(SAMPLE_V7);
+        paid = 0;
+      }
+      return enter({ step: "idea" }, true);
+    }
     return enter({ step: "end" }, true);
   }
   function paint0() {

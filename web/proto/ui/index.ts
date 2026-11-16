@@ -3,7 +3,8 @@
 // report, site). Reads the flow; only calls flow.next / goto / peek. Fixed light theme: nothing here listens to the clock.
 import "./ui.css";
 import "./v7.css";
-import { DEMO_LENGTH_S, LEVEL_META, type FlowStateV7, type Insets, type WorldLevel, type WorldV7 } from "../contracts";
+import "./report-doc.css";
+import { DEMO_LENGTH_S, LEVEL_META, type FlowStateV7, type Insets, type ProjectV7, type WorldLevel, type WorldV7 } from "../contracts";
 import { REPORT_PAGES, type ProtoFlowV7 } from "../flow";
 import { DEMO_CHAPTERS, type Demo } from "../flow/demo";
 import type { Project } from "../../src/types";
@@ -18,6 +19,8 @@ import {
   payHtml, reportPage, reportReader, sourceHtml, steerHtml, steerSuggestions, who, workTag,
 } from "./steps";
 import { ensureBrandFonts, makeView, type View } from "./view";
+import { bubbleHtml, docMode, noteRow, progressBar, reportDocHtml, teamRows, workHtml, workNotes, type WorkNote } from "./report-doc";
+import { I } from "./icons";
 import { createProject, liveConfig } from "../live/adapter";
 import { livePayHtml, mountPay } from "../live/pay";
 import { ldMark } from "./logo";
@@ -37,7 +40,7 @@ export interface UiDeps {
   still?: boolean;
 }
 
-type Pos = "center" | "bottom" | "sheet" | "boom";
+type Pos = "center" | "bottom" | "sheet" | "boom" | "doc";
 const DEMO_IDEA_FALLBACK = "A specialty coffee kiosk at a metro exit";
 
 export function createUi(host: HTMLElement, deps: UiDeps): Ui {
@@ -63,17 +66,20 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     return view;
   };
   let typedIdea = "";
+  /** The project created for the idea on the pay card, until it is paid (Back + resubmit reuses it). */
+  let lastUnpaid: { idea: string; proj: ProjectV7 } | null = null;
   let steerDraft = "";
 
   const root = el(`<div class="ui v7">
     <header class="chrome">
-      <a class="wordmark" href="/" aria-label="LaunchDesk, start over">${ldLogo(24)}</a>
+      <div class="chrome-l"><a class="wordmark" href="/" aria-label="LaunchDesk, start over">${ldLogo(24)}</a><button class="back-btn glass" type="button" data-act="back" hidden title="Back (Esc)" aria-label="Back"><span class="bb-i">${I.back(15)}</span><span class="bb-t">Back</span></button></div>
       <ol class="grow" aria-label="Growth"></ol>
       <div class="chrome-r"><span class="live-tag" hidden></span><button class="offices-btn glass" type="button" data-act="offices" aria-label="Your offices"><span class="ob-g"></span><span class="ob-t">Your offices</span></button></div>
     </header>
     <div class="demo-bar" hidden><div class="db-track"></div><div class="db-meta"><span class="db-ch"></span><span class="db-keys"><kbd>Space</kbd> pause <kbd>→</kbd> skip <kbd>Esc</kbd> exit</span></div></div>
     <div class="atag" data-on="0"></div>
     <div class="wtag glass" data-on="0"></div>
+    <div class="wbub" data-on="0" aria-hidden="true"></div>
     <div class="panels"></div>
     <div class="overlay" data-open="0"><div class="scrim" data-act="close"></div><div class="ov-body"></div></div>
   </div>`);
@@ -163,9 +169,9 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
       case "hire":
         return `hire:${flow.roster.length}`;
       case "evidence":
-        return "evidence";
+        return flow.calm ? "work" : "evidence";
       case "report":
-        return `report:${s.page ?? "score"}`;
+        return docMode(flow.project, flow.report) ? "doc" : `report:${s.page ?? "score"}`;
       case "steer":
         return `steer:${flow.steers.length}:${flow.steering?.status ?? "none"}`;
       case "boom":
@@ -183,6 +189,7 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
   }
   function posFor(key: string): Pos {
     if (key === "boom") return "boom";
+    if (key === "doc") return "doc";
     if (isMobile()) return "sheet";
     return "bottom"; // every surface rises from the bottom; the world is framed in the space above it
   }
@@ -201,6 +208,8 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     if (key === "pay2") return payHtml(flow, 2, false);
     if (key.startsWith("hire")) return hireHtml(flow);
     if (key === "evidence") return evidenceHtml(flow, s.finding ?? 0);
+    if (key === "work") return workHtml(flow);
+    if (key === "doc") return reportDocHtml(flow);
     if (key.startsWith("report:")) return reportPage(flow, s.page ?? "score");
     if (key.startsWith("steer")) return steerHtml(flow, steerDraft);
     if (key === "boom") return boomHtml();
@@ -229,7 +238,7 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
       return;
     }
     const pos = posFor(key);
-    const p = el(`<div class="panel ${pos === "boom" ? "" : "glass"}" data-pos="${pos}" data-key="${key.split(":")[0]}">${build(key, s)}</div>`);
+    const p = el(`<div class="panel ${pos === "boom" || pos === "doc" ? "" : "glass"}" data-pos="${pos}" data-key="${key.split(":")[0]}">${build(key, s)}</div>`);
     stagger(p);
     panelsEl.appendChild(p);
     curPanel = p;
@@ -254,7 +263,14 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
   /** Progressive updates inside the same surface (no remount). */
   function update(s: FlowStateV7) {
     if (!curPanel || !curKey) return;
-    if (curKey.startsWith("hire")) {
+    if (curKey === "work") {
+      const pr = curPanel.querySelector(".wk-prog");
+      if (pr) pr.innerHTML = progressBar(flow);
+      const tm = curPanel.querySelector(".wk-team");
+      if (tm) tm.innerHTML = teamRows(flow);
+      ingestNotes();
+      measure();
+    } else if (curKey.startsWith("hire")) {
       curPanel.querySelectorAll<HTMLElement>(".hire").forEach((li, i) => (li.dataset.on = i < flow.hired ? "1" : "0"));
       measure();
     } else if (curKey === "evidence") {
@@ -285,6 +301,19 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
   }
 
   function mount(p: HTMLElement, key: string, s: FlowStateV7) {
+    if (key === "work") {
+      feedEl = p.querySelector<HTMLElement>(".wk-feed");
+      noteSeen.clear();
+      ingestNotes();
+      disposePanel = () => {
+        feedEl = null;
+        noteQ = [];
+        bubble = null;
+        clearTimeout(noteTimer);
+        noteTimer = 0;
+        bub.dataset.on = "0";
+      };
+    }
     if ((key === "pay1" || key === "pay2") && flow.live && !demo) {
       const host = p.querySelector<HTMLElement>(".pay-live");
       const id = flow.live.id;
@@ -325,10 +354,12 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
         const idea = ta.value.trim();
         if (idea.length < 15) return fail(idea ? "Tell us a bit more: one full sentence." : "Type your idea first.");
         if (sending) return;
+        // pay → Back → submit the same idea again: reuse the unpaid project instead of piling up a new one each time
+        if (lastUnpaid && lastUnpaid.idea === idea) return flow.startLive(lastUnpaid.proj, "new");
         sending = true;
         go.disabled = true;
         createProject(idea).then(
-          (proj) => flow.startLive(proj, "new"),
+          (proj) => ((lastUnpaid = { idea, proj }), flow.startLive(proj, "new")),
           (e: Error) => fail(e.message || "Could not start. Try again."),
         );
       };
@@ -376,6 +407,156 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     void s;
   }
 
+  // ────────────────────────────── calm progress notes: queued, one every ~2.6 s, so each one can be read
+  const bub = $(".wbub");
+  let feedEl: HTMLElement | null = null;
+  let noteQ: WorkNote[] = [];
+  const noteSeen = new Set<string>();
+  let noteTimer = 0;
+  let bubble: WorkNote | null = null;
+  const NOTE_MS = 2600;
+  flow.setWorkHold(() => !!feedEl && noteQ.length > 0);
+  function ingestNotes() {
+    const v7 = (flow.live?.project ?? flow.project).v7;
+    for (const n of workNotes(flow, v7)) {
+      if (noteSeen.has(n.key)) continue;
+      noteSeen.add(n.key);
+      noteQ.push(n);
+    }
+    // never a firehose: when the team outpaces the reader, keep only the newest few (shown faster, see showNote)
+    if (noteQ.length > 8) {
+      // keep each analyst's latest note, then the newest others, in the order they happened
+      const keep = new Set<WorkNote>();
+      const research = (n: WorkNote) => !/^(writing|first lines)\b/i.test(n.text);
+      for (const n of [...noteQ].reverse()) if (n.role && research(n) && ![...keep].some((k) => k.role === n.role && research(k))) keep.add(n);
+      for (const n of [...noteQ].reverse()) if (keep.size < 8) keep.add(n);
+      noteQ = noteQ.filter((n) => keep.has(n));
+    }
+    if (!noteTimer) showNote();
+  }
+  function showNote() {
+    noteTimer = 0;
+    const n = noteQ.shift();
+    if (!n || !feedEl) {
+      bubble = null;
+      bub.dataset.on = "0";
+      return;
+    }
+    const li = el(noteRow(flow, n));
+    feedEl.prepend(li);
+    requestAnimationFrame(() => li.classList.add("in"));
+    while (feedEl.children.length > 4) feedEl.lastElementChild!.remove();
+    bubble = n.role ? n : null;
+    if (bubble) {
+      bub.innerHTML = bubbleHtml(flow, bubble);
+      bub.dataset.on = "1";
+    } else bub.dataset.on = "0";
+    paintTags();
+    measure();
+    // a backlog plays faster (down to ~1.3 s a note) so a quick run still shows most of what the team did
+    const pace = noteQ.length >= 4 ? NOTE_MS / 2 : noteQ.length >= 2 ? NOTE_MS * 0.7 : NOTE_MS;
+    noteTimer = window.setTimeout(showNote, reducedMotion() ? 1200 : pace);
+  }
+
+  // ────────────────────────────── back: one control (chrome button · Esc · the browser's back button)
+  const backBtn = $<HTMLButtonElement>(".back-btn");
+  const goHome = (offices = false) => {
+    closeOverlay();
+    typedIdea = "";
+    flow.next({ type: "new-project" });
+    if (offices && flow.mine.length) openOverlay(officesHtml(flow), "offices");
+  };
+  /** Where Back goes from here, or null at the start. */
+  function backTarget(): (() => void) | null {
+    const s = flow.state;
+    const doc = docMode(flow.project, flow.report);
+    switch (s.step) {
+      case "pay1":
+        return () => {
+          // back to the idea, text kept, so it can be edited and validated again
+          const keep = typedIdea || flow.project.idea;
+          flow.next({ type: "new-project" });
+          typedIdea = keep;
+          render(true);
+        };
+      case "hire":
+      case "evidence":
+        return () => goHome(true); // a real run keeps working on the server; it waits in Your offices
+      case "report": {
+        const i = REPORT_PAGES.indexOf(s.page ?? "score");
+        if (!doc && i > 0) return () => flow.goto({ step: "report", page: REPORT_PAGES[i - 1]! });
+        return () => goHome(true);
+      }
+      case "steer":
+        return () => flow.goto({ step: "report", page: doc ? "score" : "next" });
+      case "boom":
+      case "floor":
+      case "pay2":
+      case "build":
+      case "live":
+        return flow.report ? () => flow.goto({ step: "report", page: doc ? "score" : "next" }) : () => goHome(true);
+      case "building":
+        return () => flow.goto({ step: flow.project.legacy ? "live" : "floor" });
+      case "district":
+        return () => flow.goto({ step: "building" });
+      case "end":
+        return () => goHome();
+      default:
+        return null;
+    }
+  }
+  function goBack(): boolean {
+    if (overlay.dataset.open === "1") {
+      closeOverlay();
+      return true;
+    }
+    if (demo || flow.moving) return false;
+    const t = backTarget();
+    if (!t) return false;
+    t();
+    return true;
+  }
+  function paintBack() {
+    const show = !demo && !!backTarget();
+    backBtn.hidden = !show;
+  }
+  // History: each surface the founder reaches is one browser entry, so the browser's back button = our Back.
+  let histKey = "";
+  let popping = false;
+  try {
+    history.replaceState({ ld: 1 }, "");
+  } catch {
+    /* sandboxed */
+  }
+  function pushHistory() {
+    const s = flow.state;
+    const k = `${s.step}:${s.page ?? ""}:${flow.project.id}`;
+    if (k === histKey) return;
+    const first = !histKey;
+    histKey = k;
+    if (first || popping || demo || s.step === "bedroom" || deps.still) return;
+    try {
+      history.pushState({ ld: 1 }, "", location.pathname + location.search);
+    } catch {
+      /* sandboxed */
+    }
+  }
+  addEventListener("popstate", () => {
+    popping = true;
+    try {
+      goBack();
+    } finally {
+      popping = false;
+    }
+    // keep the address bar on the run that is really shown
+    const want = flow.live ? `/p/${encodeURIComponent(flow.live.id)}` : "/";
+    try {
+      if (location.pathname !== want && (flow.live || /^\/p\//.test(location.pathname))) history.replaceState(history.state, "", want + location.search);
+    } catch {
+      /* sandboxed */
+    }
+  });
+
   function typeInto(ta: HTMLTextAreaElement, text: string, ms: number) {
     if (reducedMotion()) {
       ta.value = text;
@@ -395,7 +576,15 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     const s = flow.state;
     const v = getView();
     let target: Parameters<WorldV7["actorScreenPoint"]>[0] | null = null;
-    if (s.step === "evidence" && s.analyst && !curPanel?.matches(".out")) target = s.analyst;
+    if (s.step === "evidence" && s.analyst && curKey === "evidence" && !curPanel?.matches(".out")) target = s.analyst;
+    if (curKey === "work" && bubble?.role) {
+      const pt = world.actorScreenPoint(bubble.role);
+      if (pt && pt.y > 80) {
+        const x = Math.min(innerWidth - 140, Math.max(140, pt.x));
+        bub.style.transform = `translate(${Math.round(x)}px, ${Math.round(pt.y - 16)}px) translate(-50%, -100%)`;
+        bub.dataset.on = "1";
+      } else bub.dataset.on = "0";
+    } else if (bub.dataset.on === "1" && curKey !== "work") bub.dataset.on = "0";
     if (target) {
       const a = who(flow, target as never);
       const pt = world.actorScreenPoint(target);
@@ -424,6 +613,18 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     }
   }
   world.onCameraChange(paintTags);
+
+  /** "Download PDF": the browser's print dialog with the report's own print stylesheet (report-doc.css @media print). */
+  function printReport() {
+    const t = document.title;
+    document.title = `${flow.project.title} · LaunchDesk report`;
+    const done = () => {
+      document.title = t;
+      removeEventListener("afterprint", done);
+    };
+    addEventListener("afterprint", done);
+    window.print();
+  }
 
   // ────────────────────────────── overlays
   function openOverlay(html: string, kind: string) {
@@ -456,6 +657,12 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
         flow.next({ type: "approve-pay" });
       }, reducedMotion() ? 0 : 650);
       return;
+    }
+    if (act === "back") return void goBack();
+    if (act === "pdf") return printReport();
+    if (act === "doc-jump") {
+      e.preventDefault();
+      return curPanel?.querySelector(`#${t.dataset.to}`)?.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "start" });
     }
     if (act === "next") return flow.next({ type: "next" });
     if (act === "continue") return flow.next({ type: "continue" });
@@ -518,6 +725,7 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
   });
   addEventListener("keydown", (e) => {
     if (e.key === "Escape" && overlay.dataset.open === "1") return closeOverlay();
+    if (e.key === "Escape" && !demo && !(e.target as HTMLElement)?.closest?.("textarea, input")) return void goBack();
     if (demo || overlay.dataset.open === "1") return;
     if ((e.target as HTMLElement)?.closest?.("textarea, input")) return;
     const s = flow.state;
@@ -534,11 +742,15 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
   // ────────────────────────────── render loop (flow events)
   function render(force = false) {
     const s = flow.state;
+    if (lastUnpaid && !["idea", "pay1", "bedroom"].includes(s.step)) lastUnpaid = null;
     root.dataset.step = s.step;
     paintGrow();
     paintMode();
     if (force) curKey = null;
     show(keyFor(s), s);
+    root.dataset.doc = curKey === "doc" ? "1" : "0";
+    paintBack();
+    pushHistory();
     paintTags();
   }
   let fastExample = false;

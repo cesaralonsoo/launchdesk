@@ -1,0 +1,245 @@
+// WP3 · Marketing plan v2: the shape of "Your 30-day plan", its JSON schema for the writer call, and the pure
+// clean-up that enforces the honesty rules in code (no node imports: the web view imports the types from here).
+//
+// Honesty rules (same as Validate): a local fact, place or event counts only with a source number that exists in the
+// research's numbered pages; a claim the model could not source is moved to `assumptions` ("to test"), never shown
+// as a fact. Numbers that are the founder's own choices (prices, budget, targets, hours) are plans, not claims.
+
+export type ChannelRole = "awareness" | "first sales" | "proof" | "repeat";
+export type CountFrom = "bch payments" | "website" | "by hand";
+export type CopyRef = "post-1" | "post-2" | "post-3" | "message" | "email" | "flyer" | "profile" | "press";
+
+export interface PlanSource { n: number; url: string; title: string }
+
+export interface PlanV2 {
+  lang: string;
+  currency: string;
+  /** One sentence: the whole plan for a busy person. */
+  headline: string;
+  goal: { metric: string; target: number; unit: string; by_day: number; why: string; how_counted: string };
+  customer: { who: string; places: Array<{ place: string; when: string; source: number | null }> };
+  channels: Array<{ name: string; role: ChannelRole; why: string; source: number | null; weekly_hours: number; cost: number; first_action: string }>;
+  rejected: Array<{ name: string; why_not: string }>;
+  budget: { tiers: Array<{ amount: number; label: string; lines: Array<{ channel: string; amount: number; for: string }> }>; reserve_pct: number; reallocate_rule: string };
+  weeks: Array<{ n: number; theme: string; aim: string; days: Array<{ day: number; time: string; channel: string; action: string; copy: CopyRef | null; hours: number }> }>;
+  kpis: Array<{ name: string; target: string; how_to_count: string; count_from: CountFrom }>;
+  copy: {
+    posts: Array<{ channel: string; hook: string; body: string; cta: string }>;
+    message: string;
+    email: { subject: string; body: string };
+    flyer: { headline: string; lines: string[] };
+    profile: string;
+    press: string;
+  };
+  local: Array<{ fact: string; source: number }>;
+  events: Array<{ name: string; date: string; where: string; source: number }>;
+  /** Things the plan assumes and the founder should check (unsourced claims end up here). */
+  assumptions: string[];
+  decision: { scale_if: string; adjust_if: string; stop_if: string };
+}
+
+// ───────────────────────────────────────────────────────────── JSON schema (structured output)
+
+const str = { type: "string" } as const;
+const num = { type: "number" } as const;
+/** Source number, 0 = none (a nullable union makes the compiled grammar too large for this schema). */
+const srcN = { type: "integer" } as const;
+const obj = (properties: Record<string, unknown>) => ({ type: "object", properties, required: Object.keys(properties), additionalProperties: false });
+const arr = (items: unknown) => ({ type: "array", items });
+
+export const PLAN_SCHEMA = obj({
+  headline: str,
+  goal: obj({ metric: str, target: num, unit: str, by_day: { type: "integer" }, why: str, how_counted: str }),
+  customer: obj({ who: str, places: arr(obj({ place: str, when: str, source: srcN })) }),
+  channels: arr(obj({ name: str, role: str, why: str, source: srcN, weekly_hours: num, cost: num, first_action: str })),
+  rejected: arr(obj({ name: str, why_not: str })),
+  budget: obj({ tiers: arr(obj({ amount: num, label: str, lines: arr(obj({ channel: str, amount: num, for: str })) })), reserve_pct: num, reallocate_rule: str }),
+  weeks: arr(
+    obj({
+      n: { type: "integer" },
+      theme: str,
+      aim: str,
+      days: arr(obj({ day: { type: "integer" }, time: str, channel: str, action: str, copy: str, hours: num })),
+    }),
+  ),
+  kpis: arr(obj({ name: str, target: str, how_to_count: str, count_from: str })),
+  copy: obj({
+    posts: arr(obj({ channel: str, hook: str, body: str, cta: str })),
+    message: str,
+    email: obj({ subject: str, body: str }),
+    flyer: obj({ headline: str, lines: arr(str) }),
+    profile: str,
+    press: str,
+  }),
+  local: arr(obj({ fact: str, source: srcN })),
+  events: arr(obj({ name: str, date: str, where: str, source: srcN })),
+  assumptions: arr(str),
+  decision: obj({ scale_if: str, adjust_if: str, stop_if: str }),
+});
+
+/** The whole schema compiles to a grammar the API refuses ("too large"), so the writer runs in two steps:
+ *  A = strategy (everything but weeks and copy), B = the 4-week calendar and the copy, written from A. */
+const pick = (keys: string[]) => {
+  const all = PLAN_SCHEMA.properties as Record<string, unknown>;
+  return obj(Object.fromEntries(keys.map((k) => [k, all[k]])));
+};
+export const PLAN_B_KEYS = ["weeks", "copy"] as const;
+export const PLAN_SCHEMA_A = pick(Object.keys(PLAN_SCHEMA.properties).filter((k) => !(PLAN_B_KEYS as readonly string[]).includes(k)));
+export const PLAN_SCHEMA_B = pick([...PLAN_B_KEYS]);
+
+// ───────────────────────────────────────────────────────────── clean-up (pure)
+
+/** Words that make a plan sound like a template; the writer is told not to use them, the cleaner reports them. */
+export const BANNED = ["leverage", "unlock", "game-changing", "game changer", "seamless", "synergy", "use social media", "go viral", "revolutionary", "cutting-edge"];
+export const COPY_LIMITS = { postWords: 70, emailWords: 140, profileChars: 750, pressSentences: 3, flyerLines: 3 } as const;
+
+const words = (s: string) => s.trim().split(/\s+/).filter(Boolean).length;
+const capWords = (s: string, n: number) => {
+  const w = s.trim().split(/\s+/);
+  return w.length <= n ? s.trim() : w.slice(0, n).join(" ").replace(/[,;:]$/, "") + "…";
+};
+/** One-line text, cut at a word boundary with "…" when longer than max. */
+const clean = (s: unknown, max = 600) => {
+  if (typeof s !== "string") return "";
+  const t = s.replace(/\s+/g, " ").trim();
+  return t.length <= max ? t : t.slice(0, max - 1).replace(/\s+\S*$/, "").replace(/[,;:]$/, "") + "…";
+};
+const cleanBlock = (s: unknown, max = 2000) => (typeof s === "string" ? s.replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").trim().slice(0, max) : "");
+const n0 = (v: unknown, max = 1e7) => (typeof v === "number" && Number.isFinite(v) ? Math.min(max, Math.max(0, v)) : 0);
+/** Strips [n] markers the model put inside prose (sources live in the `source` fields). */
+const noMarks = (s: string) => s.replace(/\s*\[(?:S)?\d+\]/g, "").trim();
+
+/** A fact-like sentence: a number that is not an obvious plan figure (day, time, hours) in a claim about the world. */
+export const claimsNumber = (s: string) => /\d/.test(s.replace(/\b(day|días?|week|semana)\s*\d+/gi, "").replace(/\b\d{1,2}[:.h]\d{2}\b/g, ""));
+
+export interface CleanReport { plan: PlanV2; warnings: string[] }
+
+/** "We assume" in the plan's language (the marker for an unsourced reason). */
+const ASSUME: Record<string, string> = { en: "We assume", es: "Suponemos", ca: "Suposem", fr: "Nous supposons", pt: "Supomos", it: "Supponiamo", de: "Wir nehmen an" };
+export const assumeWord = (lang: string) => ASSUME[lang] ?? ASSUME.en!;
+/** An English "we assume" left inside a non-English text becomes the local word. */
+const localAssume = (s: string, lang: string) => (lang === "en" ? s : s.replace(/\bwe assume( that)?\b/gi, (m) => (m[0] === "W" ? assumeWord(lang) : assumeWord(lang).toLowerCase())));
+
+/**
+ * Enforces the plan rules on a raw writer answer: valid source numbers only (unsourced places, facts and events are
+ * dropped or moved to assumptions), 3–4 channels, ≤2 rejected, 3 budget tiers whose lines never exceed the tier,
+ * 4 weeks with days 1–30 in order, ≤5 KPIs, copy within limits. Returns what it had to fix as warnings.
+ */
+export function cleanPlan(raw: unknown, sources: readonly PlanSource[], ctx: { lang: string; currency: string }): CleanReport {
+  const r = (raw ?? {}) as Record<string, any>;
+  const warnings: string[] = [];
+  const known = new Set(sources.map((s) => s.n));
+  const src = (v: unknown): number | null => (typeof v === "number" && known.has(v) ? v : null);
+  const assumptions: string[] = Array.isArray(r.assumptions) ? r.assumptions.map((a: unknown) => noMarks(clean(a, 240))).filter(Boolean) : [];
+
+  const goal = r.goal ?? {};
+  const places = (Array.isArray(r.customer?.places) ? r.customer.places : []).slice(0, 4).map((p: any) => ({ place: noMarks(clean(p?.place, 160)), when: noMarks(clean(p?.when, 120)), source: src(p?.source) })).filter((p: any) => p.place);
+
+  let channels = (Array.isArray(r.channels) ? r.channels : []).map((c: any) => {
+    const source = src(c?.source);
+    if (c?.source != null && c.source !== 0 && source == null) warnings.push(`channel "${clean(c?.name, 40)}": unknown source ${c.source} removed`);
+    return { name: clean(c?.name, 60), role: (["awareness", "first sales", "proof", "repeat"].includes(c?.role) ? c.role : "awareness") as ChannelRole, why: localAssume(noMarks(clean(c?.why, 320)), ctx.lang), source, weekly_hours: n0(c?.weekly_hours, 40), cost: n0(c?.cost), first_action: noMarks(clean(c?.first_action, 240)) };
+  }).filter((c: any) => c.name && c.why);
+  if (channels.length > 4) { warnings.push(`${channels.length} channels cut to 4`); channels = channels.slice(0, 4); }
+  if (channels.length < 3) warnings.push(`only ${channels.length} channels`);
+
+  const rejected = (Array.isArray(r.rejected) ? r.rejected : []).slice(0, 2).map((x: any) => ({ name: clean(x?.name, 60), why_not: noMarks(clean(x?.why_not, 240)) })).filter((x: any) => x.name);
+
+  const tiers = (Array.isArray(r.budget?.tiers) ? r.budget.tiers : []).slice(0, 3).map((t: any) => {
+    const amount = n0(t?.amount);
+    let lines = (Array.isArray(t?.lines) ? t.lines : []).map((l: any) => ({ channel: clean(l?.channel, 60), amount: n0(l?.amount), for: noMarks(clean(l?.for, 160)) })).filter((l: any) => l.channel);
+    const sum = lines.reduce((s: number, l: any) => s + l.amount, 0);
+    if (sum > amount + 0.5) {
+      warnings.push(`budget tier ${amount}: lines added up to ${sum}, scaled down`);
+      const k = sum ? amount / sum : 0;
+      lines = lines.map((l: any) => ({ ...l, amount: Math.floor(l.amount * k) }));
+    }
+    return { amount, label: clean(t?.label, 80), lines };
+  }).sort((a: any, b: any) => a.amount - b.amount);
+  if (tiers.length !== 3) warnings.push(`${tiers.length} budget tiers`);
+
+  const weeks = (Array.isArray(r.weeks) ? r.weeks : []).slice(0, 4).map((w: any, i: number) => ({
+    n: i + 1,
+    theme: clean(w?.theme, 60),
+    aim: noMarks(clean(w?.aim, 200)),
+    days: (Array.isArray(w?.days) ? w.days : [])
+      .map((d: any) => ({ day: Math.round(n0(d?.day, 30)) || 1, time: clean(d?.time, 30), channel: clean(d?.channel, 60), action: noMarks(clean(d?.action, 300)), copy: (["post-1", "post-2", "post-3", "message", "email", "flyer", "profile", "press"].includes(d?.copy) ? d.copy : null) as CopyRef | null, hours: n0(d?.hours, 12) }))
+      .filter((d: any) => d.action)
+      .sort((a: any, b: any) => a.day - b.day),
+  }));
+  if (weeks.length !== 4) warnings.push(`${weeks.length} weeks`);
+
+  let kpis = (Array.isArray(r.kpis) ? r.kpis : []).map((k: any) => ({ name: clean(k?.name, 80), target: clean(k?.target, 60), how_to_count: noMarks(clean(k?.how_to_count, 200)), count_from: (["bch payments", "website", "by hand"].includes(k?.count_from) ? k.count_from : "by hand") as CountFrom })).filter((k: any) => k.name);
+  if (kpis.length > 5) { warnings.push(`${kpis.length} KPIs cut to 5`); kpis = kpis.slice(0, 5); }
+
+  const c = r.copy ?? {};
+  const posts = (Array.isArray(c.posts) ? c.posts : []).slice(0, 3).map((p: any) => {
+    const body = cleanBlock(p?.body, 900);
+    if (words(body) > COPY_LIMITS.postWords) warnings.push(`post "${clean(p?.channel, 30)}" over ${COPY_LIMITS.postWords} words, trimmed`);
+    return { channel: clean(p?.channel, 40), hook: clean(p?.hook, 140), body: capWords(body, COPY_LIMITS.postWords), cta: clean(p?.cta, 120) };
+  });
+  const emailBody = cleanBlock(c.email?.body, 1400);
+  const profile = clean(c.profile, 2000);
+  const pressSent = clean(c.press, 1200).split(/(?<=[.!?])\s+/).filter(Boolean);
+  const copy = {
+    posts,
+    message: cleanBlock(c.message, 700),
+    email: { subject: clean(c.email?.subject, 90), body: words(emailBody) > COPY_LIMITS.emailWords ? capWords(emailBody, COPY_LIMITS.emailWords) : emailBody },
+    flyer: { headline: clean(c.flyer?.headline, 80), lines: (Array.isArray(c.flyer?.lines) ? c.flyer.lines : []).slice(0, COPY_LIMITS.flyerLines).map((l: unknown) => clean(l, 90)).filter(Boolean) },
+    profile: profile.length > COPY_LIMITS.profileChars ? profile.slice(0, COPY_LIMITS.profileChars - 1).replace(/\s+\S*$/, "") + "…" : profile,
+    press: pressSent.slice(0, COPY_LIMITS.pressSentences).join(" "),
+  };
+
+  // Facts and events need a real source; an unsourced one becomes something to check.
+  const local: PlanV2["local"] = [];
+  for (const f of Array.isArray(r.local) ? r.local : []) {
+    const fact = noMarks(clean(f?.fact, 260));
+    if (!fact) continue;
+    const s = src(f?.source);
+    if (s == null) { warnings.push(`local fact without a valid source moved to assumptions`); assumptions.push(fact); continue; }
+    local.push({ fact, source: s });
+  }
+  const events: PlanV2["events"] = [];
+  for (const e of Array.isArray(r.events) ? r.events : []) {
+    const name = clean(e?.name, 120);
+    if (!name) continue;
+    const s = src(e?.source);
+    if (s == null) { warnings.push(`event "${name}" without a valid source dropped`); continue; }
+    events.push({ name, date: clean(e?.date, 60), where: clean(e?.where, 120), source: s });
+  }
+  // An unsourced number in a channel's reason is a claim; flag it (the writer was told to cite or say "we assume").
+  for (const ch of channels) if (ch.source == null && claimsNumber(ch.why) && !/(assum|supon|supos|suppo|asumi|nehmen an|\btest|prueba)/i.test(ch.why)) warnings.push(`channel "${ch.name}": number without a source`);
+  for (const p of places) if (p.source == null && claimsNumber(p.place + " " + p.when)) warnings.push(`place "${p.place}": number without a source`);
+
+  const all = JSON.stringify({ channels, weeks, copy, rejected });
+  for (const b of BANNED) if (new RegExp(`\\b${b.replace(/[-\s]/g, "[-\\s]")}\\b`, "i").test(all)) warnings.push(`banned phrase "${b}"`);
+
+  const plan: PlanV2 = {
+    lang: ctx.lang,
+    currency: ctx.currency,
+    headline: noMarks(clean(r.headline, 220)),
+    goal: { metric: clean(goal.metric, 120), target: n0(goal.target), unit: clean(goal.unit, 40), by_day: 30, why: noMarks(clean(goal.why, 300)), how_counted: noMarks(clean(goal.how_counted, 200)) },
+    customer: { who: noMarks(clean(r.customer?.who, 260)), places },
+    channels,
+    rejected,
+    budget: { tiers, reserve_pct: Math.min(30, n0(r.budget?.reserve_pct, 100)), reallocate_rule: noMarks(clean(r.budget?.reallocate_rule, 260)) },
+    weeks,
+    kpis,
+    copy,
+    local: local.slice(0, 6),
+    events: events.slice(0, 5),
+    assumptions: [...new Set(assumptions)].slice(0, 6),
+    decision: { scale_if: noMarks(clean(r.decision?.scale_if, 240)), adjust_if: noMarks(clean(r.decision?.adjust_if, 240)), stop_if: noMarks(clean(r.decision?.stop_if, 240)) },
+  };
+  return { plan, warnings };
+}
+
+/** The source numbers a plan really uses (the view lists only these). */
+export function usedSources(p: PlanV2): number[] {
+  const s = new Set<number>();
+  for (const x of p.customer.places) if (x.source != null) s.add(x.source);
+  for (const x of p.channels) if (x.source != null) s.add(x.source);
+  for (const x of p.local) s.add(x.source);
+  for (const x of p.events) s.add(x.source);
+  return [...s].sort((a, b) => a - b);
+}

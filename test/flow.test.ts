@@ -128,23 +128,35 @@ type V7 = import("../server/v7.js").ResultsV7;
 const v7Of = (p: Project) => (p.results as { v7?: V7 }).v7;
 const t7 = await pollUntil(id, (p) => v7Of(p)?.status === "done");
 const r7 = v7Of(t7)!;
-assert.deepEqual(r7.roster.map((a) => a.role), ["competition", "market", "location", "viability"], "coffee idea hires its own team");
+assert.deepEqual(r7.roster.map((a) => a.role), ["demand", "competition", "pricing", "viability"], "the 4 block owners, one room each");
 assert.ok(r7.report && r7.report.evidence.sourced >= 3, "sourced evidence");
 assert.ok(r7.work.every((w) => w.status === "done" && w.findings.length > 0));
-assert.equal(r7.report.scalability.cap, 2);
+assert.equal(r7.report.scalability.cap, (await import("../server/v7.js")).levelCapFor(r7.report.scalability.score, r7.report.verdict));
+// v7.1: the written report: 4 blocks (evidence = the owner's findings, sources by number), the brief, progress notes
+assert.deepEqual(r7.blocks?.map((b) => b.id), ["customers", "competition", "money", "risks"]);
+for (const b of r7.blocks!) {
+  const fs = r7.work.find((w) => w.analyst === b.role)!.findings;
+  assert.deepEqual(b.evidence, fs.map((f) => f.id), `${b.id}: evidence = the owner's findings`);
+  assert.equal(b.status, "done");
+  assert.ok(b.takeaway && b.meaning && b.actions.length >= 1, `${b.id}: written`);
+  for (const f of fs) if (f.source) assert.ok(b.sources.some((s) => s.url === f.source!.url), `${b.id}: every cited page is in the block's list`);
+}
+assert.ok(r7.brief && r7.brief.summary && r7.brief.validateFirst.length === 3, "brief: summary + 3 things to validate first");
+assert.ok((r7.notes ?? []).some((n) => n.kind === "read") && (r7.notes ?? []).some((n) => n.kind === "found"), "progress notes from the real pages");
 // steer: validation, then 202 → working → done with diff chips, 409 while it runs, 429 after the limit
 assert.equal((await call("POST", `/api/projects/${id}/steer`, { note: "" })).status, 400);
 assert.equal((await call("POST", `/api/projects/${id}/steer`, { note: "x".repeat(281) })).status, 400);
 assert.equal((await call("POST", "/api/projects/nope/steer", { note: "Focus on offices" })).status, 404);
 const st1 = await call<{ id: string; ack: string; rerun: string[] }>("POST", `/api/projects/${id}/steer`, { note: "Focus on office workers, not tourists" });
 assert.equal(st1.status, 202);
-assert.deepEqual(st1.json.rerun, ["location", "viability"]);
+assert.deepEqual(st1.json.rerun, ["demand", "viability"], "rerun lands on the block owners");
 assert.ok(st1.json.ack.length > 0);
 assert.equal((await call("POST", `/api/projects/${id}/steer`, { note: "And cheaper cups" })).status, 409, "one note at a time");
 const s1 = await pollUntil(id, (p) => v7Of(p)?.steers[0]?.status === "done");
 const done1 = v7Of(s1)!.steers[0]!;
 assert.ok(done1.changes.some((c) => c.what === "score" && c.before === r7.report!.score && c.after === done1.report!.score));
 assert.deepEqual(v7Of(s1)!.report, done1.report, "the stored report is the steered one");
+for (const b of v7Of(s1)!.blocks!) assert.deepEqual(b.evidence, v7Of(s1)!.work.find((w) => w.analyst === b.role)!.findings.map((f) => f.id), `${b.id}: blocks follow the steer`);
 for (const note of ["Could we also sell our beans online?", "Make the cups purple"]) {
   assert.equal((await call("POST", `/api/projects/${id}/steer`, { note })).status, 202);
   await pollUntil(id, (p) => v7Of(p)!.steers.every((x) => x.status === "done"));

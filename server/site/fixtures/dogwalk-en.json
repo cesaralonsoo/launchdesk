@@ -1,0 +1,60 @@
+{
+  "input": {
+    "projectId": "fx-dogwalk",
+    "idea": "Midday group dog walks in East Austin with GPS photo updates for people who work long office days",
+    "slug": "pawtrail-austin",
+    "founderAddress": "bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy",
+    "brand": {
+      "name": "Pawtrail",
+      "tagline": "Happy midday walks while you're at work",
+      "voice": "warm, upbeat, dependable",
+      "palette": { "primary": "#2f6b4f", "accent": "#f2b544", "bg": "#fbf6ec", "ink": "#1d2a24" },
+      "fonts": { "display": "Fraunces", "text": "DM Sans" },
+      "lang": "en",
+      "city": "Austin",
+      "currency": "$"
+    },
+    "report": {
+      "customer": "Dog owners in East Austin who work 9+ hour office days",
+      "pain": "Their dog is alone for 9 hours and the big apps send a different stranger every time",
+      "offer": { "what": "Founding Pack: 10 midday walks", "price": 150, "normal": 200, "limit": 40 },
+      "stats": [
+        { "value": "45 min", "label": "walks in small groups of three dogs, so every dog gets attention", "sourceUrl": "https://www.example.org/group-walks" },
+        { "value": "1 walker", "label": "the same person every week, so your dog knows who is coming", "sourceUrl": "https://www.example.org/walker-continuity" }
+      ],
+      "competitors": [{ "name": "Big walking apps", "gap": "A different walker every time" }],
+      "risks": ["Insurance cost"]
+    }
+  },
+  "logos": [
+    { "id": "pw1", "family": "geometric", "idea": "Paw on a trail", "svg": "<rect width=\"64\" height=\"64\" rx=\"32\" fill=\"#2f6b4f\"/><path d=\"M12 46c10-6 18-2 26-8s10-12 16-14\" stroke=\"#f2b544\" stroke-width=\"3\" stroke-linecap=\"round\" fill=\"none\" stroke-dasharray=\"1 6\"/><ellipse cx=\"32\" cy=\"36\" rx=\"8\" ry=\"7\" fill=\"#fbf6ec\"/><circle cx=\"22\" cy=\"27\" r=\"3.6\" fill=\"#fbf6ec\"/><circle cx=\"28.5\" cy=\"21\" r=\"3.6\" fill=\"#fbf6ec\"/><circle cx=\"35.5\" cy=\"21\" r=\"3.6\" fill=\"#fbf6ec\"/><circle cx=\"42\" cy=\"27\" r=\"3.6\" fill=\"#fbf6ec\"/>" }
+  ],
+  "model": {
+    "seo": { "title": "Pawtrail · Midday dog walks in East Austin", "description": "Small-group midday walks with the same friendly walker every week, plus photo updates. 10 walks for $150 for our first 40 dogs." },
+    "hero": { "eyebrow": "East Austin", "headline": "A happy dog by the time you're home", "sub": "Midday walks in small groups with the same walker every week. You get photos and a map of the route while you're at work.", "cta": "Reserve a pack", "secondary": "How it works" },
+    "offer": { "title": "The Founding Pack", "item": "10 midday walks of 45 minutes", "bullets": ["The same walker every week", "Photo and route update after every walk", "Use them over 6 weeks"], "note": "We meet you and your dog first, for free, before the first walk." },
+    "how": { "title": "Three steps to a calmer dog", "steps": [
+      { "icon": "calendar", "title": "Book a meet & greet", "body": "We come over, meet your dog and get the key routine sorted." },
+      { "icon": "walk", "title": "We walk at midday", "body": "45 minutes in a group of three, on quiet routes near home." },
+      { "icon": "camera", "title": "You get the update", "body": "Photos and a map of the walk land on your phone." }
+    ] },
+    "services": { "title": "What you can book", "intro": "Simple options that fit a long work day.", "items": [
+      { "icon": "users", "title": "Group walk", "body": "Three dogs, one walker, 45 minutes of sniffing and play." },
+      { "icon": "dog", "title": "Solo walk", "body": "For puppies, seniors or dogs who prefer their own pace." },
+      { "icon": "home", "title": "Drop-in visit", "body": "Fresh water, a cuddle and a quick potty break." }
+    ] },
+    "about": { "title": "Why Pawtrail", "body": "We started Pawtrail because long office days are hard on dogs. Instead of a different stranger each time, your dog gets one walker who learns their quirks, their favorite tree and their friends." },
+    "local": { "title": "Where we walk", "body": "We cover East Austin, on quiet streets and parks close to your home.", "area": "East Austin, TX", "hours": "" },
+    "faq": { "title": "Good questions", "items": [
+      { "q": "Who will walk my dog?", "a": "One named walker who you meet first. If they are ever sick, we tell you before the walk." },
+      { "q": "How do you get in?", "a": "We agree on a key routine at the meet & greet and keep it the same every week." },
+      { "q": "What if my dog doesn't get along with others?", "a": "Then we book solo walks instead. We only group dogs that play well together." },
+      { "q": "How do I pay?", "a": "With Bitcoin Cash from your phone: scan the code and you're done, no card needed." },
+      { "q": "Can I pause my pack?", "a": "Yes, tell us a day before and the walk stays in your pack." }
+    ] },
+    "proof": { "title": "What makes it different", "picks": [0, 1] },
+    "order": ["how-it-works-for-customer", "proof-stats", "menu-or-services", "offer", "about", "local", "faq"],
+    "finalCta": { "headline": "Give your dog a better Tuesday", "sub": "Founding Packs are limited to our first 40 dogs.", "cta": "Reserve a pack" },
+    "footer": { "tagline": "Midday dog walks in East Austin" }
+  }
+}

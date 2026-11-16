@@ -101,6 +101,12 @@ export function createLiveRun(id: string, seed?: ProjectV7): LiveRun {
     const title = shortTitle(p.idea);
     findings = v7 ? order7(v7) : [];
     const results: ResultsV7 = v7 ? { version: 7, roster: v7.roster, work: v7.work, report: v7.status === "done" ? v7.report : null, steers: v7.steers } : { version: 7, roster: [], work: [], report: null, steers: [] };
+    // v7.1: the 4-block sections and the team's progress notes (optional, written by the server when present)
+    if (v7?.blocks?.length) results.blocks = v7.blocks;
+    // the unit economics computed by the server (written report only)
+    if (v7 && v7.status === "done" && v7.econ !== undefined) results.econ = v7.econ;
+    if (v7?.status === "done" && typeof v7.econErr === "string") results.econErr = v7.econErr;
+    if (v7 && Array.isArray((v7 as { notes?: unknown }).notes)) Object.assign(results, { notes: (v7 as { notes?: unknown }).notes });
     const built = !!(p.results.nova || p.results.dex || p.results.rae || p.results.pip);
     project = {
       id: p.id,

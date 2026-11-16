@@ -430,7 +430,7 @@ export interface Finding {
   id: string;
   analyst: AnalystRole;
   kind: FindingKind;
-  /** ≤ 18 words, plain English, one claim. */
+  /** ≤ 18 words, plain English, one claim (≤ 35 words, one full sentence, when it is block evidence: ResultsV7.blocks). */
   text: string;
   value?: number;
   unit?: string;
@@ -511,12 +511,75 @@ export interface IdeaReport {
   /** 3 next steps, ≤ 12 words each, the founder does them. */
   nextSteps: string[];
   pivot?: { idea: string; why: string } | null;
+  /** Additive (written report): the Verdict section's reason bullets. */
+  reasons?: string[];
 }
 export const levelCapFor = (scalability: number, verdict: IdeaReport["verdict"] = "go"): WorldLevel =>
   verdict === "no-go" ? 0 : scalability >= 7 ? 3 : scalability >= 4 ? 2 : 1;
 export const confidenceFor = (sourcedShare: number): IdeaReport["confidence"] => (sourcedShare >= 0.6 ? "high" : sourcedShare >= 0.3 ? "medium" : "low");
 /** No big score without evidence: the hero number appears only with ≥ 6 findings of which ≥ 3 have a source. */
 export const scoreDisplay = (r: Pick<IdeaReport, "evidence">): "hero" | "provisional" => (r.evidence.total >= 6 && r.evidence.sourced >= 3 ? "hero" : "provisional");
+
+// ───────────────────────────────────────────────────────────── h) 4 blocks (validate contract v7.1)
+// Mirror of server/v7.ts "4 blocks" (types + BLOCK_LIBRARY + blockVerdictFor + hasBlocks). Exactly 4 blocks per idea,
+// each owned by one analyst role, so rooms r0–r3, actors and the score maths are unchanged. Spec: .notes/quality/contract.md.
+// UI: one block at a time (title → takeaway + chip → evidence with numbered sources → what it means → next actions).
+
+export type BlockId = "customers" | "competition" | "money" | "risks";
+export const BLOCK_IDS: readonly BlockId[] = ["customers", "competition", "money", "risks"];
+export interface BlockMeta {
+  role: AnalystRole;
+  label: string;
+  covers: string;
+  searches: number;
+  fetches: number;
+}
+export const BLOCK_LIBRARY: Record<BlockId, BlockMeta> = {
+  customers: { role: "demand", label: "Customers & demand", covers: "Who buys, how many of them, how often, what they spend and why they would switch", searches: 2, fetches: 2 },
+  competition: { role: "competition", label: "Competition & alternatives", covers: "Named rivals and substitutes, their prices, strengths and the gap left open", searches: 2, fetches: 2 },
+  money: { role: "pricing", label: "Money", covers: "Price you can charge, cost per unit, margin, fixed costs, break-even volume", searches: 1, fetches: 1 },
+  risks: { role: "viability", label: "Risks & how to start", covers: "What kills it (rules, dependencies, timing), the cheapest first test and the path to scale", searches: 1, fetches: 1 },
+};
+export type BlockVerdict = "strong" | "mixed" | "weak";
+/** Chip = the block's factor score in the report's verdict bands (Go 6.5 · Pivot 4.5). */
+export const blockVerdictFor = (score: number): BlockVerdict => (score >= 6.5 ? "strong" : score >= 4.5 ? "mixed" : "weak");
+/** A headline figure. `source` null = an estimate and `basis` says why (label it "Estimate" in the UI). */
+export interface KeyNumber {
+  /** ≤ 5 words: "Break-even". */
+  label: string;
+  /** ≤ 4 words: "38 subscribers/month". */
+  value: string;
+  source: SourceRef | null;
+  basis?: string;
+}
+export interface ReportBlock {
+  id: BlockId;
+  /** Owner analyst: its character works / presents while the block runs, its room is r0–r3 by BLOCK_IDS order. */
+  role: AnalystRole;
+  /** Idea-specific, ≤ 10 words: "Who buys €25 bread subscriptions in Ruzafa?". */
+  title: string;
+  /** 2–3 questions, ≤ 16 words each. */
+  focus: string[];
+  status: WorkStatus;
+  /** ≤ 30 words. "" while working. */
+  takeaway: string;
+  /** factorScore of the block's findings, one decimal (null while working). */
+  score: number | null;
+  verdict: BlockVerdict | null;
+  /** 4–7 Finding ids in reading order (the findings are in work[role].findings; impact −2…+2, source optional). */
+  evidence: string[];
+  /** ≤ 60 words, "what it means for you". */
+  meaning: string;
+  /** 1–3 next actions, ≤ 16 words each. */
+  actions: string[];
+  keyNumbers?: KeyNumber[];
+  /** Distinct sources in citation order: evidence is numbered [1], [2] … by this list. */
+  sources: SourceRef[];
+  ms?: { first?: number; done?: number };
+}
+export const hasBlocks = (r: Pick<ResultsV7, "blocks"> | null | undefined): r is { blocks: ReportBlock[] } => !!r?.blocks?.length;
+/** The source number of a finding inside its block (1-based; 0 = estimate, no source). */
+export const sourceNumber = (b: Pick<ReportBlock, "sources">, f: Pick<Finding, "source">): number => (f.source ? b.sources.findIndex((s) => s.url === f.source!.url) + 1 : 0);
 
 // ───────────────────────────────────────────────────────────── d) CEO steer / debate
 
@@ -565,6 +628,27 @@ export interface ResultsV7 {
   work: AnalystWork[];
   report: IdeaReport | null;
   steers: SteerResult[];
+  /** "4 blocks" analysis (additive, optional; see section h). Missing on old projects and data/v7/*.json past
+   *  projects, which render from roster / work / report as before. Block evidence = work[block.role].findings. */
+  blocks?: ReportBlock[];
+  /** Additive (written report): unit economics computed by the server from the writer's inputs. */
+  econ?: EconSummary | null;
+  econErr?: string;
+}
+/** Mirror of server/v7.ts EconSummary: null figures = an input was missing (see `missing`). */
+export interface EconSummary {
+  unit: string;
+  price: number;
+  vatRate: number;
+  shareKept: number;
+  net: number;
+  variable: number | null;
+  contribution: number | null;
+  fixedMonthly: number | null;
+  breakEven: number | null;
+  startupCapital: number | null;
+  missing?: string[];
+  lines?: Array<{ group: "variable" | "fixed" | "startup"; item: string; eur: number; source: SourceRef | null }>;
 }
 /** One project = one world. */
 export interface ProjectV7 {

@@ -22,9 +22,11 @@ html.has-ld-banner #world, html.has-ld-banner #ui, html.has-ld-banner #ui > .ui 
 .ld-banner .lbl { color: color-mix(in srgb, var(--c-bg, #E9ECF0) 60%, transparent); }
 .ld-banner .copy[data-done="1"] .addr { color: #0AC18E; }
 @media (max-width: 640px) {
-  .ld-banner { gap: 10px; justify-content: space-between; font-size: 11px; }
-  .ld-banner .ev, .ld-banner .sep.s0 { display: none; }
-}`;
+  .ld-banner { gap: 8px; justify-content: space-between; font-size: 11px; padding: 0 12px; }
+  .ld-banner .sep, .ld-banner span.ev { display: none; }
+  .ld-banner .copy { gap: 5px; }
+}
+@media (max-width: 340px) { .ld-banner .lbl { display: none; } }`;
 
 const short = (a: string) => {
   const s = a.replace(/^bitcoincash:/, "");

@@ -1,0 +1,132 @@
+{
+  "id": "segundavuelta",
+  "promptVersion": 3,
+  "model": "claude-sonnet-5-5",
+  "usd": 0.0202,
+  "idea": "An online shop for restored vintage road bikes, around €450 each",
+  "brand": {
+    "name": "Segunda Vuelta",
+    "tagline": "Classic steel, second life.",
+    "voice": "Precise, honest, nerdy, calm. Write like a mechanic's notebook.",
+    "palette": {
+      "primary": "#1C2433",
+      "accent": "#C2412D",
+      "bg": "#F2EEE6",
+      "ink": "#1C2433"
+    },
+    "fonts": {
+      "display": "Space Grotesk",
+      "text": "IBM Plex Sans"
+    },
+    "lang": "en",
+    "currency": "€"
+  },
+  "candidates": [
+    {
+      "family": "literal",
+      "construction": "Ink disc r26 centred at 32,32. Background-coloured quarter-turn cut: right half is a second disc offset. Accent bar crosses the seam as a small rect, the weld joint.",
+      "idea": "A wheel turned over: half worn, half renewed, with one red repair seam.",
+      "svg": "<path d=\"M32 6A26 26 0 0 0 32 58Z\" fill=\"#1C2433\"/><path d=\"M32 6A26 26 0 0 1 32 58Z\" fill=\"#1C2433\"/><path d=\"M32 14A18 18 0 0 1 32 50Z\" fill=\"#F2EEE6\"/><rect x=\"28\" y=\"29\" width=\"16\" height=\"6\" fill=\"#C2412D\"/>"
+    },
+    {
+      "family": "literal",
+      "construction": "Ink square 52 with a circle r16 cut out in paper at centre; accent inspection arc slice: quarter disc in the cut-out's upper right, like a magnifier window onto the metal.",
+      "idea": "A frame tube cross-section with a red spot showing the inside checked for rust.",
+      "svg": "<rect x=\"6\" y=\"6\" width=\"52\" height=\"52\" fill=\"#1C2433\"/><circle cx=\"32\" cy=\"32\" r=\"16\" fill=\"#F2EEE6\"/><path d=\"M32 32L32 16A16 16 0 0 1 48 32Z\" fill=\"#C2412D\"/>"
+    },
+    {
+      "family": "monogram",
+      "construction": "S from two half-ring arcs, stroke 10 on r10 centres at 32,20 and 32,44 joined, with an accent quarter disc as the terminal at the lower left.",
+      "idea": "An S made of two wheel arcs, one red: the second turn.",
+      "svg": "<path d=\"M46 20A14 14 0 0 0 32 6A14 14 0 0 0 18 20A14 14 0 0 0 32 32\" fill=\"none\" stroke=\"#1C2433\" stroke-width=\"10\"/><path d=\"M32 32A14 14 0 0 1 46 44A14 14 0 0 1 32 58\" fill=\"none\" stroke=\"#1C2433\" stroke-width=\"10\"/><path d=\"M6 58L6 44A14 14 0 0 1 20 58Z\" fill=\"#C2412D\"/>"
+    },
+    {
+      "family": "monogram",
+      "construction": "S from two ink quarter-disc blocks diagonally opposed, 26 units each, meeting at centre; paper diagonal cut between, an accent bar crossing the middle like a tube.",
+      "idea": "A blocky S of two quarter wheels joined by a red steel tube.",
+      "svg": "<path d=\"M6 32L6 6L32 6A26 26 0 0 1 6 32Z\" fill=\"#1C2433\"/><path d=\"M58 32L58 58L32 58A26 26 0 0 1 58 32Z\" fill=\"#1C2433\"/><rect x=\"6\" y=\"29\" width=\"52\" height=\"6\" fill=\"#C2412D\"/><path d=\"M32 6L58 6L58 32A26 26 0 0 1 32 6Z\" fill=\"#1C2433\"/><path d=\"M32 58L6 58L6 32A26 26 0 0 1 32 58Z\" fill=\"#1C2433\"/>"
+    },
+    {
+      "family": "geometric",
+      "construction": "Ink circle r26 with a paper circle r14 offset to the right-hand side, leaving a crescent; accent small circle r6 sits inside the cut as the second turn.",
+      "idea": "A worn crescent with a fresh red wheel inside: a second round.",
+      "svg": "<circle cx=\"32\" cy=\"32\" r=\"26\" fill=\"#1C2433\"/><circle cx=\"38\" cy=\"32\" r=\"16\" fill=\"#F2EEE6\"/><circle cx=\"38\" cy=\"32\" r=\"7\" fill=\"#C2412D\"/>"
+    },
+    {
+      "family": "geometric",
+      "construction": "Ink half disc r26 sitting on baseline y56, flat bottom, with a paper diagonal cut from 6,56 to 58,30; the lower wedge in accent.",
+      "idea": "A half wheel sliced open to show what's inside: honest inspection.",
+      "svg": "<path d=\"M6 56A26 26 0 0 1 58 56Z\" fill=\"#1C2433\"/><path d=\"M6 56L58 56L58 52L6 56Z\" fill=\"#F2EEE6\"/><path d=\"M14 56L50 56L50 44Z\" fill=\"#C2412D\"/><path d=\"M10 46L54 34L54 40L10 52Z\" fill=\"#F2EEE6\"/>"
+    }
+  ],
+  "lint": [
+    {
+      "ok": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "ok": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "ok": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "ok": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "ok": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "ok": true,
+      "errors": [],
+      "warnings": []
+    }
+  ],
+  "options": [
+    {
+      "id": "segundavuelta-1",
+      "family": "literal",
+      "idea": "A wheel turned over: half worn, half renewed, with one red repair seam.",
+      "svg": "<g transform=\"translate(-2.46 -2.46) scale(1.08)\"><path d=\"M32 6A26 26 0 0 0 32 58Z\" fill=\"#1C2433\"/><path d=\"M32 6A26 26 0 0 1 32 58Z\" fill=\"#1C2433\"/><path d=\"M32 14A18 18 0 0 1 32 50Z\" fill=\"#F2EEE6\"/><rect x=\"28\" y=\"29\" width=\"16\" height=\"6\" fill=\"#C2412D\"/></g>"
+    },
+    {
+      "id": "segundavuelta-3",
+      "family": "monogram",
+      "idea": "An S made of two wheel arcs, one red: the second turn.",
+      "svg": "<g transform=\"translate(6.26 3.1) scale(0.9)\"><path d=\"M46 20A14 14 0 0 0 32 6A14 14 0 0 0 18 20A14 14 0 0 0 32 32\" fill=\"none\" stroke=\"#1C2433\" stroke-width=\"10\"/><path d=\"M32 32A14 14 0 0 1 46 44A14 14 0 0 1 32 58\" fill=\"none\" stroke=\"#1C2433\" stroke-width=\"10\"/><path d=\"M6 58L6 44A14 14 0 0 1 20 58Z\" fill=\"#C2412D\"/></g>"
+    },
+    {
+      "id": "segundavuelta-5",
+      "family": "geometric",
+      "idea": "A worn crescent with a fresh red wheel inside: a second round.",
+      "svg": "<g transform=\"translate(-2.46 -2.46) scale(1.08)\"><circle cx=\"32\" cy=\"32\" r=\"26\" fill=\"#1C2433\"/><circle cx=\"38\" cy=\"32\" r=\"16\" fill=\"#F2EEE6\"/><circle cx=\"38\" cy=\"32\" r=\"7\" fill=\"#C2412D\"/></g>"
+    },
+    {
+      "id": "segundavuelta-2",
+      "family": "literal",
+      "idea": "A frame tube cross-section with a red spot showing the inside checked for rust.",
+      "svg": "<g transform=\"translate(-2.46 -2.46) scale(1.08)\"><rect x=\"6\" y=\"6\" width=\"52\" height=\"52\" fill=\"#1C2433\"/><circle cx=\"32\" cy=\"32\" r=\"16\" fill=\"#F2EEE6\"/><path d=\"M32 32L32 16A16 16 0 0 1 48 32Z\" fill=\"#C2412D\"/></g>"
+    },
+    {
+      "id": "segundavuelta-4",
+      "family": "monogram",
+      "idea": "A blocky S of two quarter wheels joined by a red steel tube.",
+      "svg": "<g transform=\"translate(-2.46 -2.46) scale(1.08)\"><path d=\"M6 32L6 6L32 6A26 26 0 0 1 6 32Z\" fill=\"#1C2433\"/><path d=\"M58 32L58 58L32 58A26 26 0 0 1 58 32Z\" fill=\"#1C2433\"/><rect x=\"6\" y=\"29\" width=\"52\" height=\"6\" fill=\"#C2412D\"/><path d=\"M32 6L58 6L58 32A26 26 0 0 1 32 6Z\" fill=\"#1C2433\"/><path d=\"M32 58L6 58L6 32A26 26 0 0 1 32 58Z\" fill=\"#1C2433\"/></g>"
+    },
+    {
+      "id": "segundavuelta-6",
+      "family": "geometric",
+      "idea": "A half wheel sliced open to show what's inside: honest inspection.",
+      "svg": "<g transform=\"translate(-2.46 -14.31) scale(1.08)\"><path d=\"M6 56A26 26 0 0 1 58 56Z\" fill=\"#1C2433\"/><path d=\"M6 56L58 56L58 52L6 56Z\" fill=\"#F2EEE6\"/><path d=\"M14 56L50 56L50 44Z\" fill=\"#C2412D\"/><path d=\"M10 46L54 34L54 40L10 52Z\" fill=\"#F2EEE6\"/></g>"
+    }
+  ]
+}

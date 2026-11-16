@@ -12,6 +12,12 @@ import { isRunning, prepareStage, startStage } from "./jobs.js";
 import { SteerError, startSteer } from "./jobs-v7.js";
 import { ANALYST_ROLES, type AnalystRole } from "./v7.js";
 import { bchUsdCached, bchUsdOrZero, centsToSats } from "./price.js";
+import { kitRoutes } from "./kit-routes.js";
+// WP1 (server/site/routes.ts) is optional until it lands: the app runs without it.
+const siteRoutes: Hono | null = await import("./site/routes.js" as string).then(
+  (m: { siteRoutes?: Hono }) => m.siteRoutes ?? null,
+  (e: unknown) => (/Cannot find module|ERR_MODULE_NOT_FOUND/.test(String((e as { code?: string }).code ?? e)) ? null : (console.error("[app] site routes:", e), null)),
+);
 import { STAGE_DEPTS, type AppConfig, type CreatedProject, type Project, type Quote, type ShareLink, type SiteData, type Stage, type Stats, type WorkDept } from "./types.js";
 
 export const app = new Hono();
@@ -483,6 +489,10 @@ app.all("/api/*", () => {
 
 // F6: link previews. /s/:slug and /r/:id get their own <title> and og tags before the SPA fallback.
 // PNG previews (/og/*.png) need @resvg/resvg-js, which is not installed: those answer 501 and no og:image is set.
+// WP4: Launch kit routes (and WP1's website routes when installed) answer before the old /s/:slug and /og/*.
+app.route("/", kitRoutes());
+// server/site/routes.ts exports a factory (siteRoutes(opts)); accept an instance too.
+if (siteRoutes) app.route("/", typeof siteRoutes === "function" ? (siteRoutes as unknown as () => Hono)() : siteRoutes);
 app.get("/og/*", (c) => c.json({ error: "Link preview images are not available yet." }, 501));
 
 // "/" (and every other client route) is the v7 app, dist/web/index.html. The v4 bundle, dist/web/classic.html,

@@ -1,0 +1,498 @@
+{
+ "key": "bikes-en",
+ "input": {
+  "projectId": "fixture-bikes-en",
+  "idea": "An online shop for restored vintage road bikes, around €450 each",
+  "brand": {
+   "name": "Second Wind Cycles",
+   "tagline": "Classic steel road bikes, restored and ready to ride",
+   "voice": "warm, knowledgeable, a bit nerdy about old frames, never snobbish",
+   "palette": {
+    "primary": "#1f3a5f",
+    "accent": "#d9643a",
+    "bg": "#f6f3ec",
+    "ink": "#16202b"
+   },
+   "fonts": {
+    "display": "Fraunces",
+    "text": "Inter"
+   },
+   "lang": "en",
+   "currency": "EUR"
+  },
+  "report": {
+   "customer": "Riders aged 30 to 60 who want a classic steel road bike that rides well today, but have no time or tools to restore one",
+   "pain": "Second-hand listings are a gamble: worn parts, wrong sizes and no one to ask after buying",
+   "offer": {
+    "what": "A restored vintage road bike, fully serviced, sized to the buyer, shipped boxed or picked up",
+    "price": 450,
+    "limit": 6
+   },
+   "stats": [],
+   "competitors": [
+    {
+     "name": "Private sellers on second-hand marketplaces",
+     "gap": "Cheap but unchecked; no service, no sizing help"
+    },
+    {
+     "name": "Bike shops selling new entry-level road bikes",
+     "gap": "New and guaranteed, but no classic look or story"
+    }
+   ],
+   "risks": [
+    "Few bikes per month: restoring takes hours",
+    "Shipping bikes is costly and can damage them",
+    "Buyers want to see a bike before paying €450"
+   ]
+  },
+  "founderAddress": "bitcoincash:qfixturebikesaddress00000000000000000000",
+  "slug": "second-wind-cycles"
+ },
+ "result": {
+  "plan": {
+   "lang": "en",
+   "currency": "EUR",
+   "headline": "Sell 6 restored steel road bikes at 450 EUR in 30 days by reaching riders already searching for them, proving the sizing-and-service promise with the first buyers.",
+   "goal": {
+    "metric": "Paid pre-orders for restored bikes, each one BCH payment received on the website",
+    "target": 6,
+    "unit": "pre-orders (paid, 450 EUR each)",
+    "by_day": 30,
+    "why": "Six paid pre-orders equal 2,700 EUR and match the stated limit of 6 bikes per batch; it proves that strangers will pay before seeing the bike, which is the main risk.",
+    "how_counted": "Count each BCH payment received on the website for a bike order, once per bike. Do not count inquiries, messages or reserved slots without payment."
+   },
+   "customer": {
+    "who": "Riders aged 30 to 60 who want a classic steel road bike that rides well today, but have no time or tools to restore one, and who fear buying a worn or wrong-size second-hand bike.",
+    "places": [
+     {
+      "place": "Retro Classic Road forum on Retrobike, classic road bike threads",
+      "when": "Evenings and weekends, when people browse and post questions",
+      "source": 1
+     },
+     {
+      "place": "Bike Forums Classic & Vintage section, threads about rust and classic steel frames",
+      "when": "Evenings, when owners ask for repair and frame advice",
+      "source": 3
+     },
+     {
+      "place": "Singletrack World thread on fitting modern groupsets to older frames",
+      "when": "Whenever a rider is planning a rebuild and needs compatibility answers",
+      "source": 2
+     },
+     {
+      "place": "Used markets and private listings for older road bikes, where buyers meet a bike before paying",
+      "when": "Weekends, when people go to look at bikes in person",
+      "source": 7
+     }
+    ]
+   },
+   "channels": [
+    {
+     "name": "Retrobike Retro Classic Road forum",
+     "role": "awareness",
+     "why": "The buyers already ask questions about classic road bikes here, and the forum fits a nerdy, helpful brand voice; its activity dates are unclear, so check before relying on it.",
+     "source": 1,
+     "weekly_hours": 3,
+     "cost": 0,
+     "first_action": "Create a free account on the Retro Classic Road forum this week and read the last 20 threads to note what sizing and condition questions riders ask."
+    },
+    {
+     "name": "Helpful answers in Bike Forums Classic & Vintage threads",
+     "role": "first sales",
+     "why": "Riders there post about rust and steel frames, so a clear answer followed by a link to the shop reaches people who already want a restored frame.",
+     "source": 3,
+     "weekly_hours": 4,
+     "cost": 0,
+     "first_action": "Reply this week to one open rust or classic steel frame thread with a practical tip and a short note that Second Wind Cycles restores and sizes such bikes, without a hard sales push."
+    },
+    {
+     "name": "Sizing guide and free fit check by email on the website",
+     "role": "proof",
+     "why": "We assume buyers hesitate because of sizing risk, so a free sizing guide and a reply by email gives them trust before paying 450 EUR.",
+     "source": null,
+     "weekly_hours": 2,
+     "cost": 0,
+     "first_action": "Write a one-page sizing guide with a short questionnaire (height, inseam, riding style) and publish it on the website before the first forum post."
+    }
+   ],
+   "rejected": [
+    {
+     "name": "Paid social or search ads",
+     "why_not": "Paid ads reach broad audiences and cost money before any bike is proven; the buyer is a niche forum reader, and our budget is too small to test reach."
+    },
+    {
+     "name": "Market stall or flyers at a local event",
+     "why_not": "The research found no local paid channel, no events in the next 30 days and no local prices, so a stall cost and date cannot be planned yet."
+    }
+   ],
+   "budget": {
+    "tiers": [
+     {
+      "amount": 0,
+      "label": "Free start: forums, guide and direct replies",
+      "lines": [
+       {
+        "channel": "Retrobike Retro Classic Road forum",
+        "amount": 0,
+        "for": "Free account and reading threads, then helpful replies"
+       },
+       {
+        "channel": "Bike Forums Classic & Vintage",
+        "amount": 0,
+        "for": "Free account and helpful replies on rust and steel frame threads"
+       },
+       {
+        "channel": "Sizing guide and fit check",
+        "amount": 0,
+        "for": "Writing the guide and answering email questions yourself"
+       }
+      ]
+     },
+     {
+      "amount": 100,
+      "label": "Small test: sizing help and sample photos",
+      "lines": [
+       {
+        "channel": "Sizing guide and fit check",
+        "amount": 40,
+        "for": "Printed or designed sizing card for buyers and a simple photo set of one finished bike"
+       },
+       {
+        "channel": "Retrobike Retro Classic Road forum",
+        "amount": 30,
+        "for": "Paid forum membership only if the forum requires it; otherwise move to the reserve"
+       },
+       {
+        "channel": "Bike Forums Classic & Vintage",
+        "amount": 0,
+        "for": "No spend; time only"
+       }
+      ]
+     },
+     {
+      "amount": 500,
+      "label": "Full test: proof and shipping information",
+      "lines": [
+       {
+        "channel": "Sizing guide and fit check",
+        "amount": 120,
+        "for": "Professional photos and a short inspection report for each finished bike"
+       },
+       {
+        "channel": "Retrobike Retro Classic Road forum",
+        "amount": 60,
+        "for": "Forum membership or sponsored thread only if the forum offers one, with a verified price"
+       },
+       {
+        "channel": "Bike Forums Classic & Vintage",
+        "amount": 0,
+        "for": "No spend; time only"
+       }
+      ]
+     }
+    ],
+    "reserve_pct": 10,
+    "reallocate_rule": "On days 22 to 30, look at which channel sent the most BCH pre-order payments; move the unspent budget of the lowest channel to the channel with the most paid orders, and keep at least 10 percent unspent as reserve."
+   },
+   "weeks": [
+    {
+     "n": 1,
+     "theme": "Prepare",
+     "aim": "Publish the sizing guide and set up forum accounts so buyers can check size before paying.",
+     "days": [
+      {
+       "day": 1,
+       "time": "10:00",
+       "channel": "Sizing guide and fit check",
+       "action": "Publish the one-page sizing guide with a short questionnaire (height, inseam, riding style) on our website and test the form yourself.",
+       "copy": "profile",
+       "hours": 2
+      },
+      {
+       "day": 3,
+       "time": "19:30",
+       "channel": "Retrobike Retro Classic Road forum",
+       "action": "Create a free account and read the last 20 threads to note the sizing and condition questions riders ask.",
+       "copy": null,
+       "hours": 1.5
+      },
+      {
+       "day": 5,
+       "time": "19:30",
+       "channel": "Bike Forums Classic & Vintage section",
+       "action": "Create a free account and reply to one open rust or classic steel frame thread with a practical tip, without a sales push.",
+       "copy": "post-2",
+       "hours": 1.5
+      },
+      {
+       "day": 7,
+       "time": "10:00",
+       "channel": "Retrobike Retro Classic Road forum",
+       "action": "Post one helpful answer to a sizing question and link to the sizing guide on our website.",
+       "copy": "post-1",
+       "hours": 1.5
+      }
+     ]
+    },
+    {
+     "n": 2,
+     "theme": "Soft launch",
+     "aim": "Start real conversations with riders and people you know, and get the first sizing guide requests.",
+     "days": [
+      {
+       "day": 8,
+       "time": "09:00",
+       "channel": "Personal network",
+       "action": "Send the personal message to five people you know and ask them to read the sizing guide and pass it on if it helps.",
+       "copy": "message",
+       "hours": 1
+      },
+      {
+       "day": 10,
+       "time": "19:30",
+       "channel": "Bike Forums Classic & Vintage section",
+       "action": "Reply to a classic steel frame thread with advice on checking frame size and link the sizing guide on our website.",
+       "copy": "post-2",
+       "hours": 1.5
+      },
+      {
+       "day": 12,
+       "time": "19:30",
+       "channel": "Retrobike Retro Classic Road forum",
+       "action": "Answer a condition or fitting question in an active thread and point to the sizing guide, keeping the reply practical.",
+       "copy": "post-1",
+       "hours": 1.5
+      },
+      {
+       "day": 14,
+       "time": "10:00",
+       "channel": "Newsletter you already read",
+       "action": "Send the short press pitch to one classic cycling newsletter or local paper you already read, with photos of the restored bike you have.",
+       "copy": "press",
+       "hours": 1
+      }
+     ]
+    },
+    {
+     "n": 3,
+     "theme": "Offer",
+     "aim": "Open the offer for six bikes at 450 EUR and collect the first paid pre-orders with Bitcoin Cash.",
+     "days": [
+      {
+       "day": 15,
+       "time": "10:00",
+       "channel": "Sizing guide and fit check",
+       "action": "Open the offer on our website: six restored bikes at 450 EUR, pay with Bitcoin Cash (BCH) per bike, and the sizing email is free.",
+       "copy": "post-3",
+       "hours": 2
+      },
+      {
+       "day": 17,
+       "time": "19:30",
+       "channel": "Retrobike Retro Classic Road forum",
+       "action": "Post the offer in the classic road bike section with the sizing guide link and a clear price.",
+       "copy": "post-1",
+       "hours": 1.5
+      },
+      {
+       "day": 19,
+       "time": "19:30",
+       "channel": "Bike Forums Classic & Vintage section",
+       "action": "Reply to threads that ask for a classic steel road frame with the offer, the price and the link to our website.",
+       "copy": "post-2",
+       "hours": 1.5
+      },
+      {
+       "day": 21,
+       "time": "09:00",
+       "channel": "Waitlist email",
+       "action": "Send the waitlist email with the offer details and ask people to reply with their height, inseam and riding style.",
+       "copy": "email",
+       "hours": 1
+      }
+     ]
+    },
+    {
+     "n": 4,
+     "theme": "Proof and last call",
+     "aim": "Answer buyer questions, confirm the first paid pre-orders, and close the batch at six bikes.",
+     "days": [
+      {
+       "day": 22,
+       "time": "10:00",
+       "channel": "Sizing guide and fit check",
+       "action": "Reply by email to every buyer who asked about size or photos, and send the photos of the bike you are restoring.",
+       "copy": null,
+       "hours": 2
+      },
+      {
+       "day": 25,
+       "time": "19:30",
+       "channel": "Bike Forums Classic & Vintage section",
+       "action": "Answer any open buyer question in the threads and share the sizing guide link once more, without pressure.",
+       "copy": "post-2",
+       "hours": 1
+      },
+      {
+       "day": 27,
+       "time": "19:30",
+       "channel": "Retrobike Retro Classic Road forum",
+       "action": "Post a last call that says how many bikes are left in this batch, based only on the paid orders on our website.",
+       "copy": "post-1",
+       "hours": 1
+      },
+      {
+       "day": 29,
+       "time": "10:00",
+       "channel": "Waitlist email",
+       "action": "Send the last call email to the waitlist with the remaining places and the link to our website.",
+       "copy": "email",
+       "hours": 1
+      },
+      {
+       "day": 30,
+       "time": "19:30",
+       "channel": "Personal network",
+       "action": "Check the paid pre-orders on our website, count them, and send a short thank you message to the people who helped.",
+       "copy": "message",
+       "hours": 1
+      }
+     ]
+    }
+   ],
+   "kpis": [
+    {
+     "name": "Paid pre-orders",
+     "target": "6 bikes at 450 EUR each",
+     "how_to_count": "Count each BCH payment received on the website for one bike order",
+     "count_from": "bch payments"
+    },
+    {
+     "name": "Sizing guide requests",
+     "target": "20 requests",
+     "how_to_count": "Count each sizing guide download or fit-check email from the website",
+     "count_from": "website"
+    },
+    {
+     "name": "Forum replies that link to the shop",
+     "target": "12 replies",
+     "how_to_count": "Count replies you post in forum threads that point to the sizing guide or shop",
+     "count_from": "by hand"
+    },
+    {
+     "name": "Buyers who ask about a bike before paying",
+     "target": "10 conversations",
+     "how_to_count": "Count emails or forum messages where a buyer asks to see photos or talk before paying",
+     "count_from": "by hand"
+    }
+   ],
+   "copy": {
+    "posts": [
+     {
+      "channel": "Retrobike Retro Classic Road forum",
+      "hook": "Sizing a classic steel frame is the part most listings skip.",
+      "body": "If you are looking at an older steel road bike, check the frame size against your height and inseam, not just the number on the tag. We restore classic steel road bikes, service them fully and size each one to its buyer. Our sizing guide is free on our website, and we answer sizing emails ourselves.",
+      "cta": "Read the sizing guide on our website."
+     },
+     {
+      "channel": "Bike Forums Classic & Vintage section",
+      "hook": "Rust on steel: clean it first, then decide.",
+      "body": "Light surface rust often comes off with a gentle abrasive and a dry cloth. Deep pitting needs a frame builder's opinion before you ride. Check the chainstays and the bottom bracket shell first. If you want a bike that is already checked, Second Wind Cycles restores classic steel road bikes at 450 EUR, sized to you.",
+      "cta": "Ask us about sizing on our website."
+     },
+     {
+      "channel": "Sizing guide and fit check",
+      "hook": "Not sure which size you need?",
+      "body": "Send us your height, inseam and how you ride. We reply by email with a size suggestion before you pay anything. Each bike is restored, fully serviced and sized to its buyer for 450 EUR. You can pay with Bitcoin Cash (BCH) on our website, and bikes ship boxed or can be picked up.",
+      "cta": "Get the sizing guide on our website."
+     }
+    ],
+    "message": "Hi, I am starting Second Wind Cycles, where we restore old steel road bikes and sell them fully serviced, sized to the buyer, for 450 EUR. Would you read our sizing guide on our website and tell me honestly if it makes sense? If you know anyone who wants a classic road bike that rides well today, I would be glad if you passed it on. Thank you.",
+    "email": {
+     "subject": "Your first look at the restored bikes",
+     "body": "Thank you for joining the list. We are restoring a first batch of six classic steel road bikes at 450 EUR each. Each one is fully serviced and sized to its buyer. Before you pay, we will send you photos and talk through the size with you by email. You can pay with Bitcoin Cash (BCH) on our website. To start, reply to this email with your height, inseam and riding style, and we will suggest a size. We will write again when the batch is ready to order. Warm regards, Second Wind Cycles"
+    },
+    "flyer": {
+     "headline": "Classic steel, restored and sized to you",
+     "lines": [
+      "Six restored road bikes, 450 EUR each",
+      "Fully serviced and sized before you pay",
+      "Order on our website, pickup or boxed shipping"
+     ]
+    },
+    "profile": "Second Wind Cycles restores classic steel road bikes and sells them fully serviced and sized to the buyer, for 450 EUR each. Each bike is checked for worn parts and set up to ride well today. Not sure of your size? Send us your height, inseam and riding style, and we will suggest one by email before you pay. Pay with Bitcoin Cash (BCH) on our website. Bikes ship boxed or can be picked up. Classic steel road bikes, restored and ready to ride.",
+    "press": "Second Wind Cycles restores classic steel road bikes and sells each one fully serviced and sized to its buyer for 450 EUR. We are releasing a first batch of six bikes, and we help every buyer choose the right size by email before they pay. We would be glad to send photos and the story of one restoration if this suits your readers."
+   },
+   "local": [
+    {
+     "fact": "A newcomer found a cheap Peugeot at a local used market, showing that private sellers and local markets are part of how riders get classic bikes.",
+     "source": 7
+    },
+    {
+     "fact": "A broken chainstay on a vintage Italian steel frame is a job for a local frame builder with a good reputation.",
+     "source": 6
+    }
+   ],
+   "events": [],
+   "assumptions": [
+    "Riders in Europe will buy a bike ordered online with BCH payment, which may be unfamiliar to them; check how many ask about it.",
+    "The forum activity dates are unclear, so confirm that Retro Classic Road threads are recent before investing hours there.",
+    "Six restored bikes can be made in 30 days by one person at the stated limit; check restoration hours against the batch size.",
+    "Shipping cost and damage risk are not priced here; confirm a boxed shipping quote before taking the first order.",
+    "The research found no European local groups or newsletters for this buyer; the forums found are mostly UK and US."
+   ],
+   "decision": {
+    "scale_if": "6 paid pre-orders arrive by day 30 and at least 3 of them came from forum or sizing-guide contact, so the channel can grow to a second batch.",
+    "adjust_if": "Between 2 and 5 paid pre-orders arrive; keep the forum channels, rewrite the sizing guide and buyer questions, and move the reserve to the channel that sent the most buyers.",
+    "stop_if": "Fewer than 2 paid pre-orders arrive and fewer than 5 buyers ask about a bike before paying; pause the batch and test a pickup-only offer in one local used market before restoring more bikes."
+   }
+  },
+  "sources": [
+   {
+    "n": 1,
+    "url": "https://www.retrobike.co.uk/forums/retro-classic-road.12/",
+    "title": "Retro Classic Road"
+   },
+   {
+    "n": 2,
+    "url": "https://singletrackworld.com/forum/bike-forum/restoring-an-old-road-bike/",
+    "title": "Restoring an old road bike"
+   },
+   {
+    "n": 3,
+    "url": "https://www.bikeforums.net/classic-vintage/168759-repairing-rust-vintage-steel-frame.html",
+    "title": "Repairing Rust on a Vintage Steel Frame - Bike Forums"
+   },
+   {
+    "n": 4,
+    "url": "https://www.bikeforums.net/classic-vintage/904948-what-your-dream-bike-looking-classic-steel-road-frame-3.html",
+    "title": "What is your \"dream bike\"? Looking for a classic steel road frame. - Page 3 - Bike Forums"
+   },
+   {
+    "n": 5,
+    "url": "https://www.bikegremlin.net/threads/vintage-bicycle-restoration.250/",
+    "title": "Vintage bicycle restoration"
+   },
+   {
+    "n": 6,
+    "url": "https://www.roadbikereview.com/threads/vintage-bike-frame-repair.384744/",
+    "title": "Vintage bike frame repair"
+   },
+   {
+    "n": 7,
+    "url": "https://www.retrobike.co.uk/threads/ideas-for-the-restoration-of-a-vintage-road-bike.365420/",
+    "title": "ideas for the restoration of a vintage road bike"
+   }
+  ],
+  "warnings": []
+ },
+ "meta": {
+  "model": "claude-haiku-5-5",
+  "research": "claude-haiku-5-5",
+  "usd": 0.0175,
+  "date": "2026-11-16",
+  "queries": [
+   "classic steel road bike restoration forum community"
+  ]
+ }
+}
