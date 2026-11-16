@@ -34,6 +34,10 @@ import { exampleButtonHtml, exampleOf, examples, kitNoteShort, knownExamples, lo
 import { startEscrowProof } from "./escrow-proof";
 import { ESCROW } from "../live/pay";
 
+/** Short chip labels so the three sample ideas (server config.sampleIdeas) fit on one line; the full sentence still fills the box. */
+const CHIP_LABELS: [RegExp, string][] = [[/coffee kiosk/i, "Coffee kiosk · Barcelona"], [/dog-walking/i, "Dog-walking app · Madrid"], [/vintage road bikes/i, "Vintage bike shop · online"]];
+const chipLabel = (idea: string) => CHIP_LABELS.find(([re]) => re.test(idea))?.[1] ?? idea.split(",")[0]!;
+
 export interface Ui {
   openOffices(): void;
   dispose(): void;
@@ -45,7 +49,7 @@ export interface UiDeps {
   still?: boolean;
 }
 
-type Pos = "center" | "bottom" | "sheet" | "boom" | "doc";
+type Pos = "center" | "bottom" | "sheet" | "boom" | "doc" | "side";
 const DEMO_IDEA_FALLBACK = "A specialty coffee kiosk at a metro exit";
 
 export function createUi(host: HTMLElement, deps: UiDeps): Ui {
@@ -209,10 +213,13 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
         return s.step;
     }
   }
+  const sideHome = () => innerWidth >= 960 && innerWidth / innerHeight >= 1.25;
   function posFor(key: string): Pos {
     if (key === "boom") return "boom";
     if (key === "doc") return "doc";
     if (isMobile()) return "sheet";
+    // Home on a wide window: the idea card sits on the left and the office fills the rest, full height.
+    if ((key === "idea" || key === "end") && sideHome()) return "side";
     return "bottom"; // every surface rises from the bottom; the world is framed in the space above it
   }
   function build(key: string, s: FlowStateV7): string {
@@ -275,7 +282,8 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     if (!curPanel || !curKey) return;
     const pos = curPanel.dataset.pos as Pos;
     const r = curPanel.getBoundingClientRect();
-    if (pos === "bottom" || pos === "sheet" || pos === "center") setInsets({ left: 0, right: 0, top: isMobile() ? 56 : 64, bottom: Math.round(innerHeight - r.top + 12) });
+    if (pos === "side") setInsets({ left: Math.round(r.right + 8), right: 0, top: 64, bottom: 0 });
+    else if (pos === "bottom" || pos === "sheet" || pos === "center") setInsets({ left: 0, right: 0, top: isMobile() ? 56 : 64, bottom: Math.round(innerHeight - r.top + 12) });
     else setInsets({ left: 0, right: 0, top: 0, bottom: 0 });
   }
   function setInsets(i: Insets) {
@@ -377,7 +385,7 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
       let sending = false;
       // The sample sentences are one click away from the start (a judge never has to type to see a run).
       const chipsHtml = () =>
-        cfg?.sampleIdeas.length ? `<div class="idea-chips">${cfg.sampleIdeas.map((x) => `<button type="button" data-idea="${esc(x)}">${esc(x.split(",")[0]!)}</button>`).join("")}</div>` : "";
+        cfg?.sampleIdeas.length ? `<div class="idea-chips"><span class="ic-try">Try:</span>${cfg.sampleIdeas.map((x) => `<button type="button" data-idea="${esc(x)}" title="${esc(x)}">${esc(chipLabel(x))}</button>`).join("")}</div>` : "";
       // a chip only fills the box: the visitor still presses Validate (no project or payment card from a stray click)
       const wireChips = () => form.querySelectorAll<HTMLButtonElement>("[data-idea]").forEach((b) => b.addEventListener("click", () => ((ta.value = b.dataset.idea!), ta.dispatchEvent(new Event("input", { bubbles: true })), ta.focus())));
       const fail = (msg: string) => {
@@ -949,6 +957,12 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     render();
   });
   addEventListener("resize", () => {
+    // crossing the wide/narrow line on the home moves the card (side ↔ bottom); keep what was typed
+    if (curPanel && (curKey === "idea" || curKey === "end") && posFor(curKey) !== curPanel.dataset.pos) {
+      const ta = curPanel.querySelector<HTMLTextAreaElement>("textarea");
+      if (ta && curKey === "idea") typedIdea = ta.value;
+      render(true);
+    }
     measure();
     paintTags();
   });

@@ -52,7 +52,7 @@ export function ideaHtml(placeholder: string, value: string, end = false, paused
   <form class="v-idea" autocomplete="off">
     ${end ? `<div class="v-mark" data-st>${ldMark(40, undefined, true)}</div>` : ""}
     <h1 class="t-display" data-st>${end ? "Your turn." : "Turn your idea into a company."}</h1>
-    ${end ? "" : `<p class="v-sub" data-st>An AI team researches it with real sources, scores it and builds it. Pay in BCH.${ESCROW_ON ? ` Your payment waits in an on-chain contract: released with the report's fingerprint, or refunded if no report comes.` : ""}</p>`}
+    ${end ? "" : `<p class="v-sub" data-st>An AI team checks it against real sources, scores it and builds it. ${ESCROW_ON ? `Pay in BCH: an on-chain contract refunds you if no report comes.` : "Pay in BCH."}</p>`}
     ${paused ? `<div data-st>${pausedHtml()}</div>` : `<div class="idea-field" data-st>
       <textarea name="idea" rows="2" maxlength="280" placeholder="${esc(placeholder)}" aria-label="Your idea">${esc(value)}</textarea>
       <button class="btn btn-primary btn-go" type="submit"><span>Validate</span><span class="btn-price">${usd(10)}</span></button>

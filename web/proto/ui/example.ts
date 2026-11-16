@@ -40,7 +40,7 @@ const VERDICT: Record<string, string> = { go: "Go", pivot: "Test first", "no-go"
 export function exampleButtonHtml(): string {
   const x = mainExample();
   const sub = x
-    ? `${x.title} · ${x.proof ? "report, website and payment proof on Bitcoin Cash" : "report and website"}`
+    ? `${x.title} · ${x.proof ? "report, website and BCH payment proof" : "report and website"}`
     : "A real run: the report, the website and the payment proof";
   return `<button type="button" class="ex-home" data-act="example">
       <span class="ex-home-i">${I.report(18)}</span>

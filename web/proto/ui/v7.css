@@ -378,3 +378,35 @@
 @media (max-width: 600px) {
   .v7 .panel[data-pos="sheet"][data-key="live"] { top: 64px; max-height: none; border-radius: var(--r-lg) var(--r-lg) 0 0; }
 }
+
+/* Home: the office is the hero. The idea card is wide and short so the 3D room keeps most of the screen;
+   type and gaps shrink with the window height (a laptop with the browser chrome is often ~600 px tall). */
+.v7 .panel[data-pos="bottom"][data-key="idea"], .v7 .panel[data-pos="bottom"][data-key="end"] {
+  width: min(720px, calc(100vw - 32px)); padding: clamp(18px, 2.8vh, 28px) 30px clamp(16px, 2.4vh, 24px); bottom: clamp(14px, 2.6vh, 36px);
+}
+.v-idea { gap: clamp(10px, 1.7vh, 16px); }
+.v-idea h1 { font-size: clamp(30px, 5vh, 42px); }
+.v-sub { max-width: 600px; font-size: 15px; margin-top: -4px !important; }
+.v-idea .idea-chips { gap: 6px 8px; }
+.v-idea .idea-chips .ic-try { align-self: center; font-size: 12.5px; color: var(--c-muted); padding-right: 2px; }
+.v-alt { margin-top: -4px; }
+@media (max-width: 640px) { .v-idea h1 { font-size: 30px; } .v-sub { font-size: 14.5px; } }
+/* Wide windows: the home card on the left, vertically centred under the top bar; the office takes the right side. */
+.v7 .panel[data-pos="side"] { left: clamp(20px, 5vw, 80px); top: calc(50% + 30px); translate: 0 -50%; width: min(500px, 44vw); max-height: calc(100vh - 110px); padding: clamp(20px, 3.4vh, 32px) 30px clamp(18px, 2.8vh, 26px); }
+.v7 .panel[data-pos="side"] .v-idea { justify-items: start; text-align: left; }
+.v7 .panel[data-pos="side"] .v-idea h1 { font-size: clamp(32px, 6vh, 48px); }
+.v7 .panel[data-pos="side"] .v-sub { max-width: none; }
+.v7 .panel[data-pos="side"] .idea-chips, .v7 .panel[data-pos="side"] .v-alt { justify-content: flex-start; }
+.v7 .panel[data-pos="side"] .idea-field textarea { min-height: 48px; }
+.v7 .panel[data-pos="side"] .idea-field { flex-direction: column; align-items: stretch; gap: 10px; padding: 12px; }
+.v7 .panel[data-pos="side"] .idea-field textarea { min-height: 44px; }
+.v7 .panel[data-pos="side"] .btn-go { width: 100%; justify-content: center; height: 46px; }
+/* Phones: the sample chips scroll in one row and the sheet starts lower, so the office keeps the top half */
+@media (max-width: 640px) {
+  .v-idea .idea-chips { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; width: calc(100% + 36px); margin: 0 -18px; padding: 0 18px; }
+  .v-idea .idea-chips::-webkit-scrollbar { display: none; }
+  .v-idea .idea-chips button, .v-idea .idea-chips .ic-try { flex: none; }
+  .v-idea { gap: 12px; }
+  .v-idea h1 { font-size: 28px; }
+  .v-sub { font-size: 14px; }
+}
