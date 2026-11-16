@@ -207,6 +207,7 @@ export function cleanPlan(raw: unknown, sources: readonly PlanSource[], ctx: { l
     if (s == null) { warnings.push(`event "${name}" without a valid source dropped`); continue; }
     events.push({ name, date: clean(e?.date, 60), where: clean(e?.where, 120), source: s });
   }
+  events.splice(0, events.length, ...datedEvents(events, sources, assumptions, warnings, ctx.lang));
   // An unsourced number in a channel's reason is a claim; flag it (the writer was told to cite or say "we assume").
   for (const ch of channels) if (ch.source == null && claimsNumber(ch.why) && !/(assum|supon|supos|suppo|asumi|nehmen an|\btest|prueba)/i.test(ch.why)) warnings.push(`channel "${ch.name}": number without a source`);
   for (const p of places) if (p.source == null && claimsNumber(p.place + " " + p.when)) warnings.push(`place "${p.place}": number without a source`);
@@ -235,6 +236,24 @@ export function cleanPlan(raw: unknown, sources: readonly PlanSource[], ctx: { l
 }
 
 /** The source numbers a plan really uses (the view lists only these). */
+/**
+ * An event whose year differs from the year of the page it cites was probably carried over from an old edition
+ * (a 2025 article quoted as a 2026 date). It is dropped from the calendar and listed as something to check.
+ */
+export function datedEvents(events: PlanV2["events"], sources: readonly PlanSource[], assumptions: string[], warnings: string[], lang = "en"): PlanV2["events"] {
+  const yearsIn = (s: string) => [...s.matchAll(/\b(20\d\d)\b/g)].map((m) => Number(m[1]));
+  return events.filter((e) => {
+    const src = sources.find((s) => s.n === e.source);
+    const pageYears = src ? yearsIn(`${src.url} ${src.title}`) : [];
+    const ev = yearsIn(e.date)[0];
+    if (ev == null || !pageYears.length || pageYears.includes(ev)) return true;
+    warnings.push(`event "${e.name}" dated ${ev} but its source is from ${Math.max(...pageYears)}: dropped`);
+    const y = Math.max(...pageYears);
+    assumptions.push(lang === "es" ? `Comprueba la fecha de ${e.name}: la fuente que encontramos es de ${y}.` : `Check the date of ${e.name}: the source we found is from ${y}.`);
+    return false;
+  });
+}
+
 export function usedSources(p: PlanV2): number[] {
   const s = new Set<number>();
   for (const x of p.customer.places) if (x.source != null) s.add(x.source);

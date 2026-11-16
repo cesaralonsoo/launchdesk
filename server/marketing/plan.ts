@@ -8,8 +8,9 @@ import { readFileSync } from "node:fs";
 import { config } from "../config.js";
 import { Budget, recordUsage, type CostLine } from "../cost.js";
 import type { KitInput, MarketingResult } from "../kit-contract.js";
+import { templatePlan } from "../kit-templates.js";
 import { emptyMarketingResearch, researchMarketing, type MarketingResearch } from "./research.js";
-import { assumeWord, BANNED, cleanPlan, COPY_LIMITS, PLAN_SCHEMA_A, PLAN_SCHEMA_B, type PlanSource, type PlanV2 } from "./schema.js";
+import { assumeWord, BANNED, cleanPlan, datedEvents, COPY_LIMITS, PLAN_SCHEMA_A, PLAN_SCHEMA_B, type PlanSource, type PlanV2 } from "./schema.js";
 
 const envModel = (name: string, dflt: string) => (process.env[name] && /^claude-[a-z0-9-]+$/.test(process.env[name]!) ? process.env[name]! : dflt);
 /** Writer model (both steps). MODEL_MARKETING=claude-opus-5-5 if the copy feels flat (about 2x the writer cost). */
@@ -159,8 +160,12 @@ export function fixtureKeyFor(input: Pick<KitInput, "idea" | "brand">): (typeof 
 export async function planMarketing(input: KitInput, opts: { budget?: Budget; onCost?: (l: CostLine) => void; mock?: boolean; research?: MarketingResearch; onResearch?: (r: MarketingResearch) => void } = {}): Promise<PlanResult> {
   if (opts.mock ?? config.mockAi) {
     const f = loadFixture(fixtureKeyFor(input));
-    if (!f) throw new Error("No saved marketing plan to show.");
-    return structuredClone(f.result);
+    // The saved plan only for that very business (same name and language); else a plan written by code from the input.
+    if (!f || f.input.brand.name.toLowerCase() !== input.brand.name.toLowerCase() || f.input.brand.lang !== input.brand.lang)
+      return { plan: templatePlan(input), sources: [], warnings: [] };
+    const r = structuredClone(f.result);
+    r.plan.events = datedEvents(r.plan.events, r.sources, r.plan.assumptions, [], r.plan.lang);
+    return r;
   }
   const budget = opts.budget ?? new Budget(MARKETING_CAP_USD);
   const research = opts.research ?? (await researchMarketing(input, { budget, onCost: opts.onCost }).catch(() => emptyMarketingResearch()));

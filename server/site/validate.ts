@@ -72,6 +72,7 @@ export function validateModelSite(raw: Partial<ModelSite> | null | undefined, in
     const st = Number.isInteger(i) ? report.stats[i] : undefined;
     if (!st) { issues.push(`stat ${i} not in report`); continue; }
     if (!/^https:\/\//.test(st.sourceUrl) || !hostOf(st.sourceUrl)) { issues.push(`stat ${i} has no source`); continue; }
+    if (/(^|\.)example\.(org|com|net)$/i.test(hostOf(st.sourceUrl))) { issues.push(`stat ${i} has a sample source`); continue; }
     if (sourced.some((x) => x.sourceUrl === st.sourceUrl && x.value === st.value)) continue;
     sourced.push({ value: clean(st.value, 14), label: clean(st.label, 90), sourceUrl: st.sourceUrl, source: hostOf(st.sourceUrl) });
     if (sourced.length === 3) break;

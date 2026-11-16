@@ -186,21 +186,21 @@ await exec("INSERT INTO jobs (project_id, dept, stage, status, queued_at) VALUES
 await resumePending();
 assert.equal((await call("POST", `/api/projects/${id}/run`, { stage: "build" })).status, 200);
 const b = await pollUntil(id, (p) => p.status.pip === "done");
-assert.ok(b.results.nova && b.results.dex && b.results.rae && b.results.pip);
+assert.ok(b.results.nova && b.results.pip, "the Launch kit marks the build teams done");
+const kitView = await call<{ kit: { status: Record<string, string> }; siteUrl: string }>("GET", `/api/projects/${id}/kit`);
+assert.equal(kitView.status, 200);
+assert.deepEqual(kitView.json.kit.status, { brand: "done", logo: "done", site: "done", marketing: "done" });
 assert.equal(b.results.pip.slug, "pausa");
 assert.equal(b.results.pip.url, "/s/pausa");
-assert.equal(b.models.pip, "none");
 assert.ok(b.timings.build?.finished);
 assert.equal(b.error, undefined);
 
-// public site
-const site = await call<SiteData>("GET", "/api/sites/pausa");
-assert.equal(site.status, 200);
-assert.equal(site.json.name, "Pausa");
-assert.equal(site.json.founderAddress, FOUNDER);
-assert.equal(site.json.palette.length, 4);
-assert.equal(site.json.logo.icon, "cup");
-assert.equal(site.json.bchUsd, 460);
+// public site: the Launch kit website, rendered from the kit (the old /api/sites data needs the old build teams)
+const siteRes = await app.request("/s/pausa");
+assert.equal(siteRes.status, 200);
+const siteHtml = await siteRes.text();
+assert.match(siteHtml, /Pausa/);
+assert.ok(siteHtml.includes(FOUNDER.replace("bitcoincash:", "")), "reservations pay the founder");
 assert.equal((await call("GET", "/api/sites/unknown")).status, 404);
 
 // a second project with the same brand name gets a different slug

@@ -155,12 +155,38 @@ export function loadFixtures(): LogoFixture[] {
 }
 const key = (s: string) => s.normalize("NFD").replace(/[^\p{L}\p{N}]/gu, "").toLowerCase();
 /** The fixture for this brand (by name), else one picked by the name's hash, re-coloured to the brand's palette. */
-export function mockOptions(brand: KitBrand, skip = 0): LogoOption[] {
+/** Demo mode: the saved drawing set that fits this kind of business (never a dog logo for a bakery). */
+const IDEA_FIXTURE: Array<[RegExp, string]> = [
+  [/\b(dog|dogs|pet|pets|puppy|walker|walks?|perro)\b/i, "ronda"],
+  [/\b(coffee|caf[eé]|kiosk|espresso|flat whites?)\b/i, "pausa"],
+  [/\b(bike|bikes|bicycle|cycling|bici)\b/i, "segundavuelta"],
+];
+const FOOD = /\b(bakery|bakeries|bread|sourdough|loaf|loaves|baking|bake|pastry|cake|panader[ií]a|forn)\b/i;
+
+/** Three bakery marks drawn by hand for demo mode (a loaf, an ear of wheat, a morning sun over the counter). */
+function bakeryMarks(brand: KitBrand): LogoOption[] {
+  const { primary: P, accent: A, bg: B } = brand.palette;
+  const grain = (x: number, y: number, side: 1 | -1, fill: string) =>
+    `<path d="M32 ${y} C${32 + side * 4} ${y - 9} ${32 + side * 12} ${y - 9} ${x} ${y - 6} C${32 + side * 11} ${y + 1} ${32 + side * 5} ${y + 3} 32 ${y} Z" fill="${fill}"/>`;
+  return [
+    { id: "bk-loaf", family: "literal", idea: "A round loaf with three cuts on top: what you come in for every morning.",
+      svg: `<path d="M6 44 C6 24 18 14 32 14 C46 14 58 24 58 44 L58 48 L6 48 Z" fill="${P}"/><path d="M20 26 L26 38 M31 22 L37 36 M42 25 L47 34" fill="none" stroke="${B}" stroke-width="3.5" stroke-linecap="round"/><rect x="6" y="52" width="52" height="5" rx="2.5" fill="${A}"/>` },
+    { id: "bk-wheat", family: "literal", idea: "An ear of wheat with a warm top grain: flour, slow work and care.",
+      svg: `<path d="M32 60 L32 12" fill="none" stroke="${P}" stroke-width="4" stroke-linecap="round"/>${grain(44, 46, 1, P)}${grain(20, 46, -1, P)}${grain(44, 34, 1, P)}${grain(20, 34, -1, P)}<path d="M32 22 C27 16 27 9 32 4 C37 9 37 16 32 22 Z" fill="${A}"/>` },
+    { id: "bk-sun", family: "geometric", idea: "A morning sun rising over the counter: fresh bread before work.",
+      svg: `<path d="M12 40 A20 20 0 0 1 52 40 Z" fill="${A}"/><rect x="6" y="44" width="52" height="6" rx="3" fill="${P}"/><rect x="18" y="54" width="28" height="5" rx="2.5" fill="${P}"/>` },
+  ];
+}
+
+export function mockOptions(brand: KitBrand, skip = 0, idea = ""): LogoOption[] {
   const all = loadFixtures();
   if (!all.length) return [];
   const exact = all.find((f) => key(f.brand.name) === key(brand.name));
+  const byIdea = IDEA_FIXTURE.find(([re]) => re.test(idea))?.[1];
+  if (!exact && !byIdea && FOOD.test(idea))
+    return bakeryMarks(brand).map((o) => ({ ...o, svg: lintSymbol(o.svg, brand.palette).svg })).filter((o) => o.svg).slice(skip);
   const h = [...key(brand.name)].reduce((t, c) => (t * 31 + c.charCodeAt(0)) >>> 0, 7);
-  const fx = exact ?? all[h % all.length]!;
+  const fx = exact ?? all.find((f) => f.id === byIdea) ?? all[h % all.length]!;
   const opts = fx.options.map((o) => ({ ...o, svg: remapPalette(o.svg, fx.brand.palette, brand.palette) }));
   // re-lint after the re-colour (a palette with fewer distinct roles can merge colours; never ship unlinted)
   return opts
@@ -173,7 +199,7 @@ export function mockOptions(brand: KitBrand, skip = 0): LogoOption[] {
 export interface DrawOut { options: LogoOption[]; failed: Failed[]; costUsd: number; model: string; raw: Candidate[] }
 
 export async function drawLogos(brand: KitBrand, avoid: readonly string[] = [], ctx: Omit<DrawCtx, "brand"> = { idea: brand.tagline }): Promise<DrawOut> {
-  if (isMock()) return { options: rank(mockOptions(brand)), failed: [], costUsd: 0, model: "mock", raw: [] };
+  if (isMock()) return { options: rank(mockOptions(brand, 0, ctx.idea)), failed: [], costUsd: 0, model: "mock", raw: [] };
   const brandN = normBrand(brand);
   const model = LOGO_MODEL();
   const out = await callCandidates("logo.draw", model, "medium", drawPrompt({ ...ctx, brand: brandN }, avoid), 12000);

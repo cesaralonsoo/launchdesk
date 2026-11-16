@@ -7,7 +7,8 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import { Hono, type Context } from "hono";
 import { config } from "./config.js";
 import { exec, getProjectRow, type ProjectRow } from "./db.js";
-import { chooseLogo, chooseTemplate, defaultDeps, kitRunning, loadKit, moreLogos, siteUrl, type KitDeps } from "./kit.js";
+import { chooseLogo, chooseTemplate, defaultDeps, kitRunning, loadKit, moreLogos, safeBrand, siteUrl, type KitDeps } from "./kit.js";
+import { safeLogo } from "./site/render.js";
 import { allow, clientIp } from "./ratelimit.js";
 
 class KitError extends Error {
@@ -98,7 +99,10 @@ export function kitRoutes(deps: KitDeps = defaultDeps) {
     const kit = id ? await loadKit(String(id)) : null;
     const logo = kit?.logo?.options.find((o) => o.id === kit.logo!.chosen) ?? kit?.logo?.options[0];
     if (!kit || !logo) return c.notFound();
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="512" height="512"><rect width="64" height="64" fill="${kit.brand.palette.bg}"/>${logo.svg}</svg>`;
+    const brand = safeBrand(kit.brand);
+    const mark = safeLogo(logo.svg, brand.palette);
+    if (!mark) return c.notFound();
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="512" height="512"><rect width="64" height="64" fill="${brand.palette.bg}"/>${mark}</svg>`;
     return c.body(svg, 200, { "content-type": "image/svg+xml; charset=utf-8", "cache-control": "public, max-age=300", "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'" });
   });
 

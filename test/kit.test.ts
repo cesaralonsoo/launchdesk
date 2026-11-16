@@ -28,11 +28,12 @@ async function seed(id: string) {
     await exec("INSERT INTO jobs (project_id, dept, stage, status, json, queued_at, finished_at) VALUES (?, ?, 'validate', 'done', ?, ?, ?)", [id, d, JSON.stringify(p.results[d]), 1, 2]);
   return p;
 }
-const logo = (id: string, family: LogoOption["family"]): LogoOption => ({ id, family, idea: `idea ${id}`, svg: `<circle cx="32" cy="32" r="20" fill="#111111"/>` });
+let INK = "#111111"; // the brand's own ink, so the og image (allowlist lint, palette colours only) accepts it
+const logo = (id: string, family: LogoOption["family"]): LogoOption => ({ id, family, idea: `idea ${id}`, svg: `<circle cx="32" cy="32" r="24" fill="${INK}"/>` });
 const calls: string[] = [];
 const good: Deps = {
   brand: async (p) => (calls.push("brand"), (await kit.defaultDeps.brand(p))),
-  logos: async (_b, avoid) => (calls.push("logos"), avoid.length ? [logo("n1", "literal"), logo("n2", "monogram"), logo("n3", "geometric")] : [logo("a", "literal"), logo("b", "literal"), logo("c", "monogram"), logo("d", "geometric")]),
+  logos: async (b, avoid) => (calls.push("logos"), (INK = b.palette.ink), avoid.length ? [logo("n1", "literal"), logo("n2", "monogram"), logo("n3", "geometric")] : [logo("a", "literal"), logo("b", "literal"), logo("c", "monogram"), logo("d", "geometric")]),
   site: async (i) => (calls.push("site"), { hero: { title: i.brand.name } }),
   marketing: async () => (calls.push("marketing"), { plan: { goal: "20 pre-orders" }, sources: [{ n: 1, url: "https://example.org", title: "x" }] }),
 };
@@ -42,8 +43,8 @@ await seed("K1");
 const k1 = await kit.runKit("K1", good);
 assert.deepEqual(k1.status, { brand: "done", logo: "done", site: "done", marketing: "done" });
 assert.equal(calls[0], "brand");
-assert.equal(k1.logo!.options.length, 3);
-assert.deepEqual(k1.logo!.options.map((o) => o.family), ["literal", "monogram", "geometric"], "one per family");
+assert.equal(k1.logo!.options.length, 4, "every survivor is kept, so Show 3 more needs no new drawing");
+assert.deepEqual(k1.logo!.options.slice(0, 3).map((o) => o.family), ["literal", "monogram", "geometric"], "first page: one per family");
 assert.equal(k1.logo!.fallback, false);
 assert.ok(k1.brand.name && /^#[0-9A-F]{6}$/i.test(k1.brand.palette.primary));
 assert.equal((await kit.loadKit("K1"))!.marketing!.sources.length, 1);
@@ -102,8 +103,8 @@ assert.equal((await kit.loadKit("K1"))!.site!.template, "warm");
 assert.equal((await post("/api/projects/K1/kit/site", { template: "neon" })).status, 409);
 const more = await post("/api/projects/K1/kit/logo/more", {});
 assert.equal(more.status, 200);
-assert.equal((await kit.loadKit("K1"))!.logo!.options.length, 6);
-assert.equal((await post("/api/projects/K1/kit/logo/more", {})).status, 409, "at most 6 options");
+assert.equal((await kit.loadKit("K1"))!.logo!.options.length, 7);
+assert.equal((await post("/api/projects/K1/kit/logo/more", {})).status, 409, "one new drawing per kit");
 
 // owner key: a project with an owner hash refuses changes without the key
 const { createHash } = await import("node:crypto");

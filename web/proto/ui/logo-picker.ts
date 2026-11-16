@@ -8,6 +8,7 @@ import type { KitBrand, LogoOption, LogoResult } from "../../../server/kit-contr
 import { lockupSvg, type LockupOpts } from "../../../server/brand/compose";
 import { googleFontsHref, wordStyleFor } from "../../../server/brand/fonts";
 import { el, esc } from "./dom";
+import "./logo-picker.css";
 
 export interface LogoPickerProps {
   brand: KitBrand;
@@ -82,6 +83,7 @@ function tile(o: LogoOption, b: KitBrand, chosen: boolean, n: number): string {
   const dark = lockupSvg(o.svg, { ...O, dark: true }).svg;
   const icon = lockupSvg(o.svg, { ...O, layout: "icon" }).svg;
   return `<li class="lp-tile${chosen ? " is-chosen" : ""}" data-id="${esc(o.id)}">
+  ${chosen ? `<span class="lp-badge" aria-hidden="true">Chosen</span>` : ""}
   <button class="lp-pick" type="button" aria-pressed="${chosen}" aria-label="Option ${n}${chosen ? ", chosen" : ""}">
     <span class="lp-light" style="background:${b.palette.bg}">${light}</span>
     <span class="lp-uses">
@@ -89,10 +91,20 @@ function tile(o: LogoOption, b: KitBrand, chosen: boolean, n: number): string {
       <span class="lp-icon" title="App icon">${icon}</span>
       <span class="lp-tab" title="Browser tab"><span class="lp-fav">${icon}</span><span class="lp-tabname">${esc(b.name)}</span></span>
     </span>
-    <span class="lp-why">${esc(o.idea)}</span>
-    <span class="lp-cta">${chosen ? "✓ Your logo" : "Use this one"}</span>
+    <span class="lp-why" title="${esc(o.idea)}">${esc(o.idea)}</span>
+    <span class="lp-cta">${chosen ? "✓ Chosen" : "Use this one"}</span>
   </button>
 </li>`;
+}
+
+function files(o: LogoOption, b: KitBrand): string {
+  const O = opts(b);
+  const light = lockupSvg(o.svg, O).svg;
+  const dark = lockupSvg(o.svg, { ...O, dark: true }).svg;
+  const icon = lockupSvg(o.svg, { ...O, layout: "icon" }).svg;
+  const f = (k: string, label: string, prev: string, bg: string) =>
+    `<button type="button" class="lp-file" data-dl="${k}"><span class="lp-fp" style="background:${bg}">${prev}</span><span>${label}</span></button>`;
+  return `<div class="lp-fgrid">${f("logo", "Logo", light, b.palette.bg)}${f("dark", "For dark backgrounds", dark, b.palette.ink)}${f("icon", "App icon", icon, "transparent")}${f("favicon", "Tab icon", icon, "transparent")}</div>`;
 }
 
 export function mountLogoPicker(host: HTMLElement, props: LogoPickerProps): LogoPicker {
@@ -111,16 +123,13 @@ export function mountLogoPicker(host: HTMLElement, props: LogoPickerProps): Logo
     const chosen = result.options.find((o) => o.id === result.chosen) ?? result.options[0];
     const canMore = start + PAGE < total || !!props.onMore;
     root.innerHTML = `
-<header class="lp-head"><h3>Your logo</h3><p>Pick the one that feels like ${esc(b.name)}. You can change it any time; your website updates on its own.</p></header>
 <ol class="lp-grid">${shown.map((o, i) => tile(o, b, o.id === chosen?.id, start + i + 1)).join("")}</ol>
 <div class="lp-foot">
   ${canMore ? `<button class="lp-more" type="button"${busy ? " disabled" : ""}>${busy ? "Drawing 3 more…" : start + PAGE < total ? "Show 3 more" : "Draw 3 more"}</button>` : ""}
   ${page > 0 ? `<button class="lp-back" type="button">Back to the first ones</button>` : ""}
   ${error ? `<span class="lp-err" role="status">${esc(error)}</span>` : ""}
 </div>
-${chosen ? `<div class="lp-files"><span class="lp-files-t">Download your logo</span>
-  <button type="button" data-dl="logo">Logo</button><button type="button" data-dl="dark">Logo for dark backgrounds</button>
-  <button type="button" data-dl="icon">App icon</button><button type="button" data-dl="favicon">Browser tab icon</button></div>` : ""}
+${chosen ? `<div class="lp-files"><span class="lp-files-t">Download your logo files</span>${files(chosen, b)}</div>` : ""}
 ${result.fallback ? `<p class="lp-note">These are simple starter marks. Tap “Draw 3 more” for designs made for ${esc(b.name)}.</p>` : ""}`;
   };
 

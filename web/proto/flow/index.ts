@@ -1,7 +1,8 @@
 // v7 · The experience state machine (WS-EXP). The only thing that drives the World.
 //
-//   bedroom → idea → pay1 → hire → evidence → report(score → scale → points → next) → [steer]* → boom → floor
-//   → pay2 → build(nova, dex, rae, pip × working → result) → live → building → district → end
+//   bedroom → idea → pay1 → hire → evidence → report(score → scale → points → next) → [steer]* → floor (the
+//   Launch kit offer) → pay2 → live (one result screen: logo, website, 30-day plan) → end
+// (boom, build, building and district are kept for old deep links only; the main path never enters them.)
 //
 // One engine for three drivers: the user (next / actions), deep links (goto, snapped) and the judges' demo
 // (goto with animate, see flow/demo.ts). `enter(step, animate)` plays a step: hire pops analysts one by one, evidence
@@ -18,6 +19,8 @@ import type { Project } from "../../src/types";
 import { createLiveRun, postSteer, savedShells, shellProject, type LiveRun } from "../live/adapter";
 import { onChange as onSavedChange } from "../../src/app/projects";
 
+/** Validate 10 cents + Launch kit 50 cents (server config.priceCents; ui/steps.ts KIT_CENTS). */
+export const PAID_ALL = 10 + 50;
 export const REPORT_PAGES: readonly ReportPage[] = ["score", "scale", "points", "next"];
 export const STORE_KEY = "launchdesk.proto.projects.v7";
 
@@ -108,6 +111,24 @@ function loadLevels(): Record<string, WorldLevel> {
     return v && typeof v === "object" ? v : {};
   } catch {
     return {};
+  }
+}
+/** Projects whose Launch kit payment card was open (a reload comes back to it, not to the offer). */
+const PAY2_KEY = "launchdesk.proto.pay2.v1";
+function pay2Open(id: string): boolean {
+  try {
+    return (JSON.parse(localStorage.getItem(PAY2_KEY) || "[]") as string[]).includes(id);
+  } catch {
+    return false;
+  }
+}
+function setPay2Open(id: string, on: boolean): void {
+  try {
+    const v = (JSON.parse(localStorage.getItem(PAY2_KEY) || "[]") as string[]).filter((x) => x !== id);
+    if (on) v.push(id);
+    localStorage.setItem(PAY2_KEY, JSON.stringify(v.slice(-20)));
+  } catch {
+    /* private mode */
   }
 }
 function saveLevels(v: Record<string, WorldLevel>): void {
@@ -222,7 +243,7 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
     for (const b of BUILD_TEAM) {
       let x: Parameters<WorldV7["setActorState"]>[1];
       if (!after(st, "floor")) x = "absent";
-      else if (st === "floor" || (st === "pay2" && paid < 30)) x = "asleep";
+      else if (st === "floor" || (st === "pay2" && paid < PAID_ALL)) x = "asleep";
       else if (st === "pay2") x = "idle";
       else if (st === "build") {
         const i = BUILD_TEAM.indexOf(b);
@@ -367,6 +388,10 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
     const tok = run;
     const step = s.step;
     const prev = state;
+    if (live && !demo) {
+      if (step === "pay2") setPay2Open(live.id, true);
+      else if (prev.step === "pay2" || after(step, "pay2")) setPay2Open(live.id, false);
+    }
     // progress counters implied by the step
     hired = after(step, "evidence") ? roster.length : step === "hire" ? (animate ? 0 : roster.length) : 0;
     if (step === "evidence") {
@@ -374,7 +399,7 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
       const n = s.analyst && s.finding != null ? findings.findIndex((f) => f.analyst === s.analyst) + s.finding : idx;
       revealed = animate && s.finding == null && !s.analyst ? 0 : Math.max(0, Math.min(findings.length, n + 1));
     } else revealed = after(step, "report") ? findings.length : 0;
-    paid = after(step, "build") || (step === "pay2" && prev.step === "pay2" && paid >= 30) ? 30 : after(step, "hire") ? 10 : step === "pay1" && paid >= 10 ? 10 : 0;
+    paid = after(step, "build") || (step === "pay2" && prev.step === "pay2" && paid >= PAID_ALL) ? PAID_ALL : after(step, "hire") ? 10 : step === "pay1" && paid >= 10 ? 10 : 0;
     if (!after(step, "steer") || step === "steer") {
       /* keep steers (they changed the report) */
     }
@@ -633,13 +658,14 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
           return enter({ step: "pay2" }, true);
         case "pay2":
           if (a?.type !== "approve-pay") return;
-          paid = 30;
+          paid = PAID_ALL;
           world.celebrate("paid");
           for (const b of BUILD_TEAM) world.setActorState(b, "arriving");
           ping();
           if (!demo) {
+            // straight to the one Launch kit screen: its three panels fill in while the team works
             const tok = run;
-            void wait(1100).then(() => alive(tok) && enter({ step: "build", builder: "nova", phase: "working" }, true));
+            void wait(900).then(() => alive(tok) && enter({ step: "live" }, true));
           }
           return;
         case "build": {
@@ -649,7 +675,7 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
           return nb ? enter({ step: "build", builder: nb, phase: "working" }, true) : enter({ step: "live" }, true);
         }
         case "live":
-          return enter({ step: "building" }, true);
+          return; // the kit screen is the end of this path; "Your offices" opens from its footer
         case "building":
           return enter({ step: "district" }, true);
         case "district":
@@ -708,11 +734,8 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
     const paid = r.paid;
     if (!paid.validate) return { step: "pay1" };
     if (!r.phase1Done) return { step: r.project.v7.roster.length ? "evidence" : "hire" };
-    if (!paid.build) return (levels[r.id] ?? 0) >= 1 ? { step: "floor" } : { step: "report", page: "score" };
-    const b = BUILD_TEAM.find((x) => r.buildStatus(x) !== "done");
-    if (b) return { step: "build", builder: b, phase: "working" };
-    const l = levels[r.id] ?? 1;
-    return l >= 3 ? { step: "district" } : l >= 2 ? { step: "building" } : { step: "live" };
+    if (!paid.build) return pay2Open(r.id) ? { step: "pay2" } : (levels[r.id] ?? 0) >= 1 ? { step: "floor" } : { step: "report", page: "score" };
+    return { step: "live" }; // the kit screen shows each part as it lands
   }
   function attachLive(seed: ProjectV7, mode: "new" | "open") {
     detachLive();
@@ -759,7 +782,7 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
   }
 
   function decide(c: "grow" | "pivot" | "stop") {
-    if (c === "grow") return cap() >= 1 ? enter({ step: "boom" }, true) : undefined;
+    if (c === "grow") return enter({ step: "floor" }, true); // the Launch kit offer, over the office
     if (c === "pivot") {
       // a fresh idea is a fresh project: leave the finished run (the address bar goes back to "/")
       if (live) {

@@ -5,7 +5,9 @@ import { defineConfig, type Plugin } from "vite";
 // public generated site /s/:slug and the shared pack /r/:shareId. /proto.html stays as an alias of the v7 app.
 // VITE_API points the dev proxy at another API port (default 8790).
 const api = process.env.VITE_API || "http://localhost:8790";
-const CLASSIC = /^\/(s|r)\/[^/?#]+\/?(?:[?#].*)?$/;
+// /s/:slug (the founder's website) is proxied to the API so it shares this origin, as in production (the site's
+// frame-ancestors 'self' then allows the design thumbnails, and the link the kit shows is this origin's).
+const CLASSIC = /^\/r\/[^/?#]+\/?(?:[?#].*)?$/;
 
 const classicRoutes = (): Plugin => ({
   name: "launchdesk-classic-routes",
@@ -39,5 +41,9 @@ export default defineConfig({
       },
     },
   },
-  server: { port: 5173, proxy: { "/api": api, "/healthz": api } },
+  server: {
+    port: 5173,
+    // changeOrigin off: the API sees this origin as Host, so the website links it returns open here
+    proxy: { "/api": { target: api, changeOrigin: false }, "/healthz": api, "/s/": { target: api, changeOrigin: false } },
+  },
 });

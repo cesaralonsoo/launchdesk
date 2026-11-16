@@ -15,6 +15,11 @@ import { slugify } from "./jobs.js";
 import { loadV7 } from "./jobs-v7.js";
 import type { Kit, KitBrand, KitInput, LogoOption, LogoResult, MarketingResult, ReportDigest, SiteResult, SiteTemplate } from "./kit-contract.js";
 import type { NovaBrand, Project } from "./types.js";
+import { normHex } from "./brand/lint.js";
+import { templatePlan, templateSite } from "./kit-templates.js";
+import type { SiteRow } from "./site/db.js";
+import type { SiteSpec } from "./site/spec.js";
+import { asSiteSpec, luminance, validateModelSite } from "./site/validate.js";
 import type { ResultsV7 } from "./v7.js";
 
 export type KitPart = "logo" | "site" | "marketing";
@@ -60,7 +65,7 @@ export function kitBrandFrom(nova: NovaBrand | undefined, p: Project): KitBrand 
   const market = p.results.mia?.market;
   const lang = LANG_OF[(market?.language ?? "en").trim().toLowerCase()] ?? (market?.language ?? "en").slice(0, 2).toLowerCase();
   const fallbackName = (p.results.mia?.title ?? "My business").split(/\s+/).slice(0, 2).join(" ");
-  return {
+  return safeBrand({
     name: n?.name ?? fallbackName,
     tagline: n?.tagline ?? "",
     voice: nova ? `${nova.voice.traits.join(", ")}. ${nova.voice.rules}` : "Clear and direct.",
@@ -74,7 +79,22 @@ export function kitBrandFrom(nova: NovaBrand | undefined, p: Project): KitBrand 
     lang: lang || "en",
     ...(market?.city ? { city: market.city } : {}),
     currency: p.results.sam?.currency ?? market?.currency ?? "€",
-  };
+  });
+}
+
+/**
+ * Colours from the brand writer are checked before they reach SVG attributes, the website tokens or link previews:
+ * only #RRGGBB values survive (else the default), and ink is always dark (it is the dark background of the logo
+ * and the main colour of the mark): the darkest palette colour when it is dark enough, else near-black.
+ */
+export function safeBrand(b: KitBrand): KitBrand {
+  const h = (v: string | undefined, d: string) => normHex(String(v ?? "")) ?? d;
+  const primary = h(b.palette.primary, PALETTE_DEFAULT.primary);
+  const accent = h(b.palette.accent, PALETTE_DEFAULT.accent);
+  const bg = h(b.palette.bg, PALETTE_DEFAULT.bg);
+  const darkest = [h(b.palette.ink, primary), primary, accent].sort((x, y) => luminance(x) - luminance(y))[0]!;
+  const ink = luminance(darkest) <= 0.06 ? darkest : "#111827";
+  return { ...b, palette: { primary, accent, bg, ink } };
 }
 
 /** The report, reduced to what the kit needs. Stats only with a real source link. */
@@ -116,25 +136,14 @@ export function fallbackLogos(brand: KitBrand): LogoOption[] {
   ];
 }
 
-function fallbackSite(input: KitInput): unknown {
-  return {
-    fallback: true,
-    lang: input.brand.lang,
-    hero: { title: input.brand.name, subtitle: input.brand.tagline || input.idea, cta: "Reserve" },
-    sections: [{ kind: "offer", title: input.report.offer.what, price: input.report.offer.price }],
-  };
+/** A real SiteSpec written by code from the founder's input (renders like any other site). */
+function fallbackSite(input: KitInput): SiteSpec {
+  return validateModelSite(templateSite(input), input).spec;
 }
 
-async function fallbackMarketing(p: Project): Promise<MarketingResult> {
-  const tasks = p.results.mia?.checklist ?? [];
-  return {
-    plan: {
-      fallback: true,
-      goal: (p.results.mia as { gate?: { metric?: string } } | undefined)?.gate?.metric || "Your first paying customers",
-      weeks: [1, 2, 3, 4].map((w) => ({ week: w, tasks: tasks.filter((t) => t.week === w).map((t) => ({ task: t.task, done_when: t.done_when })) })),
-    },
-    sources: [],
-  };
+/** A real PlanV2 written by code from the founder's input (no sources, no invented facts). */
+function fallbackMarketing(input: KitInput): MarketingResult {
+  return { plan: templatePlan(input), sources: [] };
 }
 
 // ───────────────────────────────────────────── default parts (lazy imports of WP1–3)
@@ -206,6 +215,25 @@ async function once<T>(label: string, fn: () => Promise<T>): Promise<T> {
     console.error(`[kit] ${label} failed, retrying once:`, (e as Error).message);
     return fn();
   }
+}
+
+/** The default website design for a kind of business (the founder can switch with one click). */
+export function templateFor(idea: string): SiteTemplate {
+  const t = idea.toLowerCase();
+  if (/\b(dog|pet|cat|kid|child|yoga|wellness|care)/.test(t)) return "warm";
+  if (/\b(app|saas|software|online|tool|platform)\b/.test(t)) return "bold";
+  return "editorial";
+}
+
+/** The live website of a kit, for the website routes: brand, chosen logo and design are read from the kit. */
+export async function siteRowFor(slug: string): Promise<SiteRow | null> {
+  const r = await exec("SELECT id FROM projects WHERE slug = ?", [slug]);
+  const id = r.rows[0]?.id;
+  if (id == null) return null;
+  const kit = await loadKit(String(id));
+  const spec = kit?.site ? asSiteSpec(kit.site.spec) : null;
+  if (!kit || !spec) return null;
+  return { slug, projectId: String(id), template: kit.site!.template, spec, kit: { brand: kit.brand, logo: kit.logo }, version: 1, updatedAt: Date.now() };
 }
 
 /** Picks 3 options to show from the drawn ones (one per family when possible). */
@@ -298,8 +326,11 @@ async function runKitInner(projectId: string, deps: KitDeps, stage: string): Pro
       "logo",
       KIT_EST.logo,
       async () => {
-        const drawn = pickThree(await deps.logos(kit.brand, [], { idea: p.idea, report: input.report }));
-        if (drawn.length < 3) throw new Error(`only ${drawn.length} logos survived`);
+        // All survivors are kept (up to 6): the best three first, so "Show 3 more" needs no new drawing.
+        const all = await deps.logos(kit.brand, [], { idea: p.idea, report: input.report });
+        const first = pickThree(all);
+        if (first.length < 3) throw new Error(`only ${first.length} logos survived`);
+        const drawn = [...first, ...all.filter((o) => !first.includes(o))].slice(0, 6);
         return { options: drawn, chosen: drawn[0]!.id, fallback: false };
       },
       () => {
@@ -308,8 +339,18 @@ async function runKitInner(projectId: string, deps: KitDeps, stage: string): Pro
       },
       (r) => (kit.logo = r),
     ),
-    part<SiteResult>("site", KIT_EST.site, async () => ({ spec: await deps.site(input), template: "editorial" }), () => ({ spec: fallbackSite(input), template: "editorial" }), (r) => (kit.site = r)),
-    part<MarketingResult>("marketing", KIT_EST.marketing, () => deps.marketing(input), () => fallbackMarketing(p), (r) => (kit.marketing = r)),
+    part<SiteResult>(
+      "site",
+      KIT_EST.site,
+      async () => {
+        const spec = asSiteSpec(await deps.site(input));
+        if (!spec) throw new Error("website spec could not be rendered");
+        return { spec, template: templateFor(input.idea) };
+      },
+      () => ({ spec: fallbackSite(input), template: templateFor(input.idea) }),
+      (r) => (kit.site = r),
+    ),
+    part<MarketingResult>("marketing", KIT_EST.marketing, () => deps.marketing(input), () => fallbackMarketing(input), (r) => (kit.marketing = r)),
   ]);
   await save();
   return kit;
@@ -386,7 +427,8 @@ export async function moreLogos(projectId: string, deps: KitDeps = defaultDeps):
   const kit = await loadKit(projectId);
   if (!kit?.logo) throw new Error("Your logo is not ready yet.");
   const shown = kit.logo.options.length;
-  if (shown >= 6) throw new Error("You have already seen 6 logo options.");
+  // One new drawing per kit (spend): the first draw keeps up to 6, so more than 6 means it was already used.
+  if (shown > 6) throw new Error(`You have already seen ${shown} logo options.`);
   return costScope(projectId, "kit-more", async () => {
     const guard = kitGuard(projectId, "kit-more", KIT_EST.logo * 1.5);
     const settle = guard.reserve("logo-more", KIT_EST.logo);

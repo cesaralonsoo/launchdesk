@@ -67,7 +67,7 @@ export function payHtml(f: ProtoFlowV7, stage: 1 | 2, customIdea: boolean): stri
     <header class="pay-top" data-st><span class="pay-merchant">${ldMark(18, undefined, true)}<b>LaunchDesk</b></span><span class="tag">Prototype · no payment</span></header>
     <div class="pay-amount" data-st><b class="huge">${usd(cents)}</b><span>in Bitcoin Cash</span></div>
     <div class="pay-line" data-st><div class="pay-avs">${avs}</div><div><b>${title}</b><span>${esc(line)}</span></div></div>
-    <button class="btn btn-primary btn-pay" data-act="approve" type="button" data-st${f.paidCents >= (stage === 1 ? 10 : 30) /* flow/index.ts counts 10 + 20; see .notes/next/hookup.md */ ? ' data-state="done"' : ""}>
+    <button class="btn btn-primary btn-pay" data-act="approve" type="button" data-st${f.paidCents >= (stage === 1 ? 10 : 10 + KIT_CENTS) /* flow/index.ts PAID_ALL = validate + kit */ ? ' data-state="done"' : ""}>
       <span class="b-lbl">Approve</span><span class="spin" aria-hidden="true"></span>
       <span class="tick" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M5 12.5l4.5 4.5L19 7.5" pathLength="1"/></svg></span>
     </button>

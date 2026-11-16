@@ -490,12 +490,6 @@
      "date": "Jueves 26 de noviembre de 2026",
      "where": "Passeig de Gràcia",
      "source": 10
-    },
-    {
-     "name": "Mostaza Fest, feria local de diseño y artesanía",
-     "date": "5 y 6 de diciembre de 2026",
-     "where": "Barcelona",
-     "source": 9
     }
    ],
    "assumptions": [
@@ -503,7 +497,8 @@
     "Los vecinos de la cola del sábado aceptan hablar con alguien que les ofrece pan.",
     "Los clientes se sienten cómodos pagando en BCH en la web, o hay otra forma de pago a mano para quien no.",
     "El sábado por la mañana es el mejor día de recogida para tus clientes.",
-    "Los porteros y las juntas dejan colocar notas de un negocio del barrio."
+    "Los porteros y las juntas dejan colocar notas de un negocio del barrio.",
+    "Comprueba la fecha de Mostaza Fest, feria local de diseño y artesanía: la fuente que encontramos es de 2025."
    ],
    "decision": {
     "scale_if": "Hay 24 o más cajas pagadas y al menos 6 clientes han repetido: sube el límite de plazas y abre una segunda recogida.",
@@ -578,7 +573,9 @@
     "title": "Panaderos artesanos con problemas para contratar personal cualificado"
    }
   ],
-  "warnings": []
+  "warnings": [
+   "event \"Mostaza Fest, feria local de diseño y artesanía\" dated 2026 but its source is from 2025: dropped"
+  ]
  },
  "meta": {
   "model": "claude-sonnet-5-5",

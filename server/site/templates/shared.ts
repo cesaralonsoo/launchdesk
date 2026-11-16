@@ -117,7 +117,7 @@ export function priceLine(c: RenderCtx): string {
 
 export function scarcity(c: RenderCtx): string {
   const bits: string[] = [];
-  if (c.spec.reserve.limit) bits.push(esc(fill(c.ui.only, { n: c.spec.reserve.limit })));
+  // No "Only N available": the limit comes from the analysis, not from the founder, so it would be a made-up number.
   if (c.reserved > 0) bits.push(esc(fill(c.ui.reserved, { n: c.reserved })));
   return bits.length ? `<p class="scarce"><i></i>${bits.join(" · ")}</p>` : "";
 }

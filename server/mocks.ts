@@ -347,7 +347,7 @@ const dog: Sample = {
     price_note: "Group walk €12; average €13",
     startup_note: "Insurance, gear, booking page, legal",
     main_risk: "Margin depends on group walks: if most owners want solo walks, test an €18 solo price in week two.",
-    launch_offer: { item: "First group walk", price: 9, normal_price: 12, limit: 50 },
+    launch_offer: { item: "First midday walk", price: 9, normal_price: 12, limit: 50 },
   },
   nova: {
     names: [

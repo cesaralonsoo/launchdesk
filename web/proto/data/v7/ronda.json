@@ -856,7 +856,7 @@
     "main_risk": "Margin depends on group walks: if most owners want solo walks, test an €18 solo price in week two.",
     "key_assumption": "gross_margin_pct",
     "launch_offer": {
-     "item": "First group walk",
+     "item": "First midday walk",
      "price": 9,
      "normal_price": 12,
      "limit": 50,

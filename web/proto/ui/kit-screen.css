@@ -12,14 +12,22 @@
 .ko-foot { margin: 0; text-align: center; font-size: 12px; color: var(--c-muted); }
 
 .kit { display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 1080px; margin: 0 auto; }
-.kit-head { display: flex; flex-direction: column; gap: 4px; }
+.kit-head { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
+.kh-mark { flex: none; width: 64px; height: 64px; border-radius: 16px; display: grid; place-items: center; box-shadow: 0 0 0 1px var(--c-line); }
+.kh-t { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 220px; }
 .kit-head .t-display { margin: 0; }
+.kh-name { font-size: clamp(30px, 5vw, 40px); line-height: 1.05; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.kh-live { margin: 2px 0 0; display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; color: var(--c-positive); }
+.kh-live .ks-dot { width: 8px; height: 8px; }
+.kh-open { flex: none; min-height: 48px; text-decoration: none; }
+@media (max-width: 600px) { .kh-open { flex: 1 1 100%; justify-content: center; } .kh-mark { width: 52px; height: 52px; } .kh-mark svg { width: 36px; height: 36px; } }
 .kit-tag { margin: 0; color: var(--c-muted); font-size: 16px; }
 .kit-panels { display: grid; gap: 14px; grid-template-columns: 1fr; }
-@media (min-width: 900px) { .kit-panels { grid-template-columns: 1fr 1.25fr 1fr; align-items: start; } }
+@media (min-width: 900px) { .kit-panels { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); align-items: start; } .kp-logo { grid-column: 1 / -1; } }
 
 .kp { border: 1px solid var(--c-line); border-radius: 18px; background: var(--c-surface); padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
-.kp > header { display: flex; align-items: center; gap: 10px; }
+.kp > header { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; }
+.kp-hint { margin: 0; flex: 1 1 100%; padding-left: 34px; font-size: 13px; color: var(--c-muted); }
 .kp h3 { margin: 0; font-size: 17px; font-weight: 600; color: var(--c-ink); }
 .kp-n { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 600; background: var(--c-fill); color: var(--c-ink); flex: none; }
 .kp-site.kp > header h3 { color: var(--c-ink); }
@@ -47,8 +55,9 @@
 /* website */
 .ks-live { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 12px; background: var(--c-fill); min-width: 0; }
 .ks-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--c-positive); flex: none; box-shadow: 0 0 0 4px color-mix(in srgb, var(--c-positive) 22%, transparent); }
-.ks-url { font-size: 15px; font-weight: 600; color: var(--c-ink); text-decoration: none; overflow-wrap: anywhere; min-width: 0; }
-.ks-url:hover { text-decoration: underline; }
+.ks-url { display: flex; flex-direction: column; gap: 2px; font-size: 15px; font-weight: 600; color: var(--c-ink); text-decoration: none; overflow-wrap: anywhere; min-width: 0; }
+.ks-url small { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 500; color: var(--c-muted); }
+.ks-url:hover small { text-decoration: underline; }
 .ks-row { display: flex; gap: 14px; align-items: center; }
 .kit-qr { flex: none; border-radius: 10px; border: 1px solid var(--c-line); background: #fff; }
 .ks-btns { display: flex; flex-direction: column; gap: 8px; min-width: 0; flex: 1; }
@@ -82,3 +91,7 @@
 .kit-toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); padding: 10px 16px; border-radius: 99px; background: var(--c-ink); color: var(--c-surface); font-size: 14px; z-index: 50; max-width: calc(100vw - 32px); overflow-wrap: anywhere; }
 
 @media (prefers-reduced-motion: reduce) { .kw-bar i, .kit-wait .dots i { animation: none; } }
+
+/* the logo picker (WP2) in the app's colours */
+.kp-logo .lp { --lp-card: var(--c-surface); --lp-line: var(--c-line); --lp-muted: var(--c-muted); --lp-accent: var(--c-positive); }
+.kp-plan .pv-k { display: none; } /* the panel already says "Your 30-day plan" */

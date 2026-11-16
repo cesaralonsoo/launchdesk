@@ -58,6 +58,8 @@ body{background:var(--bg)}
 .wl input[type=email]{background:color-mix(in srgb,var(--ink) 6%,transparent);border-color:color-mix(in srgb,var(--ink) 14%,transparent)}.wl button{background:var(--ink);color:var(--bg)}
 footer{padding:32px 0 48px;font-size:14px;color:var(--mu)}footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px;align-items:center}
 .bar-in{background:color-mix(in srgb,var(--sf) 75%,transparent)}
+svg.mark{background:#F7F5F0;border-radius:24%;box-shadow:0 0 0 1px rgb(255 255 255/.12)}.big svg.mark{padding:26px}
+.btn-p{background:var(--ink);color:var(--bg)}
 `;
 
 function section(c: RenderCtx, s: Section): string {

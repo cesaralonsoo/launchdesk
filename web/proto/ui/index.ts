@@ -25,7 +25,9 @@ import { createProject, liveConfig } from "../live/adapter";
 import { livePayHtml, mountPay } from "../live/pay";
 import { ldMark } from "./logo";
 import { badge } from "./pixel";
-import { builderBadge } from "./steps";
+import { builderBadge, KIT_CENTS } from "./steps";
+import { kitOfferHtml, mountKitScreen, officesTeaserHtml } from "./kit-screen";
+import { projects as savedProjects } from "../../src/app/projects";
 import { BUILD_TEAM } from "../contracts";
 import type { AppConfig as AppConfigLike } from "../../src/types";
 
@@ -94,9 +96,9 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     let k = "", t = "";
     if (demo) k = "";
     else if (flow.live) {
-      if (cfg?.mockAi) (k = "demo"), (t = "Demo mode: sample analysis");
+      if (cfg?.mockAi) (k = "demo"), (t = "Sample data");
     } else if (st === "idea" || st === "end" || st === "bedroom") {
-      if (cfg?.mockAi) (k = "demo"), (t = "Demo mode: sample analysis");
+      if (cfg?.mockAi) (k = "demo"), (t = "Sample data");
     } else if (flow.isSample(flow.project.id)) (k = "example"), (t = "Example");
     modeTag.hidden = !k;
     if (k && (modeTag.dataset.k !== k || modeTag.dataset.t !== t)) {
@@ -104,7 +106,7 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
       modeTag.dataset.t = t;
       modeTag.title = t;
       // Phones get the short word so the tag never pushes "Your offices" off-screen.
-      modeTag.innerHTML = `<i></i><span class="lt-l">${t}</span><span class="lt-s">${k === "demo" ? "Demo" : t}</span>`;
+      modeTag.innerHTML = `<i></i><span class="lt-l">${t}</span><span class="lt-s">${k === "demo" ? "Sample" : t}</span>`;
     }
   }
 
@@ -119,7 +121,7 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     growEl.innerHTML = ([0, 1, 2, 3] as WorldLevel[])
       .map((l) => `<li data-s="${l === cur ? "now" : l < cur ? "done" : l > cap ? "ghost" : "next"}" title="${LEVEL_META[l].name}${l > cap ? " · beyond this idea's reach" : ""}">${levelGlyph(l, 16)}<span>${LEVEL_META[l].short}</span></li>`)
       .join("");
-    obG.innerHTML = levelGlyph(cur, 14);
+    obG.innerHTML = I.grid(14); // a plain "your projects" mark, not a game level
   }
 
   // ────────────────────────────── demo bar
@@ -199,9 +201,9 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     if (key === "end") return ideaHtml(flow.project.idea, "", true);
     if ((key === "pay1" || key === "pay2") && flow.live && !demo) {
       const st = key === "pay1" ? 1 : 2;
-      const avs = st === 1 ? (flow.roster.length ? flow.roster.map((a) => badge(a.name, a.color, 26)).join("") : "") : BUILD_TEAM.map((b) => builderBadge(b, 26)).join("");
-      return livePayHtml(st === 1 ? "validate" : "build", cfg?.prices[st === 1 ? "validate" : "build"] ?? (st === 1 ? 10 : 20), avs,
-        st === 1 ? "Validate your idea" : "Build and launch", st === 1 ? "A research team picked for this idea" : "Brand · logo and site · launch plan · live",
+      const avs = st === 1 ? (flow.roster.length ? flow.roster.map((a) => badge(a.name, a.color, 26)).join("") : "") : BUILD_TEAM.filter((b) => b !== "pip").map((b) => builderBadge(b, 26)).join("");
+      return livePayHtml(st === 1 ? "validate" : "build", cfg?.prices[st === 1 ? "validate" : "build"] ?? (st === 1 ? 10 : KIT_CENTS), avs,
+        st === 1 ? "Validate your idea" : "Launch kit", st === 1 ? "A research team picked for this idea" : "Your logo · your website · your 30-day plan",
         !!cfg?.mockAi, ldMark(18, undefined, true));
     }
     if (key === "pay1") return payHtml(flow, 1, !!typedIdea.trim() && typedIdea.trim() !== flow.project.idea.trim());
@@ -213,8 +215,10 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     if (key.startsWith("report:")) return reportPage(flow, s.page ?? "score");
     if (key.startsWith("steer")) return steerHtml(flow, steerDraft);
     if (key === "boom") return boomHtml();
-    if (key === "floor") return floorHtml(flow);
+    if (key === "floor") return kitOfferHtml(cfg?.prices.build ?? KIT_CENTS);
     if (key.startsWith("build:")) return v ? resultCard(v, s.builder!) : s.phase === "result" ? noBuildHtml(s.builder ?? null) : "";
+    // A real project (also on a demo-mode server): the one Launch kit screen, filled in live from the server.
+    if (key === "live" && flow.live) return `<div class="kit-root"></div>`;
     if (key === "live") return v ? livePanel(v, flow.report) : noBuildHtml(null);
     if (key.startsWith("building")) return levelHtml(flow, 2, v?.name ?? flow.project.title);
     if (key.startsWith("district")) return levelHtml(flow, 3, v?.name ?? flow.project.title);
@@ -301,6 +305,21 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
   }
 
   function mount(p: HTMLElement, key: string, s: FlowStateV7) {
+    if (key === "live" && flow.live) {
+      const host = p.querySelector<HTMLElement>(".kit-root");
+      const id = flow.live.id;
+      if (host) {
+        const k = mountKitScreen(host, {
+          projectId: id,
+          ownerKey: savedProjects.ownerKey(id),
+          onOffices: (name) => openOverlay(officesTeaserHtml(name || "your business"), "offices"),
+        });
+        // the panels fill in over time: keep the world framed above the sheet
+        const ro = new ResizeObserver(() => measure());
+        ro.observe(host);
+        disposePanel = () => (k.stop(), ro.disconnect());
+      }
+    }
     if (key === "work") {
       feedEl = p.querySelector<HTMLElement>(".wk-feed");
       noteSeen.clear();
@@ -521,33 +540,77 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     backBtn.hidden = !show;
   }
   // History: each surface the founder reaches is one browser entry, so the browser's back button = our Back.
+  // Each entry remembers its index and what it showed, so Forward can return to it (Back = our Back).
+  type HistEntry = { ld: 1; i: number; pid?: string | null; step?: FlowStateV7["step"]; page?: string };
   let histKey = "";
+  let histIdx = 0;
   let popping = false;
+  const entryNow = (i: number): HistEntry => ({ ld: 1, i, pid: flow.live?.id ?? null, step: flow.state.step, page: flow.state.page });
   try {
-    history.replaceState({ ld: 1 }, "");
+    const st = history.state as HistEntry | null;
+    histIdx = typeof st?.i === "number" ? st.i : 0;
+    history.replaceState({ ...entryNow(histIdx) }, "");
   } catch {
     /* sandboxed */
   }
+  const HIST_SAFE: ReadonlyArray<FlowStateV7["step"]> = ["report", "floor", "pay2", "live", "steer"];
+  let restoring: HistEntry | null = null;
   function pushHistory() {
     const s = flow.state;
     const k = `${s.step}:${s.page ?? ""}:${flow.project.id}`;
     if (k === histKey) return;
     const first = !histKey;
     histKey = k;
-    if (first || popping || demo || s.step === "bedroom" || deps.still) return;
+    if (popping || demo || deps.still) return;
+    // Reopening a project from Back/Forward: land on the surface that entry showed, in the same entry (no new one).
+    if (restoring && flow.live?.id === restoring.pid && s.step !== "bedroom") {
+      const want = restoring;
+      restoring = null;
+      if (want.step && want.step !== s.step && HIST_SAFE.includes(want.step) && (want.step !== "live" || s.step === "live")) {
+        popping = true;
+        try {
+          flow.goto({ step: want.step, ...(want.page ? { page: want.page as never } : {}) });
+        } finally {
+          popping = false;
+        }
+        histKey = `${flow.state.step}:${flow.state.page ?? ""}:${flow.project.id}`;
+      }
+      try {
+        history.replaceState(entryNow(histIdx), "", location.pathname + location.search);
+      } catch {
+        /* sandboxed */
+      }
+      return;
+    }
     try {
-      history.pushState({ ld: 1 }, "", location.pathname + location.search);
+      if (first) history.replaceState(entryNow(histIdx), "", location.pathname + location.search);
+      else if (s.step !== "bedroom") history.pushState(entryNow(++histIdx), "", location.pathname + location.search);
     } catch {
       /* sandboxed */
     }
   }
-  addEventListener("popstate", () => {
+  addEventListener("popstate", (e) => {
+    const st = e.state as HistEntry | null;
+    const forward = typeof st?.i === "number" && st.i > histIdx;
+    if (typeof st?.i === "number") histIdx = st.i;
     popping = true;
     try {
-      goBack();
+      // Back and Forward both return to what that entry showed, for the surfaces that can be reopened as they were;
+      // anything else (a run in progress, the pay card for the research) takes our Back.
+      if (st?.pid && st.pid !== flow.live?.id && !demo) {
+        closeOverlay();
+        restoring = st;
+        flow.next({ type: "switch-project", id: st.pid });
+      } else if (st && overlay.dataset.open === "1" && !forward) closeOverlay();
+      else if (st?.pid && st.step && HIST_SAFE.includes(st.step) && !flow.moving) {
+        closeOverlay();
+        flow.goto({ step: st.step, ...(st.page ? { page: st.page as never } : {}) });
+      } else if (forward && st && !st.pid && flow.live && !demo) goHome(true);
+      else if (!forward) goBack();
     } finally {
       popping = false;
     }
+    histKey = `${flow.state.step}:${flow.state.page ?? ""}:${flow.project.id}`;
     // keep the address bar on the run that is really shown
     const want = flow.live ? `/p/${encodeURIComponent(flow.live.id)}` : "/";
     try {

@@ -10,6 +10,7 @@ import * as editorial from "./templates/editorial.js";
 import * as bold from "./templates/bold.js";
 import * as warm from "./templates/warm.js";
 import { currencySymbol, money, tokens } from "./validate.js";
+import { lintSymbol } from "../brand/lint.js";
 
 const TEMPLATES = { editorial, bold, warm } as const;
 
@@ -75,9 +76,17 @@ function qrSvg(text: string): string {
 
 const bchAmount = (usd: number, bchUsd: number) => (usd > 0 && bchUsd > 0 ? (usd / bchUsd).toFixed(8).replace(/0+$/, "").replace(/\.$/, "") : "");
 
-/** Strips anything but drawing elements from a logo before it is inlined (defence in depth over WP2's lint). */
-export function safeLogo(svg: string | undefined | null): string | null {
+/**
+ * The logo as it is inlined: rebuilt by WP2's allowlist linter (only known drawing elements and attributes, palette
+ * colours) when the palette is known, then the old denylist as a second gate.
+ */
+export function safeLogo(svg: string | undefined | null, palette?: Kit["brand"]["palette"]): string | null {
   if (!svg || svg.length > 20_000) return null;
+  if (palette) {
+    const r = lintSymbol(svg, palette);
+    if (!r.ok || !r.svg) return null;
+    svg = r.svg;
+  }
   if (/<\s*(script|foreignObject|iframe|image|use|style|a)\b/i.test(svg) || /\son\w+\s*=|javascript:|href\s*=|url\((?!#)/i.test(svg)) return null;
   return svg.replace(/<\/?svg[^>]*>/gi, "");
 }
@@ -87,7 +96,7 @@ export function renderSite(spec: SiteSpec, kit: Pick<Kit, "brand" | "logo">, tem
   const brand = kit.brand;
   const t = tokens(brand.palette, T.mode);
   const chosen = kit.logo?.options.find((o) => o.id === kit.logo?.chosen) ?? kit.logo?.options[0];
-  const logo = safeLogo(chosen?.svg);
+  const logo = safeLogo(chosen?.svg, kit.brand.palette);
   const r = spec.reserve;
   const cur = r.currency || brand.currency || "$";
   const price = r.price > 0 ? money(r.price, cur, spec.lang) : "";

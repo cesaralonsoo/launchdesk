@@ -52,7 +52,10 @@ test("prices come from the report, not the model", () => {
 });
 
 test("stats only when they map to a sourced report stat", () => {
-  const fx = loadFixture("bakery-es");
+  const raw = loadFixture("bakery-es");
+  // Sample sources (example.org) never reach a page: with them, no proof section at all.
+  assert.ok(!validateModelSite(raw.model, raw.input).spec.sections.some((s) => s.kind === "proof-stats"), "example.org stats are dropped");
+  const fx = { ...raw, input: { ...raw.input, report: { ...raw.input.report, stats: raw.input.report.stats.map((st) => ({ ...st, sourceUrl: st.sourceUrl.replace("www.example.org", "www.ine.es") })) } } };
   const { spec, issues } = validateModelSite(fx.model, fx.input);
   const proof = spec.sections.find((s) => s.kind === "proof-stats");
   assert.ok(proof && proof.kind === "proof-stats");
@@ -80,9 +83,10 @@ test("hostile model text is escaped and cleaned; hype words dropped; garbage inp
 test("logo is read at render time and unsafe logos fall back to a monogram", () => {
   const fx = loadFixture("saas-en");
   const { spec } = validateModelSite(fx.model, fx.input);
-  const other = { id: "x2", family: "geometric" as const, idea: "", svg: `<circle cx="32" cy="32" r="20" fill="#123456"/>` };
-  const html = renderSite(spec, { brand: fx.input.brand, logo: { options: [...fx.logos, other], chosen: "x2", fallback: false } }, "editorial", { reserved: 0 });
-  assert.match(html, /#123456/);
+  const brand = { ...fx.input.brand, palette: { ...fx.input.brand.palette, accent: "#123456" } };
+  const other = { id: "x2", family: "geometric" as const, idea: "", svg: `<circle cx="32" cy="32" r="24" fill="#123456"/>` };
+  const html = renderSite(spec, { brand, logo: { options: [...fx.logos, other], chosen: "x2", fallback: false } }, "editorial", { reserved: 0 });
+  assert.match(html, /#123456/i);
   assert.equal(safeLogo(`<circle onload="x()"/>`), null);
   assert.equal(safeLogo(`<image href="https://e.vil/x.png"/>`), null);
   assert.ok(safeLogo(`<rect width="64" height="64"/>`));

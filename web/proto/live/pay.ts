@@ -74,7 +74,7 @@ function causeOf(e: unknown): Cause {
 export function livePayHtml(stage: Stage, cents: number, avatars: string, title: string, line: string, mock: boolean, merchant: string): string {
   return `
   <section class="pay pay-live">
-    <header class="pay-top" data-st><span class="pay-merchant">${merchant}<b>LaunchDesk</b></span><span class="tag${mock ? " tag-demo" : ""}">${mock ? "Demo mode: sample analysis" : "Bitcoin Cash · mainnet"}</span></header>
+    <header class="pay-top" data-st><span class="pay-merchant">${merchant}<b>LaunchDesk</b></span><span class="tag${mock ? " tag-demo" : ""}">${mock ? "Sample data" : "Bitcoin Cash · mainnet"}</span></header>
     <div class="pay-amount" data-st><b class="huge">${usd(cents)}</b><span class="pl-sats">in Bitcoin Cash</span></div>
     <div class="pay-line" data-st><div class="pay-avs">${avatars}</div><div><b>${esc(title)}</b><span>${esc(line)}</span></div></div>
     <div class="pl-slot" data-st aria-live="polite"></div>
@@ -85,7 +85,7 @@ export function livePayHtml(stage: Stage, cents: number, avatars: string, title:
 export function mountPay(root: HTMLElement, d: PayDeps): () => void {
   const slot = root.querySelector<HTMLElement>(".pl-slot")!;
   const satsEl = root.querySelector<HTMLElement>(".pl-sats")!;
-  const cents = d.config?.prices[d.stage] ?? (d.stage === "validate" ? 10 : 20);
+  const cents = d.config?.prices[d.stage] ?? (d.stage === "validate" ? 10 : 50);
   const mock = !!d.config?.mockAi;
   const devOk = !mock && !!d.config?.devSkipPayment;
   let quote: Quote | null = null;

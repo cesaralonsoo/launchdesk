@@ -368,3 +368,10 @@
 /* integrate: the CEO note field stays one row (text left, Send right) on phones too */
 .steer-f .idea-field { flex-direction: row; align-items: center; text-align: left; }
 .steer-f .idea-field textarea { text-align: left; }
+
+/* Plain chrome: no game levels in the top bar (the world is the background, not a menu). */
+.ui.v7 .grow { display: none; }
+/* Phones, the Launch kit result: the sheet takes the screen under the top bar; the office stays behind it. */
+@media (max-width: 600px) {
+  .v7 .panel[data-pos="sheet"][data-key="live"] { top: 64px; max-height: none; border-radius: var(--r-lg) var(--r-lg) 0 0; }
+}

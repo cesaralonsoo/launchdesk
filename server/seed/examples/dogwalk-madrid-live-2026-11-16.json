@@ -1,0 +1,2045 @@
+{
+ "_note": "Real live validate run, 2026-11-16, MOCK_AI=0, $0.0659 (Haiku 5.5, 4 searches, 2 fetches). Verdict no-go, so no Launch kit was run. Every URL is one the live run returned. Not yet wired into MOCK replay (server/v7-samples.ts REPORT_SAMPLES.dog still serves the opt V4-b run).",
+ "project": {
+  "id": "bhrjlcUzFQ",
+  "idea": "A dog-walking app for busy Madrid professionals, €12 a walk",
+  "created_at": 1794792226159,
+  "payments": {
+   "validate": {
+    "txid": "dev-example",
+    "sats": 0,
+    "cents": 10,
+    "at": 1794792226216
+   }
+  },
+  "status": {
+   "mia": "done",
+   "leo": "done",
+   "sam": "done"
+  },
+  "results": {
+   "mia": {
+    "title": "Dog-walking booking service in Madrid",
+    "one_liner": "Trusted Madrid dog walks booked in two taps, €12 per walk, same day.",
+    "brief": {
+     "concept": "App-booked 30-minute dog walks in Madrid neighbourhoods during working hours, sold at €12 per walk with a paid trial first.",
+     "for": "Madrid professionals aged 28 to 45 who own a dog, work office hours, and live or work in Chamberí, Salamanca or Retiro.",
+     "goal": "Prove demand: 15 paid trial walks at €12 booked by week 4, or stop."
+    },
+    "market": {
+     "city": "Madrid",
+     "country_iso": "ES",
+     "currency": "€",
+     "language": "en"
+    },
+    "gate": {
+     "metric": "paid trial walks",
+     "target": 15,
+     "by_week": 4
+    },
+    "checklist": [
+     {
+      "week": 1,
+      "task": "Interview 20 Madrid professionals who own dogs",
+      "how": "Find owners in local dog-owner groups and office community channels, then ask how they book walks and what they paid last month.",
+      "done_when": "20 interviews logged, 8 or more say they pay for walks",
+      "helped_by": "leo",
+      "est_hours": 8
+     },
+     {
+      "week": 1,
+      "task": "Log prices and slots from 10 existing walker listings",
+      "how": "Check 10 current dog-walking listings serving Madrid, noting price per walk, available time slots, and cancellation terms in one sheet.",
+      "done_when": "10 listings logged with price and slot data",
+      "helped_by": "sam",
+      "est_hours": 3
+     },
+     {
+      "week": 2,
+      "task": "Build a one-page booking form with payment link",
+      "how": "Create a single form asking for owner name, dog details, neighbourhood, and preferred time window, ending in a €12 trial payment link.",
+      "done_when": "Form live and one test payment completed",
+      "helped_by": "dex",
+      "est_hours": 4
+     },
+     {
+      "week": 2,
+      "task": "Recruit 5 walkers for manual trial walks",
+      "how": "Contact 5 freelance walkers you can pay per walk, confirm availability for weekday midday slots, and agree a flat fee per walk.",
+      "done_when": "5 walkers confirmed for at least 3 slots each",
+      "helped_by": null,
+      "est_hours": 6
+     },
+     {
+      "week": 2,
+      "task": "Run 5 paid trial walks and collect feedback",
+      "how": "Book 5 interviewees onto the trial form, have a walker complete each walk, then message the owner for a rating and one improvement.",
+      "done_when": "5 paid walks completed, 5 feedback notes recorded",
+      "helped_by": null,
+      "est_hours": 10
+     },
+     {
+      "week": 3,
+      "task": "Publish the landing page with the €12 trial offer",
+      "how": "Write one page covering the walk, the neighbourhoods served, the price, and a booking button linked to the trial form.",
+      "done_when": "Page live with trial form tracked for clicks and bookings",
+      "helped_by": "pip",
+      "est_hours": 5
+     },
+     {
+      "week": 3,
+      "task": "Send 60 personal outreach messages to warm contacts",
+      "how": "Write a short message offering the trial to interviewees and their colleagues, and send each one personally from your own account.",
+      "done_when": "60 messages sent, 12 or more replies received",
+      "helped_by": "rae",
+      "est_hours": 6
+     },
+     {
+      "week": 3,
+      "task": "Post the trial offer in 3 Madrid dog-owner groups",
+      "how": "Write one post per group that names the neighbourhoods and the €12 price, following each group's posting rules, and link to the form.",
+      "done_when": "3 posts live, 40 or more link clicks logged",
+      "helped_by": "rae",
+      "est_hours": 2
+     },
+     {
+      "week": 4,
+      "task": "Track weekly bookings, cancellations and revenue",
+      "how": "Update one sheet every evening with form submissions, paid trials, cancellations, and euros collected, so the count is always current.",
+      "done_when": "Sheet updated daily with paid trial total",
+      "helped_by": "sam",
+      "est_hours": 2
+     },
+     {
+      "week": 4,
+      "task": "Count paid trial walks against the gate on Sunday",
+      "how": "Total completed paid trial walks from the payment record only, not from bookings, and compare the count with the target of 15.",
+      "done_when": "Paid walk count written down against target 15",
+      "helped_by": "sam",
+      "est_hours": 1.5
+     },
+     {
+      "week": 4,
+      "task": "Write the go or stop decision memo",
+      "how": "Record the paid walk count, the top two owner objections, and one clear decision with its reason in under 200 words.",
+      "done_when": "Decision memo saved with one reason and one next step",
+      "helped_by": null,
+      "est_hours": 2
+     }
+    ]
+   },
+   "leo": {
+    "score": 2.8,
+    "verdict": "no-go",
+    "headline": "No-go: The price is in range. A 30-minute walk in Madrid is…",
+    "summary": "No-go: The price is in range. A 30-minute walk in Madrid is reported at €10–15 and €7–15, so €12 is defensible for that length. 26 findings, 21 with a source.",
+    "signals": [
+     {
+      "name": "Demand",
+      "score": 4,
+      "why": "Whopaws says central districts have more walkers and more competition, which can…",
+      "source_id": 3
+     },
+     {
+      "name": "Competition gap",
+      "score": 3,
+      "why": "Rover's Madrid average is €10 per 30-minute walk, with most bookings from…",
+      "source_id": 5
+     },
+     {
+      "name": "Price acceptance",
+      "score": 4,
+      "why": "Whopaws' group walks sit at €8–12 per session, and a 20-walk bundle…",
+      "source_id": 3
+     },
+     {
+      "name": "Channel",
+      "score": 4,
+      "why": "Whopaws says central districts have more walkers and more competition, which can…",
+      "source_id": 3
+     },
+     {
+      "name": "Timing",
+      "score": 1,
+      "why": "Whopaws says it holds payment until the client confirms the walk. This…",
+      "source_id": 3
+     }
+    ],
+    "why_go": "Whopaws says it holds payment until the client confirms the walk. This is a useful model to copy, since it protects buyers and gives you dispute control.",
+    "risks": [
+     {
+      "risk": "Whopaws says central districts have more walkers and more competition, which can pull rates down.",
+      "mitigation": "Put up a simple booking page and a paid waitlist in two or three Madrid professional networks, offering the first 10 walks at €12 with a refund if the walker does not show. Use a manual walker you already know. Keep the walk length fixed at 30 minutes.",
+      "severity": "high"
+     },
+     {
+      "risk": "Whopaws' group walks sit at €8–12 per session, and a 20-walk bundle at €150–200. This sets a low ceiling on what buyers pay for shared walks, which may cut into your premium.",
+      "mitigation": "Ask the 10 pilot customers which walk length they would book at €12 and at €18, and record the answer. Also check your own price list against two competitor listings.",
+      "severity": "high"
+     },
+     {
+      "risk": "The price data is advertised rather than transactional. Several listings are undated or more than a year old, and one listing is in Valdemoro, outside the city.",
+      "mitigation": "Get quotes from two Spanish liability insurers for a micro-business covering walkers and third-party damage, and speak to five walkers who would take a booked walk at the payout you can afford.",
+      "severity": "med"
+     }
+    ],
+    "pivot": null,
+    "next_step": "Put up a simple booking page and a paid waitlist in two or three Madrid professional networks, offering the first 10 walks at €12 with a refund if the walker does not show. Use a manual walker you already know. Keep the walk length fixed at 30 minutes.",
+    "market_facts": [
+     {
+      "fact": "Madrid listings advertise 30-minute walks from €10 and 60-minute walks up to €20. Petme lists walks at €12–22 for 30–60 minutes, which includes your price point.",
+      "source_id": 1,
+      "is_estimate": false
+     },
+     {
+      "fact": "Petme recruits walkers for regular walks in Chamberí and Salamanca. This shows where walk work is sought, not where buyers live or spend, but it suggests the central districts have active demand.",
+      "source_id": 2,
+      "is_estimate": false
+     },
+     {
+      "fact": "Whopaws says central districts have more walkers and more competition, which can pull rates down.",
+      "source_id": 3,
+      "is_estimate": false
+     },
+     {
+      "fact": "The price data is advertised rather than transactional. Several listings are undated or more than a year old, and one listing is in Valdemoro, outside the city.",
+      "source_id": 4,
+      "is_estimate": false
+     },
+     {
+      "fact": "Most sources are marketplace price lists or guides, not verified transaction data.",
+      "source_id": 2,
+      "is_estimate": false
+     }
+    ],
+    "competitors": [],
+    "you": {
+     "price": 5,
+     "differentiation": 7
+    },
+    "sources": [
+     {
+      "id": 1,
+      "url": "https://www.petbacker.com/spain/walking/comunidad-de-madrid/madrid/madrid-~-madrid-freelance-dog-walker",
+      "title": "Dog Walking in Madrid - Madrid Atoc, Madrid",
+      "domain": "petbacker.com",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 2,
+      "url": "https://petme.social/spain/dog-walking-jobs/madrid",
+      "title": "Petme",
+      "domain": "petme.social",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 3,
+      "url": "https://www.whopaws.com/es/blog/paseador-perros-madrid",
+      "title": "Paseador de Perros Confianza Madrid 2026",
+      "domain": "whopaws.com",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 4,
+      "url": "https://professnow.com/profession/top-10-best-dog-walker-pet-sitter-in-madrid/",
+      "title": "Top 10 Best Dog Walker / Pet Sitter in Madrid (Verified & Reviewed ...",
+      "domain": "professnow.com",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 5,
+      "url": "https://www.rover.com/es/madrid--comunidad-de-madrid--paseador-de-perros/",
+      "title": "Los Mejores Paseadores De Perros En madrid",
+      "domain": "rover.com",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 6,
+      "url": "https://www.rover.com/es/campo-real--comunidad-de-madrid--paseador-de-perros/",
+      "title": "Los Mejores Paseadores De Perros En campo-real",
+      "domain": "rover.com",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 7,
+      "url": "https://www.rover.com/es/blog/las-rozas-de-madrid-perro-paseador-de-perros-precio/",
+      "title": "¿Cuánto cuesta el paseo de perros en Las Rozas de Madrid, Comunidad ...",
+      "domain": "rover.com",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 8,
+      "url": "https://appwebel.com/servicios/paseo-de-perros-domicilio/madrid/b/madrid-este",
+      "title": "Paseador de perros a domicilio en Madrid - Este",
+      "domain": "appwebel.com",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 9,
+      "url": "https://yoojo.es/animales/guias/cuanto-cuesta-un-paseador-de-perros-precio-por-paseo-819",
+      "title": "Cuánto cuesta un paseador de perros en 2026: precio por paseo, ...",
+      "domain": "yoojo.es",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 10,
+      "url": "https://www.cronoshare.com/comunidad/p/autonomos-empresas/crear-empresa/como-ser-paseador-perros",
+      "title": "Cómo ser paseador de perros",
+      "domain": "cronoshare.com",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 11,
+      "url": "https://sede.comunidad.madrid/inscripciones-registro/identificacion-animales-compania",
+      "title": "Identificación animales compañia",
+      "domain": "sede.comunidad.madrid",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 12,
+      "url": "https://www.estrelladigital.es/articulo/vida/normas-pasear-perros-madrid/20250525133912431585.html",
+      "title": "Normas para pasear a los perros en Madrid",
+      "domain": "estrelladigital.es",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 13,
+      "url": "https://vetmadrid.com/perros-potencialmente-peligrosos-madrid/",
+      "title": "Perros potencialmente peligrosos Madrid 2026",
+      "domain": "vetmadrid.com",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 14,
+      "url": "https://www.thewalkingdog.es/blog/normativa-madrid-perros/",
+      "title": "La normativa en Madrid sobre perros en 2026. Un resumen",
+      "domain": "thewalkingdog.es",
+      "accessed": "2026-11-16"
+     }
+    ],
+    "interviews": {
+     "who": "",
+     "where": "",
+     "questions": [],
+     "good_sign": "",
+     "target": 0
+    },
+    "kill_criteria": [],
+    "score_math": "0.24×4.0 + 0.29×3.0 + 0.18×4.0 + 0.29×1.0 = 2.8",
+    "verdict_rule": "Go from 6.5 with no factor at 3 or below · Pivot 4.5–6.4 · No-go under 4.5",
+    "confidence": {
+     "level": "high",
+     "note": "21 of 26 findings cite a source"
+    }
+   },
+   "sam": {
+    "currency": "€",
+    "canvas": {
+     "customer": "Madrid professionals aged 28-45 with dogs, office hours, in Chamberí, Salamanca, Retiro.",
+     "value": "Booked 30-minute midday dog walk without leaving the office.",
+     "revenue": "€12 per walk, paid by card at booking, no subscription.",
+     "channels": "Neighbourhood WhatsApp groups, dog parks, vet clinic flyers, referrals.",
+     "costs": "Walker pay per walk, app hosting, insurance, part-time operations.",
+     "unit_economics": "Each walk keeps about €4.40 after walker pay and fees."
+    },
+    "assumptions": [
+     {
+      "key": "customers_per_day_m1",
+      "label": "Walks per open day, month 1",
+      "value": 0.6,
+      "unit": "walks per open day",
+      "basis": "Founder-led launch, about 15 walks in first month",
+      "is_estimate": true
+     },
+     {
+      "key": "customers_per_day_m12",
+      "label": "Walks per open day, month 12",
+      "value": 7,
+      "unit": "walks per open day",
+      "basis": "Two walkers at about 4 walks a day each",
+      "is_estimate": true
+     },
+     {
+      "key": "avg_ticket",
+      "label": "Revenue per walk",
+      "value": 12,
+      "unit": "EUR per walk",
+      "basis": "Matches sourced Madrid 30-minute listings",
+      "is_estimate": false
+     },
+     {
+      "key": "gross_margin_pct",
+      "label": "Gross margin per walk",
+      "value": 37,
+      "unit": "percent",
+      "basis": "€12 minus about €7.50 walker pay, fees, insurance",
+      "is_estimate": true
+     },
+     {
+      "key": "fixed_costs_month",
+      "label": "Fixed costs per month",
+      "value": 530,
+      "unit": "EUR per month",
+      "basis": "Sum of fixed cost lines below",
+      "is_estimate": true
+     },
+     {
+      "key": "startup_cost",
+      "label": "One-off start-up spend",
+      "value": 3500,
+      "unit": "EUR one-off",
+      "basis": "Freelance app build, company setup, insurance",
+      "is_estimate": true
+     },
+     {
+      "key": "open_days_month",
+      "label": "Open days per month",
+      "value": 26,
+      "unit": "days per month",
+      "basis": "Monday to Saturday, excluding public holidays",
+      "is_estimate": true
+     }
+    ],
+    "fixed_costs_breakdown": [
+     {
+      "label": "Software and hosting",
+      "value": 80
+     },
+     {
+      "label": "Liability insurance",
+      "value": 50
+     },
+     {
+      "label": "Ops coordinator, 10 hours a week",
+      "value": 300
+     },
+     {
+      "label": "Local marketing",
+      "value": 100
+     }
+    ],
+    "months": [
+     {
+      "month": 1,
+      "revenue": 187,
+      "costs": 648,
+      "cash": -3961
+     },
+     {
+      "month": 2,
+      "revenue": 246,
+      "costs": 685,
+      "cash": -4400
+     },
+     {
+      "month": 3,
+      "revenue": 345,
+      "costs": 747,
+      "cash": -4802
+     },
+     {
+      "month": 4,
+      "revenue": 503,
+      "costs": 847,
+      "cash": -5146
+     },
+     {
+      "month": 5,
+      "revenue": 732,
+      "costs": 991,
+      "cash": -5405
+     },
+     {
+      "month": 6,
+      "revenue": 1026,
+      "costs": 1176,
+      "cash": -5555
+     },
+     {
+      "month": 7,
+      "revenue": 1346,
+      "costs": 1378,
+      "cash": -5587
+     },
+     {
+      "month": 8,
+      "revenue": 1639,
+      "costs": 1563,
+      "cash": -5511
+     },
+     {
+      "month": 9,
+      "revenue": 1868,
+      "costs": 1707,
+      "cash": -5350
+     },
+     {
+      "month": 10,
+      "revenue": 2026,
+      "costs": 1806,
+      "cash": -5130
+     },
+     {
+      "month": 11,
+      "revenue": 2125,
+      "costs": 1869,
+      "cash": -4874
+     },
+     {
+      "month": 12,
+      "revenue": 2184,
+      "costs": 1906,
+      "cash": -4596
+     }
+    ],
+    "price": {
+     "value": 12,
+     "display": "€12.00",
+     "note": "One sale is one solo 30-minute walk, average ticket €12."
+    },
+    "startup_cost": {
+     "value": 3500,
+     "display": "€3.5k",
+     "note": "App build, company setup, insurance, walker onboarding."
+    },
+    "cash_needed": {
+     "value": 5587,
+     "display": "€5.6k",
+     "month": 7
+    },
+    "break_even": {
+     "month": 8,
+     "note": "Revenue covers costs from month 8"
+    },
+    "breakeven_units_per_day": 4.6,
+    "year1": {
+     "revenue": "€14k",
+     "costs": "€15k",
+     "result": "−€1.1k",
+     "monthly_profit_m12": "€278",
+     "payback": "About month 29"
+    },
+    "main_risk": "Walks per open day in month 1 (0.6): run a 2-week paid pre-order of 15 walks in Chamberí and Salamanca using a booking form and WhatsApp.",
+    "key_assumption": "gross_margin_pct",
+    "launch_offer": {
+     "item": "One 30-minute solo walk",
+     "price": 10,
+     "normal_price": 12,
+     "limit": 20,
+     "display": "€10",
+     "normal_display": "€12",
+     "discount_pct": 17,
+     "contribution": 2.44,
+     "contribution_display": "€2.44",
+     "revenue_if_sold_out": 200,
+     "revenue_display": "€200"
+    },
+    "unit": {
+     "price": 12,
+     "variable_cost": 7.56,
+     "contribution": 4.44,
+     "margin_pct": 37,
+     "line": "€12 a sale − €7.56 direct cost = €4.44 left"
+    },
+    "breakeven": {
+     "per_month": 120,
+     "per_day": 4.6,
+     "formula": "€530 fixed ÷ €4.44 per sale ÷ 26 days = 4.6 sales a day"
+    },
+    "headroom": {
+     "m12_per_day": 7,
+     "breakeven_per_day": 4.6,
+     "multiple": 1.5,
+     "note": "Month-12 plan is 1.5× break-even"
+    },
+    "sensitivity": [
+     {
+      "key": "gross_margin_pct",
+      "label": "Gross margin per walk",
+      "low": {
+       "value": 27,
+       "year1_result": -2519,
+       "break_even_month": 10,
+       "breakeven_per_day": 6.3,
+       "cash_needed": 6140
+      },
+      "base": {
+       "value": 37,
+       "year1_result": -1096,
+       "break_even_month": 8,
+       "breakeven_per_day": 4.6,
+       "cash_needed": 5587
+      },
+      "high": {
+       "value": 47,
+       "year1_result": 326,
+       "break_even_month": 7,
+       "breakeven_per_day": 3.7,
+       "cash_needed": 5252
+      },
+      "swing": 2845,
+      "line": "Gross margin per walk ±10 pts: year 1 from −€2.5k to +€326"
+     },
+     {
+      "key": "fixed_costs_month",
+      "label": "Fixed costs per month",
+      "low": {
+       "value": 424,
+       "year1_result": 176,
+       "break_even_month": 7,
+       "breakeven_per_day": 3.7,
+       "cash_needed": 4919
+      },
+      "base": {
+       "value": 530,
+       "year1_result": -1096,
+       "break_even_month": 8,
+       "breakeven_per_day": 4.6,
+       "cash_needed": 5587
+      },
+      "high": {
+       "value": 636,
+       "year1_result": -2368,
+       "break_even_month": 9,
+       "breakeven_per_day": 5.6,
+       "cash_needed": 6359
+      },
+      "swing": 2544,
+      "line": "Fixed costs per month ±20%: year 1 from −€2.4k to +€176"
+     },
+     {
+      "key": "customers_per_day_m12",
+      "label": "Walks per open day",
+      "low": {
+       "value": 5.6,
+       "year1_result": -2150,
+       "break_even_month": 9,
+       "breakeven_per_day": 4.6,
+       "cash_needed": 5958
+      },
+      "base": {
+       "value": 7,
+       "year1_result": -1096,
+       "break_even_month": 8,
+       "breakeven_per_day": 4.6,
+       "cash_needed": 5587
+      },
+      "high": {
+       "value": 8.4,
+       "year1_result": -44,
+       "break_even_month": 7,
+       "breakeven_per_day": 4.6,
+       "cash_needed": 5332
+      },
+      "swing": 2106,
+      "line": "Walks per open day ±20%: year 1 from −€2.1k to −€44"
+     }
+    ]
+   },
+   "v7": {
+    "version": 7,
+    "roster": [
+     {
+      "id": "demand",
+      "role": "demand",
+      "name": "Ava",
+      "color": "#22A06B",
+      "mission": "Who buys, how many of them, how often, what they spend and why they would switch",
+      "why": "Customers & demand",
+      "weight": 0.24
+     },
+     {
+      "id": "competition",
+      "role": "competition",
+      "name": "Leo",
+      "color": "#3B82F6",
+      "mission": "Named rivals and substitutes, their prices, strengths and the gap left open",
+      "why": "Competition & alternatives",
+      "weight": 0.29
+     },
+     {
+      "id": "pricing",
+      "role": "pricing",
+      "name": "Theo",
+      "color": "#CA8A04",
+      "mission": "Price you can charge, cost per unit, margin, fixed costs, break-even volume",
+      "why": "Money",
+      "weight": 0.18
+     },
+     {
+      "id": "viability",
+      "role": "viability",
+      "name": "Mia",
+      "color": "#8B7CF6",
+      "mission": "What kills it (rules, dependencies, timing), the cheapest first test and the path to scale",
+      "why": "Risks & how to start",
+      "weight": 0.29
+     }
+    ],
+    "work": [
+     {
+      "analyst": "demand",
+      "status": "done",
+      "findings": [
+       {
+        "id": "demand-0",
+        "analyst": "demand",
+        "kind": "number",
+        "text": "Madrid listings advertise 30-minute walks from €10 and 60-minute walks up to €20. Petme lists walks at €12–22 for 30–60 minutes, which includes your price point.",
+        "display": "€10",
+        "source": {
+         "url": "https://www.petbacker.com/spain/walking/comunidad-de-madrid/madrid/madrid-~-madrid-freelance-dog-walker",
+         "title": "Dog Walking in Madrid - Madrid Atoc, Madrid",
+         "domain": "petbacker.com",
+         "accessed": "2026-11-16"
+        },
+        "impact": 1,
+        "t": 0
+       },
+       {
+        "id": "demand-1",
+        "analyst": "demand",
+        "kind": "fact",
+        "text": "Petme recruits walkers for regular walks in Chamberí and Salamanca. This shows where walk work is sought, not where buyers live or spend, but it suggests the central districts have active demand.",
+        "source": {
+         "url": "https://petme.social/spain/dog-walking-jobs/madrid",
+         "title": "Petme",
+         "domain": "petme.social",
+         "accessed": "2026-11-16"
+        },
+        "impact": 1,
+        "t": 0
+       },
+       {
+        "id": "demand-2",
+        "analyst": "demand",
+        "kind": "fact",
+        "text": "Whopaws says central districts have more walkers and more competition, which can pull rates down.",
+        "source": {
+         "url": "https://www.whopaws.com/es/blog/paseador-perros-madrid",
+         "title": "Paseador de Perros Confianza Madrid 2026",
+         "domain": "whopaws.com",
+         "accessed": "2026-11-16"
+        },
+        "impact": -2,
+        "t": 0
+       },
+       {
+        "id": "demand-3",
+        "analyst": "demand",
+        "kind": "fact",
+        "text": "The price data is advertised rather than transactional. Several listings are undated or more than a year old, and one listing is in Valdemoro, outside the city.",
+        "source": {
+         "url": "https://professnow.com/profession/top-10-best-dog-walker-pet-sitter-in-madrid/",
+         "title": "Top 10 Best Dog Walker / Pet Sitter in Madrid (Verified & Reviewed ...",
+         "domain": "professnow.com",
+         "accessed": "2026-11-16"
+        },
+        "impact": -1,
+        "t": 0
+       },
+       {
+        "id": "demand-4",
+        "analyst": "demand",
+        "kind": "estimate",
+        "text": "The research found no Madrid population figure, no household spending on dog walking, no buyer profile and no demand growth data.",
+        "source": null,
+        "basis": "Not found in the research",
+        "impact": 0,
+        "t": 0
+       },
+       {
+        "id": "demand-5",
+        "analyst": "demand",
+        "kind": "fact",
+        "text": "Most sources are marketplace price lists or guides, not verified transaction data.",
+        "source": {
+         "url": "https://petme.social/spain/dog-walking-jobs/madrid",
+         "title": "Petme",
+         "domain": "petme.social",
+         "accessed": "2026-11-16"
+        },
+        "impact": 0,
+        "t": 0
+       }
+      ],
+      "score": 4,
+      "headline": "Prices show that walks sell in Madrid at around €10–15 for 30 minutes, but no source shows how many Madrid professionals buy them, where they live or what they spend. Demand is the largest unknown."
+     },
+     {
+      "analyst": "competition",
+      "status": "done",
+      "findings": [
+       {
+        "id": "competition-0",
+        "analyst": "competition",
+        "kind": "number",
+        "text": "Rover's Madrid average is €10 per 30-minute walk, with most bookings from €7 to €18. Rover's Las Rozas and Mejorada listings show averages near €10 too.",
+        "display": "€10",
+        "source": {
+         "url": "https://www.rover.com/es/madrid--comunidad-de-madrid--paseador-de-perros/",
+         "title": "Los Mejores Paseadores De Perros En madrid",
+         "domain": "rover.com",
+         "accessed": "2026-11-16"
+        },
+        "impact": -1,
+        "t": 0
+       },
+       {
+        "id": "competition-1",
+        "analyst": "competition",
+        "kind": "number",
+        "text": "Rover adds a service fee: its Campo Real page says a 15% fee applies on top of the sitter's rate. So the amount a client pays on Rover is above the sitter's rate, which makes €10 an all-in figure in some listings and a pre-fee figure in others.",
+        "display": "15%",
+        "source": {
+         "url": "https://www.rover.com/es/campo-real--comunidad-de-madrid--paseador-de-perros/",
+         "title": "Los Mejores Paseadores De Perros En campo-real",
+         "domain": "rover.com",
+         "accessed": "2026-11-16"
+        },
+        "impact": -1,
+        "t": 0
+       },
+       {
+        "id": "competition-2",
+        "analyst": "competition",
+        "kind": "number",
+        "text": "A Rover blog for Las Rozas says a local sitter usually charges €11 for a 30-minute visit, and that prices rise in peak periods to around €13 per day. This is a Las Rozas figure, not a central Madrid figure.",
+        "display": "€11",
+        "source": {
+         "url": "https://www.rover.com/es/blog/las-rozas-de-madrid-perro-paseador-de-perros-precio/",
+         "title": "¿Cuánto cuesta el paseo de perros en Las Rozas de Madrid, Comunidad ...",
+         "domain": "rover.com",
+         "accessed": "2026-11-16"
+        },
+        "impact": -1,
+        "t": 0
+       },
+       {
+        "id": "competition-3",
+        "analyst": "competition",
+        "kind": "number",
+        "text": "A named local firm, CaninAmistad, charges €15 for 30 minutes and €21 for an hour, with discounts for recurring bookings. That gives a benchmark for a premium local service.",
+        "display": "€15",
+        "source": {
+         "url": "https://appwebel.com/servicios/paseo-de-perros-domicilio/madrid/b/madrid-este",
+         "title": "Paseador de perros a domicilio en Madrid - Este",
+         "domain": "appwebel.com",
+         "accessed": "2026-11-16"
+        },
+        "impact": 1,
+        "t": 0
+       },
+       {
+        "id": "competition-4",
+        "analyst": "competition",
+        "kind": "estimate",
+        "text": "Competitor app price lists for Wegow and Paseo were not found, and the cheapest non-app substitute was not found.",
+        "source": null,
+        "basis": "Not found in the research",
+        "impact": 0,
+        "t": 0
+       },
+       {
+        "id": "competition-5",
+        "analyst": "competition",
+        "kind": "fact",
+        "text": "Whopaws says it holds payment through Stripe until the client confirms the walk. Its commission rate was not found.",
+        "source": {
+         "url": "https://www.whopaws.com/es/blog/paseador-perros-madrid",
+         "title": "Paseador de Perros Confianza Madrid 2026",
+         "domain": "whopaws.com",
+         "accessed": "2026-11-16"
+        },
+        "impact": 0,
+        "t": 0
+       }
+      ],
+      "score": 3,
+      "headline": "Madrid has many walkers and several platforms. Rover is the reference point at about €10 per walk, and its prices include its fees. You would enter a crowded market, and your edge must come from service quality, reliability or convenience."
+     },
+     {
+      "analyst": "pricing",
+      "status": "done",
+      "findings": [
+       {
+        "id": "pricing-0",
+        "analyst": "pricing",
+        "kind": "number",
+        "text": "Rover's Madrid blog says five 30-minute walks a week cost about €50, which is €200 a month. This gives a monthly benchmark for a subscription.",
+        "display": "€50,",
+        "source": {
+         "url": "https://www.rover.com/es/blog/las-rozas-de-madrid-perro-paseador-de-perros-precio/",
+         "title": "¿Cuánto cuesta el paseo de perros en Las Rozas de Madrid, Comunidad ...",
+         "domain": "rover.com",
+         "accessed": "2026-11-16"
+        },
+        "impact": 1,
+        "t": 0
+       },
+       {
+        "id": "pricing-1",
+        "analyst": "pricing",
+        "kind": "number",
+        "text": "Yoojo puts one weekday walk at €150–250 per month. Your subscription option can be compared to that range.",
+        "display": "€150–250",
+        "source": {
+         "url": "https://yoojo.es/animales/guias/cuanto-cuesta-un-paseador-de-perros-precio-por-paseo-819",
+         "title": "Cuánto cuesta un paseador de perros en 2026: precio por paseo, ...",
+         "domain": "yoojo.es",
+         "accessed": "2026-11-16"
+        },
+        "impact": 1,
+        "t": 0
+       },
+       {
+        "id": "pricing-2",
+        "analyst": "pricing",
+        "kind": "number",
+        "text": "Whopaws' group walks sit at €8–12 per session, and a 20-walk bundle at €150–200. This sets a low ceiling on what buyers pay for shared walks, which may cut into your premium.",
+        "display": "€8–12",
+        "source": {
+         "url": "https://www.whopaws.com/es/blog/paseador-perros-madrid",
+         "title": "Paseador de Perros Confianza Madrid 2026",
+         "domain": "whopaws.com",
+         "accessed": "2026-11-16"
+        },
+        "impact": -2,
+        "t": 0
+       },
+       {
+        "id": "pricing-3",
+        "analyst": "pricing",
+        "kind": "risk",
+        "text": "Commercial rent, wages, employer social security, self-employment costs, equipment and margins were not found in the research.",
+        "source": null,
+        "basis": "Not found in the research",
+        "impact": -1,
+        "t": 0
+       },
+       {
+        "id": "pricing-4",
+        "analyst": "pricing",
+        "kind": "risk",
+        "text": "VAT on dog walking was not confirmed by the research. Spain's standard rate is generally 21% from background knowledge, which is unverified here (estimate). Check with AEAT before pricing.",
+        "source": null,
+        "basis": "No source cited in the report",
+        "impact": -1,
+        "t": 0
+       },
+       {
+        "id": "pricing-5",
+        "analyst": "pricing",
+        "kind": "estimate",
+        "text": "This section relies on one search and no page fetch. Competitor prices are mostly undated or 2026 guides, not verified price lists (estimate).",
+        "source": null,
+        "basis": "No source cited in the report",
+        "impact": 0,
+        "t": 0
+       }
+      ],
+      "score": 4,
+      "headline": "The price is credible, but the cost base is almost entirely estimated. The break-even below depends on walker pay, insurance and your own pay, none of which the research confirmed for Madrid."
+     },
+     {
+      "analyst": "viability",
+      "status": "done",
+      "findings": [
+       {
+        "id": "viability-0",
+        "analyst": "viability",
+        "kind": "fact",
+        "text": "Madrid's dog-walking trade is not officially regulated, according to a Whopaws guide, which says anyone can advertise as a walker without proof of training. This is a competitor's marketing guide, not a legal text, so it is weak support.",
+        "source": {
+         "url": "https://www.whopaws.com/es/blog/paseador-perros-madrid",
+         "title": "Paseador de Perros Confianza Madrid 2026",
+         "domain": "whopaws.com",
+         "accessed": "2026-11-16"
+        },
+        "impact": -1,
+        "t": 0
+       },
+       {
+        "id": "viability-1",
+        "analyst": "viability",
+        "kind": "fact",
+        "text": "A separate guide says no specific training is required, though basic canine behaviour and first aid are advisable. Its date is unknown.",
+        "source": {
+         "url": "https://www.cronoshare.com/comunidad/p/autonomos-empresas/crear-empresa/como-ser-paseador-perros",
+         "title": "Cómo ser paseador de perros",
+         "domain": "cronoshare.com",
+         "accessed": "2026-11-16"
+        },
+        "impact": 0,
+        "t": 0
+       },
+       {
+        "id": "viability-2",
+        "analyst": "viability",
+        "kind": "fact",
+        "text": "The Comunidad de Madrid's RIAC page says identification of dogs and cats is compulsory across the region, free of charge. These duties fall on the owner, not the walker.",
+        "source": {
+         "url": "https://sede.comunidad.madrid/inscripciones-registro/identificacion-animales-compania",
+         "title": "Identificación animales compañia",
+         "domain": "sede.comunidad.madrid",
+         "accessed": "2026-11-16"
+        },
+        "impact": -1,
+        "t": 0
+       },
+       {
+        "id": "viability-3",
+        "analyst": "viability",
+        "kind": "fact",
+        "text": "Owners must carry a microchip, RIAC entry and an up-to-date health card. A walker should ask for these before the first walk.",
+        "source": {
+         "url": "https://www.estrelladigital.es/articulo/vida/normas-pasear-perros-madrid/20250525133912431585.html",
+         "title": "Normas para pasear a los perros en Madrid",
+         "domain": "estrelladigital.es",
+         "accessed": "2026-11-16"
+        },
+        "impact": -1,
+        "t": 0
+       },
+       {
+        "id": "viability-4",
+        "analyst": "viability",
+        "kind": "number",
+        "text": "Decree 30/2003 applies national rules to potentially dangerous breeds in Madrid. Walking a listed breed requires a PPP licence and a municipal registration. Your app must block or verify these bookings.",
+        "source": {
+         "url": "https://vetmadrid.com/perros-potencialmente-peligrosos-madrid/",
+         "title": "Perros potencialmente peligrosos Madrid 2026",
+         "domain": "vetmadrid.com",
+         "accessed": "2026-11-16"
+        },
+        "impact": -1,
+        "t": 0
+       },
+       {
+        "id": "viability-5",
+        "analyst": "viability",
+        "kind": "number",
+        "text": "A 2026 guide says civil-liability insurance is compulsory for dog owners in Madrid under Ley 4/2016 and the city's ordinance. The research could not check this against the legal text, and the cover amount is not stated.",
+        "source": {
+         "url": "https://www.thewalkingdog.es/blog/normativa-madrid-perros/",
+         "title": "La normativa en Madrid sobre perros en 2026. Un resumen",
+         "domain": "thewalkingdog.es",
+         "accessed": "2026-11-16"
+        },
+        "impact": -1,
+        "t": 0
+       },
+       {
+        "id": "viability-6",
+        "analyst": "viability",
+        "kind": "number",
+        "text": "Whopaws advises at least €300,000 of walker cover, including third-party damage and vet costs. This is a platform recommendation, not a legal minimum.",
+        "display": "€300,000",
+        "source": {
+         "url": "https://www.whopaws.com/es/blog/paseador-perros-madrid",
+         "title": "Paseador de Perros Confianza Madrid 2026",
+         "domain": "whopaws.com",
+         "accessed": "2026-11-16"
+        },
+        "impact": -1,
+        "t": 0
+       },
+       {
+        "id": "viability-7",
+        "analyst": "viability",
+        "kind": "fact",
+        "text": "Whopaws says it holds payment until the client confirms the walk. This is a useful model to copy, since it protects buyers and gives you dispute control.",
+        "source": {
+         "url": "https://www.whopaws.com/es/blog/paseador-perros-madrid",
+         "title": "Paseador de Perros Confianza Madrid 2026",
+         "domain": "whopaws.com",
+         "accessed": "2026-11-16"
+        },
+        "impact": 2,
+        "t": 0
+       }
+      ],
+      "score": 1,
+      "headline": "The trade is not officially regulated and needs no formal training, so the risk sits in insurance, dog paperwork and walker quality, which you must control yourself."
+     }
+    ],
+    "report": {
+     "score": 2.8,
+     "verdict": "no-go",
+     "verdictLine": "No-go: The price is in range. A 30-minute walk in Madrid is reported at €10–15 and €7–15, so €12 is defensible for that length.",
+     "factors": [
+      {
+       "analyst": "demand",
+       "label": "Customers",
+       "weight": 0.24,
+       "score": 4,
+       "findings": [
+        "demand-0",
+        "demand-1",
+        "demand-2",
+        "demand-3",
+        "demand-4",
+        "demand-5"
+       ],
+       "sourced": 5,
+       "total": 6
+      },
+      {
+       "analyst": "competition",
+       "label": "Competition",
+       "weight": 0.29,
+       "score": 3,
+       "findings": [
+        "competition-0",
+        "competition-1",
+        "competition-2",
+        "competition-3",
+        "competition-4",
+        "competition-5"
+       ],
+       "sourced": 5,
+       "total": 6
+      },
+      {
+       "analyst": "pricing",
+       "label": "Pricing",
+       "weight": 0.18,
+       "score": 4,
+       "findings": [
+        "pricing-0",
+        "pricing-1",
+        "pricing-2",
+        "pricing-3",
+        "pricing-4",
+        "pricing-5"
+       ],
+       "sourced": 3,
+       "total": 6
+      },
+      {
+       "analyst": "viability",
+       "label": "Viability",
+       "weight": 0.29,
+       "score": 1,
+       "findings": [
+        "viability-0",
+        "viability-1",
+        "viability-2",
+        "viability-3",
+        "viability-4",
+        "viability-5",
+        "viability-6",
+        "viability-7"
+       ],
+       "sourced": 8,
+       "total": 8
+      }
+     ],
+     "math": "0.24×4.0 + 0.29×3.0 + 0.18×4.0 + 0.29×1.0 = 2.8",
+     "evidence": {
+      "total": 26,
+      "sourced": 21,
+      "sourcedShare": 0.81,
+      "sources": [
+       {
+        "url": "https://www.petbacker.com/spain/walking/comunidad-de-madrid/madrid/madrid-~-madrid-freelance-dog-walker",
+        "title": "Dog Walking in Madrid - Madrid Atoc, Madrid",
+        "domain": "petbacker.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://petme.social/spain/dog-walking-jobs/madrid",
+        "title": "Petme",
+        "domain": "petme.social",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://www.whopaws.com/es/blog/paseador-perros-madrid",
+        "title": "Paseador de Perros Confianza Madrid 2026",
+        "domain": "whopaws.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://professnow.com/profession/top-10-best-dog-walker-pet-sitter-in-madrid/",
+        "title": "Top 10 Best Dog Walker / Pet Sitter in Madrid (Verified & Reviewed ...",
+        "domain": "professnow.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://www.rover.com/es/madrid--comunidad-de-madrid--paseador-de-perros/",
+        "title": "Los Mejores Paseadores De Perros En madrid",
+        "domain": "rover.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://www.rover.com/es/campo-real--comunidad-de-madrid--paseador-de-perros/",
+        "title": "Los Mejores Paseadores De Perros En campo-real",
+        "domain": "rover.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://www.rover.com/es/blog/las-rozas-de-madrid-perro-paseador-de-perros-precio/",
+        "title": "¿Cuánto cuesta el paseo de perros en Las Rozas de Madrid, Comunidad ...",
+        "domain": "rover.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://appwebel.com/servicios/paseo-de-perros-domicilio/madrid/b/madrid-este",
+        "title": "Paseador de perros a domicilio en Madrid - Este",
+        "domain": "appwebel.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://yoojo.es/animales/guias/cuanto-cuesta-un-paseador-de-perros-precio-por-paseo-819",
+        "title": "Cuánto cuesta un paseador de perros en 2026: precio por paseo, ...",
+        "domain": "yoojo.es",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://www.cronoshare.com/comunidad/p/autonomos-empresas/crear-empresa/como-ser-paseador-perros",
+        "title": "Cómo ser paseador de perros",
+        "domain": "cronoshare.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://sede.comunidad.madrid/inscripciones-registro/identificacion-animales-compania",
+        "title": "Identificación animales compañia",
+        "domain": "sede.comunidad.madrid",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://www.estrelladigital.es/articulo/vida/normas-pasear-perros-madrid/20250525133912431585.html",
+        "title": "Normas para pasear a los perros en Madrid",
+        "domain": "estrelladigital.es",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://vetmadrid.com/perros-potencialmente-peligrosos-madrid/",
+        "title": "Perros potencialmente peligrosos Madrid 2026",
+        "domain": "vetmadrid.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://www.thewalkingdog.es/blog/normativa-madrid-perros/",
+        "title": "La normativa en Madrid sobre perros en 2026. Un resumen",
+        "domain": "thewalkingdog.es",
+        "accessed": "2026-11-16"
+       }
+      ]
+     },
+     "confidence": "high",
+     "scalability": {
+      "score": 5,
+      "cap": 0,
+      "reach": "City",
+      "why": "Booking software can serve many districts, but walks must be done in person by local walkers, so volume is limited by walker supply and Madrid's central demand.",
+      "wouldScale": [
+       "Add walker recruitment and quality checks so the service works across more districts without the founder.",
+       "Introduce recurring weekly subscriptions priced against the €200 per month benchmark to lift repeat bookings.",
+       "Expand to a second Spanish city with the same booking flow once Madrid unit economics are proven."
+      ],
+      "parts": [
+       {
+        "label": "Reach",
+        "score": 4
+       },
+       {
+        "label": "Repeatable",
+        "score": 6
+       },
+       {
+        "label": "Margins at scale",
+        "score": 4
+       },
+       {
+        "label": "Founder-free",
+        "score": 4
+       },
+       {
+        "label": "Digital leverage",
+        "score": 7
+       }
+      ]
+     },
+     "strengths": [
+      {
+       "text": "Whopaws says it holds payment until the client confirms the walk. This is a useful model to copy, since it protects buyers and gives you dispute control.",
+       "finding": "viability-7"
+      },
+      {
+       "text": "Madrid listings advertise 30-minute walks from €10 and 60-minute walks up to €20. Petme lists walks at €12–22 for 30–60 minutes, which includes your price point.",
+       "finding": "demand-0"
+      },
+      {
+       "text": "Petme recruits walkers for regular walks in Chamberí and Salamanca. This shows where walk work is sought, not where buyers live or spend, but it suggests the central districts have active demand.",
+       "finding": "demand-1"
+      }
+     ],
+     "weaknesses": [
+      {
+       "text": "Whopaws says central districts have more walkers and more competition, which can pull rates down.",
+       "finding": "demand-2"
+      },
+      {
+       "text": "Whopaws' group walks sit at €8–12 per session, and a 20-walk bundle at €150–200. This sets a low ceiling on what buyers pay for shared walks, which may cut into your premium.",
+       "finding": "pricing-2"
+      },
+      {
+       "text": "The price data is advertised rather than transactional. Several listings are undated or more than a year old, and one listing is in Valdemoro, outside the city.",
+       "finding": "demand-3"
+      }
+     ],
+     "nextSteps": [
+      "Put up a simple booking page and a paid waitlist in two or three Madrid professional networks, offering the first 10 walks at €12 with a refund if the walker does not show. Use a manual walker you already know. Keep the walk length fixed at 30 minutes.",
+      "Ask the 10 pilot customers which walk length they would book at €12 and at €18, and record the answer. Also check your own price list against two competitor listings.",
+      "Get quotes from two Spanish liability insurers for a micro-business covering walkers and third-party damage, and speak to five walkers who would take a booked walk at the payout you can afford."
+     ],
+     "pivot": null,
+     "reasons": [
+      "The price is in range. A 30-minute walk in Madrid is reported at €10–15 and €7–15, so €12 is defensible for that length.",
+      "The market is saturated at the low end. Rover's Madrid average is €10 per 30-minute walk, and several Madrid freelance listings start at €10. You would be selling a premium on convenience, and nothing in the research proves buyers will pay it.",
+      "Demand is unproven. The research found no usage, booking or market-size data for app-based dog walking in Madrid. Do not commit your savings until a paid pre-test works.",
+      "Costs are missing. Rent, wages, self-employment social security and margins were not found. The unit economics below use estimates, and the break-even of 1,713 walks per month depends on them.",
+      "Insurance and walker quality carry real exposure. Owners are reported to need civil-liability cover in Madrid, and platform guidance recommends at least €300,000 of walker cover. Madrid has no official training requirement, so you would set the quality bar yourself."
+     ]
+    },
+    "steers": [],
+    "status": "done",
+    "blocks": [
+     {
+      "id": "customers",
+      "role": "demand",
+      "title": "Customers & demand",
+      "focus": [
+       "Who would pay for this, and how many are there?",
+       "How often would they buy, and why switch?"
+      ],
+      "status": "done",
+      "takeaway": "Prices show that walks sell in Madrid at around €10–15 for 30 minutes, but no source shows how many Madrid professionals buy them, where they live or what they spend. Demand is the largest unknown.",
+      "score": 4,
+      "verdict": "weak",
+      "evidence": [
+       "demand-0",
+       "demand-1",
+       "demand-2",
+       "demand-3",
+       "demand-4",
+       "demand-5"
+      ],
+      "meaning": "Your price is credible for a 30-minute walk, but you must prove that a buyer exists before spending. Start by testing one or two districts, since you have no data showing where professionals with dogs live in Madrid.",
+      "actions": [
+       "Set up a booking page and a paid waitlist, and send it to 3 professional networks or workplace groups in Madrid.",
+       "Ask 15 dog owners in those networks what they pay today and how often they need a midday walk.",
+       "Pick two districts for the first test based on where your waitlist sign-ups come from, not on Petme's walker recruitment alone."
+      ],
+      "keyNumbers": [
+       {
+        "label": "Planned price, 30-minute walk",
+        "value": "€12",
+        "source": null,
+        "basis": "Your offer"
+       },
+       {
+        "label": "Madrid 30-minute walk, Whopaws",
+        "value": "€10–15",
+        "source": {
+         "url": "https://www.whopaws.com/es/blog/paseador-perros-madrid",
+         "title": "Paseador de Perros Confianza Madrid 2026",
+         "domain": "whopaws.com",
+         "accessed": "2026-11-16"
+        }
+       },
+       {
+        "label": "Madrid 30-minute walk, Yoojo",
+        "value": "€7–15",
+        "source": {
+         "url": "https://yoojo.es/animales/guias/cuanto-cuesta-un-paseador-de-perros-precio-por-paseo-819",
+         "title": "Cuánto cuesta un paseador de perros en 2026: precio por paseo, ...",
+         "domain": "yoojo.es",
+         "accessed": "2026-11-16"
+        }
+       },
+       {
+        "label": "Rover Madrid most-bookings range",
+        "value": "€7–18 per walk",
+        "source": {
+         "url": "https://www.rover.com/es/madrid--comunidad-de-madrid--paseador-de-perros/",
+         "title": "Los Mejores Paseadores De Perros En madrid",
+         "domain": "rover.com",
+         "accessed": "2026-11-16"
+        }
+       }
+      ],
+      "sources": [
+       {
+        "url": "https://www.petbacker.com/spain/walking/comunidad-de-madrid/madrid/madrid-~-madrid-freelance-dog-walker",
+        "title": "Dog Walking in Madrid - Madrid Atoc, Madrid",
+        "domain": "petbacker.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://petme.social/spain/dog-walking-jobs/madrid",
+        "title": "Petme",
+        "domain": "petme.social",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://www.whopaws.com/es/blog/paseador-perros-madrid",
+        "title": "Paseador de Perros Confianza Madrid 2026",
+        "domain": "whopaws.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://professnow.com/profession/top-10-best-dog-walker-pet-sitter-in-madrid/",
+        "title": "Top 10 Best Dog Walker / Pet Sitter in Madrid (Verified & Reviewed ...",
+        "domain": "professnow.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://yoojo.es/animales/guias/cuanto-cuesta-un-paseador-de-perros-precio-por-paseo-819",
+        "title": "Cuánto cuesta un paseador de perros en 2026: precio por paseo, ...",
+        "domain": "yoojo.es",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://www.rover.com/es/madrid--comunidad-de-madrid--paseador-de-perros/",
+        "title": "Los Mejores Paseadores De Perros En madrid",
+        "domain": "rover.com",
+        "accessed": "2026-11-16"
+       }
+      ],
+      "ms": {
+       "done": 62665
+      }
+     },
+     {
+      "id": "competition",
+      "role": "competition",
+      "title": "Competition & alternatives",
+      "focus": [
+       "Who do customers use today instead?",
+       "What do they charge, and where are they weak?"
+      ],
+      "status": "done",
+      "takeaway": "Madrid has many walkers and several platforms. Rover is the reference point at about €10 per walk, and its prices include its fees. You would enter a crowded market, and your edge must come from service quality, reliability or convenience.",
+      "score": 3,
+      "verdict": "weak",
+      "evidence": [
+       "competition-0",
+       "competition-1",
+       "competition-2",
+       "competition-3",
+       "competition-4",
+       "competition-5"
+      ],
+      "meaning": "You are not competing on price with Rover. You are competing on reliability, one-to-one service and booking ease for professionals. You need to show that a €12 walk from your service is worth more than a €10 Rover booking, through a clear promise on punctuality, updates and cover.",
+      "actions": [
+       "Book one Rover walk and one CaninAmistad walk yourself, and record the timing, updates and booking steps.",
+       "Write down three things your service will guarantee that Rover does not, and test whether buyers value them with the waitlist.",
+       "Ask two Madrid pet-care businesses for their current walk price and whether they would share it, since competitor app price lists were not found."
+      ],
+      "keyNumbers": [
+       {
+        "label": "Rover Madrid average, 30-minute walk",
+        "value": "€10",
+        "source": {
+         "url": "https://www.rover.com/es/madrid--comunidad-de-madrid--paseador-de-perros/",
+         "title": "Los Mejores Paseadores De Perros En madrid",
+         "domain": "rover.com",
+         "accessed": "2026-11-16"
+        }
+       },
+       {
+        "label": "Rover Madrid most-bookings range",
+        "value": "€7–18",
+        "source": {
+         "url": "https://www.rover.com/es/madrid--comunidad-de-madrid--paseador-de-perros/",
+         "title": "Los Mejores Paseadores De Perros En madrid",
+         "domain": "rover.com",
+         "accessed": "2026-11-16"
+        }
+       },
+       {
+        "label": "Rover service fee (Campo Real)",
+        "value": "15% plus tax",
+        "source": {
+         "url": "https://www.rover.com/es/campo-real--comunidad-de-madrid--paseador-de-perros/",
+         "title": "Los Mejores Paseadores De Perros En campo-real",
+         "domain": "rover.com",
+         "accessed": "2026-11-16"
+        }
+       },
+       {
+        "label": "CaninAmistad 30-minute walk",
+        "value": "€15",
+        "source": {
+         "url": "https://appwebel.com/servicios/paseo-de-perros-domicilio/madrid/b/madrid-este",
+         "title": "Paseador de perros a domicilio en Madrid - Este",
+         "domain": "appwebel.com",
+         "accessed": "2026-11-16"
+        }
+       }
+      ],
+      "sources": [
+       {
+        "url": "https://www.rover.com/es/madrid--comunidad-de-madrid--paseador-de-perros/",
+        "title": "Los Mejores Paseadores De Perros En madrid",
+        "domain": "rover.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://www.rover.com/es/campo-real--comunidad-de-madrid--paseador-de-perros/",
+        "title": "Los Mejores Paseadores De Perros En campo-real",
+        "domain": "rover.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://www.rover.com/es/blog/las-rozas-de-madrid-perro-paseador-de-perros-precio/",
+        "title": "¿Cuánto cuesta el paseo de perros en Las Rozas de Madrid, Comunidad ...",
+        "domain": "rover.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://appwebel.com/servicios/paseo-de-perros-domicilio/madrid/b/madrid-este",
+        "title": "Paseador de perros a domicilio en Madrid - Este",
+        "domain": "appwebel.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://www.whopaws.com/es/blog/paseador-perros-madrid",
+        "title": "Paseador de Perros Confianza Madrid 2026",
+        "domain": "whopaws.com",
+        "accessed": "2026-11-16"
+       }
+      ],
+      "ms": {
+       "done": 62665
+      }
+     },
+     {
+      "id": "money",
+      "role": "pricing",
+      "title": "Money",
+      "focus": [
+       "What price can it charge, and what does one sale cost?",
+       "How many sales a month to break even?"
+      ],
+      "status": "done",
+      "takeaway": "The price is credible, but the cost base is almost entirely estimated. The break-even below depends on walker pay, insurance and your own pay, none of which the research confirmed for Madrid.",
+      "score": 4,
+      "verdict": "weak",
+      "evidence": [
+       "pricing-0",
+       "pricing-1",
+       "pricing-2",
+       "pricing-3",
+       "pricing-4",
+       "pricing-5"
+      ],
+      "meaning": "The model shows that the break-even depends on a volume of walks you have not yet proven you can sell. Keep the startup capital small until a pilot shows repeat bookings. If walker payout must rise to keep reliable staff, the contribution falls, and the break-even moves up.",
+      "actions": [
+       "Check with AEAT whether the 21% VAT rate applies to dog-walking services and whether your €12 includes it.",
+       "Get two insurance quotes and a self-employment social security figure from the Seguridad Social before you set any fixed-cost number.",
+       "Interview five walkers about the payout they would accept per 30-minute walk, and update the walker payout line in the model."
+      ],
+      "keyNumbers": [
+       {
+        "label": "Planned price, 30-minute walk",
+        "value": "€12 gross",
+        "source": null,
+        "basis": "Your offer (assumed to include VAT)"
+       },
+       {
+        "label": "VAT rate",
+        "value": "21%",
+        "source": null,
+        "basis": "Estimate, unverified; check with AEAT"
+       },
+       {
+        "label": "Walker payout per walk",
+        "value": "€8",
+        "source": {
+         "url": "https://www.whopaws.com/es/blog/paseador-perros-madrid",
+         "title": "Paseador de Perros Confianza Madrid 2026",
+         "domain": "whopaws.com",
+         "accessed": "2026-11-16"
+        }
+       },
+       {
+        "label": "Payment processing per walk",
+        "value": "€0.40",
+        "source": null,
+        "basis": "Estimate"
+       }
+      ],
+      "math": [
+       "Price per unit (incl. VAT 21%): €12.00",
+       "Share kept by the business: 100%",
+       "Net revenue per unit: €9.92",
+       "Variable cost per unit: €8.70",
+       "Contribution per unit: €1.22 (12%)",
+       "Fixed costs per month: €2,085",
+       "Break-even (units per month): 1,713",
+       "Start-up capital: €9,700"
+      ],
+      "sources": [
+       {
+        "url": "https://www.rover.com/es/blog/las-rozas-de-madrid-perro-paseador-de-perros-precio/",
+        "title": "¿Cuánto cuesta el paseo de perros en Las Rozas de Madrid, Comunidad ...",
+        "domain": "rover.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://yoojo.es/animales/guias/cuanto-cuesta-un-paseador-de-perros-precio-por-paseo-819",
+        "title": "Cuánto cuesta un paseador de perros en 2026: precio por paseo, ...",
+        "domain": "yoojo.es",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://www.whopaws.com/es/blog/paseador-perros-madrid",
+        "title": "Paseador de Perros Confianza Madrid 2026",
+        "domain": "whopaws.com",
+        "accessed": "2026-11-16"
+       }
+      ],
+      "ms": {
+       "done": 62665
+      }
+     },
+     {
+      "id": "risks",
+      "role": "viability",
+      "title": "Risks & how to start",
+      "focus": [
+       "What could stop it: rules, suppliers, timing?",
+       "What is the cheapest first test, and how could it grow?"
+      ],
+      "status": "done",
+      "takeaway": "The trade is not officially regulated and needs no formal training, so the risk sits in insurance, dog paperwork and walker quality, which you must control yourself.",
+      "score": 1,
+      "verdict": "weak",
+      "evidence": [
+       "viability-0",
+       "viability-1",
+       "viability-2",
+       "viability-3",
+       "viability-4",
+       "viability-5",
+       "viability-6",
+       "viability-7"
+      ],
+      "meaning": "Your main protection is a booking flow that checks documents before a walk, an insurance policy that covers walkers, and a payment hold until the walk is confirmed. Build these into the first version, not later. You also need to confirm the insurance rule in the legal text, since the research could not do so.",
+      "actions": [
+       "Get the legal text of Ley 4/2016 and Madrid's animal ordinance, and confirm whether civil-liability insurance is compulsory for owners and what the minimum cover is.",
+       "Write a short booking checklist: microchip, RIAC entry, health card, and a block on listed breeds without a PPP licence.",
+       "Get two walker-cover quotes and make sure the policy includes third-party damage and vet costs."
+      ],
+      "keyNumbers": [
+       {
+        "label": "Recommended walker cover",
+        "value": "€300,000",
+        "source": {
+         "url": "https://www.whopaws.com/es/blog/paseador-perros-madrid",
+         "title": "Paseador de Perros Confianza Madrid 2026",
+         "domain": "whopaws.com",
+         "accessed": "2026-11-16"
+        }
+       },
+       {
+        "label": "Owner documents needed",
+        "value": "Microchip, RIAC entry, health card",
+        "source": {
+         "url": "https://www.estrelladigital.es/articulo/vida/normas-pasear-perros-madrid/20250525133912431585.html",
+         "title": "Normas para pasear a los perros en Madrid",
+         "domain": "estrelladigital.es",
+         "accessed": "2026-11-16"
+        }
+       },
+       {
+        "label": "Dog registration fee",
+        "value": "None",
+        "source": {
+         "url": "https://sede.comunidad.madrid/inscripciones-registro/identificacion-animales-compania",
+         "title": "Identificación animales compañia",
+         "domain": "sede.comunidad.madrid",
+         "accessed": "2026-11-16"
+        }
+       },
+       {
+        "label": "Walker training required",
+        "value": "None (advisable)",
+        "source": {
+         "url": "https://www.cronoshare.com/comunidad/p/autonomos-empresas/crear-empresa/como-ser-paseador-perros",
+         "title": "Cómo ser paseador de perros",
+         "domain": "cronoshare.com",
+         "accessed": "2026-11-16"
+        }
+       }
+      ],
+      "sources": [
+       {
+        "url": "https://www.whopaws.com/es/blog/paseador-perros-madrid",
+        "title": "Paseador de Perros Confianza Madrid 2026",
+        "domain": "whopaws.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://www.cronoshare.com/comunidad/p/autonomos-empresas/crear-empresa/como-ser-paseador-perros",
+        "title": "Cómo ser paseador de perros",
+        "domain": "cronoshare.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://sede.comunidad.madrid/inscripciones-registro/identificacion-animales-compania",
+        "title": "Identificación animales compañia",
+        "domain": "sede.comunidad.madrid",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://www.estrelladigital.es/articulo/vida/normas-pasear-perros-madrid/20250525133912431585.html",
+        "title": "Normas para pasear a los perros en Madrid",
+        "domain": "estrelladigital.es",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://vetmadrid.com/perros-potencialmente-peligrosos-madrid/",
+        "title": "Perros potencialmente peligrosos Madrid 2026",
+        "domain": "vetmadrid.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://www.thewalkingdog.es/blog/normativa-madrid-perros/",
+        "title": "La normativa en Madrid sobre perros en 2026. Un resumen",
+        "domain": "thewalkingdog.es",
+        "accessed": "2026-11-16"
+       }
+      ],
+      "ms": {
+       "done": 62666
+      }
+     }
+    ],
+    "notes": [
+     {
+      "analyst": "demand",
+      "kind": "status",
+      "text": "Digging into customers & demand…",
+      "at": 6
+     },
+     {
+      "analyst": "competition",
+      "kind": "status",
+      "text": "Digging into competition & alternatives…",
+      "at": 11
+     },
+     {
+      "analyst": "pricing",
+      "kind": "status",
+      "text": "Digging into money…",
+      "at": 12
+     },
+     {
+      "analyst": "viability",
+      "kind": "status",
+      "text": "Digging into risks & how to start…",
+      "at": 12
+     },
+     {
+      "analyst": "competition",
+      "kind": "search",
+      "text": "Searching: paseador de perros Madrid precio paseo 2026 apps Rover Wegow",
+      "at": 1165
+     },
+     {
+      "analyst": "viability",
+      "kind": "search",
+      "text": "Searching: Madrid paseador de perros requisitos registro autónomo 2026",
+      "at": 2232
+     },
+     {
+      "analyst": "demand",
+      "kind": "search",
+      "text": "Searching: Madrid dog walking service price per walk 2026",
+      "at": 3365
+     },
+     {
+      "analyst": "competition",
+      "kind": "read",
+      "text": "Reading rover.com…",
+      "at": 4462
+     },
+     {
+      "analyst": "pricing",
+      "kind": "search",
+      "text": "Searching: Madrid paseo perros precio 2026 app paseadores",
+      "at": 4975
+     },
+     {
+      "analyst": "viability",
+      "kind": "read",
+      "text": "Reading whopaws.com…",
+      "at": 5107
+     },
+     {
+      "analyst": "competition",
+      "kind": "found",
+      "text": "Found 12 facts, 6 sources",
+      "at": 15997
+     },
+     {
+      "analyst": "demand",
+      "kind": "found",
+      "text": "Found 9 facts, 7 sources",
+      "at": 17254
+     },
+     {
+      "analyst": "pricing",
+      "kind": "found",
+      "text": "Found 10 facts, 6 sources",
+      "at": 18520
+     },
+     {
+      "analyst": "viability",
+      "kind": "found",
+      "text": "Found 11 facts, 6 sources",
+      "at": 20748
+     },
+     {
+      "analyst": "viability",
+      "kind": "status",
+      "text": "Writing the report…",
+      "at": 20756
+     },
+     {
+      "analyst": "viability",
+      "kind": "status",
+      "text": "First lines of the report are in…",
+      "at": 34461
+     },
+     {
+      "analyst": "viability",
+      "kind": "status",
+      "text": "Writing the executive summary…",
+      "at": 34519
+     },
+     {
+      "analyst": "viability",
+      "kind": "status",
+      "text": "Writing the verdict…",
+      "at": 36111
+     },
+     {
+      "analyst": "viability",
+      "kind": "status",
+      "text": "Writing the 3 things to validate first…",
+      "at": 38091
+     },
+     {
+      "analyst": "demand",
+      "kind": "status",
+      "text": "Writing Customers & demand…",
+      "at": 42009
+     },
+     {
+      "analyst": "competition",
+      "kind": "status",
+      "text": "Writing Competition & alternatives…",
+      "at": 45643
+     },
+     {
+      "analyst": "pricing",
+      "kind": "status",
+      "text": "Writing Money…",
+      "at": 50071
+     },
+     {
+      "analyst": "viability",
+      "kind": "status",
+      "text": "Writing Risks & how to start…",
+      "at": 55786
+     },
+     {
+      "analyst": "pricing",
+      "kind": "found",
+      "text": "Break-even: 1,713 booked 30-minute walks a month",
+      "at": 62662
+     },
+     {
+      "analyst": "viability",
+      "kind": "status",
+      "text": "Report ready in 63 s",
+      "at": 62667
+     }
+    ],
+    "firstFindingMs": 15997,
+    "researched": 25,
+    "brief": {
+     "title": "Dog-walking app for Madrid professionals",
+     "summary": "The opportunity is a booking app for 30-minute dog walks in Madrid, priced at €12, aimed at professionals who cannot walk their dogs during the working day. The strongest evidence for it is that the price sits inside the range that Madrid listings and guides report for a 30-minute walk, and that Rover's Madrid average is €10 with most bookings between €7 and €18. The strongest evidence against it is that the market is crowded: Rover, Petme, Petbacker, Dogbuddy, Whopaws and a named local firm, CaninAmistad, all sell walks in the city. At €12 you are about €2 above Rover's average, and no source shows that Madrid professionals will pay that premium through an app. The research found no demand data, no buyer profile and no cost figures for rent, wages, social security or margins. Using the placeholder estimates in this report, the break-even is 1,713 walks per month, and the startup capital needed is €9,700. The verdict is GO WITH CONDITIONS.",
+     "validateFirst": [
+      {
+       "what": "Madrid professionals will pay €12 for a 30-minute walk booked through an app, at least 10 times in the next 30 days",
+       "how": "Put up a simple booking page and a paid waitlist in two or three Madrid professional networks, offering the first 10 walks at €12 with a refund if the walker does not show. Use a manual walker you already know. Keep the walk length fixed at 30 minutes.",
+       "passIf": "At least 10 paid walks within 30 days, with at least 5 of those customers booking a second walk, at €12 each."
+      },
+      {
+       "what": "The €12 price covers a 30-minute walk, and that is the walk length buyers choose",
+       "how": "Ask the 10 pilot customers which walk length they would book at €12 and at €18, and record the answer. Also check your own price list against two competitor listings.",
+       "passIf": "At least 7 of 10 pilot customers choose the 30-minute walk at €12, and that choice is not reversed when shown €18 for a 60-minute walk."
+      },
+      {
+       "what": "Walker supply and insurance can be secured at the walker payout assumed in the model",
+       "how": "Get quotes from two Spanish liability insurers for a micro-business covering walkers and third-party damage, and speak to five walkers who would take a booked walk at the payout you can afford.",
+       "passIf": "Insurance quoted at or below the €35 monthly estimate in the model, and five walkers who accept the planned payout for the first 30 days."
+      }
+     ],
+     "researchedAt": "2026-11-16"
+    },
+    "reportMd": "# Founder report: Dog-walking app for Madrid professionals\n\n## Executive summary\n\nThe opportunity is a booking app for 30-minute dog walks in Madrid, priced at €12, aimed at professionals who cannot walk their dogs during the working day. The strongest evidence for it is that the price sits inside the range that Madrid listings and guides report for a 30-minute walk, and that Rover's Madrid average is €10 with most bookings between €7 and €18 [S8]. The strongest evidence against it is that the market is crowded: Rover, Petme, Petbacker, Dogbuddy, Whopaws and a named local firm, CaninAmistad, all sell walks in the city [S1][S5][S7][S15][S18]. At €12 you are about €2 above Rover's average, and no source shows that Madrid professionals will pay that premium through an app. The research found no demand data, no buyer profile and no cost figures for rent, wages, social security or margins. Using the placeholder estimates in this report, the break-even is 1,713 walks per month, and the startup capital needed is €9,700. The verdict is GO WITH CONDITIONS.\n\n## Verdict\n\n**NO-GO** (score 2.8/10; the writer's own call was GO WITH CONDITIONS)\n\n- The price is in range. A 30-minute walk in Madrid is reported at €10–15 [S15] and €7–15 [S16], so €12 is defensible for that length.\n- The market is saturated at the low end. Rover's Madrid average is €10 per 30-minute walk [S8], and several Madrid freelance listings start at €10 [S6]. You would be selling a premium on convenience, and nothing in the research proves buyers will pay it.\n- Demand is unproven. The research found no usage, booking or market-size data for app-based dog walking in Madrid. Do not commit your savings until a paid pre-test works.\n- Costs are missing. Rent, wages, self-employment social security and margins were not found. The unit economics below use estimates, and the break-even of 1,713 walks per month depends on them.\n- Insurance and walker quality carry real exposure. Owners are reported to need civil-liability cover in Madrid [S23], and platform guidance recommends at least €300,000 of walker cover [S15]. Madrid has no official training requirement [S15][S19], so you would set the quality bar yourself.\n\n## 3 things to validate first\n\n1. **Madrid professionals will pay €12 for a 30-minute walk booked through an app, at least 10 times in the next 30 days.**\n   - *Why it matters:* If they will not, the business has no revenue at all. The break-even of 1,713 walks per month is far above what a small test can show, so the first customers decide whether you continue.\n   - *Test this month:* Put up a simple booking page and a paid waitlist in two or three Madrid professional networks, offering the first 10 walks at €12 with a refund if the walker does not show. Use a manual walker you already know. Keep the walk length fixed at 30 minutes.\n   - *Pass:* At least 10 paid walks within 30 days, with at least 5 of those customers booking a second walk, at €12 each.\n\n2. **The €12 price covers a 30-minute walk, and that is the walk length buyers choose.**\n   - *Why it matters:* The research gives 60-minute walks at €12–22 [S16] and €18–25 [S15]. If your €12 is really a 60-minute price, you are cheap; if it is a 30-minute price, you are €2 above Rover's average [S8]. Either way the pricing story changes.\n   - *Test this month:* Ask the 10 pilot customers which walk length they would book at €12 and at €18, and record the answer. Also check your own price list against two competitor listings.\n   - *Pass:* At least 7 of 10 pilot customers choose the 30-minute walk at €12, and that choice is not reversed when shown €18 for a 60-minute walk.\n\n3. **Walker supply and insurance can be secured at the walker payout assumed in the model.**\n   - *Why it matters:* The walker payout of €8.70 in variable costs drives the contribution per walk. If you need to pay walkers more to get reliable staff, or if insurance costs more than estimated, the contribution per walk falls.\n   - *Test this month:* Get quotes from two Spanish liability insurers for a micro-business covering walkers and third-party damage, and speak to five walkers who would take a booked walk at the payout you can afford.\n   - *Pass:* Insurance quoted at or below the €35 monthly estimate in the model, and five walkers who accept the planned payout for the first 30 days.\n\n## Customers & demand\n\n**Takeaway:** Prices show that walks sell in Madrid at around €10–15 for 30 minutes, but no source shows how many Madrid professionals buy them, where they live or what they spend. Demand is the largest unknown.\n\n**Evidence:**\n- (+) Madrid listings advertise 30-minute walks from €10 and 60-minute walks up to €20 [S3][S5]. Petme lists walks at €12–22 for 30–60 minutes [S1], which includes your price point.\n- (+) Petme recruits walkers for regular walks in Chamberí and Salamanca [S1]. This shows where walk work is sought, not where buyers live or spend, but it suggests the central districts have active demand.\n- (−) Whopaws says central districts have more walkers and more competition, which can pull rates down [S15].\n- (−) The price data is advertised rather than transactional. Several listings are undated or more than a year old [S2][S3][S17], and one listing is in Valdemoro, outside the city [S6].\n- (=) The research found no Madrid population figure, no household spending on dog walking, no buyer profile and no demand growth data.\n- (=) Most sources are marketplace price lists or guides, not verified transaction data [S1][S2][S8].\n\n**Key numbers:**\n\n| Figure | Value | Source or \"estimate\" |\n|---|---|---|\n| Planned price, 30-minute walk | €12 | Your offer |\n| Madrid 30-minute walk, Whopaws | €10–15 | [S15] |\n| Madrid 30-minute walk, Yoojo | €7–15 | [S16] |\n| Rover Madrid most-bookings range | €7–18 per walk | [S8] |\n| Madrid city population | Not found | Not found |\n| Household spending on dog walking | Not found | Not found |\n\n**Unit economics:** Not applicable to this section. See the Money section.\n\n**What it means for you:** Your price is credible for a 30-minute walk, but you must prove that a buyer exists before spending. Start by testing one or two districts, since you have no data showing where professionals with dogs live in Madrid.\n\n**Next actions:**\n1. Set up a booking page and a paid waitlist, and send it to 3 professional networks or workplace groups in Madrid.\n2. Ask 15 dog owners in those networks what they pay today and how often they need a midday walk.\n3. Pick two districts for the first test based on where your waitlist sign-ups come from, not on Petme's walker recruitment alone.\n\n**Score: 4/10**\n\n## Competition & alternatives\n\n**Takeaway:** Madrid has many walkers and several platforms. Rover is the reference point at about €10 per walk, and its prices include its fees. You would enter a crowded market, and your edge must come from service quality, reliability or convenience.\n\n**Evidence:**\n- (−) Rover's Madrid average is €10 per 30-minute walk, with most bookings from €7 to €18 [S8]. Rover's Las Rozas and Mejorada listings show averages near €10 too [S10][S11].\n- (−) Rover adds a service fee: its Campo Real page says a 15% fee applies on top of the sitter's rate [S9]. So the amount a client pays on Rover is above the sitter's rate, which makes €10 an all-in figure in some listings and a pre-fee figure in others.\n- (−) A Rover blog for Las Rozas says a local sitter usually charges €11 for a 30-minute visit, and that prices rise in peak periods to around €13 per day [S13]. This is a Las Rozas figure, not a central Madrid figure.\n- (+) A named local firm, CaninAmistad, charges €15 for 30 minutes and €21 for an hour, with discounts for recurring bookings [S18]. That gives a benchmark for a premium local service.\n- (=) Competitor app price lists for Wegow and Paseo were not found, and the cheapest non-app substitute was not found.\n- (=) Whopaws says it holds payment through Stripe until the client confirms the walk [S15]. Its commission rate was not found.\n\n**Key numbers:**\n\n| Figure | Value | Source or \"estimate\" |\n|---|---|---|\n| Rover Madrid average, 30-minute walk | €10 | [S8] |\n| Rover Madrid most-bookings range | €7–18 | [S8] |\n| Rover service fee (Campo Real) | 15% plus tax | [S9] |\n| CaninAmistad 30-minute walk | €15 | [S18] |\n| CaninAmistad 60-minute walk | €21 | [S18] |\n| Your planned price | €12 | Your offer |\n| Price gap to Rover average | About €2 above | Estimate, see note below |\n\nNote: Rover's averages include its fees in some cases and exclude tax in others [S10][S13], so the gap is an estimate, not a like-for-like comparison.\n\n**Unit economics:** Not applicable to this section. See the Money section.\n\n**What it means for you:** You are not competing on price with Rover. You are competing on reliability, one-to-one service and booking ease for professionals. You need to show that a €12 walk from your service is worth more than a €10 Rover booking, through a clear promise on punctuality, updates and cover.\n\n**Next actions:**\n1. Book one Rover walk and one CaninAmistad walk yourself, and record the timing, updates and booking steps.\n2. Write down three things your service will guarantee that Rover does not, and test whether buyers value them with the waitlist.\n3. Ask two Madrid pet-care businesses for their current walk price and whether they would share it, since competitor app price lists were not found.\n\n**Score: 3/10**\n\n## Money\n\n**Takeaway:** The price is credible, but the cost base is almost entirely estimated. The break-even below depends on walker pay, insurance and your own pay, none of which the research confirmed for Madrid.\n\n**Evidence:**\n- (+) Rover's Madrid blog says five 30-minute walks a week cost about €50, which is €200 a month [S13]. This gives a monthly benchmark for a subscription.\n- (+) Yoojo puts one weekday walk at €150–250 per month [S16]. Your subscription option can be compared to that range.\n- (−) Whopaws' group walks sit at €8–12 per session, and a 20-walk bundle at €150–200 [S15]. This sets a low ceiling on what buyers pay for shared walks, which may cut into your premium.\n- (−) Commercial rent, wages, employer social security, self-employment costs, equipment and margins were not found in the research.\n- (−) VAT on dog walking was not confirmed by the research. Spain's standard rate is generally 21% from background knowledge, which is unverified here (estimate). Check with AEAT before pricing.\n- (=) This section relies on one search and no page fetch. Competitor prices are mostly undated or 2026 guides, not verified price lists (estimate).\n\n**Key numbers:**\n\n| Figure | Value | Source or \"estimate\" |\n|---|---|---|\n| Planned price, 30-minute walk | €12 gross | Your offer (assumed to include VAT) |\n| VAT rate | 21% | Estimate, unverified; check with AEAT |\n| Walker payout per walk | €8 | Estimate, based on Whopaws group range of €7.50–10 per walk [S15] |\n| Payment processing per walk | €0.40 | Estimate |\n| Supplies per walk | €0.30 | Estimate |\n| Monthly fixed costs (total) | €2,085 | Estimate, see the unit economics list |\n| Startup capital | €9,700 | Estimate, see the unit economics list |\n| Subscription benchmark, five 30-minute walks/week | €200 per month | [S13] |\n\n**Unit economics:**\n\nThe unit is one booked 30-minute walk. The price is €12 gross including VAT, and the VAT rate is 21% (estimate). You keep the full net price because the model sells directly and pays walkers as a cost (share kept 100%).\n\n- Net revenue per walk: €9.92\n- Variable costs per walk (walker payout, payment fees, supplies): €8.70\n- Contribution per walk: €1.22\n- Contribution margin: 12%\n- Fixed costs per month (app hosting, insurance, accounting, marketing, office/storage, phone, owner pay and self-employment social security): €2,085. Every fixed-cost line is an estimate because the research did not cover these costs.\n- Break-even: 1,713 walks per month\n- Startup capital (app build, legal setup, insurance start, first marketing, working capital): €9,700. All lines are estimates.\n\nTwo inputs need checking before you rely on the break-even. First, confirm whether €12 includes VAT. Second, confirm that the walker payout is realistic for reliable walkers in your districts. A change in either shifts the break-even materially.\n\n**What it means for you:** The model shows that the break-even depends on a volume of walks you have not yet proven you can sell. Keep the startup capital small until a pilot shows repeat bookings. If walker payout must rise to keep reliable staff, the contribution falls, and the break-even moves up.\n\n**Next actions:**\n1. Check with AEAT whether the 21% VAT rate applies to dog-walking services and whether your €12 includes it.\n2. Get two insurance quotes and a self-employment social security figure from the Seguridad Social before you set any fixed-cost number.\n3. Interview five walkers about the payout they would accept per 30-minute walk, and update the walker payout line in the model.\n\n**Score: 4/10**\n\n**Computed unit economics** (unit: one booked 30-minute walk; arithmetic done in code from the inputs below)\n\n| line | value |\n|---|---|\n| Price per unit (incl. VAT 21%) | €12.00 |\n| Share kept by the business | 100% |\n| Net revenue per unit | €9.92 |\n| Variable cost per unit | €8.70 |\n| Contribution per unit | €1.22 (12%) |\n| Fixed costs per month | €2,085 |\n| Break-even (units per month) | 1,713 |\n| Start-up capital | €9,700 |\n\n| variable cost per unit | € | source |\n|---|---|---|\n| walker payout per walk | €8.00 | estimate, based on S15 group walk range of 7.50-10 per walk |\n| payment processing per walk | €0.40 | estimate |\n| supplies per walk | €0.30 | estimate |\n\n| fixed cost per month | € | source |\n|---|---|---|\n| app hosting and software | €60.00 | estimate |\n| liability insurance | €35.00 | estimate |\n| accounting (gestoria) | €120 | estimate |\n| marketing | €250 | estimate |\n| office and storage rent | €80.00 | estimate |\n| phone and utilities | €40.00 | estimate |\n| owner pay | €1,200 | estimate |\n| self-employment social security | €300 | estimate, Seguridad Social figure not found |\n\n| start-up cost | € | source |\n|---|---|---|\n| app build | €6,000 | estimate |\n| legal and registration setup | €400 | estimate |\n| insurance start-up | €300 | estimate |\n| first marketing | €1,000 | estimate |\n| working capital | €2,000 | estimate |\n\n## Risks & how to start\n\n**Takeaway:** The trade is not officially regulated and needs no formal training, so the risk sits in insurance, dog paperwork and walker quality, which you must control yourself.\n\n**Evidence:**\n- (−) Madrid's dog-walking trade is not officially regulated, according to a Whopaws guide, which says anyone can advertise as a walker without proof of training [S15]. This is a competitor's marketing guide, not a legal text, so it is weak support.\n- (=) A separate guide says no specific training is required, though basic canine behaviour and first aid are advisable [S19]. Its date is unknown.\n- (−) The Comunidad de Madrid's RIAC page says identification of dogs and cats is compulsory across the region, free of charge [S20]. These duties fall on the owner, not the walker.\n- (−) Owners must carry a microchip, RIAC entry and an up-to-date health card [S21]. A walker should ask for these before the first walk.\n- (−) Decree 30/2003 applies national rules to potentially dangerous breeds in Madrid. Walking a listed breed requires a PPP licence and a municipal registration [S22]. Your app must block or verify these bookings.\n- (−) A 2026 guide says civil-liability insurance is compulsory for dog owners in Madrid under Ley 4/2016 and the city's ordinance. The research could not check this against the legal text, and the cover amount is not stated [S23].\n- (−) Whopaws advises at least €300,000 of walker cover, including third-party damage and vet costs. This is a platform recommendation, not a legal minimum [S15].\n- (+) Whopaws says it holds payment until the client confirms the walk [S15]. This is a useful model to copy, since it protects buyers and gives you dispute control.\n\n**Key numbers:**\n\n| Figure | Value | Source or \"estimate\" |\n|---|---|---|\n| Recommended walker cover | €300,000 | [S15], platform guidance |\n| Owner documents needed | Microchip, RIAC entry, health card | [S21] |\n| Dog registration fee | None | [S20] |\n| Walker training required | None (advisable) | [S19] |\n| Potentially dangerous breed licence | PPP licence required | [S22] |\n| Monthly insurance cost | €35 | Estimate |\n\n**Unit economics:** Not applicable to this section. See the Money section.\n\n**What it means for you:** Your main protection is a booking flow that checks documents before a walk, an insurance policy that covers walkers, and a payment hold until the walk is confirmed. Build these into the first version, not later. You also need to confirm the insurance rule in the legal text, since the research could not do so.\n\n**Next actions:**\n1. Get the legal text of Ley 4/2016 and Madrid's animal ordinance, and confirm whether civil-liability insurance is compulsory for owners and what the minimum cover is.\n2. Write a short booking checklist: microchip, RIAC entry, health card, and a block on listed breeds without a PPP licence.\n3. Get two walker-cover quotes and make sure the policy includes third-party damage and vet costs.\n\n**Score: 4/10**\n\n## Sources\n- [S1] [Petme](https://petme.social/spain/dog-walking-jobs/madrid)\n- [S2] [Top 10 Best Dog Walker / Pet Sitter in Madrid (Verified & Reviewed ...](https://professnow.com/profession/top-10-best-dog-walker-pet-sitter-in-madrid/)\n- [S3] [Dog Walking in Madrid - Madrid Atoc, Madrid](https://www.petbacker.com/spain/walking/comunidad-de-madrid/madrid/madrid-~-madrid-freelance-dog-walker)\n- [S5] [Dog Walking in Madrid, Madrid](https://www.petbacker.com/spain/dog-walking/comunidad-de-madrid/madrid/la-moraleja-dogwalker-freelance-dog-walker)\n- [S6] [Dog Walking in Madrid, Madrid](https://www.petbacker.com/spain/dog-walking/comunidad-de-madrid/madrid/paseos-por-madrid-freelance-dog-walker-1)\n- [S7] [Dog Sitting in Madrid Spain](https://uk.dogbuddy.com/dog-sitters-madrid-spain)\n- [S8] [Los Mejores Paseadores De Perros En madrid](https://www.rover.com/es/madrid--comunidad-de-madrid--paseador-de-perros/)\n- [S9] [Los Mejores Paseadores De Perros En campo-real](https://www.rover.com/es/campo-real--comunidad-de-madrid--paseador-de-perros/)\n- [S10] [Los Mejores Paseadores De Perros En las-rozas-de-madrid](https://www.rover.com/es/las-rozas-de-madrid--comunidad-de-madrid--paseador-de-perros/)\n- [S11] [Paseadores de Perros en Mejorada del Campo](https://www.rover.com/es/mejorada-del-campo--comunidad-de-madrid--paseador-de-perros/)\n- [S13] [¿Cuánto cuesta el paseo de perros en Las Rozas de Madrid, Comunidad ...](https://www.rover.com/es/blog/las-rozas-de-madrid-perro-paseador-de-perros-precio/)\n- [S15] [Paseador de Perros Confianza Madrid 2026](https://www.whopaws.com/es/blog/paseador-perros-madrid)\n- [S16] [Cuánto cuesta un paseador de perros en 2026: precio por paseo, ...](https://yoojo.es/animales/guias/cuanto-cuesta-un-paseador-de-perros-precio-por-paseo-819)\n- [S17] [Paseo de perros en Madrid](https://gudog.com/paseo-de-perros-madrid)\n- [S18] [Paseador de perros a domicilio en Madrid - Este](https://appwebel.com/servicios/paseo-de-perros-domicilio/madrid/b/madrid-este)\n- [S19] [Cómo ser paseador de perros](https://www.cronoshare.com/comunidad/p/autonomos-empresas/crear-empresa/como-ser-paseador-perros)\n- [S20] [Identificación animales compañia](https://sede.comunidad.madrid/inscripciones-registro/identificacion-animales-compania)\n- [S21] [Normas para pasear a los perros en Madrid](https://www.estrelladigital.es/articulo/vida/normas-pasear-perros-madrid/20250525133912431585.html)\n- [S22] [Perros potencialmente peligrosos Madrid 2026](https://vetmadrid.com/perros-potencialmente-peligrosos-madrid/)\n- [S23] [La normativa en Madrid sobre perros en 2026. Un resumen](https://www.thewalkingdog.es/blog/normativa-madrid-perros/)\n",
+    "econ": {
+     "unit": "one booked 30-minute walk",
+     "price": 12,
+     "vatRate": 0.21,
+     "shareKept": 1,
+     "net": 9.92,
+     "variable": 8.7,
+     "contribution": 1.22,
+     "fixedMonthly": 2085,
+     "breakEven": 1713,
+     "startupCapital": 9700,
+     "lines": [
+      {
+       "group": "variable",
+       "item": "walker payout per walk",
+       "eur": 8,
+       "source": {
+        "url": "https://www.whopaws.com/es/blog/paseador-perros-madrid",
+        "title": "Paseador de Perros Confianza Madrid 2026",
+        "domain": "whopaws.com",
+        "accessed": "2026-11-16"
+       }
+      },
+      {
+       "group": "variable",
+       "item": "payment processing per walk",
+       "eur": 0.4,
+       "source": null
+      },
+      {
+       "group": "variable",
+       "item": "supplies per walk",
+       "eur": 0.3,
+       "source": null
+      },
+      {
+       "group": "fixed",
+       "item": "app hosting and software",
+       "eur": 60,
+       "source": null
+      },
+      {
+       "group": "fixed",
+       "item": "liability insurance",
+       "eur": 35,
+       "source": null
+      },
+      {
+       "group": "fixed",
+       "item": "accounting (gestoria)",
+       "eur": 120,
+       "source": null
+      },
+      {
+       "group": "fixed",
+       "item": "marketing",
+       "eur": 250,
+       "source": null
+      },
+      {
+       "group": "fixed",
+       "item": "office and storage rent",
+       "eur": 80,
+       "source": null
+      },
+      {
+       "group": "fixed",
+       "item": "phone and utilities",
+       "eur": 40,
+       "source": null
+      },
+      {
+       "group": "fixed",
+       "item": "owner pay",
+       "eur": 1200,
+       "source": null
+      },
+      {
+       "group": "fixed",
+       "item": "self-employment social security",
+       "eur": 300,
+       "source": null
+      },
+      {
+       "group": "startup",
+       "item": "app build",
+       "eur": 6000,
+       "source": null
+      },
+      {
+       "group": "startup",
+       "item": "legal and registration setup",
+       "eur": 400,
+       "source": null
+      },
+      {
+       "group": "startup",
+       "item": "insurance start-up",
+       "eur": 300,
+       "source": null
+      },
+      {
+       "group": "startup",
+       "item": "first marketing",
+       "eur": 1000,
+       "source": null
+      },
+      {
+       "group": "startup",
+       "item": "working capital",
+       "eur": 2000,
+       "source": null
+      }
+     ]
+    },
+    "ms": 62667
+   },
+   "memo": {
+    "purpose": "Decide whether to put money into: A dog-walking app for busy Madrid professionals, €12 a walk",
+    "problem": "Whopaws says central districts have more walkers and more competition, which can pull rates down. Whopaws' group walks sit at €8–12 per session, and a 20-walk bundle at €150–200. This sets a low ceiling on what buyers pay for shared walks, which may cut into your premium.",
+    "insight": "Whopaws says it holds payment until the client confirms the walk. This is a useful model to copy, since it protects buyers and gives you dispute control. Madrid listings advertise 30-minute walks from €10 and 60-minute walks up to €20. Petme lists walks at €12–22 for 30–60 minutes, which includes your price point.",
+    "verdict_line": "2.8/10, no-go: No-go: The price is in range. A 30-minute walk in Madrid is reported at €10–15 and €7–15, so €12 is defensible for that length. (team: customers, competition, pricing, viability).",
+    "next_7_days": [
+     "Put up a simple booking page and a paid waitlist in two or three Madrid professional networks, offering the first 10 walks at €12 with a refund if the walker does not show. Use a manual walker you already know. Keep the walk length fixed at 30 minutes.",
+     "Ask the 10 pilot customers which walk length they would book at €12 and at €18, and record the answer. Also check your own price list against two competitor listings.",
+     "Get quotes from two Spanish liability insurers for a micro-business covering walkers and third-party damage, and speak to five walkers who would take a booked walk at the payout you can afford."
+    ]
+   }
+  },
+  "timings": {
+   "validate": {
+    "started": 1794792226226,
+    "finished": 1794792304607
+   }
+  },
+  "models": {
+   "mia": "claude-haiku-5-5",
+   "leo": "v7",
+   "sam": "claude-haiku-5-5"
+  },
+  "attempts": {
+   "mia": 1,
+   "leo": 1,
+   "sam": 1
+  }
+ }
+}

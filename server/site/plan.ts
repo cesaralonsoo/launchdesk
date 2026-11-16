@@ -9,6 +9,7 @@ import { recordUsage, usdOf } from "../cost.js";
 import type { KitInput, LogoOption } from "../kit-contract.js";
 import { ICONS, MODEL_SITE_SCHEMA, type ModelSite, type SiteSpec } from "./spec.js";
 import { validateModelSite } from "./validate.js";
+import { templateSite } from "../kit-templates.js";
 
 export const SITE_MODEL = process.env.MODEL_SITE || "claude-sonnet-5-5";
 
@@ -72,8 +73,11 @@ export interface PlanResult { spec: SiteSpec; issues: string[]; usd: number; moc
 
 export async function planSiteDetailed(input: KitInput, opts: { mock?: boolean; variantHint?: string } = {}): Promise<PlanResult> {
   if (opts.mock ?? config.mockAi) {
+    // A saved fixture only when it is this very business (same name and language); otherwise copy written by code
+    // from the founder's own input, so a demo never shows another business's claims or numbers.
     const fx = mockFixtureFor(input);
-    const { spec, issues } = validateModelSite(fx.model, input);
+    const same = fx.input.brand.name.toLowerCase() === input.brand.name.toLowerCase() && fx.input.brand.lang === input.brand.lang;
+    const { spec, issues } = validateModelSite(same ? fx.model : templateSite(input), input);
     return { spec, issues, usd: 0, mock: true };
   }
   const prompt = `Digest:\n${JSON.stringify(siteDigest(input))}${opts.variantHint ? `\n\nStyle hint from the founder: ${opts.variantHint.slice(0, 200)}` : ""}`;

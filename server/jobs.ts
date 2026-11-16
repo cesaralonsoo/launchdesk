@@ -79,6 +79,12 @@ type StageOpts = RunOpts & { v7?: Promise<void> };
 async function runStage(projectId: string, stage: Stage) {
   // Nothing else runs this stage in this process (startStage is deduplicated).
   await prepare(projectId, stage, true);
+  if (stage === "build") {
+    // The Launch kit: brand, then logo options, website and 30-day plan in parallel; marks the build teams done.
+    const { runKitStage } = await import("./kit.js"); // dynamic: kit.ts imports slugify from this file
+    await runKitStage(projectId);
+    return;
+  }
   const opts: StageOpts = {};
   let team: Promise<void> = Promise.resolve();
   if (stage === "validate") {

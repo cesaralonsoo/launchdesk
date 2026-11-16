@@ -803,16 +803,10 @@ export const DEMO_SCRIPT: ReadonlyArray<{ at: number; step: FlowStepV7; show: st
   { at: 53, step: "report", page: "scale", show: "Scalability 0–10 + cap: how far this world can grow" },
   { at: 59, step: "report", page: "points", show: "3 strengths · 3 weak points" },
   { at: 64, step: "steer", show: "Note types itself, 2 analysts re-run, diff chips" },
-  { at: 72, step: "boom", show: "Room bursts into the office floor" },
-  { at: 78, step: "pay2", show: "$0.20, approves itself" },
-  { at: 81, step: "build", builder: "nova", show: "Name + brand" },
-  { at: 85, step: "build", builder: "dex", show: "Logo + landing" },
-  { at: 89, step: "build", builder: "rae", show: "30-day launch plan" },
-  { at: 93, step: "build", builder: "pip", show: "Goes live" },
-  { at: 96, step: "live", show: "Site card with BCH pre-orders" },
-  { at: 100, step: "building", show: "Pull back: the building" },
-  { at: 104, step: "district", show: "District ghost + what would make it scale" },
-  { at: 109, step: "end", show: "Your turn: type your idea" },
+  { at: 72, step: "floor", show: "The office floor; the Launch kit offer: logo, website and 30-day plan" },
+  { at: 78, step: "pay2", show: "$0.50, approves itself" },
+  { at: 82, step: "live", show: "One result screen: logo options, the live website, the 30-day plan" },
+  { at: 96, step: "end", show: "Your turn: type your idea" },
 ];
 export const DEMO_LENGTH_S = 112;
 
