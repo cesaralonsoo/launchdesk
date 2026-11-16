@@ -355,6 +355,8 @@ const num10 = (x: unknown, d: number) => (Number.isFinite(Number(x)) ? Math.max(
 /** Pure: the shipped Markdown → the block contract (ReportOut + each block's own numbered sources). */
 export function parseReport(md: string, opts: { idea?: string; meta?: WriterMeta; sources?: readonly ReportSource[]; accessed?: string } = {}): ReportOut {
   const accessed = opts.accessed ?? today();
+  // The writer sometimes marks an uncited fact in words ("…, 2026; no source id"); the page already labels it Estimate.
+  md = md.replace(/\s*[;,]\s*no source (?:id|cited)\b/gi, "").replace(/\s*\(\s*no source (?:id|cited)\s*\)/gi, "");
   const secs = sectionsOf(md);
   const srcList: ReportSource[] = opts.sources ? [...opts.sources] : [];
   if (!opts.sources) {
@@ -455,7 +457,7 @@ export function parseReport(md: string, opts: { idea?: string; meta?: WriterMeta
 const WSYSTEM = () => `You write founder reports: decision documents for a first-time founder deciding whether to put their savings into a business idea. The current date is ${today()}.
 Quality bar (applies to everything you write):
 - Specific to this exact idea, place and price. No generic startup advice.
-- Real numbers with their source: every factual figure carries the [S#] id of the research note it came from. Use only [S#] ids that appear in the research notes; never invent a source or a number for it.
+- Real numbers with their source: every factual figure carries the [S#] id of the research note it came from. Use only [S#] ids that appear in the research notes; never invent a source or a number for it. A figure with no [S#] gets no marker in words (never write "no source id"); the page labels it as an estimate.
 - When you assume something, label it "(estimate)" and show the inputs.
 - If the research does not cover something, say so plainly instead of filling the gap.
 - Plain, short sentences. Markdown. No preamble, no closing remarks.`;
