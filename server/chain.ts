@@ -9,8 +9,13 @@ import {
 } from "@bitauth/libauth";
 import { config } from "./config.js";
 
+/** Tests only: replaces the Fulcrum transport (so a whole flow can run against a MockNetworkProvider, no network). */
+let transport: ((method: string, params: unknown[]) => Promise<unknown>) | null = null;
+export const __setElectrumTransport = (fn: typeof transport) => void (transport = fn);
+
 /** One short-lived JSON-RPC call to a Fulcrum server, with failover. */
 export async function electrum<T = unknown>(method: string, params: unknown[]): Promise<T> {
+  if (transport) return (await transport(method, params)) as T;
   let lastErr: unknown;
   for (const url of config.electrumServers) {
     try {
@@ -68,11 +73,25 @@ export const paymentTag = (projectId: string, stage: string) => `LD1:${projectId
 export type CheckedPayment = { txid: string; paidSats: number };
 
 /**
+ * ESCROW=1 only (server/escrow/install.ts): a payment to the order's own contract address, verified by the escrow
+ * code just before the pay route runs. Held only for the length of that one request.
+ */
+const preChecked = new Map<string, CheckedPayment & { tag: string }>();
+export function holdCheckedPayment(txHex: string, tag: string, c: CheckedPayment): () => void {
+  const k = txHex.toLowerCase();
+  preChecked.set(k, { ...c, tag });
+  return () => void preChecked.delete(k);
+}
+
+/**
  * Decode a signed transaction and check, without trusting the browser:
  * - it pays at least `minSats` to the merchant address;
  * - it carries an OP_RETURN with exactly `tag`.
  */
 export function checkPaymentTx(txHex: string, minSats: number, tag: string): CheckedPayment {
+  // ESCROW=1: the escrow middleware already checked this exact transaction against the order's contract address.
+  const pre = preChecked.get(txHex.toLowerCase());
+  if (pre && pre.tag === tag && pre.paidSats >= minSats) return { txid: pre.txid, paidSats: pre.paidSats };
   if (!/^[0-9a-f]+$/i.test(txHex) || txHex.length > 200_000) throw new Error("Invalid transaction: the wallet sent something we could not read. Please try again.");
   const bin = hexToBin(txHex);
   const tx = decodeTransaction(bin);

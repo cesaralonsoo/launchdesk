@@ -2,7 +2,7 @@
 //   GET  /api/escrow/:id/:stage         status for the "Payment held safely / delivered / refunded" panel + verify view
 //   GET  /api/escrow/:id/:stage/report  the exact report bytes whose sha256 is on chain (text/plain, for re-hashing)
 //   POST /api/escrow/:id/:stage/refund  "Get my refund now": broadcasts the refund once the timeout has passed
-// Quote and pay stay on the existing /api/projects/:id/quote and /pay routes (see .notes/next/escrow.md, hook-up).
+// Quote and pay stay on the existing /api/projects/:id/quote and /pay routes, wrapped by install.ts.
 import { Hono } from "hono";
 import { escrowRefund, escrowReportBody, escrowStatus } from "./service.js";
 

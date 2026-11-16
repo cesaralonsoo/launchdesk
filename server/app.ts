@@ -1,4 +1,5 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
+import { installEscrow } from "./escrow/install.js";
 import { readFileSync, statSync } from "node:fs";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono, type Context } from "hono";
@@ -13,12 +14,14 @@ import { SteerError, startSteer } from "./jobs-v7.js";
 import { ANALYST_ROLES, type AnalystRole } from "./v7.js";
 import { bchUsdCached, bchUsdOrZero, centsToSats } from "./price.js";
 import { kitRoutes } from "./kit-routes.js";
+import { officeRoutes } from "./offices/routes.js";
 import { siteRowFor } from "./kit.js";
 import { siteRoutes } from "./site/routes.js";
 import { getSite } from "./site/db.js";
 import { STAGE_DEPTS, type AppConfig, type CreatedProject, type Project, type Quote, type ShareLink, type SiteData, type Stage, type Stats, type WorkDept } from "./types.js";
 
 export const app = new Hono();
+installEscrow(app);
 const QUOTE_MS = 15 * 60_000;
 
 class ApiError extends Error {
@@ -485,6 +488,7 @@ app.get("/api/r/:shareId", async (c) => {
 // A kit's website is read straight from the kit (brand, chosen logo, chosen design), so a choice shows at once;
 // the sites table is the second source. Unknown slugs fall through to the old page.
 app.route("/", kitRoutes());
+app.route("/", officeRoutes()); // "Your offices" (server/offices/routes.ts)
 app.route("/", siteRoutes({ load: async (slug) => (await siteRowFor(slug)) ?? (await getSite(slug)) }));
 
 app.all("/api/*", () => {

@@ -164,7 +164,7 @@ export function kitScreenHtml(data: KitPayload): string {
     </div>
     <footer class="kit-foot" data-st>
       <p class="kit-own">This page is yours on this device. Keep your private link to come back.</p>
-      <button type="button" class="btn btn-ghost" data-kit-act="offices"><span>Your offices (soon)</span>${I.arrow(16)}</button>
+      <button type="button" class="btn btn-primary" data-kit-act="offices"><span>Open your offices</span>${I.arrow(16)}</button>
     </footer>
   </section>`;
 }
@@ -355,7 +355,11 @@ export function mountKitScreen(root: HTMLElement, o: KitScreenOpts): { stop(): v
     }
     const act = t.closest<HTMLElement>("[data-kit-act]")?.dataset.kitAct;
     if (act === "more") return void more();
-    if (act === "offices") return o.onOffices?.(data.kit?.brand.name);
+    // "Your offices" (ui/offices.ts): continue from this project. The example (mock) keeps the old teaser.
+    if (act === "offices") {
+      if (o.mock) return o.onOffices?.(data.kit?.brand.name);
+      return void import("./offices").then((m) => m.openOffices({ projectId: o.projectId, ownerKey: o.ownerKey, api, name: data.kit?.brand.name }));
+    }
     if (act === "copy") {
       const url = t.closest<HTMLElement>("[data-url]")!.dataset.url!;
       void navigator.clipboard?.writeText(url).then(() => toast(root, "Link copied"), () => toast(root, url));
@@ -371,6 +375,13 @@ export function mountKitScreen(root: HTMLElement, o: KitScreenOpts): { stop(): v
     },
     refresh: tick,
   };
+}
+
+// "Bring a project you already run" without a created project: /#offices opens the offices on their own.
+if (typeof window !== "undefined") {
+  const viaHash = () => location.hash === "#offices" && void import("./offices").then((m) => m.openOffices({ onClose: () => history.replaceState(null, "", location.pathname + location.search) }));
+  window.addEventListener("hashchange", viaHash);
+  viaHash();
 }
 
 function toast(root: HTMLElement, text: string) {

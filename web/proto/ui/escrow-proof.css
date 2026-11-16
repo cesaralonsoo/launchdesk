@@ -1,0 +1,23 @@
+/* "Proof on Bitcoin Cash" panel at the end of the live report (VITE_ESCROW=1). Same tokens as ui/v7.css. */
+.ep-panel { margin: 32px 0 0; padding: 18px 20px; border: 1px solid var(--c-line); border-radius: 14px; background: var(--c-surface); display: grid; gap: 10px; font-size: 13.5px; color: var(--c-ink); min-width: 0; }
+.ep-panel h3 { margin: 0; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.ep-panel h3::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--c-positive); }
+.ep-panel[data-state="funded"] h3::before { background: var(--c-warning); }
+.ep-panel p { margin: 0; color: var(--c-muted); line-height: 1.5; }
+.ep-fp { display: grid; gap: 4px; min-width: 0; }
+.ep-fp span { font-size: 11.5px; letter-spacing: .04em; text-transform: uppercase; color: var(--c-muted); }
+.ep-panel code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; word-break: break-all; }
+.ep-fp code { padding: 8px 10px; border-radius: 8px; background: var(--c-fill); color: var(--c-ink); user-select: all; }
+.ep-links { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.ep-links a { color: var(--c-ink); font-weight: 600; }
+.ep-out { font-size: 12.5px; }
+.ep-out[data-ok="yes"] { color: var(--c-positive); }
+.ep-out[data-ok="no"] { color: var(--c-negative); }
+.ep-how summary { cursor: pointer; font-weight: 600; color: var(--c-ink); }
+.ep-how ol { margin: 8px 0; padding-left: 20px; display: grid; gap: 6px; color: var(--c-muted); }
+.ep-how a { color: var(--c-ink); }
+@media print {
+  .ep-panel { break-inside: avoid; }
+  .ep-check, .ep-out, .ep-how { display: none; }
+}
+@media (max-width: 520px) { .ep-panel { padding: 14px; } }

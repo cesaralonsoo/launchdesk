@@ -37,7 +37,7 @@ let send: (hex: string, txid: string) => Promise<void> = broadcast;
 export const __setEscrowBroadcast = (fn: typeof send) => void (send = fn);
 
 export const escrowOn = () => process.env.ESCROW === "1";
-const net = (): EscrowNet => (process.env.ESCROW_NETWORK === "chipnet" ? "chipnet" : "mainnet");
+export const net = (): EscrowNet => (process.env.ESCROW_NETWORK === "chipnet" ? "chipnet" : "mainnet");
 const timeoutBlocks = () => {
   const n = Number(process.env.ESCROW_TIMEOUT_BLOCKS);
   return Number.isInteger(n) && n > 0 ? n : DEFAULT_TIMEOUT_BLOCKS;
@@ -75,7 +75,7 @@ export function chainProvider(n: EscrowNet = net()): NetworkProvider {
 
 // ---- store -------------------------------------------------------------------------------------------------------
 let ready: Promise<unknown> | null = null;
-const table = () =>
+export const table = () =>
   (ready ??= exec(`CREATE TABLE IF NOT EXISTS escrow_orders (
     project_id TEXT NOT NULL, stage TEXT NOT NULL,
     ref TEXT NOT NULL, network TEXT NOT NULL,
@@ -88,12 +88,12 @@ const table = () =>
     updated_at INTEGER NOT NULL,
     PRIMARY KEY (project_id, stage))`));
 
-type Row = Record<string, unknown>;
-async function getRow(projectId: string, stage: string): Promise<Row | null> {
+export type Row = Record<string, unknown>;
+export async function getRow(projectId: string, stage: string): Promise<Row | null> {
   await table();
   return ((await exec("SELECT * FROM escrow_orders WHERE project_id = ? AND stage = ?", [projectId, stage])).rows[0] as Row) ?? null;
 }
-const setRow = async (projectId: string, stage: string, f: Record<string, string | number | null>) => {
+export const setRow = async (projectId: string, stage: string, f: Record<string, string | number | null>) => {
   const cols = Object.keys(f);
   await exec(`UPDATE escrow_orders SET ${cols.map((c) => `${c} = ?`).join(", ")}, updated_at = ? WHERE project_id = ? AND stage = ?`, [
     ...cols.map((c) => f[c]!),
@@ -134,15 +134,26 @@ export async function escrowQuoteAddress(projectId: string, stage: string, refun
   return { address: e.address, timeoutBlocks: e.timeoutBlocks };
 }
 
-/** Drop-in for chain.ts checkPaymentTx() when ESCROW=1: same return shape. The caller still broadcasts. */
-export async function escrowCheckPayment(projectId: string, stage: string, txHex: string, minSats: number): Promise<{ txid: string; paidSats: number }> {
+/** Checks a signed funding tx against this order's contract, without writing anything. */
+export async function escrowVerifyPayment(projectId: string, stage: string, txHex: string, minSats: number): Promise<{ txid: string; paidSats: number; vout: number }> {
   const r = await getRow(projectId, stage);
   if (!r) throw new Error("Get a price quote first");
   const f = checkFunding(txHex, escrowOf(r), minSats, String(r.ref));
-  if (r.status === "quoted" || (r.status === "funded" && r.funding_txid === f.txid))
-    await setRow(projectId, stage, { status: "funded", funding_txid: f.txid, funding_vout: f.vout, sats: f.sats, funded_at: Date.now() });
-  else if (r.funding_txid !== f.txid) throw new Error("This order was already paid.");
-  return { txid: f.txid, paidSats: f.sats };
+  if (r.status !== "quoted" && r.funding_txid !== f.txid) throw new Error("This order was already paid.");
+  return { txid: f.txid, paidSats: f.sats, vout: f.vout };
+}
+/** Records the funding output (idempotent for the same tx). */
+export async function escrowMarkFunded(projectId: string, stage: string, f: { txid: string; vout: number; sats: number }) {
+  const r = await getRow(projectId, stage);
+  if (!r || (r.status !== "quoted" && r.funding_txid !== f.txid)) return;
+  if (r.status === "quoted") await setRow(projectId, stage, { status: "funded", funding_txid: f.txid, funding_vout: f.vout, sats: f.sats, funded_at: Date.now() });
+}
+
+/** Drop-in for chain.ts checkPaymentTx() when ESCROW=1: same return shape. The caller still broadcasts. */
+export async function escrowCheckPayment(projectId: string, stage: string, txHex: string, minSats: number): Promise<{ txid: string; paidSats: number }> {
+  const f = await escrowVerifyPayment(projectId, stage, txHex, minSats);
+  await escrowMarkFunded(projectId, stage, { txid: f.txid, vout: f.vout, sats: f.paidSats });
+  return { txid: f.txid, paidSats: f.paidSats };
 }
 
 /**
@@ -170,7 +181,7 @@ export async function escrowRelease(projectId: string, stage: string, report: st
 }
 
 /** Confirmations of the funding output, or 0 if unconfirmed, or null if it is no longer unspent. */
-async function depthOf(r: Row): Promise<number | null> {
+export async function depthOf(r: Row): Promise<number | null> {
   const p = chainProvider(String(r.network) as EscrowNet);
   const list = await electrum<Array<{ tx_hash: string; tx_pos: number; height: number }>>("blockchain.scripthash.listunspent", [
     binToHex(sha256(hexToBin(String(r.locking_hex))).reverse()),
@@ -230,7 +241,14 @@ export type EscrowStatus = {
   refundTxid: string | null;
   reportHash: string | null;
   timeoutBlocks: number;
+  network: EscrowNet;
+  /** Block explorer pages for the release / refund transactions (null until they exist). */
+  releaseUrl: string | null;
+  refundUrl: string | null;
 };
+/** Block explorer page for one transaction on the order's network. */
+export const explorerTxUrl = (n: EscrowNet, txid: string) =>
+  n === "chipnet" ? `https://chipnet.imaginary.cash/tx/${txid}` : `https://blockchair.com/bitcoin-cash/transaction/${txid}`;
 export async function escrowStatus(projectId: string, stage: string): Promise<EscrowStatus | null> {
   const r = await getRow(projectId, stage);
   if (!r) return null;
@@ -244,6 +262,9 @@ export async function escrowStatus(projectId: string, stage: string): Promise<Es
     refundTxid: s("refund_txid"),
     reportHash: s("report_hash"),
     timeoutBlocks: Number(r.timeout_blocks),
+    network: String(r.network) as EscrowNet,
+    releaseUrl: r.release_txid ? explorerTxUrl(String(r.network) as EscrowNet, String(r.release_txid)) : null,
+    refundUrl: r.refund_txid ? explorerTxUrl(String(r.network) as EscrowNet, String(r.refund_txid)) : null,
   };
 }
 /** The exact bytes that were hashed on chain, so anyone can re-hash them in the browser. */
