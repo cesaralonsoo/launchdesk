@@ -291,7 +291,8 @@ const overlap = (a: string, b: string) => { const kb = new Set(keyWords(b)); ret
 export function garbled(s: string): boolean {
   const t = s.trim();
   if (words(t) < 4) return true;
-  if (/\b(\w+)\s+\1\b/i.test(t) && !/\b(very very|no no)\b/i.test(t)) return true;
+  // repeated word, Unicode-aware ("más más" counts, not only ASCII words)
+  if (/(?<![\p{L}\p{N}])([\p{L}\p{N}]+)\s+\1(?![\p{L}\p{N}])/iu.test(t) && !/\b(very very|no no)\b/i.test(t)) return true;
   if (/[{}<>]|\b(undefined|null|NaN|TODO|lorem)\b|\[(?:S)?\d+\]/.test(t)) return true;
   if (/(.)\1{4,}/.test(t)) return true;
   if (/\b(and|or|the|to|with|a|an|of|for|y|el|la|de|con|para)$/i.test(t.replace(/[.,;:!?…]+$/, ""))) return true;
@@ -319,13 +320,22 @@ export function saneDays(plan: PlanV2, fallback: readonly Day[], warnings: strin
   const fix = (d: Day): Day => {
     let { channel, action } = d;
     if (garbled(action)) {
+      // the template lines are English: a plan in another language gets a short line in its own language instead
+      if (lang !== "en") {
+        warnings.push(lang === "es" ? `day ${d.day}: unclear task replaced by a plain line` : `day ${d.day}: unclear task kept (no template in this language)`);
+        return lang === "es" ? { ...d, action: "Cuenta lo que trajo cada canal hasta hoy y apúntalo.", copy: null } : d;
+      }
       const near = [...fallback].filter((f) => !used.has(f.action)).sort((a, b) => Math.abs(a.day - d.day) - Math.abs(b.day - d.day))[0];
       warnings.push(`day ${d.day}: unclear task replaced by a template line`);
       if (near) { used.add(near.action); return { ...d, channel: near.channel, action: near.action, copy: near.copy }; }
       return { ...d, action: "Count what each channel brought so far and write it down." };
     }
     const rule = d.copy ? COPY_CHANNEL[d.copy] : undefined;
-    if (rule && !rule.re.test(channel)) {
+    if (rule && !rule.re.test(channel) && names.includes(channel) && !rule.re.test(action)) {
+      // a channel the plan chose, with a task that does not name the copy's kind: the copy reference is the mistake
+      warnings.push(`day ${d.day}: the ${d.copy} text dropped (it does not fit "${channel}")`);
+      return { ...d, channel, action, copy: null };
+    } else if (rule && !rule.re.test(channel)) {
       const named = names.find((n) => rule.re.test(n));
       const to = named ?? (lang ? rule[lang] : null);
       if (to && to !== channel) { warnings.push(`day ${d.day}: channel "${channel}" relabelled "${to}" (the task uses the ${d.copy} text)`); channel = to; }

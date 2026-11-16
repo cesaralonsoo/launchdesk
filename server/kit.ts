@@ -128,9 +128,22 @@ export function digestOf(p: Project, v7: ResultsV7 | null): ReportDigest & Repor
   const sam = p.results.sam as (Project["results"]["sam"] & { launch_offer?: { item: string; price: number; normal_price: number; limit: number } }) | undefined;
   const lo = sam?.launch_offer;
   const all: ReportDigest["stats"] = [];
-  for (const b of v7?.blocks ?? []) for (const k of b.keyNumbers ?? []) if (k.source?.url) all.push({ value: k.value, label: k.label, sourceUrl: k.source.url });
+  // A number the report counts AGAINST the idea is never shown as proof on the website: drop it when a negative
+  // finding with the same source, or a weak point, quotes it. Writer qualifiers ("72,707 (unconfirmed)") are cut, and
+  // a number qualified as unconfirmed / estimate / assumed is not headline proof at all.
+  const against = (v7?.work ?? []).flatMap((w) => w.findings.filter((f) => (f.impact ?? 0) < 0).map((f) => ({ url: f.source?.url ?? "", text: `${f.text} ${f.display ?? ""}` })));
+  const weak = (v7?.report?.weaknesses ?? []).map((w) => w.text);
+  const quotes = (t: string, v: string) => /\d/.test(v) && v.length >= 2 && t.includes(v);
+  const push = (value: string, label: string, url: string) => {
+    if (/\((?:[^)]*\b(?:unconfirmed|estimate[sd]?|assumed|assumption|sin confirmar|estimad[oa]s?|supuesto)\b[^)]*)\)/i.test(value)) return;
+    const v = value.replace(/\s*\([^)]*\)/g, "").trim();
+    if (!v) return;
+    if (against.some((f) => f.url === url && quotes(f.text, v)) || weak.some((t) => quotes(t, v))) return;
+    all.push({ value: v, label, sourceUrl: url });
+  };
+  for (const b of v7?.blocks ?? []) for (const k of b.keyNumbers ?? []) if (k.source?.url) push(k.value, k.label, k.source.url);
   if (!all.length)
-    for (const w of v7?.work ?? []) for (const f of w.findings) if (f.source?.url && f.display) all.push({ value: f.display, label: f.text.slice(0, 80), sourceUrl: f.source.url });
+    for (const w of v7?.work ?? []) for (const f of w.findings) if (f.source?.url && f.display && (f.impact ?? 0) >= 0) push(f.display, f.text.slice(0, 80), f.source.url);
   const order = { demand: 0, price: 1, context: 2 } as const;
   const seen = new Set<string>();
   const stats = all

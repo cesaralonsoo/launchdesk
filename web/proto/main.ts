@@ -44,7 +44,8 @@ const flow = createFlow(world, p7.demo ? { step: "bedroom" } : init, { hold: p.s
 // A real run lives at /p/:id (the server and dev middleware serve the app there): reload or share = reopen it.
 const pathId = /^\/p\/([A-Za-z0-9_-]{4,40})\/?$/.exec(location.pathname)?.[1] ?? null;
 const openId = p7.project ?? pathId;
-if (openId && !p7.step && !p7.demo) flow.next({ type: "switch-project", id: openId });
+// a finished example opens on its report (as from the home card), so a shared link never skips the report and its proof
+if (openId && !p7.step && !p7.demo) flow.next({ type: "switch-project", id: openId, ...(/^ex-/.test(openId) ? { at: "report" as const } : {}) });
 const demo = p7.demo ? createDemo(flow, p7.demoAt ?? 0) : null;
 
 const ui = p.ui ? createUi(uiHost, { world, flow, demo, still: p.still }) : null;

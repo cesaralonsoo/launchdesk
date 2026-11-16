@@ -12,7 +12,8 @@ html.has-ld-banner #world, html.has-ld-banner #ui, html.has-ld-banner #ui > .ui 
   background: var(--c-ink, #0B0D12); color: color-mix(in srgb, var(--c-bg, #E9ECF0) 72%, transparent);
   font: 500 12px/1 var(--font-text, Inter, system-ui, sans-serif); letter-spacing: 0.01em; white-space: nowrap; overflow: hidden; }
 .ld-banner b { font-weight: 600; color: var(--c-bg, #E9ECF0); }
-.ld-banner a, .ld-banner button { color: var(--c-bg, #E9ECF0); text-decoration: none; background: none; border: 0; padding: 4px 2px; font: inherit; cursor: pointer; }
+.ld-banner a, .ld-banner button { position: relative; color: var(--c-bg, #E9ECF0); text-decoration: none; background: none; border: 0; padding: 4px 2px; font: inherit; cursor: pointer; }
+.ld-banner a::after, .ld-banner button::after { content: ""; position: absolute; inset: -12px -6px; }
 .ld-banner a:hover, .ld-banner button:hover { text-decoration: underline; text-underline-offset: 3px; }
 .ld-banner a:focus-visible, .ld-banner button:focus-visible { outline: 1px solid currentColor; outline-offset: 2px; border-radius: 3px; }
 .ld-banner .sep { width: 1px; height: 12px; background: color-mix(in srgb, var(--c-bg, #E9ECF0) 22%, transparent); }
@@ -26,6 +27,7 @@ html.has-ld-banner #world, html.has-ld-banner #ui, html.has-ld-banner #ui > .ui 
   .ld-banner .sep, .ld-banner span.ev { display: none; }
   .ld-banner .copy { gap: 5px; }
 }
+@media (max-width: 420px) { .ld-banner .addr { display: none; } }
 @media (max-width: 340px) { .ld-banner .lbl { display: none; } }`;
 
 const short = (a: string) => {
@@ -70,8 +72,8 @@ export function mountBanner(el: HTMLElement): () => void {
     ${linkReady(SLIDES_URL) ? `<a href="${SLIDES_URL}" target="_blank" rel="noopener">Slides</a>` : ""}
     ${linkReady(REPO_URL) ? `<a href="${REPO_URL}" target="_blank" rel="noopener">Code</a>` : ""}
     <span class="sep" aria-hidden="true"></span>
-    <button type="button" class="copy" title="Copy the EMBER2026 donation address (CashTokens)" aria-label="Copy EMBER2026 donation address ${EMBER_ADDRESS}">
-      <span class="lbl">EMBER2026</span><span class="addr">${short(EMBER_ADDRESS)}</span><span class="state">Copy</span>
+    <button type="button" class="copy" title="Copy the CashTokens address for EMBER2026 community-choice votes" aria-label="Copy EMBER2026 donation address ${EMBER_ADDRESS}">
+      <span class="lbl">Vote with EMBER2026</span><span class="addr">${short(EMBER_ADDRESS)}</span><span class="state">Copy</span>
     </button>`;
   const btn = bar.querySelector<HTMLButtonElement>(".copy")!;
   const state = btn.querySelector<HTMLElement>(".state")!;

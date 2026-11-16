@@ -152,8 +152,8 @@ How to refund without LaunchDesk:
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
 
-/** Live runs need the escrow flag; the examples always have their proof. */
-const wanted = (id: string | null) => !!id && (ESCROW || isExample(id));
+/** Live runs need the escrow flag; examples show proof only when they have one (a test-mode example never calls the escrow route). */
+const wanted = (id: string | null) => !!id && (isExample(id) || (ESCROW && !/^ex-/.test(id) && !exampleOf(id)));
 
 function paint() {
   const id = projectId();

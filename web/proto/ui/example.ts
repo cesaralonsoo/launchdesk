@@ -49,13 +49,19 @@ export function exampleButtonHtml(): string {
     </button>`;
 }
 
+/** The kit note in one short line ("Kit from a second run (€2.50 flat white version)"), or undefined. */
+export function kitNoteShort(note: string | undefined): string | undefined {
+  if (!note) return undefined;
+  const ver = /\(a ([^)]{1,40}) version\)/.exec(note)?.[1];
+  return `Kit from a second run${ver ? ` (${ver} version)` : " of this idea"}`;
+}
+
 /** The strip over an open example: what it is, and the three places a judge wants to see. */
 export function ribbonHtml(x: ExampleCard, at: "report" | "kit" | "proof", others: ExampleCard[]): string {
   const other = others.find((o) => o.id !== x.id);
   const v = x.verdict ? `${VERDICT[x.verdict.verdict] ?? x.verdict.verdict} ${x.verdict.score.toFixed(1)}/10` : "";
   // one short line on the ribbon; the full reason behind an (i) tap
-  const ver = /\(a ([^)]{1,40}) version\)/.exec(x.kitNote)?.[1];
-  const kitShort = x.kitNote ? `Kit from a second run${ver ? ` (${ver} version)` : " of this idea"}` : "";
+  const kitShort = kitNoteShort(x.kitNote) ?? "";
   return `<div class="ex-ribbon glass" role="region" aria-label="Finished example">
     <div class="ex-r-t"><span class="ex-r-tag">Finished example</span><b>${esc(x.title)}</b>
       <span class="ex-r-meta">${esc(x.run)} · ${esc(x.paid)}${v ? ` · ${esc(v)}` : ""}${x.sources ? ` · ${x.sources} web pages cited` : ""}</span></div>

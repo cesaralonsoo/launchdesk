@@ -206,12 +206,23 @@ export function placeOk(c: Candidate, names: string[]): boolean {
 /** Government or military archive photos read as off-topic stock (a DoD gardener as "home plant care"). */
 const ARCHIVE_CREATOR = /department of defense|\bdod\b|u\.s\. (army|navy|air force|marine)|usda|national archives|\bnasa\b|military/i;
 
-/** Hard filters: licence, size, file type, junk words, museum objects. Ratio is checked per role later. */
-export function keepCandidate(c: Candidate): boolean {
+/** A junk word in the photo's text, unless the idea itself names it ("sticker" is fine for a sticker shop). */
+function badWords(text: string, idea: string): boolean {
+  if (!idea) return BAD_WORDS.test(text);
+  const re = new RegExp(BAD_WORDS.source, "gi");
+  for (const m of text.matchAll(re)) {
+    const w = m[0].toLowerCase().replace(/s$/, "");
+    if (!new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "i").test(idea)) return true;
+  }
+  return false;
+}
+
+/** Hard filters: licence, size, file type, junk words (except ones the idea names), museum objects. Ratio is checked per role later. */
+export function keepCandidate(c: Candidate, idea = ""): boolean {
   if (!ALLOWED_LICENSE.has(c.license)) return false;
   if (c.width < 1000 || c.height < 600) return false;
   if (!/^https:\/\//.test(c.url) || /\.(png|gif|svg|tiff?)(\?|$)/i.test(c.url)) return false;
-  if (BAD_WORDS.test(`${c.title} ${c.tags.join(" ")}`)) return false;
+  if (badWords(`${c.title} ${c.tags.join(" ")}`, idea)) return false;
   if (c.provider === "rawpixel" && BAD_RAWPIXEL_PATH.test(rawpixelPath(c.url))) return false;
   if (c.creator && ARCHIVE_CREATOR.test(c.creator)) return false;
   return true;
@@ -533,7 +544,7 @@ export async function findPhotos(input: FindPhotosInput): Promise<SitePhoto[]> {
     const area = cleanCity(input.area ?? areaOf(input.idea, input.city));
     const q = buildQueries({ ...input, area });
     const names = area ? [area] : input.city ? [cleanCity(input.city)] : [];
-    const pool = await search(q, { f, signal: all, deadline: started + Math.min(Math.round(budget * 0.4), 8000), cache, log, names });
+    const pool = await search(q, { f, signal: all, deadline: started + Math.min(Math.round(budget * 0.4), 8000), cache, log, names, idea: input.idea });
     if (all.aborted || !pool.length) return [];
     let ranked = pool;
     const useVision = (input.vision ?? process.env.PHOTO_VISION !== "0") && !config.mockAi;
@@ -574,7 +585,7 @@ async function defaultCache(): Promise<FindPhotosInput["cache"]> {
   }
 }
 
-interface Ctx { f: typeof fetch; signal: AbortSignal; deadline: number; cache: FindPhotosInput["cache"]; log: (m: string) => void; names?: string[] }
+interface Ctx { f: typeof fetch; signal: AbortSignal; deadline: number; cache: FindPhotosInput["cache"]; log: (m: string) => void; names?: string[]; idea?: string }
 
 async function cached(ctx: Ctx, key: string, run: () => Promise<Candidate[]>): Promise<Candidate[]> {
   const hit = await ctx.cache?.get(key).catch(() => null);
@@ -628,17 +639,17 @@ async function search(q: PhotoQueries, ctx: Ctx): Promise<Candidate[]> {
   const ov = Promise.all(plan.map(([role, s]) => settle(searchOpenverse(ctx, s, role), `search "${s}"`)));
   const place = (async () => {
     for (const s of q.place.slice(0, 2)) {
-      const r = (await settle(searchCommons(ctx, s), `place "${s}"`)).filter(keepCandidate).filter((c) => ratioOk(c, "place") && placeOk(c, ctx.names ?? []));
+      const r = (await settle(searchCommons(ctx, s), `place "${s}"`)).filter((c) => keepCandidate(c, ctx.idea)).filter((c) => ratioOk(c, "place") && placeOk(c, ctx.names ?? []));
       if (r.length) return r;
     }
     return [] as Candidate[];
   })();
   const [lists, places] = await Promise.all([ov, place]);
-  let pool = dedupe(lists.flat().filter(keepCandidate));
+  let pool = dedupe(lists.flat().filter((c) => keepCandidate(c, ctx.idea)));
   // Thin results: one more try with a category default the plan did not run yet.
   if (pool.filter((c) => ratioOk(c, "hero")).length < 2 && Date.now() < ctx.deadline - 1500) {
     const extra = [...q.hero.slice(2), ...q.detail.slice(2)][0];
-    if (extra) pool = dedupe([...pool, ...(await settle(searchOpenverse(ctx, extra, "hero"), `search "${extra}"`)).filter(keepCandidate)]);
+    if (extra) pool = dedupe([...pool, ...(await settle(searchOpenverse(ctx, extra, "hero"), `search "${extra}"`)).filter((c) => keepCandidate(c, ctx.idea))]);
   }
   return dedupe([...pool, ...places]);
 }
@@ -851,7 +862,7 @@ async function visionCheck(pool: Candidate[], input: FindPhotosInput, ctx: { f: 
   ok.forEach((t, i) => content.push({ type: "text", text: `#${i}` }, { type: "image", source: { type: "base64", media_type: t.mime, data: t.data } }));
   content.push({
     type: "text",
-    text: "Reject any photo that is off-topic for this business, an illustration, painting, engraving, old print or museum object, black-and-white or sepia, a product cut-out on white, a sign or text, dark or blurry, low quality, a famous landmark, or one where a person's face is the main subject. Also reject photos whose setting contradicts the business (an outdoor farm or field for an indoor shop or a city service, a costume or party). Pick the best hero: a real, wide, well-lit photo of the thing the business sells or does, with calm space for a headline. For every photo you keep, write a plain alt text (6-16 words) that says only what is visible: the main subject, what it is doing, and the setting (indoors, street, park). Never guess brands, places or actions you cannot see. Use the numbers above. hero is -1 if none fits.",
+    text: "Reject any photo that is off-topic for this business, an illustration, painting, engraving, old print or museum object, black-and-white or sepia, a product cut-out on white, a sign or text, dark or blurry, low quality, a famous landmark, or one where a person's face is the main subject. Also reject photos showing uniforms, logos, government-agency or brand marks, or screens with unrelated data, and keep only photos whose main subject is the product, the customer or the setting of this business: fewer photos are better than off-topic ones. Also reject photos whose setting contradicts the business (an outdoor farm or field for an indoor shop or a city service, a costume or party). Pick the best hero: a real, wide, well-lit photo of the thing the business sells or does, with calm space for a headline. For every photo you keep, write a plain alt text (6-16 words) that says only what is visible: the main subject, what it is doing, and the setting (indoors, street, park). Never guess brands, places or actions you cannot see. Use the numbers above. hero is -1 if none fits.",
   });
   const msg = await client.messages.create(
     {

@@ -99,7 +99,11 @@ const reportExtras = (w: WrittenReport, report: IdeaReport | null): Pick<Results
 const honestReport = (report: IdeaReport, w: WrittenReport, work: readonly AnalystWork[]): IdeaReport => {
   const all = work.flatMap((x) => x.findings);
   const gaps = all.filter((f) => !f.source && /not found/i.test(f.basis ?? "")).length;
-  return { ...report, confidence: adjustConfidence(report.confidence, { econMissing: !w.econ || w.econ.computed.missing.length > 0, gaps, total: all.length }) };
+  const ids = new Set((w.sources ?? []).map((s) => s.id));
+  const e = w.econ?.inputs;
+  const lines = e ? [...(e.variable_costs_per_unit ?? []), ...(e.fixed_monthly_costs ?? []), ...(e.startup_costs ?? [])] : [];
+  const econUnsourced = lines.length > 0 && lines.every((x) => !ids.has(/\bS\d+\b/.exec(String(x.source ?? ""))?.[0] ?? ""));
+  return { ...report, confidence: adjustConfidence(report.confidence, { econMissing: !w.econ || w.econ.computed.missing.length > 0, gaps, total: all.length, econUnsourced }) };
 };
 
 /**

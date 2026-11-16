@@ -308,6 +308,9 @@
   .grow li { padding: 0 7px; gap: 5px; }
   .offices-btn { height: 38px; padding: 0 11px; border-radius: 12px; }
   .offices-btn .ob-t { display: none; }
+  /* 38 px look, 44 px hit area */
+  .offices-btn, .v7 .wordmark { position: relative; }
+  .offices-btn::after, .v7 .wordmark::after { content: ""; position: absolute; inset: -3px; }
   .v7 .chrome::before { display: none; }
   .v7 .panel[data-pos="sheet"] { padding: 18px 16px calc(16px + env(safe-area-inset-bottom)); max-height: 70vh; }
   .v7 .panel[data-pos="sheet"][data-key="idea"], .v7 .panel[data-pos="sheet"][data-key="end"] { padding-top: 22px; }

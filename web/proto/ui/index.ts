@@ -30,7 +30,7 @@ import { kitOfferHtml, mountKitScreen, officesTeaserHtml } from "./kit-screen";
 import { projects as savedProjects } from "../../src/app/projects";
 import { BUILD_TEAM } from "../contracts";
 import type { AppConfig as AppConfigLike } from "../../src/types";
-import { exampleButtonHtml, exampleOf, examples, knownExamples, lockedHtml, mainExample, ribbonHtml } from "./example";
+import { exampleButtonHtml, exampleOf, examples, kitNoteShort, knownExamples, lockedHtml, mainExample, ribbonHtml } from "./example";
 import { startEscrowProof } from "./escrow-proof";
 import { ESCROW } from "../live/pay";
 
@@ -72,6 +72,8 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     paintExample();
     // opened straight on /p/ex-… (or reloaded there): the kit mounted before the list arrived, so it was not read-only
     if (curKey === "live" && flow.live && exampleOf(flow.live.id)) render(true);
+    // a report opened before the list arrived: its header now knows whether the example was paid
+    if (curKey === "doc" && /^ex-/.test(flow.project.id)) render(true);
   });
   // "Proof on Bitcoin Cash" under a report: the examples' real proof always, a live run's when escrow is on.
   startEscrowProof();
@@ -117,7 +119,7 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
       else if (cfg?.mockAi) (k = "demo"), (t = "Sample data");
     } else if (st === "idea" || st === "end" || st === "bedroom") {
       if (cfg?.mockAi) (k = "demo"), (t = "Sample data");
-    } else if (flow.isSample(flow.project.id)) (k = "example"), (t = "Example");
+    } else if (flow.isSample(flow.project.id)) (k = "demo"), (t = "Sample data · not real research");
     modeTag.hidden = !k;
     if (k && (modeTag.dataset.k !== k || modeTag.dataset.t !== t)) {
       modeTag.dataset.k = k;
@@ -331,7 +333,9 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
           projectId: id,
           ownerKey: savedProjects.ownerKey(id),
           readOnly: !demo && !!exampleOf(id),
+          note: !demo ? kitNoteShort(exampleOf(id)?.kitNote) : undefined,
           onOffices: (name) => openOverlay(officesTeaserHtml(name || "your business"), "offices"),
+          onOwn: () => ((typedIdea = ""), flow.next({ type: "new-project" })),
         });
         // the panels fill in over time: keep the world framed above the sheet
         const ro = new ResizeObserver(() => measure());
@@ -374,7 +378,8 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
       // The sample sentences are one click away from the start (a judge never has to type to see a run).
       const chipsHtml = () =>
         cfg?.sampleIdeas.length ? `<div class="idea-chips">${cfg.sampleIdeas.map((x) => `<button type="button" data-idea="${esc(x)}">${esc(x.split(",")[0]!)}</button>`).join("")}</div>` : "";
-      const wireChips = () => form.querySelectorAll<HTMLButtonElement>("[data-idea]").forEach((b) => b.addEventListener("click", () => ((ta.value = b.dataset.idea!), submit())));
+      // a chip only fills the box: the visitor still presses Validate (no project or payment card from a stray click)
+      const wireChips = () => form.querySelectorAll<HTMLButtonElement>("[data-idea]").forEach((b) => b.addEventListener("click", () => ((ta.value = b.dataset.idea!), ta.dispatchEvent(new Event("input", { bubbles: true })), ta.focus())));
       const fail = (msg: string) => {
         sending = false;
         go.disabled = false;
@@ -857,6 +862,12 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
 
   // ────────────────────────────── the finished example's ribbon · "locked, not paid yet" after paying
   const ribbon = el(`<div class="ex-ribbon-host"></div>`);
+  // the panels under the ribbon leave room for its real height (it grows with the kit note and on phones)
+  const ribbonH = () => {
+    const h = ribbon.querySelector<HTMLElement>(".ex-ribbon")?.offsetHeight ?? 0;
+    if (h) root.style.setProperty("--ex-ribbon-h", `${h}px`);
+  };
+  const ribbonRo = typeof ResizeObserver === "function" ? new ResizeObserver(ribbonH) : null;
   root.appendChild(ribbon);
   let ribbonKey = "";
   /** The proof panel is on screen (the ribbon marks "Proof on Bitcoin Cash" as pressed instead of "Report"). */
@@ -882,10 +893,16 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     const at = s.step === "live" ? "kit" : proofShown ? "proof" : "report";
     const on = !!x && (s.step === "report" || s.step === "live" || s.step === "steer" || s.step === "floor");
     root.dataset.example = on ? "1" : "0";
-    const k = on && x ? `${x.id}:${at}` : "";
+    // on the offices floor the ribbon would cover "New idea" (the list there already holds the examples)
+    const show = on && !!x && s.step !== "floor";
+    const k = show && x ? `${x.id}:${at}` : "";
     if (k !== ribbonKey) {
       ribbonKey = k;
-      ribbon.innerHTML = on && x ? ribbonHtml(x, at, knownExamples()) : "";
+      ribbon.innerHTML = show && x ? ribbonHtml(x, at, knownExamples()) : "";
+      ribbonRo?.disconnect();
+      const rb = ribbon.querySelector<HTMLElement>(".ex-ribbon");
+      if (rb) ribbonRo?.observe(rb);
+      ribbonH();
     }
     paintLock();
   }

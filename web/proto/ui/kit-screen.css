@@ -23,7 +23,7 @@
 @media (max-width: 600px) { .kh-open { flex: 1 1 100%; justify-content: center; } .kh-mark { width: 52px; height: 52px; } .kh-mark svg { width: 36px; height: 36px; } }
 .kit-tag { margin: 0; color: var(--c-muted); font-size: 16px; }
 .kit-panels { display: grid; gap: 14px; grid-template-columns: 1fr; }
-@media (min-width: 900px) { .kit-panels { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); align-items: start; } .kp-logo { grid-column: 1 / -1; } }
+@media (min-width: 900px) { .kit-panels { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); align-items: start; } .kp-logo { grid-column: 1 / -1; } .kp-site { position: sticky; top: 80px; } }
 
 .kp { border: 1px solid var(--c-line); border-radius: 18px; background: var(--c-surface); padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .kp > header { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; }

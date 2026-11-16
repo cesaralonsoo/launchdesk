@@ -158,7 +158,8 @@ export function fillPlaceholders(md: string, vals: Partial<Record<string, string
     const val = v ?? "n/a";
     return sign && !/^€/.test(val) && /^\d/.test(val) ? `${sign}${val}` : val;
   });
-  return { md: out, missing };
+  // "{{CONTRIBUTION_MARGIN_PCT}}%" → "46%", never "46%%": the computed value already ends in %
+  return { md: out.replace(/%%/g, "%"), missing };
 }
 
 // ───────────────────────────────────────────────────────────── finalize (econ, placeholders, cites, sources)
@@ -617,11 +618,13 @@ export function alignVerdictMd(md: string, verdict: IdeaReport["verdict"], score
 }
 
 /** Pure: confidence drops one level when the money inputs are missing and one more when gaps ("not found") are a
- *  quarter or more of the evidence: a report that says its picture is incomplete never claims high confidence. */
-export function adjustConfidence(c: IdeaReport["confidence"], o: { econMissing: boolean; gaps: number; total: number }): IdeaReport["confidence"] {
+ *  quarter or more of the evidence: a report that says its picture is incomplete never claims high confidence.
+ *  `econUnsourced`: every unit-economics line is an estimate with no cited source (counts like missing inputs). */
+export function adjustConfidence(c: IdeaReport["confidence"], o: { econMissing: boolean; gaps: number; total: number; econUnsourced?: boolean }): IdeaReport["confidence"] {
   const lv: IdeaReport["confidence"][] = ["low", "medium", "high"];
   let i = lv.indexOf(c);
-  if (o.econMissing) i--;
+  // missing money inputs, or money inputs that are all desk estimates (no line cites a source): one level down
+  if (o.econMissing || o.econUnsourced) i--;
   if (o.total && o.gaps / o.total >= 0.25) i--;
   return lv[Math.max(0, i)]!;
 }

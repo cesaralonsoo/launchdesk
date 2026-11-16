@@ -70,7 +70,9 @@ export type ExampleCard = {
   proof: boolean;
 };
 
-const ORDER = ["coffee-kiosk-barcelona.json", "yoga-seniors-valencia.json"];
+// The yoga snapshot (yoga-seniors-valencia.json) is kept on disk but not listed: its idea is in English while its kit
+// was written in Spanish, so it is off the judge path until it is regenerated in English.
+const ORDER = ["coffee-kiosk-barcelona.json"];
 
 /** The snapshot folder: next to this file in dev (tsx), or the source tree from the compiled server (tsc copies no JSON). */
 function dir(): string | null {
@@ -111,10 +113,12 @@ export async function seedFinishedExamples(): Promise<void> {
   }
 }
 
-/** Display-only: the writer's "no source id" notes (from before the cleaner in v7.ts plainText) are dropped from every
- *  string the app shows. The fingerprinted bytes (escrow.reportBody) are never touched, so "Check it" still matches. */
+/** Display-only: the writer's "no source id" notes (from before the cleaner in v7.ts plainText) become "estimate" in every
+ *  string the app shows, so "(barcelonatourism.org, 2026; no source id)" reads "(barcelonatourism.org, 2026; estimate)"
+ *  and never passes for a listed source. The fingerprinted bytes (escrow.reportBody) are never touched, so "Check it"
+ *  still matches. */
 const dropNoSourceNotes = (s: string) =>
-  s.replace(/\s*[;,]\s*no source (?:id|cited)\b/gi, "").replace(/\s*\(\s*no source (?:id|cited)\s*\)/gi, "");
+  s.replace(/\s*[;,]\s*no source (?:id|cited)\b/gi, "; estimate").replace(/\s*\(\s*no source (?:id|cited)\s*\)/gi, " (estimate)");
 export function cleanForDisplay<T>(v: T): T {
   if (typeof v === "string") return dropNoSourceNotes(v) as T;
   if (Array.isArray(v)) return v.map(cleanForDisplay) as T;

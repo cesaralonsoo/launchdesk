@@ -44,13 +44,15 @@ export function kindTag(f: Finding): string {
 }
 
 // ───────────────────────────── idea / end
+/** Escrow on (VITE_ESCROW=1, as on the public demo): the home line says where the payment waits. */
+const ESCROW_ON = (import.meta as unknown as { env?: Record<string, string | undefined> }).env?.VITE_ESCROW === "1";
 /** `paused`: the server takes no payments right now (GET /api/config paused:true): a calm notice instead of the price. */
 export function ideaHtml(placeholder: string, value: string, end = false, paused = false): string {
   return `
   <form class="v-idea" autocomplete="off">
     ${end ? `<div class="v-mark" data-st>${ldMark(40, undefined, true)}</div>` : ""}
     <h1 class="t-display" data-st>${end ? "Your turn." : "Turn your idea into a company."}</h1>
-    ${end ? "" : `<p class="v-sub" data-st>An AI team researches it with real sources, scores it and builds it. Pay in BCH.</p>`}
+    ${end ? "" : `<p class="v-sub" data-st>An AI team researches it with real sources, scores it and builds it. Pay in BCH.${ESCROW_ON ? ` Your payment waits in an on-chain contract: released with the report's fingerprint, or refunded if no report comes.` : ""}</p>`}
     ${paused ? `<div data-st>${pausedHtml()}</div>` : `<div class="idea-field" data-st>
       <textarea name="idea" rows="2" maxlength="280" placeholder="${esc(placeholder)}" aria-label="Your idea">${esc(value)}</textarea>
       <button class="btn btn-primary btn-go" type="submit"><span>Validate</span><span class="btn-price">${usd(10)}</span></button>
@@ -209,7 +211,7 @@ function reportHead(f: ProtoFlowV7, page: ReportPage, read = false): string {
   const i = REPORT_PAGES.indexOf(page);
   return `
   <header class="rp-head" data-st>
-    <div><span class="eyebrow px-eb">Your report</span><b class="rp-title">${esc(f.project.title)}</b></div>
+    <div><span class="eyebrow px-eb">${f.isSample(f.project.id) ? "Practice run · sample data" : "Your report"}</span><b class="rp-title">${esc(f.project.title)}</b></div>
     ${read ? "" : `<nav class="rp-dots" aria-label="Report pages">${REPORT_PAGES.map((p, j) => `<button type="button" data-act="page" data-page="${p}" aria-current="${j === i}" title="${PAGE_LABEL[p]}"><i></i><span>${PAGE_LABEL[p]}</span></button>`).join("")}</nav>`}
   </header>`;
 }
@@ -245,7 +247,7 @@ function scorePage(f: ProtoFlowV7, r: IdeaReport): string {
     <div class="sc-v">
       <span class="vpill" data-v="${r.verdict}">${VERDICT[r.verdict]}${hero ? "" : " · provisional"}</span>
       <p class="sc-line">${esc(r.reasons?.length ? leadLine(r.verdictLine) : r.verdictLine)}</p>
-      <p class="sc-ev"><b class="num">${r.evidence.total}</b> findings · <b class="num">${r.evidence.sourced}</b> sourced · <span data-c="${r.confidence}">${r.confidence} confidence</span></p>
+      <p class="sc-ev"><b class="num">${r.evidence.total}</b> findings · <b class="num">${r.evidence.sourced}</b> sourced · ${f.isSample(f.project.id) ? "<span>sample data</span>" : `<span data-c="${r.confidence}">${r.confidence} confidence</span>`}</p>
     </div>
   </div>
   ${hero ? "" : `<p class="sc-warn" data-st>${I.info(14)}<span>Provisional: ${need ? `needs ${need} more sourced finding${need > 1 ? "s" : ""}` : "needs at least 6 findings"} before this score counts.</span></p>`}
@@ -444,7 +446,7 @@ export function officesHtml(f: ProtoFlowV7): string {
     const cur = p.id === f.project.id;
     return `<li><button type="button" data-act="switch" data-id="${esc(p.id)}" aria-current="${cur}">
         <span class="of-g">${levelGlyph(l, 22)}</span>
-        <span class="of-t"><b>${esc(p.title)}${example ? `<span class="of-tag">Sample data</span>` : ""}</b><span>${esc(p.idea)}</span></span>
+        <span class="of-t"><b>${esc(p.title)}${example ? `<span class="of-tag">Sample data</span>` : ""}</b><span>${esc(!r && p.idea.trim() === p.title.trim() ? "No report yet" : p.idea)}</span></span>
         <span class="of-r"><b class="num">${r ? one(r.score) : "–"}</b><em>${r ? "score" : ""}${r && scoreDisplay(r) !== "hero" ? " · provisional" : ""}</em></span>
       </button></li>`;
   };

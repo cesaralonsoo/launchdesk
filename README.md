@@ -8,6 +8,8 @@ it is delivered.
 
 Built for **BCH BLAZE 2026** (Mainnet track).
 
+**Live demo: https://launchdesk-bch.onrender.com**. No wallet needed to look around: tap **"See a finished example"**.
+
 ## Proven on Bitcoin Cash mainnet
 
 On 16 Nov 2026 we ran one real order through the escrow contract. It was paid from the Selene wallet over
@@ -27,9 +29,9 @@ WizardConnect, for a coffee kiosk idea in Barcelona.
 
 ## What a judge sees (about 2 minutes)
 
-0. No wallet? Tap **"See a finished example"** under the idea box. It opens a real run (a coffee kiosk in
+0. No wallet? Open https://launchdesk-bch.onrender.com and tap **"See a finished example"** under the idea box. It opens a real run (a coffee kiosk in
    Barcelona, paid 10¢ on mainnet) on its report, the proof panel and its launch kit, in about 5 seconds.
-1. Open the demo and type a business idea.
+1. Open the demo at https://launchdesk-bch.onrender.com and type a business idea.
 2. Pay **10¢** from a WizardConnect wallet (Selene, Cashonize, Paytaca). The money goes into a contract for this
    order only. It is held there, not paid to us yet.
 3. The team writes the report while you watch, with real source links. A full run took 78–102 seconds in our live
@@ -153,7 +155,7 @@ Set in `render.yaml` (change them in Render's Environment tab if needed):
 
 | Variable | Default | What it does |
 |---|---|---|
-| `DAILY_CAP_USD` | `3` | Spend brake: new paid runs pause for the rest of the UTC day once AI spend would pass this |
+| `DAILY_CAP_USD` | `10` | Spend brake: new paid runs pause for the rest of the UTC day once AI spend would pass this (`.env.example` uses `3` for local runs) |
 | `PAUSE` | unset | Set to `1` to pause new paid runs at once. Sample runs and the finished examples keep working |
 | `TRUST_PROXY_HOPS` | `2` in production | How many proxy hops (Render's edge) to skip in `X-Forwarded-For` when finding the visitor for rate limits |
 | `TRUST_PROXY_SKIP_PRIVATE` | on in production | Drop private (internal) addresses from `X-Forwarded-For` first |

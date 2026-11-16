@@ -23,6 +23,10 @@ export type KitScreenOpts = {
   readOnly?: boolean;
   /** Opens "Your offices"; gets the brand name once it is known. */
   onOffices?: (name?: string) => void;
+  /** Read-only example: one short line under the name (e.g. the kit came from another run of the idea). */
+  note?: string;
+  /** Read-only example: the footer button starts the visitor's own idea instead of opening offices. */
+  onOwn?: () => void;
 };
 
 const TEMPLATES: Array<{ id: SiteTemplate; name: string; note: string }> = [
@@ -153,7 +157,7 @@ function planBody(k: Kit | null): string {
     return st?.marketing === "error" ? oops("Your plan hit a snag. Please reload in a minute.") : waiting("Writing your 30-day plan");
   return `<div data-kit-slot="plan"></div>`;
 }
-const headHtml = (k: Kit | null, ready: boolean, url = "", ro = false) => {
+const headHtml = (k: Kit | null, ready: boolean, url = "", ro = false, note = "") => {
   const L = chosenLogo(k);
   const live = !!k && k.status.site === "done" && !!k.site && !!url;
   return `
@@ -162,6 +166,7 @@ const headHtml = (k: Kit | null, ready: boolean, url = "", ro = false) => {
         <span class="eyebrow">${ro ? "Finished example · launch kit" : ready ? "Ready" : "Making your launch kit"}</span>
         <h2 class="t-display kh-name"${k ? ` style="font-family:'${esc(k.brand.fonts.display)}',var(--f-display, serif)"` : ""}>${k ? esc(k.brand.name) : "Your launch kit"}</h2>
         ${live ? `<p class="kh-live"><span class="ks-dot" aria-hidden="true"></span>${ro ? "This example's site is online" : "Your business is online"}</p>` : k?.brand.tagline ? `<p class="kit-tag">${esc(k.brand.tagline)}</p>` : ""}
+        ${ro && note ? `<p class="kit-tag kh-note">${esc(note)}</p>` : ""}
       </div>
       ${live ? `<a class="btn btn-primary kh-open" href="${esc(url)}" target="_blank" rel="noopener noreferrer"><span>${ro ? "Open the website" : "Open your website"}</span>${I.ext(14)}</a>` : ""}`;
 };
@@ -226,6 +231,10 @@ export function mountKitScreen(root: HTMLElement, o: KitScreenOpts): { stop(): v
     node.classList.add("kit-ro");
     const hint = node.querySelector<HTMLElement>(".kp-logo .kp-hint");
     if (hint) hint.textContent = "The logo this founder chose.";
+    const own = node.querySelector<HTMLElement>(".kit-own");
+    if (own) own.textContent = "This is a finished example. Start your own idea to get a kit like this one.";
+    const btn = node.querySelector<HTMLElement>('[data-kit-act="offices"] span');
+    if (btn) btn.textContent = "Try your own idea";
   }
   // design thumbnails: the 375 px preview is scaled to the card's real width (no empty strip beside it)
   const fitThumbs = () =>
@@ -248,7 +257,7 @@ export function mountKitScreen(root: HTMLElement, o: KitScreenOpts): { stop(): v
     const head = `${ready}|${k?.brand.name ?? ""}|${k?.brand.tagline ?? ""}|${chosenLogo(k)?.id ?? ""}|${k?.status.site}|${url}`;
     if (head !== sig.head) {
       sig.head = head;
-      node.querySelector<HTMLElement>("[data-kit-head]")!.innerHTML = headHtml(k, ready, url, !!o.readOnly);
+      node.querySelector<HTMLElement>("[data-kit-head]")!.innerHTML = headHtml(k, ready, url, !!o.readOnly, o.note);
     }
   };
   // One panel failing to draw must never stop the others or the polling.
@@ -390,7 +399,9 @@ export function mountKitScreen(root: HTMLElement, o: KitScreenOpts): { stop(): v
     if (act === "more") return void more();
     // "Your offices" (ui/offices.ts): continue from this project. The example (mock) keeps the old teaser.
     if (act === "offices") {
-      if (o.mock) return o.onOffices?.(data.kit?.brand.name);
+      // a read-only example cannot open offices (the server refuses it): the button starts the visitor's own idea
+      if (o.readOnly && o.onOwn) return o.onOwn();
+      if (o.mock || o.readOnly) return o.onOffices?.(data.kit?.brand.name);
       return void import("./offices").then((m) => m.openOffices({ projectId: o.projectId, ownerKey: o.ownerKey, api, name: data.kit?.brand.name }));
     }
     if (act === "copy") {

@@ -183,6 +183,8 @@ main :is(h1,h2,h3)+p{margin-top:.75em}
 :where(main) :where(s,del){white-space:nowrap}
 :where(main) img{max-width:100%}
 .ld-coin{display:inline-block;width:1.1em;height:1.1em;flex:none;vertical-align:-.2em;margin-right:.45em}
+:where([data-reserve]){gap:.35em}
+:where(main) :where(div,li,p,dd)>b+span::before{content:"\\a0"}
 .ld-note{margin:.6em 0 0;font-size:.8125rem;line-height:1.4;letter-spacing:.01em;opacity:.82}
 @media(max-width:560px){
 main section:not([data-hero]) :is(figure,article,li,picture):has(img){aspect-ratio:auto!important;height:auto!important;min-height:0!important}

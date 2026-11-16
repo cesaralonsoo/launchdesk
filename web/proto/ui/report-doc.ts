@@ -12,7 +12,7 @@ import type { ProtoFlowV7 } from "../flow";
 import { statusLine } from "../live/adapter";
 import { fullSentences, leadLine, plainText, reasonsAfterLead, unitPlural } from "../../../server/v7";
 import { esc } from "./dom";
-import { exampleOf } from "./example";
+import { exampleOf, knownExamples } from "./example";
 import { I } from "./icons";
 import { ldMark } from "./logo";
 import { badge } from "./pixel";
@@ -258,7 +258,7 @@ export function reportDocHtml(f: ProtoFlowV7): string {
   return `
   <div class="rdoc">
     <div class="rd-bar no-print">
-      <span class="rd-bar-t">${isExample ? "Finished example: a real paid report" : "Your report is ready. Read it, then decide at the end."}</span>
+      <span class="rd-bar-t">${ex?.proof ? "Finished example: a real paid report" : isExample ? (ex || knownExamples().length ? "Finished example: a real AI run (test mode, not paid)" : "Finished example") : "Your report is ready. Read it, then decide at the end."}</span>
       <button class="btn btn-primary rd-pdf" data-act="pdf" type="button">${I.pack(15)}<span>Download PDF</span></button>
     </div>
     <article class="rd-paper">
