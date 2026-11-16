@@ -10,7 +10,7 @@ import {
 } from "../contracts";
 import type { ProtoFlowV7 } from "../flow";
 import { statusLine } from "../live/adapter";
-import { fullSentences, leadLine, plainText, reasonsAfterLead, unitPlural } from "../../../server/v7";
+import { fullSentences, leadLine, plainText, reasonsAfterLead, unitPlural, verdictWhy, VERDICT_RULE_V7 } from "../../../server/v7";
 import { esc } from "./dom";
 import { exampleOf, knownExamples } from "./example";
 import { I } from "./icons";
@@ -162,17 +162,27 @@ function keyNumber(b: ReportBlock, k: KeyNumber): string {
   const n = k.source ? b.sources.findIndex((s) => s.url === k.source!.url) + 1 : 0;
   return `<li><b class="num">${tx(k.value)}</b><span>${tx(k.label)}</span>${k.source ? srcLink(k.source, n) : estimate(k.basis)}</li>`;
 }
-const money = (x: number) => `€${x.toLocaleString("en-GB", { minimumFractionDigits: Math.abs(x) < 100 ? 2 : 0, maximumFractionDigits: Math.abs(x) < 100 ? 2 : 0 })}`;
+/** EUR keeps its old format; any other currency (results.v7.econ.currency) is shown with its own sign, never converted. */
+const money = (x: number, code = "EUR") => {
+  const d = Math.abs(x) < 100 ? 2 : 0;
+  if (code === "EUR") return `€${x.toLocaleString("en-GB", { minimumFractionDigits: d, maximumFractionDigits: d })}`;
+  try {
+    return new Intl.NumberFormat("en-US", { style: "currency", currency: code, minimumFractionDigits: d, maximumFractionDigits: d }).format(x);
+  } catch {
+    return `${code} ${x.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d })}`;
+  }
+};
 const NA = `<span class="rd-na">n/a</span>`;
 /** "one cup of flat white sold at the kiosk" → "cups of flat white" (break-even is already "a month"). */
 const unitWord = (u: string) => unitPlural(u);
 /** The unit economics the server computed in code (results.v7.econ), with each cost line's source. */
 export function econHtml(b: ReportBlock, e: EconSummary | null | undefined, err?: string): string {
   if (!e) return err ? `<h3>Unit economics</h3><p class="rd-miss">The unit economics could not be computed (${esc(err)}).</p>` : "";
-  const v = (x: number | null) => (x == null ? NA : `<b class="num">${esc(money(x))}</b>`);
+  const cur = e.currency ?? "EUR";
+  const v = (x: number | null) => (x == null ? NA : `<b class="num">${esc(money(x, cur))}</b>`);
   const be = e.breakEven == null ? (e.missing?.length ? NA : `<b>never</b> <span>(contribution is not positive)</span>`) : `<b class="num">${e.breakEven.toLocaleString("en-GB")}</b> <span>${esc(unitWord(e.unit))} a month</span>`;
   const rows: Array<[string, string]> = [
-    [`Price per ${esc(e.unit.replace(/^(?:one|a|an)\s+/i, ""))} (incl. VAT ${Math.round(e.vatRate * 100)}%)`, v(e.price)],
+    [`Price per ${esc(e.unit.replace(/^(?:one|a|an)\s+/i, ""))}${e.vatRate === 0 && e.currency && e.currency !== "EUR" ? "" : ` (incl. VAT ${Math.round(e.vatRate * 100)}%)`}`, v(e.price)],
     ...(e.shareKept < 1 ? ([["Share the business keeps", `<b class="num">${Math.round(e.shareKept * 100)}%</b>`]] as Array<[string, string]>) : []),
     ["Net revenue per unit", v(e.net)],
     ["Variable cost per unit", v(e.variable)],
@@ -186,7 +196,7 @@ export function econHtml(b: ReportBlock, e: EconSummary | null | undefined, err?
     if (!ls.length) return "";
     return `<h4>${title}</h4><ul class="rd-econ-lines">${ls.map((x) => {
       const n = x.source ? b.sources.findIndex((s) => s.url === x.source!.url) + 1 : 0;
-      return `<li><span>${esc(x.item)}</span><b class="num">${x.eur > 0 ? esc(money(x.eur)) : "missing"}</b>${x.source ? `${srcLink(x.source, n)}${x.check ? `<span class="rd-est rd-check" title="This figure was not found in the cited page's research note"><b>Check</b> · figure not confirmed in the source</span>` : ""}` : estimate()}</li>`;
+      return `<li><span>${esc(x.item)}</span><b class="num">${x.eur > 0 ? esc(money(x.eur, cur)) : "missing"}</b>${x.source ? `${srcLink(x.source, n)}${x.check ? `<span class="rd-est rd-check" title="This figure was not found in the cited page's research note"><b>Check</b> · figure not confirmed in the source</span>` : ""}` : estimate()}</li>`;
     }).join("")}</ul>`;
   };
   return `<h3>Unit economics</h3>
@@ -267,10 +277,11 @@ export function reportDocHtml(f: ProtoFlowV7): string {
         <h1>${esc(p.title)}</h1>
         <p class="rd-idea">“${esc(p.idea)}”</p>
         <div class="rd-score">
-          <div><span class="eyebrow">Verdict</span><b class="rd-v" data-v="${r.verdict}">${VERDICT[r.verdict]}</b></div>
+          <div><span class="eyebrow">Verdict</span><b class="rd-v" data-v="${r.verdict}" title="${esc(VERDICT_RULE_V7)}">${VERDICT[r.verdict]}</b></div>
           <div><span class="eyebrow">Score${hero ? "" : " · provisional"}</span><b class="num">${one(r.score)}<small>/10</small></b></div>
           <div><span class="eyebrow">How far it can grow</span><b class="rd-reach">${esc(REACH[S.reach] ?? S.reach)}</b></div>
         </div>
+        ${verdictWhy(r) ? `<p class="rd-rule">${esc(verdictWhy(r))}</p>` : ""}
         ${ex?.proof ? `<button type="button" class="rd-proof-link no-print" data-act="see-proof">${I.lock(14)}<span>Paid on Bitcoin Cash · check the proof</span></button>` : ""}
         <p class="rd-line">${tx(lead)}</p>
         ${reasons.length ? `<ul class="rd-why">${reasons.map((x) => `<li>${tx(x)}</li>`).join("")}</ul>` : ""}

@@ -25,13 +25,13 @@ const L = {
     week: "Week", day: "Day", hours: "h", useText: "Text", local: "Good to know", events: "Coming up in the next 30 days",
     check: "Check first", checkSub: "The plan assumes these. Check them before you spend time or money.",
     posts: "Posts", post: "Post", message: "Message to people you know", email: "Email to your waitlist", subject: "Subject", flyer: "Flyer",
-    profile: "Shop or map listing description", press: "Note to local press or a newsletter", copy: "Copy", copied: "Copied",
+    profile: "Profile or listing description", press: "Note to press or a newsletter", copy: "Copy", copied: "Copied",
     budget: "Budget", reserve: "kept aside for whatever works best", move: "Days 22 to 30", kpis: "Numbers to watch",
     countFrom: { "bch payments": "From your payments", website: "From your website", "by hand": "Count by hand" } as Record<string, string>,
     day30: "On day 30, decide", scale: "Go bigger if", adjust: "Adjust if", stop: "Stop if",
     sources: "Sources", print: "Print the plan", scan: "Scan to open the website", noBudget: "No money needed",
     gate: { go: "The report said Go", pivot: "The report said Test first", "no-go": "The report said No-go" } as Record<string, string>,
-    gateSub: { go: "Run the report's checks in week 1, next to your first sales.", pivot: "So the plan starts with the report's checks. Do not open or spend money until they pass.", "no-go": "You chose to build anyway, so the plan starts with the report's checks. Stop if one fails." } as Record<string, string>,
+    gateSub: { go: "Run the report's checks in week 1, next to your first sales.", pivot: "So the plan starts with the report's checks. Pre-orders on your page are part of the test; spend no money until the checks pass.", "no-go": "You chose to build anyway, so the plan starts with the report's checks. Stop if one fails." } as Record<string, string>,
     gateWhy: "Main reason", gateCheck: "Check", gatePass: "Pass if", gateDay: "Day", gateSee: "See the week",
   },
   es: {
@@ -49,7 +49,7 @@ const L = {
     day30: "El día 30, decide", scale: "Crece si", adjust: "Ajusta si", stop: "Para si",
     sources: "Fuentes", print: "Imprimir el plan", scan: "Escanea para abrir la web", noBudget: "Sin gastar dinero",
     gate: { go: "El informe dijo: adelante", pivot: "El informe dijo: probar primero", "no-go": "El informe dijo: no seguir así" } as Record<string, string>,
-    gateSub: { go: "Haz las comprobaciones del informe en la semana 1, junto a tus primeras ventas.", pivot: "Por eso el plan empieza por las comprobaciones del informe. No abras ni gastes dinero hasta que pasen.", "no-go": "Decidiste seguir igualmente, así que el plan empieza por las comprobaciones del informe. Para si una falla." } as Record<string, string>,
+    gateSub: { go: "Haz las comprobaciones del informe en la semana 1, junto a tus primeras ventas.", pivot: "Por eso el plan empieza por las comprobaciones del informe. Las reservas en tu web son parte de la prueba; no gastes dinero hasta que pasen.", "no-go": "Decidiste seguir igualmente, así que el plan empieza por las comprobaciones del informe. Para si una falla." } as Record<string, string>,
     gateWhy: "Motivo principal", gateCheck: "Comprobación", gatePass: "Pasa si", gateDay: "Día", gateSee: "Ver la semana",
   },
 };
@@ -57,9 +57,12 @@ type Labels = (typeof L)["en"];
 const COPY_NAMES = (t: Labels): Record<string, string> => ({ "post-1": `${t.post} 1`, "post-2": `${t.post} 2`, "post-3": `${t.post} 3`, message: t.message, email: t.email, flyer: t.flyer, profile: t.profile, press: t.press });
 
 const isPlan = (p: unknown): p is PlanV2 => !!p && typeof p === "object" && "goal" in p && Array.isArray((p as PlanV2).channels) && Array.isArray((p as PlanV2).weeks);
-const money = (n: number, cur: string, lang: string) => {
+/** Plans store a sign ("€", "$", "MX$") or a code: Intl needs the code (a sign made it throw and print "100 €"). */
+const CODE_OF: Record<string, string> = { "€": "EUR", $: "USD", "£": "GBP", "MX$": "MXN", "CA$": "CAD", "A$": "AUD", "R$": "BRL", "₹": "INR", "¥": "JPY" };
+const money = (n: number, cur0: string, lang: string) => {
+  const cur = CODE_OF[String(cur0 ?? "").trim().toUpperCase()] ?? String(cur0 ?? "").trim().toUpperCase();
   try {
-    return new Intl.NumberFormat(lang === "es" ? "es-ES" : "en-GB", { style: "currency", currency: cur, maximumFractionDigits: 0 }).format(n);
+    return new Intl.NumberFormat(lang === "es" ? "es-ES" : cur === "USD" ? "en-US" : "en-GB", { style: "currency", currency: cur, maximumFractionDigits: 0 }).format(n);
   } catch {
     return `${n} ${cur}`;
   }

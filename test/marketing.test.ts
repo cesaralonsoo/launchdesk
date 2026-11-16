@@ -5,6 +5,7 @@ process.env.MOCK_AI = "1";
 process.env.DATABASE_URL ??= ":memory:";
 
 const { cleanPlan, saneDays, withValidateFirst, garbled, usedSources, PLAN_SCHEMA, PLAN_SCHEMA_A, PLAN_SCHEMA_B, BANNED, COPY_LIMITS, assumeWord } = await import("../server/marketing/schema.js");
+const { templatePlan } = await import("../server/kit-templates.js");
 const { planMarketing, loadFixture, fixtureKeyFor, mergeSources, promptA, promptB, FIXTURE_KEYS } = await import("../server/marketing/plan.js");
 const { locationOf, researchPrompt } = await import("../server/marketing/research.js");
 type PlanV2 = import("../server/marketing/schema.js").PlanV2;
@@ -162,6 +163,12 @@ await test("prompts carry the rules and the report's sourced numbers", () => {
   assert.equal(sources.length, f.input.report.stats.length);
   const a = promptA(f.input, { notes: [], sources: [], queries: [], ok: false }, sources);
   assert.match(a, /exactly 3 tiers: 0, 100 and 500 EUR/);
+  const mx = promptA({ ...f.input, brand: { ...f.input.brand, currency: "MX$" } }, { notes: [], sources: [], queries: [], ok: false }, sources);
+  assert.match(mx, /exactly 3 tiers: 0, 2000 and 10000 MX\$/);
+  const tp = (currency: string) => templatePlan({ ...f.input, brand: { ...f.input.brand, currency } } as never).budget.tiers.map((t) => [t.amount, t.lines.reduce((x, l) => x + l.amount, 0)]);
+  assert.deepEqual(tp("€"), [[0, 0], [100, 100], [500, 500]], "fallback plan budget unchanged in euros");
+  assert.deepEqual(tp("MX$"), [[0, 0], [2000, 2000], [10000, 10000]], "fallback plan budget in pesos");
+  assert.match(promptA({ ...f.input, brand: { ...f.input.brand, currency: "$" } }, { notes: [], sources: [], queries: [], ok: false }, sources), /exactly 3 tiers: 0, 100 and 500 \$/);
   assert.match(a, /\[1\]/);
   assert.match(a, /Spanish/);
   assert.match(a, /Suponemos/);
@@ -248,6 +255,25 @@ await test("real yoga plan: numbered checks count as covered; a check in another
   for (const d of added) assert.doesNotMatch(d.action, /\b(the|and|with|Run|Get|Request)\b/, d.action);
   assert.deepEqual(o2.gate?.checks.map((c) => c.day), [1, 2, 3]);
   assert.ok(o2.weeks[0]!.days.filter((d) => d.channel !== "Comprobar primero").every((d) => d.day > 3), "the writer's days move after the checks");
+});
+
+await test("a rejected channel gets no budget; first actions carry no day number", () => {
+  const ch = (name: string) => ({ name, role: "awareness", why: "because", source: 0, weekly_hours: 1, cost: 0, first_action: "Day 3: send the first 25" });
+  const { plan, warnings } = cleanPlan(
+    {
+      channels: ["Direct email to shops", "Forum posts", "Waitlist email"].map(ch),
+      rejected: [{ name: "Paid newsletter sponsorships", why_not: "too dear" }],
+      budget: { tiers: [{ amount: 100, label: "b", lines: [{ channel: "Forum posts", amount: 55, for: "x" }, { channel: "Paid newsletter sponsorships", amount: 35, for: "y" }] }, { amount: 500, label: "c", lines: [{ channel: "Forum posts", amount: 450, for: "x" }] }, { amount: 0, label: "a", lines: [] }], reserve_pct: 15, reallocate_rule: "" },
+      weeks: [],
+      kpis: [],
+    },
+    SRC,
+    ctx,
+  );
+  const t100 = plan.budget.tiers.find((t) => t.amount === 100)!;
+  assert.deepEqual(t100.lines.map((l) => l.channel), ["Forum posts"]);
+  assert.ok(warnings.some((w) => /rejected channel/.test(w)));
+  assert.equal(plan.channels[0]!.first_action, "Send the first 25");
 });
 
 console.log(`marketing: ${n} tests passed`);

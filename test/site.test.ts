@@ -9,8 +9,8 @@ const dir = mkdtempSync(join(tmpdir(), "ld-site-"));
 Object.assign(process.env, { MOCK_AI: "1", ANTHROPIC_API_KEY: "", DATABASE_URL: `file:${join(dir, "site.db")}`, BCH_USD_FIXED: "480" });
 
 const { FIXTURES, loadFixture, planSiteDetailed } = await import("../server/site/plan.js");
-const { renderSite, SITE_CSP, SCRIPT_HASH, safeLogo } = await import("../server/site/render.js");
-const { validateModelSite, contrast, tokens, clean } = await import("../server/site/validate.js");
+const { renderSite, SITE_CSP, SCRIPT_HASH, safeLogo, buildCtx } = await import("../server/site/render.js");
+const { validateModelSite, contrast, tokens, clean, money } = await import("../server/site/validate.js");
 const { SITE_TEMPLATES } = await import("../server/site/spec.js");
 const { siteRoutes } = await import("../server/site/routes.js");
 const { saveSite, setSiteTemplate, listLeads } = await import("../server/site/db.js");
@@ -160,4 +160,23 @@ test("site2: standard designs show real photos (hero + one photo section + credi
     const plain = renderSite(spec, kitOf(fx), t, { reserved: 0, bchUsd: 480 }, { slug: fx.input.slug });
     assert.doesNotMatch(plain, /class="pband"|class="hph|class="pcred"|<img /, `${t}: no photos → no empty photo blocks`);
   }
+});
+
+test("money follows the currency; a currency with no rate gets no BCH amount (never treated as US dollars)", () => {
+  assert.equal(money(900, "MX$", "es"), "MX$900");
+  assert.equal(money(900, "MXN", "en"), "MX$900");
+  assert.equal(money(29, "€", "es"), "29 €");
+  assert.equal(money(29, "€", "en"), "€29");
+  assert.equal(money(4.5, "$", "en"), "$4.50");
+  assert.equal(money(900, "CHF", "en"), "CHF 900");
+  const fx = loadFixture(FIXTURES[0]!);
+  const { spec } = validateModelSite(fx.model, { ...fx.input, founderAddress: "qq0000000000000000000000000000000000000000" });
+  const at = (currency: string) => buildCtx({ ...spec, reserve: { ...spec.reserve, price: 900, currency } }, kitOf(fx), { reserved: 0, bchUsd: 480 }, {}, "light");
+  assert.equal(at("MX$").bch, "", "MX$: no BCH amount, the wallet asks for it");
+  assert.equal(at("MXN").bch, "");
+  assert.ok(!at("MX$").payUri.includes("amount="));
+  assert.notEqual(at("$").bch, "", "US dollars keep their BCH amount");
+  assert.notEqual(at("€").bch, "", "euros keep their BCH amount");
+  const html = renderSite({ ...spec, reserve: { ...spec.reserve, price: 900, currency: "MX$" } }, kitOf(fx), "editorial", { reserved: 0, bchUsd: 480 });
+  assert.match(html, /"priceCurrency":"MXN"/);
 });

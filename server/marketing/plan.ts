@@ -9,6 +9,7 @@ import { config } from "../config.js";
 import { Budget, recordUsage, type CostLine } from "../cost.js";
 import type { KitInput, MarketingResult } from "../kit-contract.js";
 import { templatePlan } from "../kit-templates.js";
+import { budgetTiersFor, codeFor } from "../money.js";
 import { emptyMarketingResearch, researchMarketing, type MarketingResearch } from "./research.js";
 import { assumeWord, BANNED, cleanPlan, datedEvents, COPY_LIMITS, gateReason, PLAN_SCHEMA_A, PLAN_SCHEMA_B, saneDays, type PlanSource, type PlanV2, type ReportGate } from "./schema.js";
 
@@ -42,7 +43,7 @@ const gateRule = (input: KitInput) => {
   if (!g.verdict) return "";
   return g.verdict === "go"
     ? `\n- The report says Go. Still run its validate_first checks in week 1, alongside the first sales actions, each day's task starting "Check 1:", "Check 2:"… (in Spanish "Comprobación 1:"…).`
-    : `\n- The report says ${g.verdict === "no-go" ? "No-go" : "Test first"}, and the founder chose to build anyway. The plan starts by checking the deciding reason and the validate_first items (for example: confirm the permit before opening day). Week 1 is checks and pre-orders only: no opening, no printing, no spending until each check passes. Put each check as an early day with its pass mark, and start that day's task with "Check 1:", "Check 2:" or "Check 3:" (in Spanish "Comprobación 1:"…), so the founder can match it to the report. Make the decision say: stop if a check fails.`;
+    : `\n- The report says ${g.verdict === "no-go" ? "No-go" : "Test first"}, and the founder chose to build anyway. The plan starts by checking the deciding reason and the validate_first items (for example: confirm the permit before opening day). Week 1 is checks and pre-orders only: no opening, no printing, no spending until each check passes. Put each check as an early day with its pass mark, and start that day's task with "Check 1:", "Check 2:" or "Check 3:" (in Spanish "Comprobación 1:"…), so the founder can match it to the report. Keep the report's order: Check 1 is on the earliest day, then Check 2, then Check 3, and a check whose pass mark needs results from later days goes after those days. Make the decision say: stop if a check fails. The website and its BCH reserve button are live from day 1 (they are part of this kit): never plan to "open" or "turn on" the pay button later; pre-orders through it are the demand test, not spending.`;
 };
 
 export function contextBlock(input: KitInput, research: MarketingResearch, sources: readonly PlanSource[]): string {
@@ -69,12 +70,24 @@ ${research.notes.join("\n") || "- No web research came back. Use no local facts;
 <sources>
 ${sources.map((s) => `[${s.n}] ${s.title}`).join("\n") || "none"}
 </sources>
-The founder takes payments in Bitcoin Cash (BCH) on their own website: each pre-order or booking is one payment they can count.`;
+The founder takes payments in Bitcoin Cash (BCH) on their own website: each pre-order or booking is one payment they can count.
+${dayOne()}`;
 }
+/** Day 1 of the plan is tomorrow: a dated event goes on its matching day number (an event on day 5 is 4 days after day 1). */
+const dayOne = () => {
+  const d = new Date(Date.now() + 86_400_000);
+  return `Day 1 of the plan is ${d.toISOString().slice(0, 10)} (${d.toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" })}). An event on a calendar date goes on its matching day number; drop events that fall after day 30 or that the founder cannot use.`;
+};
 
 const commonRules = (input: KitInput) =>
   `- Write every text field in ${LANG_NAME[input.brand.lang] ?? input.brand.lang}, in the brand voice, for normal people. No marketing jargon. Never use: ${BANNED.join(", ")}.
 - Source numbers go only in "source" fields (0 when there is none), never inside the text. No number about the world (population, prices, counts, dates of events) without a source; plan numbers (targets, budget, hours, the offer price) are fine.`;
+
+/** "0, 100 and 500" (EUR, USD, GBP…), "0, 2000 and 10000" (MXN): the founder's budget choices in the brand currency. */
+const tierWords = (cur: string) => {
+  const [a, b, c] = budgetTiersFor(codeFor(cur) || "USD");
+  return `${a}, ${b} and ${c}`;
+};
 
 export function promptA(input: KitInput, research: MarketingResearch, sources: readonly PlanSource[]): string {
   const cur = input.brand.currency;
@@ -88,7 +101,7 @@ ${commonRules(input)}
 - customer.places: 2-4 concrete places or moments where this customer already is (a named street, market, group, forum, time of day). Put its [n] number in source when the research states it, else 0.
 - channels: 3 or 4, each with a role (one of: awareness, first sales, proof, repeat), why THIS customer is there (with source [n] when you use a research fact; if not sourced, start the why with "${assumeWord(input.brand.lang)}"), weekly hours, cost in ${cur} for the month, and the very first action (concrete: who, where, what).
 - rejected: 1 or 2 obvious channels you do NOT use (for example paid ads or TikTok) and why not, for this business.
-- budget.tiers: exactly 3 tiers: 0, 100 and 500 ${cur}. Lines per channel that never add up to more than the tier; reserve_pct 10-15; a rule for days 22-30 to move money to what works.
+- budget.tiers: exactly 3 tiers: ${tierWords(cur)} ${cur}. Lines per channel only for channels in "channels" (never one in "rejected"), adding up to at most the tier minus the reserve; reserve_pct 10-15; a rule for days 22-30 to move money to what works.
 - kpis: at most 5. Each with a target and how to count it; count_from is one of: bch payments, website, by hand.
 - local: up to 6 facts from the research that matter for this plan, each with its [n]. events: named events in the next 30 days from the research only, each with date, place and [n]. None in the research: empty lists.
 - assumptions: 2-5 things this plan assumes that the founder should check.
@@ -147,7 +160,10 @@ export function mergeSources(research: readonly PlanSource[], input: KitInput): 
   const out: PlanSource[] = research.map((s, i) => ({ ...s, n: i + 1 }));
   for (const st of input.report.stats) {
     if (!/^https?:\/\//.test(st.sourceUrl) || out.some((s) => s.url === st.sourceUrl)) continue;
-    out.push({ n: out.length + 1, url: st.sourceUrl, title: st.label });
+    // the page's own title (never the report's table label, which reads like a title of a page it is not)
+    let host = "";
+    try { host = new URL(st.sourceUrl).hostname.replace(/^www\./, ""); } catch { /* keep "" */ }
+    out.push({ n: out.length + 1, url: st.sourceUrl, title: st.sourceTitle?.trim() || host || st.label });
   }
   return out;
 }

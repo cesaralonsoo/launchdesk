@@ -15,7 +15,7 @@ import { usd } from "./view";
 import { statusLine } from "../live/adapter";
 import { kitOfferHtml } from "./kit-screen";
 import { exampleButtonHtml, knownExamples, pausedHtml } from "./example";
-import { fullSentences, leadLine, plainText } from "../../../server/v7";
+import { fullSentences, leadLine, plainText, verdictWhy, VERDICT_RULE_V7 } from "../../../server/v7";
 
 /** WP4: the Launch kit price, in cents (server config.priceCents.build). */
 export const KIT_CENTS = 50;
@@ -245,7 +245,8 @@ function scorePage(f: ProtoFlowV7, r: IdeaReport): string {
       ${meter(r.score, "big")}
     </div>
     <div class="sc-v">
-      <span class="vpill" data-v="${r.verdict}">${VERDICT[r.verdict]}${hero ? "" : " · provisional"}</span>
+      <span class="vpill" data-v="${r.verdict}" title="${esc(VERDICT_RULE_V7)}">${VERDICT[r.verdict]}${hero ? "" : " · provisional"}</span>
+      ${verdictWhy(r) ? `<p class="sc-ev">${esc(verdictWhy(r))}</p>` : ""}
       <p class="sc-line">${esc(r.reasons?.length ? leadLine(r.verdictLine) : r.verdictLine)}</p>
       <p class="sc-ev"><b class="num">${r.evidence.total}</b> findings · <b class="num">${r.evidence.sourced}</b> sourced · ${f.isSample(f.project.id) ? "<span>sample data</span>" : `<span data-c="${r.confidence}">${r.confidence} confidence</span>`}</p>
     </div>

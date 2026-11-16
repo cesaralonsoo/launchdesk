@@ -29,6 +29,8 @@ import type { SiteSpec } from "./site/spec.js";
 import { asSiteSpec, luminance, validateModelSite } from "./site/validate.js";
 import type { ResultsV7 } from "./v7.js";
 import { isPlaceholderPass, plainText } from "./v7.js";
+import { currencyOf, symbolFor } from "./money.js";
+import { sellsOnline } from "./report-v7.js";
 
 export type KitPart = "logo" | "site" | "marketing";
 export const KIT_PARTS: readonly KitPart[] = ["logo", "site", "marketing"];
@@ -77,6 +79,14 @@ export async function saveKit(projectId: string, kit: Kit) {
 const PALETTE_DEFAULT = { primary: "#1F2937", accent: "#0AC18E", bg: "#F8FAFC", ink: "#111827" };
 const LANG_OF: Record<string, string> = { es: "es", spanish: "es", español: "es", en: "en", english: "en", fr: "fr", french: "fr", de: "de", german: "de", it: "it", pt: "pt", ca: "ca" };
 
+/** The kit's currency sign. A written report decides it (its econ currency, else the idea's own: no conversion);
+ *  older projects keep Sam's or Mia's sign. */
+export function kitCurrency(p: Pick<Project, "idea" | "results">): string {
+  const v7 = (p.results as { v7?: Pick<ResultsV7, "report" | "econ"> }).v7;
+  if (v7?.report) return symbolFor(v7.econ?.currency ?? (v7.econ ? "EUR" : currencyOf(p.idea).code));
+  return p.results.sam?.currency ?? p.results.mia?.market?.currency ?? "€";
+}
+
 export function kitBrandFrom(nova: NovaBrand | undefined, p: Project): KitBrand {
   const n = nova?.names[nova.chosen] ?? nova?.names[0];
   const hex = (role: string, i: number) => n?.palette.find((c) => c.name === role)?.hex ?? n?.palette[i]?.hex;
@@ -95,8 +105,9 @@ export function kitBrandFrom(nova: NovaBrand | undefined, p: Project): KitBrand 
     },
     fonts: { display: nova?.typography.display ?? "Fraunces", text: nova?.typography.body ?? "Inter" },
     lang: lang || "en",
-    ...(market?.city ? { city: market.city } : {}),
-    currency: p.results.sam?.currency ?? market?.currency ?? "€",
+    // an idea that sells through Etsy, an app, a website… is planned online even when it names the founder's city
+    ...(market?.city && !sellsOnline(p.idea) ? { city: market.city } : {}),
+    currency: kitCurrency(p),
   });
 }
 
@@ -134,16 +145,16 @@ export function digestOf(p: Project, v7: ResultsV7 | null): ReportDigest & Repor
   const against = (v7?.work ?? []).flatMap((w) => w.findings.filter((f) => (f.impact ?? 0) < 0).map((f) => ({ url: f.source?.url ?? "", text: `${f.text} ${f.display ?? ""}` })));
   const weak = (v7?.report?.weaknesses ?? []).map((w) => w.text);
   const quotes = (t: string, v: string) => /\d/.test(v) && v.length >= 2 && t.includes(v);
-  const push = (value: string, label: string, url: string) => {
+  const push = (value: string, label: string, url: string, title?: string) => {
     if (/\((?:[^)]*\b(?:unconfirmed|estimate[sd]?|assumed|assumption|sin confirmar|estimad[oa]s?|supuesto)\b[^)]*)\)/i.test(value)) return;
     const v = value.replace(/\s*\([^)]*\)/g, "").trim();
     if (!v) return;
     if (against.some((f) => f.url === url && quotes(f.text, v)) || weak.some((t) => quotes(t, v))) return;
-    all.push({ value: v, label, sourceUrl: url });
+    all.push({ value: v, label, sourceUrl: url, ...(title?.trim() ? { sourceTitle: title.trim() } : {}) });
   };
-  for (const b of v7?.blocks ?? []) for (const k of b.keyNumbers ?? []) if (k.source?.url) push(k.value, k.label, k.source.url);
+  for (const b of v7?.blocks ?? []) for (const k of b.keyNumbers ?? []) if (k.source?.url) push(k.value, k.label, k.source.url, k.source.title);
   if (!all.length)
-    for (const w of v7?.work ?? []) for (const f of w.findings) if (f.source?.url && f.display && (f.impact ?? 0) >= 0) push(f.display, f.text.slice(0, 80), f.source.url);
+    for (const w of v7?.work ?? []) for (const f of w.findings) if (f.source?.url && f.display && (f.impact ?? 0) >= 0) push(f.display, f.text.slice(0, 80), f.source.url, f.source.title);
   const order = { demand: 0, price: 1, context: 2 } as const;
   const seen = new Set<string>();
   const stats = all

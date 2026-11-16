@@ -3,7 +3,7 @@
 // and the build prompts quote exactly the same score, verdict and evidence as the v7 report (one number everywhere).
 import type { LeoV6 } from "./ai.js";
 import type { LeoOpportunity, Memo, Source } from "./types.js";
-import { ROLE_LIBRARY, VERDICT_RULE_V7, capWords, isSourced, type Finding, type IdeaReport, type ResultsV7 } from "./v7.js";
+import { ROLE_LIBRARY, VERDICT_RULE_V7, VERDICT_WORD, capWords, isSourced, type Finding, type IdeaReport, type ResultsV7 } from "./v7.js";
 
 const SIGNALS: Array<[string, Array<string>]> = [
   ["Demand", ["demand", "market", "viability"]],
@@ -59,13 +59,15 @@ export function leoFromV7(v: ResultsV7): LeoOpportunity & LeoV6 {
 /** Mia's one-page memo, derived from the v7 report (no model call). Quotes the v7 score exactly. */
 export function memoFromV7(idea: string, v: ResultsV7): Memo {
   const r: IdeaReport = v.report!;
-  const word = r.verdict === "go" ? "go" : r.verdict === "pivot" ? "pivot first" : "no-go";
+  // the verdict line already carries the display word ("Test first: …"); add it only when it does not
+  const word = VERDICT_WORD[r.verdict];
+  const line = r.verdictLine.toLowerCase().startsWith(word.toLowerCase()) ? r.verdictLine : `${word}: ${r.verdictLine}`;
   const team = v.roster.map((a) => ROLE_LIBRARY[a.role].dept.toLowerCase()).join(", ");
   return {
     purpose: capWords(`Decide whether to put money into: ${idea}`, 24),
     problem: r.weaknesses.slice(0, 2).map((w) => w.text.replace(/\.?$/, ".")).join(" "),
     insight: r.strengths.slice(0, 2).map((s) => s.text.replace(/\.?$/, ".")).join(" "),
-    verdict_line: `${r.score.toFixed(1)}/10, ${word}: ${r.verdictLine} (team: ${team}).`,
+    verdict_line: `${r.score.toFixed(1)}/10 · ${line} (team: ${team}).`,
     next_7_days: r.nextSteps.slice(0, 3),
   };
 }

@@ -7,7 +7,7 @@ import { Budget, costOf, costScope, EST, endCost } from "./cost.js";
 import { leoFromV7, memoFromV7 } from "./v7-bridge.js";
 import { mockJudge, preparedSteerFor, routeSteer, runAnalyst, runJudge } from "./ai-v7.js";
 import { assembleReport, emptyResearch, fallbackReport, ownerOf, researchBlock, sampleBlocks, sampleSteerFindings, type BlockResearch } from "./blocks-v7.js";
-import { adjustConfidence, alignSummary, alignVerdictMd, econSummary, verdictSentence, marketOf, writeReport, type WrittenReport } from "./report-v7.js";
+import { adjustConfidence, alignSummary, alignVerdictMd, businessKind, econSummary, verdictSentence, marketOf, writeReport, type WrittenReport } from "./report-v7.js";
 import { config } from "./config.js";
 import { exec } from "./db.js";
 import {
@@ -131,6 +131,8 @@ export async function runV7(projectId: string, idea: string, _research?: Researc
     });
     const budget = new Budget();
     const location = marketOf(idea);
+    // an online idea that names no city gets research that does not look for one (businessKind)
+    const kind = businessKind(idea);
     // A retry after a failed report reuses the research already paid for (saved per block as each finishes).
     const saved = config.mockAi ? [] : await loadBlockResearch(projectId);
     const toRun = BLOCK_IDS.filter((id) => !saved.some((r) => r.id === id && r.ok));
@@ -146,7 +148,7 @@ export async function runV7(projectId: string, idea: string, _research?: Researc
           done.push(prior);
           return prior;
         }
-        const r = await withDeadline(researchBlock(idea, id, { onNote: noteFor(projectId, t0, role), location, budget }), RESEARCH_DEADLINE_MS).catch((e) => {
+        const r = await withDeadline(researchBlock(idea, id, { onNote: noteFor(projectId, t0, role), location, budget, kind }), RESEARCH_DEADLINE_MS).catch((e) => {
           console.error(`[jobs7] ${projectId} research ${id}:`, (e as Error).message);
           return emptyResearch(id);
         });

@@ -62,8 +62,11 @@ const today = () => new Date().toISOString().slice(0, 10);
 
 // ───────────────────────────────────────────────────────────── research (one call per block)
 
-const RSYSTEM = (city: string | null) =>
-  `You are a market researcher. The current date is ${today()}. Your training data ends well before today's date. Prices, rents, wages, rules and anything "latest" may have changed since then, so search for those before you answer. ${city ? `Put the user's city (${city}) in search queries.` : "Put the place named in the idea in search queries."}`;
+/** "online": the idea sells online and names no city (see report-v7 businessKind); "local": today's city-centred research. */
+export type BusinessKind = "online" | "local";
+
+const RSYSTEM = (city: string | null, kind: BusinessKind = "local") =>
+  `You are a market researcher. The current date is ${today()}. Your training data ends well before today's date. Prices, rents, wages, rules and anything "latest" may have changed since then, so search for those before you answer. ${kind === "online" ? "This business sells online: do not add a city to the queries; search the country the idea names, or worldwide when it names none." : city ? `Put the user's city (${city}) in search queries.` : "Put the place named in the idea in search queries."}`;
 
 /** What each section's research must find (the money brief carries the 4 gaps the judges flagged). */
 export const BRIEF: Record<BlockId, string> = {
@@ -72,11 +75,18 @@ export const BRIEF: Record<BlockId, string> = {
   money: "Commercial rent, the main ingredient or material cost per unit, wages for the trade, equipment costs, typical margins, capital needed. Also find: the VAT rate that applies to this exact product (search it); named local competitors' unit prices; commercial (not residential) rent per m²; employer social security on top of wages.",
   risks: "Permits and registrations for this activity in this city, self-employment costs, the key risks (failure rates, energy or input costs, churn, platform dependency), and cheap ways to start (markets, shared kitchens, pre-sales).",
 };
+/** The same four topics for a business that sells online: no neighbourhood, no rent per m², no city permits. */
+export const BRIEF_ONLINE: Record<BlockId, string> = {
+  customers: "Who buys this online and how many there are in the country the idea names (worldwide when none): community or user counts, search interest, spending on this need, each with its year. Do not look for a city.",
+  competition: "Named online competitors and marketplace listings (websites, apps, Etsy, Amazon or app stores) with their prices, and the cheapest substitute with its price.",
+  money: "Payment and platform fees, shipping or hosting cost per unit, tools and software subscriptions, ad cost per click or per customer for this niche, typical margins, capital needed; the sales tax or VAT only for the country the idea names.",
+  risks: "Rules for selling this online in the country the idea names (or its main markets), platform or payment-provider dependency, chargebacks and refunds, shipping and returns, churn, and cheap ways to start (pre-sales, a waitlist, one marketplace).",
+};
 export const NOTE_RULES = `Then write plain research notes: short factual lines starting with "- ", each one a specific fact or number with its year, backed by a citation. Say "not found" rather than guessing. Do not number the lines.`;
-export const researchPrompt = (idea: string, id: BlockId) => `Research this business idea for a founder deciding whether to put their savings into it.
+export const researchPrompt = (idea: string, id: BlockId, kind: BusinessKind = "local") => `Research this business idea for a founder deciding whether to put their savings into it.
 <idea>${idea}</idea>
-Topic: ${BLOCK_LIBRARY[id].label}. ${BRIEF[id]}
-Search the web once (at most ${SEARCHES_PER_BLOCK} search), preferring primary and local sources (official statistics, operators' own sites and price lists, local press). Then fetch the one result page most likely to state the exact figures this topic needs (at most ${FETCHES_PER_BLOCK} fetch: an official statistic, a price list, the regulation itself) and take the numbers from that page; skip the fetch only if the snippets already state every figure with its year. Keep each source's own wording for categories (for example "foreign nationality" is not "foreign-born") and say where a price was seen (which shop, market or street). ${NOTE_RULES} At most 15 lines.`;
+Topic: ${BLOCK_LIBRARY[id].label}. ${(kind === "online" ? BRIEF_ONLINE : BRIEF)[id]}
+Search the web once (at most ${SEARCHES_PER_BLOCK} search), preferring primary${kind === "online" ? "" : " and local"} sources (official statistics, operators' own sites and price lists, ${kind === "online" ? "trade press" : "local press"}). Then fetch the one result page most likely to state the exact figures this topic needs (at most ${FETCHES_PER_BLOCK} fetch: an official statistic, a price list, the regulation itself) and take the numbers from that page; skip the fetch only if the snippets already state every figure with its year. Keep each source's own wording for categories (for example "foreign nationality" is not "foreign-born") and say where a price was seen (${kind === "online" ? "which website, store or marketplace" : "which shop, market or street"}). ${NOTE_RULES} At most 15 lines.`;
 
 export interface BlockResearch {
   id: BlockId;
@@ -193,7 +203,7 @@ export const isGapNote = (n: string) => /\bnot found\b/i.test(n) && !/\[\d+\]/.t
 /** One block's research: 1 search + ≤ 1 fetch on Haiku, streamed so the progress notes land as they happen. A
  *  failed call is retried at most once (without web_fetch when the API rejected the tool); `pause_turn` continues
  *  the same call and is not a retry. Every call reserves its estimate in the report budget first. */
-export async function researchBlock(idea: string, id: BlockId, opts: { onNote?: NoteFn; location?: { country: string; city: string } | null; budget?: Budget } = {}): Promise<BlockResearch> {
+export async function researchBlock(idea: string, id: BlockId, opts: { onNote?: NoteFn; location?: { country: string; city: string } | null; budget?: Budget; kind?: BusinessKind } = {}): Promise<BlockResearch> {
   const meta = BLOCK_LIBRARY[id];
   const say: NoteFn = (k, t) => {
     try {
@@ -205,7 +215,8 @@ export async function researchBlock(idea: string, id: BlockId, opts: { onNote?: 
   say("status", `Digging into ${meta.label.toLowerCase()}…`);
   if (config.mockAi) return mockResearch(idea, id, say);
   const t0 = Date.now();
-  const prompt = researchPrompt(idea, id);
+  const kind = opts.kind ?? "local";
+  const prompt = researchPrompt(idea, id, kind);
   const attempt = async (withFetch: boolean): Promise<BlockResearch> => {
     const settle = opts.budget?.reserve(`research:${id}`, EST.research);
     const lines: CostLine[] = [];
@@ -221,7 +232,7 @@ export async function researchBlock(idea: string, id: BlockId, opts: { onNote?: 
       let text = "";
       for (let turn = 0; turn < 3; turn++) {
         const stream = getClient().messages.stream(
-          { model: BLOCK_MODEL, max_tokens: 8000, system: RSYSTEM(opts.location?.city ?? null), messages, tools } as Anthropic.MessageStreamParams,
+          { model: BLOCK_MODEL, max_tokens: 8000, system: RSYSTEM(opts.location?.city ?? null, kind), messages, tools } as Anthropic.MessageStreamParams,
           { timeout: RESEARCH_CALL_MS, maxRetries: 0 },
         );
         stream.on("contentBlock", (b) => {

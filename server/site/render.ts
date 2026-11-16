@@ -11,6 +11,7 @@ import * as bold from "./templates/bold.js";
 import * as warm from "./templates/warm.js";
 import { currencySymbol, money, tokens } from "./validate.js";
 import { lintSymbol } from "../brand/lint.js";
+import { codeFor } from "../money.js";
 
 const TEMPLATES = { editorial, bold, warm } as const;
 
@@ -21,7 +22,7 @@ export interface LiveData {
   leads?: number;
   /** BCH price in USD (0/undefined → the sheet shows the local price only, the wallet asks for the amount). */
   bchUsd?: number;
-  /** USD per 1 unit of the offer currency (default: rough table, 1 for $). */
+  /** USD per 1 unit of the offer currency (default: rough table for $ € £; any other currency gets no BCH amount). */
   usdPerUnit?: number;
 }
 
@@ -109,7 +110,9 @@ export function buildCtx(spec: SiteSpec, kit: Pick<Kit, "brand" | "logo">, live:
   const cur = r.currency || brand.currency || "$";
   const price = r.price > 0 ? money(r.price, cur, spec.lang) : "";
   const normal = r.normal ? money(r.normal, cur, spec.lang) : "";
-  const usd = r.price * (live.usdPerUnit ?? FX[currencySymbol(cur)] ?? 1);
+  // A currency we have no rate for gets no BCH amount (the sheet shows the local price, the wallet asks for the amount):
+  // never treat an unknown currency as US dollars and never invent a rate.
+  const usd = r.price * (live.usdPerUnit ?? FX[currencySymbol(cur)] ?? 0);
   const bch = bchAmount(usd, live.bchUsd ?? 0);
   const addr = r.address ? (r.address.startsWith("bitcoincash:") ? r.address : `bitcoincash:${r.address}`) : "";
   const payUri = addr ? (bch ? `${addr}?amount=${bch}` : addr) : "";
@@ -152,7 +155,7 @@ export function renderSite(spec: SiteSpec, kit: Pick<Kit, "brand" | "logo">, tem
     "@graph": [
       { "@type": "Organization", name: brand.name, slogan: brand.tagline, ...(url ? { url } : {}), ...(brand.city ? { address: { "@type": "PostalAddress", addressLocality: brand.city } } : {}) },
       ...(r.price > 0
-        ? [{ "@type": "Product", name: spec.sections.find((s) => s.kind === "offer")?.["item" as never] ?? brand.name, brand: brand.name, offers: { "@type": "Offer", price: r.price, priceCurrency: ({ "€": "EUR", "$": "USD", "£": "GBP" } as Record<string, string>)[currencySymbol(cur)] ?? cur, availability: "https://schema.org/PreOrder" } }]
+        ? [{ "@type": "Product", name: spec.sections.find((s) => s.kind === "offer")?.["item" as never] ?? brand.name, brand: brand.name, offers: { "@type": "Offer", price: r.price, priceCurrency: codeFor(currencySymbol(cur)) || cur, availability: "https://schema.org/PreOrder" } }]
         : []),
     ],
   };

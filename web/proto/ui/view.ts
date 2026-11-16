@@ -52,7 +52,7 @@ export function makeView(p: Project) {
 }
 
 export const CHANNEL_LABEL: Record<string, string> = { instagram: "Instagram", tiktok: "TikTok", linkedin: "LinkedIn", x: "X", email: "Email" };
-export const VERDICT_LABEL = { go: "Go", pivot: "Pivot", "no-go": "No-go" } as const;
+export const VERDICT_LABEL = { go: "Go", pivot: "Test first", "no-go": "No-go" } as const;
 export const usd = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 /** €54k · €3.2k · €940 · −€18k */
 export function money(cur: string, n: number, cents = false): string {

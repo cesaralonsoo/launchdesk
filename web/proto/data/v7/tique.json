@@ -975,12 +975,12 @@
      "variable_cost": 0.9,
      "contribution": 5.1,
      "margin_pct": 85,
-     "line": "€6 a sale − €0.90 direct cost = €5.10 left"
+     "line": "€6 a subscriber a month − €0.90 direct cost = €5.10 left"
     },
     "breakeven": {
      "per_month": 540,
      "per_day": 18,
-     "formula": "€2,750 fixed ÷ €5.10 per sale ÷ 30 days = 18 sales a day"
+     "formula": "€2,750 fixed ÷ €5.10 per subscriber a month = 540 paying subscribers"
     },
     "headroom": {
      "m12_per_day": 40,

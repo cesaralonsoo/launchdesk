@@ -27,7 +27,7 @@ export interface ReportDigest {
   offer: { what: string; price: number; normal?: number; limit?: number };
   /** Sourced numbers, most useful first. kind: "demand" = about the customer or their problem; "price" = a market or
    * competitor price (context, never a headline number); "context" = population, rent, fees, rules (not for the page). */
-  stats: Array<{ value: string; label: string; sourceUrl: string; kind?: "demand" | "price" | "context" }>;
+  stats: Array<{ value: string; label: string; sourceUrl: string; sourceTitle?: string; kind?: "demand" | "price" | "context" }>;
   competitors: Array<{ name: string; gap: string }>;
   risks: string[];
 }

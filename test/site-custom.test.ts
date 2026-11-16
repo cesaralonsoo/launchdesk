@@ -9,7 +9,7 @@ Object.assign(process.env, { MOCK_AI: "1", ANTHROPIC_API_KEY: "" });
 
 const { sanitize, gateCustom, sanitizeCss, inventedClaims, extractFragment } = await import("../server/site/sanitize.js");
 const { generateCustomSite, customBrief, storeCtx, aspectOf, CUSTOM_SYSTEM } = await import("../server/site/custom.js");
-const { customRender, fontsHref, photoKey } = await import("../server/site/custom-render.js");
+const { customRender, fontsHref, photoKey, headerLogo } = await import("../server/site/custom-render.js");
 const { SCRIPT_HASH } = await import("../server/site/render.js");
 const { SITE_JS } = await import("../server/site/templates/shared.js");
 const { loadFixture } = await import("../server/site/plan.js");
@@ -234,7 +234,8 @@ test("site quality net: BCH on the page, guard CSS, numerals, stats sorted for t
   const d = decorateBody(`<p class="big num">€10–15</p><span class="num">£45</span>`);
   assert.match(d.body, /class="big num ld-c6"/);
   assert.deepEqual(d.chars, [6]);
-  assert.match(guardCss(d.chars), /\.ld-c6\{font-size:min\(25\.0vw,6rem\)!important\}/);
+  assert.doesNotMatch(guardCss(d.chars), /\.ld-c6\{font-size/, "no CSS rule sets a numeral size (it made small prices huge)");
+  assert.match(html, /const fit=\(\)=>\{const W=h\.clientWidth;if\(W>560\)return;/, "phone numeral fit (shrink-only) inside the one allowed script");
 
   const { statKind } = await import("../server/site/stat-kind.js");
   assert.equal(statKind({ value: "1,729,963", label: "Barcelona population, 1 Jan 2026" }), "context");
@@ -254,4 +255,26 @@ test("site quality net: BCH on the page, guard CSS, numerals, stats sorted for t
   assert.match(blocks[1]!.text, /quality bar, not a layout to copy/);
   assert.ok(blocks[1]!.cache_control && !blocks[0]!.cache_control);
   assert.doesNotMatch(blocks[1]!.text, /example\.org\/plant-survey/, "the reference page carries no placeholder statistic");
+});
+
+test("the chosen logo sits next to the wordmark in the header, only when the link is the brand name", async () => {
+  const svg = `<svg class="ld-logo" viewBox="0 0 64 64"><rect width="64" height="64"/></svg>`;
+  const count = (h: string) => (/<header\b[\s\S]*?<\/header>/.exec(h)?.[0].match(/class="ld-logo"/g) ?? []).length;
+  const once = headerLogo(GOLD, "Fern & Co", svg);
+  assert.equal(count(once), 1, "Fern <span>&amp;</span> Co matches the brand Fern & Co");
+  assert.match(once, /<a class="mark" href="#top"><svg class="ld-logo"/);
+  assert.equal(headerLogo(once, "Fern & Co", svg), once, "applied twice: still one logo");
+  assert.equal(headerLogo(GOLD, "Another Brand", svg), GOLD, "a wordmark that is not the brand name is left alone");
+  assert.equal(headerLogo(GOLD, "Fern & Co", ""), GOLD, "no chosen logo: unchanged");
+  assert.equal(headerLogo("<main><a href=\"#top\">Fern &amp; Co</a></main>", "Fern & Co", svg), "<main><a href=\"#top\">Fern &amp; Co</a></main>", "no header: unchanged");
+  // end to end: the mock design's header wordmark gets the chosen logo; with no logo, nothing is added
+  const fx = loadFixture("dogwalk-en");
+  const spec = validateModelSite(fx.model, fx.input).spec;
+  const ph = [1, 2, 3].map((i) => ({ alt: `p${i}`, width: 1200, height: 1600 }));
+  const r = await generateCustomSite(fx.input, ph, { spec });
+  const withLogo = customRender({ html: r.html!, spec, kit: { brand: fx.input.brand, logo: { options: fx.logos, chosen: fx.logos[0]!.id, fallback: false } }, photos: ph }, { reserved: 0 }, { slug: fx.input.slug })!;
+  const without = customRender({ html: r.html!, spec, kit: { brand: fx.input.brand }, photos: ph }, { reserved: 0 }, { slug: fx.input.slug })!;
+  assert.equal(count(withLogo), 1);
+  assert.equal(count(without), 0);
+  assert.match(withLogo, /header a\[href="#top"\]>svg\.ld-logo\{/);
 });

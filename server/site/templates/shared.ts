@@ -206,6 +206,9 @@ ${amount}
 export const credit = (c: RenderCtx) => `<a class="credit" href="${esc(c.homeHref)}" rel="noopener">${esc(c.ui.madeWith)}</a>`;
 
 /** Inline behaviour: reveal on scroll, reserve sheet, copy, waitlist via fetch, sticky bar after the hero. */
+/** Custom pages, phones only: a big numeral (decorateBody's ld-cN class) wider than its box or the screen is scaled down
+ *  to fit; never scaled up (a CSS size per length used to make a "$0.64" inside a button 96px). */
+const NUM_FIT = `const fit=()=>{const W=h.clientWidth;if(W>560)return;d.querySelectorAll('main .num[class*="ld-c"]').forEach(e=>{e.style.fontSize="";const p=e.parentElement;if(!p)return;const cs=getComputedStyle(p);const w=Math.min(p.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight),W-32);const r=Math.max(e.scrollWidth,e.getBoundingClientRect().width);if(w>0&&r>w)e.style.fontSize=(parseFloat(getComputedStyle(e).fontSize)*w/r*0.97).toFixed(1)+"px"})};fit();addEventListener("load",fit);addEventListener("resize",fit);d.fonts&&d.fonts.ready.then(fit);`;
 export const SITE_JS = `(()=>{const d=document,h=d.documentElement;h.classList.add("js");
 const io="IntersectionObserver"in window&&!matchMedia("(prefers-reduced-motion: reduce)").matches?new IntersectionObserver(es=>{for(const e of es)if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target)}},{rootMargin:"0px 0px -8% 0px"}):null;
 d.querySelectorAll(".rv").forEach(el=>io?io.observe(el):el.classList.add("in"));
@@ -214,7 +217,8 @@ d.querySelectorAll("[data-reserve]").forEach(a=>a.addEventListener("click",open)
 d.querySelectorAll("[data-copy]").forEach(b=>b.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(b.dataset.copy);const t=b.textContent;b.textContent=b.dataset.copied;setTimeout(()=>b.textContent=t,1600)}catch{}}));
 d.querySelectorAll("form[data-lead]").forEach(f=>f.addEventListener("submit",async e=>{e.preventDefault();const b=f.querySelector("button");b.disabled=true;try{const r=await fetch(f.action,{method:"POST",headers:{"content-type":"application/json",accept:"application/json"},body:JSON.stringify({email:f.email.value,website:f.website.value})});if(r.ok){f.classList.add("done");f.querySelector(".wl-ok").hidden=false}else b.disabled=false}catch{b.disabled=false}}));
 const bar=d.querySelector("[data-bar]"),hero=d.querySelector("[data-hero]");if(bar&&hero&&"IntersectionObserver"in window){bar.classList.add("hide");new IntersectionObserver(([e])=>bar.classList.toggle("hide",e.isIntersecting),{threshold:0}).observe(hero)}
-if(/[?&]joined=1/.test(location.search))d.querySelectorAll(".wl-ok").forEach(p=>p.hidden=false);})();`;
+if(/[?&]joined=1/.test(location.search))d.querySelectorAll(".wl-ok").forEach(p=>p.hidden=false);
+${NUM_FIT}})();`;
 
 /** CSS every template includes: reset, tokens wiring, sheet, bar, waitlist, faq, reveal. Templates add their look. */
 export function baseCss(t: Tokens): string {

@@ -9,6 +9,7 @@ import type { LiveData, RenderOpts } from "./render.js";
 import { buildCtx } from "./render.js";
 import { BCH_COIN, chrome, credit, esc, mark, sectionOf, SITE_JS, type RenderCtx } from "./templates/shared.js";
 import { currencySymbol, ensureContrast, mix, onColor, type Tokens } from "./validate.js";
+import { codeFor } from "../money.js";
 import { sanitize, type SanitizePhoto, type Sanitized } from "./sanitize.js";
 
 /** A downloaded photo as the page needs it (the photos module's SitePhoto is a superset). Order = model ids p1, p2… */
@@ -173,10 +174,10 @@ ${bar ? `#ld-bar{position:fixed;left:0;right:0;bottom:0;z-index:2147482000;paddi
  * heading gap beats a bare `p{margin:0}` reset; the phone photo rules use !important because they must win. `chars` = character counts of the .num elements on the page.
  */
 export function guardCss(chars: number[] = []): string {
-  const caps = [...new Set(chars.filter((n) => n >= 5))]
-    .sort((a, b) => a - b)
-    .map((n) => `.ld-c${n}{font-size:min(${(150 / n).toFixed(1)}vw,6rem)!important}`)
-    .join("");
+  // Shrink-only: a CSS size per character count used to SET the size (a "$0.64" inside a button became 96px and pushed
+  // the hero past the phone width). The phone cap is now NUM_FIT in SITE_JS, which only ever makes a numeral smaller.
+  void chars;
+  const caps = "";
   return `:where(button,input,select,textarea){font:inherit}
 main :is(h1,h2,h3)+p{margin-top:.75em}
 :where(.num){white-space:nowrap;font-variant-numeric:lining-nums tabular-nums}
@@ -185,6 +186,7 @@ main :is(h1,h2,h3)+p{margin-top:.75em}
 .ld-coin{display:inline-block;width:1.1em;height:1.1em;flex:none;vertical-align:-.2em;margin-right:.45em}
 :where([data-reserve]){gap:.35em}
 :where(main) :where(div,li,p,dd)>b+span::before{content:"\\a0"}
+header a[href="#top"]>svg.ld-logo{display:inline-block!important;width:1.35em!important;height:1.35em!important;margin:0 .4em 0 0!important;vertical-align:-.25em;flex:none;border-radius:22%}
 .ld-note{margin:.6em 0 0;font-size:.8125rem;line-height:1.4;letter-spacing:.01em;opacity:.82}
 @media(max-width:560px){
 main section:not([data-hero]) :is(figure,article,li,picture):has(img){aspect-ratio:auto!important;height:auto!important;min-height:0!important}
@@ -196,6 +198,8 @@ main section:not([data-hero]) img{max-height:min(62svh,480px);object-fit:cover}
 ${caps}
 }`;
 }
+
+/* Phone numeral fit: see NUM_FIT in templates/shared.ts (inside SITE_JS, the one script the page CSP allows). */
 
 /** Adds the coin mark to every reserve button and a size class to big numerals (for the phone cap). */
 export function decorateBody(body: string): { body: string; chars: number[] } {
@@ -210,6 +214,26 @@ export function decorateBody(body: string): { body: string; chars: number[] } {
     return `<${tag}${a} class="${cls} ld-c${Math.min(n, 16)}"${b}>${text}</`;
   });
   return { body: out, chars };
+}
+
+/** Letters and digits only, lower case: "Fern &amp; Co" and "Fern & Co" → "fernco". */
+const brandKey = (t: string) =>
+  t.replace(/<[^>]*>/g, "").replace(/&amp;/gi, "&").replace(/&[a-z#0-9]+;/gi, "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "");
+
+/**
+ * Pure: the chosen logo inside the page header's wordmark link (the first `href="#top"` link in the first <header>),
+ * only when that link's text is the brand name and it has no <svg> yet. Anything else is returned unchanged.
+ */
+export function headerLogo(body: string, brandName: string, svg: string): string {
+  if (!svg) return body;
+  const h = /<header\b[^>]*>[\s\S]*?<\/header>/i.exec(body);
+  if (!h) return body;
+  const a = /(<a\b[^>]*\shref="#top"[^>]*>)([\s\S]*?)<\/a>/i.exec(h[0]);
+  if (!a || /<svg\b/i.test(a[2]!)) return body;
+  const want = brandKey(brandName);
+  if (!want || brandKey(a[2]!) !== want) return body;
+  const at = h.index + a.index + a[1]!.length;
+  return body.slice(0, at) + svg + body.slice(at);
 }
 
 // ───────────────────────────────────────────────────────────── fixed labels in the page's language
@@ -289,7 +313,8 @@ export function customRender(row: CustomRow, live: LiveData, opts: CustomRenderO
   }
   const { spec, kit } = row;
   const deco = decorateBody(localizeLabels(s.body, row.spec.lang || row.kit.brand.lang));
-  s = { ...s, body: deco.body };
+  // the founder's chosen logo next to the wordmark in the header (only a chosen logo, never the monogram)
+  s = { ...s, body: headerLogo(deco.body, kit.brand.name, c.logo ? mark(c, 32, "ld-logo") : "") };
   const brand = kit.brand;
   const t = c.t;
   const origin = (opts.origin ?? "").replace(/\/$/, "");
@@ -304,7 +329,7 @@ export function customRender(row: CustomRow, live: LiveData, opts: CustomRenderO
     "@context": "https://schema.org",
     "@graph": [
       { "@type": "Organization", name: brand.name, slogan: brand.tagline, ...(url ? { url } : {}), ...(heroUrl ? { image: heroUrl } : {}), ...(brand.city ? { address: { "@type": "PostalAddress", addressLocality: brand.city } } : {}) },
-      ...(r.price > 0 ? [{ "@type": "Product", name: offer?.item || brand.name, brand: brand.name, offers: { "@type": "Offer", price: r.price, priceCurrency: ({ "€": "EUR", "$": "USD", "£": "GBP" } as Record<string, string>)[currencySymbol(cur)] ?? cur, availability: "https://schema.org/PreOrder" } }] : []),
+      ...(r.price > 0 ? [{ "@type": "Product", name: offer?.item || brand.name, brand: brand.name, offers: { "@type": "Offer", price: r.price, priceCurrency: codeFor(currencySymbol(cur)) || cur, availability: "https://schema.org/PreOrder" } }] : []),
     ],
   };
   const withBar = Boolean(r.address);

@@ -146,16 +146,24 @@ export function cleanPlan(raw: unknown, sources: readonly PlanSource[], ctx: { l
   let channels = (Array.isArray(r.channels) ? r.channels : []).map((c: any) => {
     const source = src(c?.source);
     if (c?.source != null && c.source !== 0 && source == null) warnings.push(`channel "${clean(c?.name, 40)}": unknown source ${c.source} removed`);
-    return { name: clean(c?.name, 60), role: (["awareness", "first sales", "proof", "repeat"].includes(c?.role) ? c.role : "awareness") as ChannelRole, why: localAssume(noMarks(clean(c?.why, 320)), ctx.lang), source, weekly_hours: n0(c?.weekly_hours, 40), cost: n0(c?.cost), first_action: noMarks(clean(c?.first_action, 240)) };
+    return { name: clean(c?.name, 60), role: (["awareness", "first sales", "proof", "repeat"].includes(c?.role) ? c.role : "awareness") as ChannelRole, why: localAssume(noMarks(clean(c?.why, 320)), ctx.lang), source, weekly_hours: n0(c?.weekly_hours, 40), cost: n0(c?.cost), first_action: noMarks(clean(c?.first_action, 240)).replace(/^(?:day|d[ií]a)\s*\d{1,2}\s*[:.,–—-]\s*/i, "").replace(/^\p{Ll}/u, (x) => x.toUpperCase()) };
   }).filter((c: any) => c.name && c.why);
   if (channels.length > 4) { warnings.push(`${channels.length} channels cut to 4`); channels = channels.slice(0, 4); }
   if (channels.length < 3) warnings.push(`only ${channels.length} channels`);
 
   const rejected = (Array.isArray(r.rejected) ? r.rejected : []).slice(0, 2).map((x: any) => ({ name: clean(x?.name, 60), why_not: noMarks(clean(x?.why_not, 240)) })).filter((x: any) => x.name);
 
+  const reservePct = Math.min(30, n0(r.budget?.reserve_pct, 100));
+  // a channel the plan says it won't use gets no money (unless it is also one of the plan's channels)
+  const key = (x: string) => x.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+  const sameCh = (a: string, b: string) => { const x = key(a), y = key(b); return !!x && !!y && (x === y || (Math.min(x.length, y.length) >= 6 && (x.includes(y) || y.includes(x)))); };
+  const isRejected = (ch: string) => rejected.some((x: any) => sameCh(ch, x.name)) && !channels.some((c: any) => sameCh(ch, c.name));
   const tiers = (Array.isArray(r.budget?.tiers) ? r.budget.tiers : []).slice(0, 3).map((t: any) => {
     const amount = n0(t?.amount);
     let lines = (Array.isArray(t?.lines) ? t.lines : []).map((l: any) => ({ channel: clean(l?.channel, 60), amount: n0(l?.amount), for: noMarks(clean(l?.for, 160)) })).filter((l: any) => l.channel);
+    const before = lines.length;
+    lines = lines.filter((l: any) => !isRejected(l.channel));
+    if (lines.length < before) warnings.push(`budget tier ${amount}: ${before - lines.length} line(s) for a rejected channel dropped`);
     const sum = lines.reduce((s: number, l: any) => s + l.amount, 0);
     if (sum > amount + 0.5) {
       warnings.push(`budget tier ${amount}: lines added up to ${sum}, scaled down`);
@@ -171,7 +179,7 @@ export function cleanPlan(raw: unknown, sources: readonly PlanSource[], ctx: { l
     theme: clean(w?.theme, 60),
     aim: noMarks(clean(w?.aim, 200)),
     days: (Array.isArray(w?.days) ? w.days : [])
-      .map((d: any) => ({ day: Math.round(n0(d?.day, 30)) || 1, time: clean(d?.time, 30), channel: clean(d?.channel, 60), action: noMarks(clean(d?.action, 300)), copy: (["post-1", "post-2", "post-3", "message", "email", "flyer", "profile", "press"].includes(d?.copy) ? d.copy : null) as CopyRef | null, hours: n0(d?.hours, 12) }))
+      .map((d: any) => ({ day: Math.round(n0(d?.day, 30)) || 1, time: clean(d?.time, 64), channel: clean(d?.channel, 60), action: noMarks(clean(d?.action, 300)), copy: (["post-1", "post-2", "post-3", "message", "email", "flyer", "profile", "press"].includes(d?.copy) ? d.copy : null) as CopyRef | null, hours: n0(d?.hours, 12) }))
       .filter((d: any) => d.action)
       .sort((a: any, b: any) => a.day - b.day),
   }));
@@ -231,7 +239,7 @@ export function cleanPlan(raw: unknown, sources: readonly PlanSource[], ctx: { l
     customer: { who: noMarks(clean(r.customer?.who, 260)), places },
     channels,
     rejected,
-    budget: { tiers, reserve_pct: Math.min(30, n0(r.budget?.reserve_pct, 100)), reallocate_rule: noMarks(clean(r.budget?.reallocate_rule, 260)) },
+    budget: { tiers, reserve_pct: reservePct, reallocate_rule: noMarks(clean(r.budget?.reallocate_rule, 260)) },
     weeks,
     kpis,
     copy,

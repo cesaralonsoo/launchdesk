@@ -129,6 +129,8 @@ export interface EconSummary {
   missing?: string[];
   /** `check`: the line cites a source, but its figure could not be found in that source's research note. */
   lines?: Array<{ group: "variable" | "fixed" | "startup"; item: string; eur: number; source: SourceRef | null; check?: boolean }>;
+  /** ISO 4217 code of every amount here (the idea's currency); absent = EUR (every report stored before currencies). */
+  currency?: string;
 }
 export interface AgentNote { analyst: AnalystRole; kind: "search" | "read" | "found" | "status"; text: string; at: number }
 export const NOTES_MAX = 60;
@@ -172,7 +174,7 @@ export const BAN_TEXT = /\b(?:banned|prohibited|forbidden|illegal|not (?:allowed
 export function evidenceAgainst(
   factors: readonly Pick<ScoreFactor, "analyst" | "label" | "score">[],
   findings: readonly Finding[],
-  econ?: { net: number; lines?: ReadonlyArray<{ group: string; eur: number; source: SourceRef | null; check?: boolean }> } | null,
+  econ?: { net: number; currency?: string; lines?: ReadonlyArray<{ group: string; eur: number; source: SourceRef | null; check?: boolean }> } | null,
 ): string[] {
   const out: string[] = [];
   for (const f of factors) {
@@ -187,7 +189,10 @@ export function evidenceAgainst(
   }
   if (econ && econ.net > 0) {
     const sourcedVar = (econ.lines ?? []).filter((l) => l.group === "variable" && l.source && !l.check).reduce((t, l) => t + (Number(l.eur) || 0), 0);
-    if (sourcedVar > econ.net) out.push(`Money: sourced costs per sale (€${sourcedVar.toFixed(2)}) are above the €${econ.net.toFixed(2)} each sale brings in.`);
+    const code = econ.currency ?? "EUR";
+    // EUR keeps its exact old wording; any other currency is formatted with its own sign (no conversion)
+    const m = (x: number) => (code === "EUR" ? `€${x.toFixed(2)}` : new Intl.NumberFormat("en-US", { style: "currency", currency: code, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(x));
+    if (sourcedVar > econ.net) out.push(`Money: sourced costs per sale (${m(sourcedVar)}) are above the ${m(econ.net)} each sale brings in.`);
   }
   return out;
 }
@@ -320,7 +325,7 @@ export function noInlineCites(s: string): string {
   return plainText(plainText(s).replace(/\s*\(([^()]{1,90})\)/g, (all, inner: string) => (isInlineCite(inner) ? "" : all)));
 }
 /** Sentences of a plain text (a sentence ends at . ! ? before a capital, digit, quote or €). */
-export const sentencesOf = (t: string): string[] => t.split(/(?<=[.!?])\s+(?=[A-Z0-9(“"€*¿¡])/).map((x) => x.trim()).filter(Boolean);
+export const sentencesOf = (t: string): string[] => t.split(/(?<=[.!?])\s+(?=[A-Z0-9(“"€$£*¿¡])/).map((x) => x.trim()).filter(Boolean);
 
 /** Pure: whole sentences up to `max` words; a text that was cut ("…") drops its unfinished sentence, and a first
  *  sentence longer than `max` ends at its last full clause instead of a dangling fragment. */
@@ -468,12 +473,19 @@ export function alignVerdictLine(line: string, verdict: IdeaReport["verdict"]): 
 const REASON_TOPIC: Record<string, RegExp> = {
   demand: /\b(?:demand|customers?|buyers?|bookings?|usage|audience|footfall|subscribers?|wants?|will pay)\b/i,
   competition: /\b(?:compet\w*|saturat\w*|crowded|rivals?|incumbents?|alternatives?|chains?|market is)\b/i,
-  pricing: /\b(?:pric\w*|margins?|premium|break-even|contribution|economics|per walk|per unit|€)/i,
+  pricing: /\b(?:pric\w*|margins?|premium|break-even|contribution|economics|per walk|per unit|[€$£])/i,
   viability: /\b(?:costs?|rent|wages?|insurance|licen[cs]\w*|legal|regulat\w*|capital|savings|exposure|liabilit\w*|break-even|permits?|social security|viab\w*)\b/i,
 };
 const REASON_NEG = /\b(?:no|not|none|nothing|unproven|missing|saturated|crowded|risk\w*|exposure|without|lacks?|weak|fails?|never|cannot|can't|unknown|unclear|too (?:high|low|small)|below|thin|loss\w*|expensive|undercut\w*)\b/gi;
 const REASON_POS = /\b(?:in range|defensible|strong\w*|growing|proven|underserved|gap in|room for|willing|healthy|profitable|cheap\w*|clear demand|demand exists)\b/gi;
 const hits = (re: RegExp, s: string) => (s.match(re) ?? []).length;
+
+/** A reason or gap that is only about the idea naming no place ("names no location", "no city was named"). For an
+ *  online idea that is not a gap at all, and it never explains a verdict, so it never leads. */
+export const LOCATION_GAP = /\b(?:names? no (?:location|city|place|country)|no (?:city|location|place|country|neighbou?rhood)\b[^.]{0,60}?\b(?:was|were|has been|have been|is)\s+(?:named|given|specified|chosen|stated)|location (?:is )?unspecified|no local market has been sized)\b/i;
+
+/** A reason that argues the case is still open: it can never be the lead of a No-go ("No-go: The case is open…"). */
+const OPEN_CASE = /\b(?:case is (?:still )?open|not closed|should be tested|test (?:it|them) before|nothing sourced (?:shows|rules|counts)|no sourced evidence (?:shows|rules|counts))\b/i;
 
 /** Pure: the index of the reason that best explains the computed verdict. No-go / Pivot: the most negative reason on
  *  the weakest scored sections; Go: the most positive one on the strongest. Ties keep the writer's order. */
@@ -487,10 +499,24 @@ export function leadReason(reasons: readonly string[], verdict: IdeaReport["verd
     const neg = hits(REASON_NEG, r);
     const pos = hits(REASON_POS, r);
     const topic = factors.reduce((t, f) => t + (REASON_TOPIC[f.analyst]?.test(r) ? weight(f) : 0), 0);
-    const s = (against ? 2 * neg - 3 * pos : 2 * pos - 2 * neg) + topic;
+    const s = (against ? 2 * neg - 3 * pos : 2 * pos - 2 * neg) + topic - (LOCATION_GAP.test(r) ? 100 : 0) - (verdict === "no-go" && OPEN_CASE.test(r) ? 100 : 0);
     if (s > top) (top = s), (best = i);
   });
   return best;
+}
+
+/** Pure, display only: why the label differs from what the score alone suggests (a Test first under 4.5 or from 6.5).
+ *  Empty when the label follows the score bands. Never changes the verdict. */
+export function verdictWhy(r: Pick<IdeaReport, "verdict" | "score" | "factors">): string {
+  if (r.verdict !== "pivot") return "";
+  if (r.score < VERDICT_BANDS_V7.pivot) return "Why not No-go: the score is low because data is missing, not because sourced evidence counts against the idea.";
+  if (r.score >= VERDICT_BANDS_V7.go) {
+    const low = [...(r.factors ?? [])].filter((f) => f.score <= VERDICT_BANDS_V7.floor).sort((a, b) => a.score - b.score)[0];
+    return low
+      ? `Why not Go: ${low.label} scored ${(Math.round(low.score * 10) / 10).toFixed(1)}/10, and a section at 3 or below holds the verdict at Test first.`
+      : "Why not Go: a section at 3 or below holds the verdict at Test first.";
+  }
+  return "";
 }
 
 /** `against` (from evidenceAgainst): under the Pivot band the verdict is No-go only when sourced evidence counts

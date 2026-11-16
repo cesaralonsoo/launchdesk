@@ -468,7 +468,7 @@ assert.equal(data.brandSignOf(data.SAMPLE_V7)?.name, "Pausa");
   const checks = rv7.checksOf(sec.split("\n").slice(1));
   assert.equal(checks.length, 3, "three checks, not the sub-bullets of the first one");
   assert.match(checks[0]!.what, /^Madrid owners will pay about €18 per walk-hour and rebook$/);
-  assert.match(checks[0]!.how, /^interview 40 Madrid dog owners/);
+  assert.match(checks[0]!.how, /^Interview 40 Madrid dog owners/);
   assert.match(checks[0]!.pass_if, /^at least 12 of 40/);
   assert.doesNotMatch(checks[0]!.pass_if, /fewer than 12/, "the Fail line is not part of the pass mark");
   assert.match(checks[1]!.what, /walkers employees/);
@@ -492,6 +492,152 @@ assert.equal(data.brandSignOf(data.SAMPLE_V7)?.name, "Pausa");
   assert.equal(v7.plainText("Price is €18 [S2, estimate] and €10 [S1; S3] here [S12; estimate]."), "Price is €18 and €10 here.");
   assert.equal(v7.isPlaceholderPass("Set a numeric pass mark before you start"), true);
   assert.equal(v7.isPlaceholderPass("at least 12 of 40 pay"), false);
+}
+
+// ── currency follows the idea, online ideas, one money model, verdict label (q2 plan items 1-4)
+{
+  const { createHash } = await import("node:crypto");
+  const rp = await import("../server/report-v7.js");
+  const bl = await import("../server/blocks-v7.js");
+  const money = await import("../server/money.js");
+  const ai = await import("../server/ai.js");
+  const { kitCurrency } = await import("../server/kit.js");
+  const { config: cfg } = await import("../server/config.js");
+  const IDEA_A = "A subscription box of Bitcoin Cash stickers and merch for meetups, $25 a month";
+  const IDEA_B = "Software de gestión de turnos y nóminas para clínicas dentales pequeñas en México, 900 pesos al mes por clínica";
+  const EXAMPLE_IDEAS = [
+    "A specialty coffee kiosk at a Barcelona metro exit, €3 flat whites for commuters",
+    "Gentle yoga classes for seniors in Valencia, small groups in a bright studio near Ruzafa, 12 euros a class",
+    "A specialty coffee kiosk at a busy Barcelona metro exit, takeaway only, €2.50 flat white",
+    "A dog-walking app for busy Madrid professionals, €12 a walk",
+  ];
+
+  // EUR output is byte-identical to the code before currencies (hash taken from the previous computeEcon /
+  // fillPlaceholders / finalizeReport / econSummary / priceHints over these exact inputs)
+  const v1a = {
+    unit: "one subscriber-month (4 weekly loaves at €25/month)", price_per_unit_gross_eur: 25, vat_rate: 0.04, share_kept: 1,
+    variable_costs_per_unit: [{ item: "flour, salt and ingredients for 4 loaves", eur: 4, source: "estimate" }, { item: "packaging and delivery", eur: 2.5, source: "estimate" }],
+    fixed_monthly_costs: [{ item: "rent, 160 m² unit", eur: 1200, source: "S14" }, { item: "utilities", eur: 300, source: "estimate" }, { item: "insurance, accounting and software", eur: 200, source: "estimate" }, { item: "owner social security, first bracket", eur: 206, source: "S21" }, { item: "baker wages (part-time)", eur: 1500, source: "estimate" }],
+    startup_costs: [{ item: "licence and technical project", eur: 8000, source: "S18" }, { item: "oven and bakery equipment", eur: 35000, source: "estimate" }, { item: "fit-out works", eur: 15000, source: "estimate" }, { item: "deposit and first-month rent (3 months at 1,200)", eur: 3600, source: "S14" }, { item: "working capital", eur: 5000, source: "estimate" }],
+  };
+  {
+    const out: unknown[] = [];
+    for (const e of [v1a, { ...v1a, price_per_unit_gross_eur: 5 }, { ...v1a, variable_costs_per_unit: [{ item: "x", eur: 0 }] }, { ...v1a, price_per_unit_gross_eur: 1234.5, share_kept: 0.8 }]) {
+      const c = rp.computeEcon(e as never);
+      out.push(c.vals, c.table);
+    }
+    const vals = rp.computeEcon(v1a as never).vals;
+    for (const t of ["€{{NET_REVENUE_PER_UNIT}} and € {{FIXED_MONTHLY}} {{CONTRIBUTION_MARGIN_PCT}}% {{BREAK_EVEN_UNITS}} x {{NOPE}}", "Cost €{{VARIABLE_COST_PER_UNIT}}."]) out.push(rp.fillPlaceholders(t, vals));
+    const srcs = [{ id: "S1", url: "https://a.es/1", title: "Padrón" }, { id: "S2", url: "https://b.es/2", title: "Rents" }];
+    const raw = `# Founder report: Bread in Ruzafa\n\n## Executive summary\n\nBreak-even is {{BREAK_EVEN_UNITS}} subscribers [S1], capital €{{STARTUP_CAPITAL}}.\n\n## Verdict\n\n**NO-GO**\n\n- Demand unproven [S7].\n\n## Money\n\n**Takeaway:** Rent dominates.\n\n**Evidence:**\n- (−) Rent is €1,200 a month [S2].\n\n## Risks & how to start\n\n**Takeaway:** Licences.\n\n\`\`\`econ\n${JSON.stringify({ ...v1a, scores: { money: 3 } })}\n\`\`\`\n`;
+    const fin = rp.finalizeReport(raw, srcs);
+    out.push(fin.md, fin.econ, fin.econErr);
+    out.push(rp.econSummary(fin, srcs, "2026-11-16"));
+    out.push(rp.priceHints("Weekly bread subscriptions at €25 a month"), rp.priceHints("Bread at 25€ per week"));
+    assert.equal(createHash("sha256").update(JSON.stringify(out)).digest("hex"), "41aca4a6367a4dcc3121a083f0f3b45f07c8c5d1ff84c3e0b208ed102e0850e7", "EUR unit economics are byte-identical to before");
+  }
+
+  // one currency per idea: its price, then its place, then US dollars
+  const cur = (i: string) => money.currencyOf(i).code;
+  assert.equal(cur(IDEA_A), "USD");
+  assert.equal(cur(IDEA_B), "MXN");
+  for (const i of [...cfg.sampleIdeas, ...EXAMPLE_IDEAS]) assert.equal(cur(i), "EUR", i);
+  assert.equal(cur("An online course on sourdough, £40"), "GBP");
+  assert.equal(cur("A food truck selling tacos"), "USD");
+  assert.deepEqual(money.currencyOf("tienda online en Madrid"), { code: "EUR", why: "place" });
+  assert.equal(cur("5 pounds of coffee beans a month for $20"), "USD");
+  assert.equal(cur("A newsletter paid in BCH, 0.05 BCH a month"), "USD");
+  assert.equal(money.symbolFor("MXN"), "MX$");
+  assert.equal(money.codeFor("MX$"), "MXN");
+  assert.equal(money.codeFor("€"), "EUR");
+  assert.equal(money.fmtMoney(23, "EUR"), "€23.00");
+  assert.equal(money.fmtMoney(2000, "MXN"), "MX$2,000");
+  assert.deepEqual(money.budgetTiersFor("MXN"), [0, 2000, 10000]);
+  assert.deepEqual(money.budgetTiersFor("USD"), [0, 100, 500]);
+
+  // a US-dollar idea: the table, the summary and the placeholders are in $ and never converted
+  const usd = rp.computeEcon(v1a as never, "USD");
+  assert.ok(usd.table.includes("$") && !usd.table.includes("€24.04") && !/\| € \|/.test(usd.table), "USD table has no € sign");
+  assert.equal(usd.vals.NET_REVENUE_PER_UNIT, "$24.04");
+  assert.equal(rp.fillPlaceholders("$ {{FIXED_MONTHLY}}", { FIXED_MONTHLY: "$130.00" }).md, "$130.00");
+  assert.equal(rp.fillPlaceholders("MX${{FIXED_MONTHLY}} a month", { FIXED_MONTHLY: "MX$2,000" }).md, "MX$2,000 a month");
+  const neutral = { unit: "one subscriber-month", price_per_unit_gross: 25, vat_rate: 0, share_kept: 1, variable_costs_per_unit: [{ item: "stickers", amount: 8, source: "estimate" }, { item: "postage", amount: 4, source: "estimate" }], fixed_monthly_costs: [{ item: "software", amount: 30, source: "estimate" }, { item: "owner pay", amount: 100, source: "estimate" }], startup_costs: [{ item: "first stock", amount: 950, source: "estimate" }] };
+  const finUsd = rp.finalizeReport(`# Founder report: Sticker box\n\n## Money\n\n**Takeaway:** Fine.\n\n\`\`\`econ\n${JSON.stringify(neutral)}\n\`\`\`\n`, [], "USD");
+  const esUsd = rp.econSummary(finUsd, []);
+  assert.equal(esUsd?.currency, "USD");
+  assert.equal(esUsd?.price, 25);
+  assert.equal(esUsd?.fixedMonthly, 130);
+  assert.equal(esUsd?.breakEven, 10);
+  assert.ok(finUsd.md.includes("| fixed cost per month | $ | source |"));
+  // the old EUR keys still parse, and an EUR report stores no currency field (absent = EUR)
+  assert.equal(rp.econSummary(rp.finalizeReport(`# R\n\n\`\`\`econ\n${JSON.stringify(v1a)}\n\`\`\`\n`, []), [])?.currency, undefined);
+  assert.ok(rp.priceHints("Stickers for meetups, $25 a month, shipped weekly")[0]!.includes("$5.77 per delivery"));
+  assert.ok(rp.priceHints("Weekly bread subscriptions at €25 a month")[0]!.includes("€5.77 per delivery"));
+  const wpA = rp.writerPrompt(IDEA_A, [{ title: "Customers", notes: "- x" }]);
+  assert.ok(wpA.includes("All money in this block is in USD ($)") && !wpA.includes("€0") && wpA.includes('"price_per_unit_gross"'), "writer works in the idea's currency");
+  assert.ok(rp.writerPrompt(IDEA_B, [{ title: "Customers", notes: "- x" }]).includes("in MXN (MX$)"));
+  assert.ok(rp.writerPrompt(EXAMPLE_IDEAS[0]!, [{ title: "Customers", notes: "- x" }]).includes("in EUR (€)"));
+  // money that would count against an MXN idea is shown in pesos, the EUR wording is unchanged
+  const varLine = (eur: number) => ({ group: "variable", eur, source: { url: "https://x.mx", title: "x", domain: "x.mx", accessed: "2026-11-16" } });
+  assert.match(v7.evidenceAgainst([], [], { net: 9.92, currency: "MXN", lines: [varLine(11)] })[0]!, /MX\$11\.00.*MX\$9\.92/);
+  assert.match(v7.evidenceAgainst([], [], { net: 9.92, lines: [varLine(11)] })[0]!, /€11\.00.*€9\.92/);
+
+  // the kit follows the report's currency (econ first, then the idea); projects without a report keep the old chain
+  const proj = (results: Record<string, unknown>, idea = IDEA_B) => ({ idea, results } as never);
+  assert.equal(kitCurrency(proj({ v7: { report: {}, econ: { currency: "MXN" } }, sam: { currency: "$" } })), "MX$");
+  assert.equal(kitCurrency(proj({ v7: { report: {}, econ: null }, sam: { currency: "$" } })), "MX$");
+  assert.equal(kitCurrency(proj({ v7: { report: {}, econ: { price: 3 } } }, EXAMPLE_IDEAS[0])), "€", "a stored econ with no currency is EUR");
+  assert.equal(kitCurrency(proj({ sam: { currency: "$" } })), "$");
+
+  // online ideas: no city-centred research, no "names no location" reasons
+  for (const i of [IDEA_A, IDEA_B, "An online shop for restored vintage road bikes, around €450 each"]) assert.equal(rp.businessKind(i), "online", i);
+  for (const i of [...EXAMPLE_IDEAS, cfg.sampleIdeas[0]!, cfg.sampleIdeas[1]!, "A food truck selling tacos, $8 each"]) assert.equal(rp.businessKind(i), "local", i);
+  // a premises word that describes the customer does not make an app local; one that is the thing opened does
+  for (const i of ["A mobile app that splits restaurant bills among friends and settles in BCH, free with a 1% fee", "A SaaS for gyms", "Handmade leather wallets sold on Etsy from Austin, Texas, $45 each"]) assert.equal(rp.businessKind(i), "online", i);
+  for (const i of ["Open a café with an app for ordering", "A restaurant in Lisbon with online ordering"]) assert.equal(rp.businessKind(i), "local", i);
+  assert.equal(rp.sellsOnline("Handmade leather wallets sold on Etsy from Austin, Texas"), true);
+  assert.equal(rp.sellsOnline("A coffee kiosk in Barcelona that accepts BCH"), false);
+  const rpOnline = bl.researchPrompt(IDEA_A, "money", "online");
+  assert.ok(!/rent per m²|neighbourhood/i.test(rpOnline) && /Payment and platform fees/.test(rpOnline));
+  assert.equal(bl.researchPrompt("x", "money"), bl.researchPrompt("x", "money", "local"), "local research is unchanged");
+  assert.ok(rp.writerPrompt(IDEA_A, [{ title: "Customers", notes: "- x" }]).includes("A missing city or neighbourhood is not a gap"));
+  assert.ok(!rp.writerPrompt(EXAMPLE_IDEAS[0]!, [{ title: "Customers", notes: "- x" }]).includes("A missing city"));
+  const mdA = readFileSync(new URL("./fixtures/report-online-a.md", import.meta.url), "utf8");
+  const parsedA = rp.parseReport(mdA, { idea: IDEA_A });
+  assert.ok(parsedA.reasons?.length && !v7.LOCATION_GAP.test(parsedA.reasons[0]!), "an online idea's reasons never say it names no location");
+  assert.ok(Object.values(parsedA.blocks).every((b) => b!.evidence.every((e) => !(e.kind === "estimate" && v7.LOCATION_GAP.test(e.text)))), "no 'no city was named' gaps for an online idea");
+  const parsedLocal = rp.parseReport(mdA, { idea: "A sticker kiosk in Barcelona" });
+  assert.ok(parsedLocal.reasons!.some((r) => v7.LOCATION_GAP.test(r)), "a local idea keeps its reasons as written");
+  const factors = [{ analyst: "demand", score: 3 }, { analyst: "pricing", score: 4 }];
+  assert.notEqual(v7.leadReason(parsedLocal.reasons!, "pivot", factors), parsedLocal.reasons!.findIndex((r) => v7.LOCATION_GAP.test(r)), "a missing place never leads");
+
+  // a No-go never leads with a reason that says the case is open (real run a, 16 Nov: "No-go: The case is open, not closed.")
+  const noGoReasons = ["The case is open, not closed. The research did not cover subscription rules, churn, sticker unit cost or postage.", "Sourced price evidence counts against the idea. A three-pack of BCH stickers costs $4.99."];
+  assert.equal(v7.leadReason(noGoReasons, "no-go", [{ analyst: "pricing", score: 2 }]), 1);
+
+  // verdict label explained when it is not what the score bands alone say (display only)
+  const f = (label: string, score: number) => ({ analyst: "demand", label, weight: 0.25, score, findings: [], sourced: 0, total: 0 }) as never;
+  assert.match(v7.verdictWhy({ verdict: "pivot", score: 3, factors: [f("Customers", 3)] }), /^Why not No-go/);
+  assert.equal(v7.verdictWhy({ verdict: "pivot", score: 7, factors: [f("Customers", 8), f("Competition", 3)] }), "Why not Go: Competition scored 3.0/10, and a section at 3 or below holds the verdict at Test first.");
+  assert.equal(v7.verdictWhy({ verdict: "pivot", score: 5.5, factors: [] }), "");
+  assert.equal(v7.verdictWhy({ verdict: "go", score: 7, factors: [] }), "");
+  assert.equal(v7.verdictWhy({ verdict: "no-go", score: 3, factors: [] }), "");
+
+  // one money model: Sam takes the report's unit economics (price, margin, fixed and start-up costs, currency)
+  const { mockFor } = await import("../server/mocks.js");
+  const draft = () => JSON.parse(JSON.stringify(mockFor("sam", IDEA_A))) as Parameters<typeof ai.anchorSam>[0];
+  assert.deepEqual(ai.anchorSam(draft(), null), draft(), "no econ: unchanged");
+  assert.deepEqual(ai.anchorSam(draft(), { ...esUsd!, price: 0 }), draft(), "no price: unchanged");
+  const anchored = ai.anchorSam(draft(), esUsd);
+  const val = (k: string) => anchored.assumptions.find((a) => a.key === k)!.value;
+  assert.equal(val("avg_ticket"), 25);
+  assert.equal(val("fixed_costs_month"), 130);
+  assert.equal(anchored.fixed_costs_breakdown.reduce((t, l) => t + l.value, 0), 130);
+  assert.equal(val("startup_cost"), 950);
+  assert.equal(anchored.currency, "$");
+  const derived = ai.deriveSamV6(anchored);
+  const days = val("open_days_month");
+  assert.ok(Math.abs(derived.breakeven_units_per_day * days - esUsd!.breakEven!) <= 1, `Sam's break-even pace (${derived.breakeven_units_per_day}/day × ${days}) matches the report's ${esUsd!.breakEven}`);
 }
 
 void (null as unknown as IdeaReport);

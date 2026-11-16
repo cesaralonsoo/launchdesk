@@ -3,6 +3,7 @@
 // Honesty: no invented numbers, no reviews, no market facts. The only figures are the founder's own offer and
 // goals the founder sets for themselves (clearly labelled as goals).
 import type { KitInput } from "./kit-contract.js";
+import { budgetTiersFor, codeFor } from "./money.js";
 import type { PlanV2 } from "./marketing/schema.js";
 import type { ModelSite } from "./site/spec.js";
 
@@ -176,6 +177,10 @@ export function templatePlan(input: KitInput): PlanV2 {
     { n: 4, theme: "Decide", aim: "Know if this is worth growing.", days: [day(22, c2, "Post a reminder that the launch offer ends soon.", "post-3"), day(25, "Local press or newsletter", "Send a short note about your opening.", "press"), day(28, "By hand", "Add up reservations and payments for the month."), day(30, "Decision", "Compare with your goal and choose: grow, adjust or stop.")] },
   ];
   const name = brand.name;
+  // the founder's budget choices in the brand currency (×1 for $, €, £; MX$ 0 / 2,000 / 10,000…)
+  const [, t1, t2] = budgetTiersFor(codeFor(brand.currency || "€") || "USD");
+  const k1 = t1 / 100;
+  const k2 = t2 / 500;
   return {
     lang: "en",
     currency: brand.currency || "€",
@@ -190,8 +195,8 @@ export function templatePlan(input: KitInput): PlanV2 {
     budget: {
       tiers: [
         { amount: 0, label: "Free", lines: [] },
-        { amount: 100, label: "Small budget", lines: [{ channel: "Printing", amount: 40, for: "Flyers and a window sign" }, { channel: c2, amount: 60, for: "Boost your best post near you" }] },
-        { amount: 500, label: "Bigger push", lines: [{ channel: "Printing", amount: 100, for: "Flyers, sign and cards" }, { channel: c2, amount: 250, for: "Local ads on your best post" }, { channel: "Launch day", amount: 150, for: "A small opening offer or event" }] },
+        { amount: t1, label: "Small budget", lines: [{ channel: "Printing", amount: 40 * k1, for: "Flyers and a window sign" }, { channel: c2, amount: 60 * k1, for: "Boost your best post near you" }] },
+        { amount: t2, label: "Bigger push", lines: [{ channel: "Printing", amount: 100 * k2, for: "Flyers, sign and cards" }, { channel: c2, amount: 250 * k2, for: "Local ads on your best post" }, { channel: "Launch day", amount: 150 * k2, for: "A small opening offer or event" }] },
       ],
       reserve_pct: 10,
       reallocate_rule: "Every week, move money to the channel that brought the most reservations.",

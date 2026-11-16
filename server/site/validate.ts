@@ -23,19 +23,25 @@ const icon = (v: unknown): IconName => ((ICONS as readonly string[]).includes(St
 const list = <T>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
 const step = (v: { icon?: unknown; title?: unknown; body?: unknown }): Step => ({ icon: icon(v?.icon), title: clean(v?.title, 40), body: clean(v?.body, 150) });
 
-/** "€", "EUR", "$", "USD", "£" → a display symbol (or the code). */
+const SYMBOL_OF: Record<string, string> = {
+  EUR: "€", USD: "$", GBP: "£", "€": "€", $: "$", "£": "£",
+  MXN: "MX$", "MX$": "MX$", CAD: "CA$", "CA$": "CA$", "C$": "CA$", AUD: "A$", "A$": "A$", "AU$": "A$",
+  BRL: "R$", "R$": "R$", INR: "₹", "₹": "₹", JPY: "¥", "¥": "¥", "US$": "$",
+};
+/** "€", "EUR", "$", "USD", "£", "MXN", "MX$" … → a display symbol (or the code). */
 export function currencySymbol(c: string): string {
   const k = (c || "").trim().toUpperCase();
-  return ({ EUR: "€", USD: "$", GBP: "£", "€": "€", $: "$", "£": "£" } as Record<string, string>)[k] ?? (k || "$");
+  return SYMBOL_OF[k] ?? (k || "$");
 }
 
-/** 29 → "€29" (en) or "29 €" (es). */
+/** 29 → "€29" (en) or "29 €" (es); "MX$900"; a code with no symbol → "CHF 900". */
 export function money(n: number, currency: string, lang: string): string {
   const sym = currencySymbol(currency);
   const v = Math.round(n * 100) / 100;
   const es = lang.toLowerCase().startsWith("es");
   const num = Number.isInteger(v) ? v.toLocaleString(es ? "es-ES" : "en-US") : v.toLocaleString(es ? "es-ES" : "en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  if (sym.length > 1) return `${num} ${sym}`;
+  if (/^[A-Z]{3}$/.test(sym)) return `${sym} ${num}`;
+  if (sym.length > 1 && !sym.endsWith("$")) return `${num} ${sym}`;
   return es && sym === "€" ? `${num} €` : `${sym}${num}`;
 }
 
@@ -74,7 +80,10 @@ export function validateModelSite(raw: Partial<ModelSite> | null | undefined, in
     if (!/^https:\/\//.test(st.sourceUrl) || !hostOf(st.sourceUrl)) { issues.push(`stat ${i} has no source`); continue; }
     if (/(^|\.)example\.(org|com|net)$/i.test(hostOf(st.sourceUrl))) { issues.push(`stat ${i} has a sample source`); continue; }
     if (sourced.some((x) => x.sourceUrl === st.sourceUrl && x.value === st.value)) continue;
-    sourced.push({ value: clean(st.value, 14), label: clean(st.label, 90), sourceUrl: st.sourceUrl, source: hostOf(st.sourceUrl) });
+    // a stat value is never cut mid-word ("About 24 mont…"): "about 24 months" becomes "~24 months", else the stat is skipped
+    const sv = clean(st.value, 999), value = sv.length <= 14 ? sv : sv.replace(/^(?:about|around|approx\.?|approximately|roughly|~)\s*/i, "~");
+    if (!value || value.length > 14) { issues.push(`stat ${i} value too long`); continue; }
+    sourced.push({ value, label: clean(st.label, 90), sourceUrl: st.sourceUrl, source: hostOf(st.sourceUrl) });
     if (sourced.length === 3) break;
   }
 

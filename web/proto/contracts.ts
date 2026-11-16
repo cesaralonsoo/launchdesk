@@ -650,6 +650,8 @@ export interface EconSummary {
   missing?: string[];
   /** `check`: the line cites a source, but its figure could not be found in that source's research note. */
   lines?: Array<{ group: "variable" | "fixed" | "startup"; item: string; eur: number; source: SourceRef | null; check?: boolean }>;
+  /** ISO 4217 code of every amount here (the idea's currency); absent = EUR (every report stored before currencies). */
+  currency?: string;
 }
 /** One project = one world. */
 export interface ProjectV7 {

@@ -14,6 +14,9 @@ import { emptyResearch, fallbackReport, sampleBlocks, type BlockResearch, type B
 import { VERDICT_BANDS_V7, VERDICT_WORD, type EconSummary, type IdeaReport } from "./v7.js";
 import { BLOCK_IDS, BLOCK_LIBRARY, BLOCK_LIMITS, capWords, fullSentences, noInlineCites, unitPlural as unitPluralV7, factorScore, fallbackBlockPlans, hostOf, isGapText, STEP_ESTIMATE, STEP_SOURCED, type AgentNote, type AnalystRole, type BlockId, type FindingKind, type Impact, type SourceRef } from "./v7.js";
 import { ACCESSED, REPORT_SAMPLES, v7SampleFor, type V7Sample } from "./v7-samples.js";
+import { LOCATION_GAP } from "./v7.js";
+import type { BusinessKind } from "./blocks-v7.js";
+import { currencyOf, fmtMoney, MONEY_SIGN_SRC, symbolFor } from "./money.js";
 
 const envModel = (name: string, dflt: string) => (process.env[name] && /^claude-[a-z0-9-]+$/.test(process.env[name]!) ? process.env[name]! : dflt);
 /** Never default to Sonnet: DECISION.md measured it as not worth the cost. */
@@ -47,6 +50,30 @@ export function marketOf(idea: string): Market | null {
   return null;
 }
 
+const ONLINE_WORDS = /\b(online|app|apps|saas|software|platform|marketplace|website|web ?shop|e-?commerce|subscription box|newsletter|digital|plugin|api|crypto|bitcoin|bch|token|nft|dao|wallet|ships|shipping|shipped|mail[- ]order|worldwide|remote|course|ebook|podcast|etsy|shopify|amazon|en l[ií]nea|aplicaci[oó]n|plataforma|tienda online|env[ií]os?)\b/i;
+const PREMISES_WORDS = /\b(kiosk|caf[eé]|coffee shop|bakery|restaurant|bar|salon|gym|studio|stall|food truck|shop in|store in|storefront|walk-in|near me)\b/i;
+/** Pure: "online" when the idea names no known city and sells online (app, software, shipping, crypto…) with no
+ *  premises; everything else is "local" (today's city-centred research). */
+export function businessKind(idea: string): BusinessKind {
+  const t = String(idea ?? "");
+  if (marketOf(t)) return "local";
+  if (!ONLINE_WORDS.test(t)) return "local";
+  // "an app that splits restaurant bills": the premises word describes the customer, not what is sold. With a software
+  // or online-channel word, premises only count when they are the thing being opened or run.
+  if (SOFTWARE_WORDS.test(t)) return PREMISES_SOLD.test(t) ? "local" : "online";
+  return PREMISES_WORDS.test(t) ? "local" : "online";
+}
+const SOFTWARE_WORDS = /\b(app|apps|saas|software|platform|plugin|api|website|newsletter|marketplace|etsy|shopify|amazon|ebay|e-?commerce|online store|web ?shop|podcast|ebook)\b/i;
+const PREMISES_SOLD = { test: (t: string) => /\b(open(?:ing)?|run(?:ning)?|own(?:ing)?|start(?:ing)?)\s+(?:a|an|my|our)?\s*(?:kiosk|caf[eé]|coffee shop|bakery|restaurant|bar|salon|gym|studio|stall|food truck|shop|store|storefront)(?![a-z])/i.test(t) || /\b(?:kiosk|caf[eé]|coffee shop|bakery|restaurant|bar|salon|gym|stall|food truck|shop|store|storefront)\s+(?:in|at|on|near)\s+(?:the\s+)?[A-Z]/.test(t) };
+/** Selling channels that are never a place. An "app" or "website" is not one: a dog-walking app in Madrid is local. */
+const ONLINE_CHANNEL = /\b(etsy|shopify|amazon|ebay|online (?:shop|store)|web ?shop|e-?commerce|ships|shipping|mail[- ]order|newsletter|saas|software|podcast|ebook)\b/i;
+/** Pure: the idea sells through a channel that is not a place (Etsy, an online store, a newsletter…), even when it
+ *  names the founder's city: the launch kit is then planned online. */
+export function sellsOnline(idea: string): boolean {
+  const t = String(idea ?? "");
+  return ONLINE_CHANNEL.test(t) && !PREMISES_SOLD.test(t);
+}
+
 // ───────────────────────────────────────────────────────────── sources: per-block numbers → global [S#]
 
 export interface ReportSource { id: string; url: string; title: string }
@@ -68,10 +95,13 @@ export function labelResearch(research: readonly BlockResearch[]): { sections: A
 
 // ───────────────────────────────────────────────────────────── unit economics (computed in code)
 
-export interface EconItem { item: string; eur: number; source?: string; quote?: string }
+/** `eur` is the amount in the econ currency (the idea's currency; EUR for every report stored before currencies). The
+ *  writer may send it as `amount` (and the price as `price_per_unit_gross`): finalizeReport maps both to these names. */
+export interface EconItem { item: string; eur: number; amount?: number; source?: string; quote?: string }
 export interface EconInputs {
   unit: string;
   price_per_unit_gross_eur: number;
+  price_per_unit_gross?: number;
   vat_rate: number;
   share_kept?: number | null;
   variable_costs_per_unit?: EconItem[];
@@ -84,6 +114,8 @@ export const PLACEHOLDERS = ["NET_REVENUE_PER_UNIT", "VARIABLE_COST_PER_UNIT", "
 export const ECON_NA = "n/a (cost inputs missing)";
 
 const eur = (x: number) => `€${x.toLocaleString("en-US", { minimumFractionDigits: Math.abs(x) < 100 ? 2 : 0, maximumFractionDigits: Math.abs(x) < 100 ? 2 : 0 })}`;
+/** EUR keeps the exact old format (byte-identical tables); any other currency is formatted by Intl. */
+const moneyIn = (code: string) => (code === "EUR" ? eur : (x: number) => fmtMoney(x, code));
 /** Pure: the cost lines the writer left at €0 (or a whole empty group). A €0 cost is a missing input, never a fact. */
 export function missingInputs(e: EconInputs): string[] {
   const out: string[] = [];
@@ -96,7 +128,9 @@ export function missingInputs(e: EconInputs): string[] {
 }
 /** Pure port of opt.ts computeEcon: net = gross / (1 + VAT) × share kept; break-even = ceil(fixed / contribution).
  *  Guard: when a cost input is missing (€0 or empty), the figures that depend on it become "n/a", never a number. */
-export function computeEcon(e: EconInputs): { vals: Record<(typeof PLACEHOLDERS)[number], string>; table: string; raw: EconComputed } {
+export function computeEcon(e: EconInputs, code = "EUR"): { vals: Record<(typeof PLACEHOLDERS)[number], string>; table: string; raw: EconComputed } {
+  const eur = moneyIn(code);
+  const sym = code === "EUR" ? "€" : symbolFor(code);
   const sum = (a?: EconItem[]) => (a ?? []).reduce((s, x) => s + (Number(x.eur) || 0), 0);
   const share = e.share_kept == null ? 1 : Number(e.share_kept);
   const net = ((Number(e.price_per_unit_gross_eur) || 0) / (1 + (Number(e.vat_rate) || 0))) * share;
@@ -119,13 +153,16 @@ export function computeEcon(e: EconInputs): { vals: Record<(typeof PLACEHOLDERS)
     STARTUP_CAPITAL: capOk ? eur(cap) : ECON_NA,
   };
   const cell = (s: unknown) => String(s ?? "").replace(/\|/g, "/").trim();
+  // EUR tables stay byte-identical (stored reports); the US and Canada have sales tax, not VAT; 93.5% is never shown as 94%
+  const taxWord = code === "USD" || code === "CAD" ? "sales tax" : "VAT";
+  const sharePct = code === "EUR" || Number.isInteger(Math.round(share * 1000) / 10) ? (share * 100).toFixed(0) : (share * 100).toFixed(1);
   const row = (x: EconItem) => `| ${cell(x.item)} | ${Number(x.eur) > 0 ? eur(Number(x.eur)) : "missing"} | ${cell(x.source) || "estimate"} |`;
   const table = `**Computed unit economics** (unit: ${cell(e.unit)}; arithmetic done in code from the inputs below)
 
 | line | value |
 |---|---|
-| Price per unit (incl. VAT ${((Number(e.vat_rate) || 0) * 100).toFixed(0)}%) | ${eur(Number(e.price_per_unit_gross_eur) || 0)} |
-| Share kept by the business | ${(share * 100).toFixed(0)}% |
+| Price per unit (incl. ${taxWord} ${((Number(e.vat_rate) || 0) * 100).toFixed(0)}%) | ${eur(Number(e.price_per_unit_gross_eur) || 0)} |
+| Share kept by the business | ${sharePct}% |
 | Net revenue per unit | ${vals.NET_REVENUE_PER_UNIT} |
 | Variable cost per unit | ${vals.VARIABLE_COST_PER_UNIT} |
 | Contribution per unit | ${vals.CONTRIBUTION_PER_UNIT} (${vals.CONTRIBUTION_MARGIN_PCT}) |
@@ -133,15 +170,15 @@ export function computeEcon(e: EconInputs): { vals: Record<(typeof PLACEHOLDERS)
 | Break-even (units per month) | ${vals.BREAK_EVEN_UNITS} |
 | Start-up capital | ${vals.STARTUP_CAPITAL} |
 
-| variable cost per unit | € | source |
+| variable cost per unit | ${sym} | source |
 |---|---|---|
 ${(e.variable_costs_per_unit ?? []).map(row).join("\n")}
 
-| fixed cost per month | € | source |
+| fixed cost per month | ${sym} | source |
 |---|---|---|
 ${(e.fixed_monthly_costs ?? []).map(row).join("\n")}
 
-| start-up cost | € | source |
+| start-up cost | ${sym} | source |
 |---|---|---|
 ${(e.startup_costs ?? []).map(row).join("\n")}`;
   const warn = missing.length ? `\n\n**Missing cost inputs:** ${missing.map(cell).join("; ")}. The figures that depend on them are shown as n/a until you get a quote.` : "";
@@ -152,14 +189,16 @@ ${(e.startup_costs ?? []).map(row).join("\n")}`;
 export function fillPlaceholders(md: string, vals: Partial<Record<string, string>> | null): { md: string; missing: number } {
   let missing = 0;
   // "€{{NET_REVENUE_PER_UNIT}}" → "€2.73", never "€€2.73": the computed value already carries its € sign
-  const out = md.replace(/(€\s?)?\{\{\s*([A-Z_]+)\s*\}\}/g, (_all, sign: string | undefined, k: string) => {
+  // any currency sign ("$", "MX$", "£") or a code ("MXN ") in front of a placeholder is dropped: the value carries its own
+  const out = md.replace(/((?:[A-Z]{1,2})?[€$£¥₹]\s?|\b[A-Z]{3}\s)?\{\{\s*([A-Z_]+)\s*\}\}/g, (_all, sign: string | undefined, k: string) => {
     const v = vals?.[k];
     if (v == null) missing++;
     const val = v ?? "n/a";
-    return sign && !/^€/.test(val) && /^\d/.test(val) ? `${sign}${val}` : val;
+    return sign && /^\d/.test(val) ? `${sign}${val}` : val;
   });
   // "{{CONTRIBUTION_MARGIN_PCT}}%" → "46%", never "46%%": the computed value already ends in %
-  return { md: out.replace(/%%/g, "%"), missing };
+  // the writer's spec calls the fenced cost JSON "the econ block": the founder only sees the unit economics table
+  return { md: out.replace(/%%/g, "%").replace(/\b(the|this|your)?\s*econ (?:block|fence|JSON)\b/gi, (m: string, d?: string) => (d ? `${d} unit economics table` : /^\s*E/.test(m) ? `${m.match(/^\s*/)![0]}Unit economics table` : `${m.match(/^\s*/)![0]}unit economics table`)), missing };
 }
 
 // ───────────────────────────────────────────────────────────── finalize (econ, placeholders, cites, sources)
@@ -168,14 +207,15 @@ export interface WriterScale { reach: number; repeatable: number; margins: numbe
 export interface WriterMeta { scores?: Partial<Record<BlockId, number>>; scalability?: Partial<WriterScale>; pivot?: { idea: string; why: string } | null }
 export interface Finalized {
   md: string;
-  econ: { inputs: EconInputs; computed: EconComputed } | null;
+  /** `currency`: ISO code of every amount in `inputs` (absent = EUR). */
+  econ: { inputs: EconInputs; computed: EconComputed; currency?: string } | null;
   econErr: string | null;
   invalidCites: number;
   meta: WriterMeta;
 }
 
 /** Pure: the writer's raw Markdown → the shipped report (see the header). */
-export function finalizeReport(raw: string, sources: readonly ReportSource[]): Finalized {
+export function finalizeReport(raw: string, sources: readonly ReportSource[], code = "EUR"): Finalized {
   const fences = [...raw.matchAll(/```(?:econ|json)\s*\n?([\s\S]*?)```/g)];
   const fence = fences[fences.length - 1];
   let md = (fence ? raw.slice(0, fence.index) + raw.slice(fence.index! + fence[0].length) : raw).replace(/\n## Sources\b[\s\S]*$/i, "").trim();
@@ -188,13 +228,22 @@ export function finalizeReport(raw: string, sources: readonly ReportSource[]): F
   else {
     try {
       const j = JSON.parse(fence[1]!.trim()) as EconInputs & WriterMeta;
+      // the currency-neutral keys ("price_per_unit_gross", "amount") and the old EUR ones both parse
+      if (j && typeof j === "object") {
+        if (j.price_per_unit_gross_eur == null && j.price_per_unit_gross != null) j.price_per_unit_gross_eur = j.price_per_unit_gross;
+        delete j.price_per_unit_gross;
+        for (const g of [j.variable_costs_per_unit, j.fixed_monthly_costs, j.startup_costs]) {
+          if (!Array.isArray(g)) continue;
+          for (const x of g) if (x && typeof x === "object") { if (x.eur == null && x.amount != null) x.eur = x.amount; delete x.amount; }
+        }
+      }
       const pv = j.pivot && typeof j.pivot === "object" ? { idea: String(j.pivot.idea ?? "").trim(), why: String(j.pivot.why ?? "").trim() } : null;
       meta = { ...(j.scores && typeof j.scores === "object" ? { scores: j.scores } : {}), ...(j.scalability && typeof j.scalability === "object" ? { scalability: j.scalability } : {}), ...(pv?.idea ? { pivot: pv } : {}) };
       if (!Number.isFinite(Number(j.price_per_unit_gross_eur)) || Number(j.price_per_unit_gross_eur) <= 0) econErr = "econ block has no price";
       else {
         const { scores: _s, scalability: _c, pivot: _p, ...inputs } = j;
-        const c = computeEcon(inputs);
-        econ = { inputs, computed: c.raw };
+        const c = computeEcon(inputs, code);
+        econ = { inputs, computed: c.raw, ...(code !== "EUR" ? { currency: code } : {}) };
         vals = c.vals;
         table = c.table;
         if (c.raw.missing.length) econErr = `cost inputs missing: ${c.raw.missing.slice(0, 6).join(", ")}`;
@@ -308,7 +357,8 @@ export function checksOf(lines: readonly string[]): Array<{ what: string; how: s
     const what = strip(head).replace(/[.:]$/, "");
     return {
       what: noCites(what),
-      how: noCites(strip(how)).replace(/^[-*]\s*/, "") || "Plan the cheapest test with a real number.",
+      // shown as its own sentence (next steps, memo): starts with a capital
+      how: noCites(strip(how)).replace(/^[-*]\s*/, "").replace(/^\p{Ll}/u, (x) => x.toUpperCase()) || "Plan the cheapest test with a real number.",
       pass_if: noCites(strip(pass)).replace(/[-*]\s*$/, "").trim() || PASS_FALLBACK,
     };
   });
@@ -380,7 +430,7 @@ export function impactsFor(items: ReadonlyArray<{ sign: -1 | 0 | 1 | null; sourc
 
 const scaleDefaults = (idea: string): WriterScale => {
   const t = idea.toLowerCase();
-  const digital = /\b(app|saas|software|online|platform|marketplace|web)\b/.test(t);
+  const digital = /\b(app|saas|software|online|platform|marketplace|web|ships|shipping|subscription box)\b/.test(t);
   const physical = /\b(shop|kiosk|caf[eé]|bakery|restaurant|bar|studio|salon|gym)\b/.test(t);
   const [reach, repeatable, margins, founder_free, dig] = digital ? [7, 7, 6, 5, 8] : physical ? [3, 5, 4, 3, 2] : [5, 5, 5, 4, 4];
   return { reach, repeatable, margins, founder_free, digital: dig, reach_label: digital ? "Country" : physical ? "Neighbourhood" : "City", why: "Rule-of-thumb estimate: the writer gave no scalability scores.", would_scale: [] };
@@ -390,6 +440,7 @@ const num10 = (x: unknown, d: number) => (Number.isFinite(Number(x)) ? Math.max(
 /** Pure: the shipped Markdown → the block contract (ReportOut + each block's own numbered sources). */
 export function parseReport(md: string, opts: { idea?: string; meta?: WriterMeta; sources?: readonly ReportSource[]; accessed?: string } = {}): ReportOut {
   const accessed = opts.accessed ?? today();
+  const online = opts.idea != null && businessKind(opts.idea) === "online";
   // The writer sometimes marks an uncited fact in words ("…, 2026; no source id"); the page already labels it Estimate.
   md = md.replace(/\s*[;,]\s*no source (?:id|cited)\b/gi, "").replace(/\s*\(\s*no source (?:id|cited)\s*\)/gi, "");
   const secs = sectionsOf(md);
@@ -417,7 +468,8 @@ export function parseReport(md: string, opts: { idea?: string; meta?: WriterMeta
     // an inferred sign (a gap, a hedge) only counts when the writer's own section score leans the same way
     const ws = opts.meta?.scores?.[id];
     const lean = ws == null || !Number.isFinite(Number(ws)) ? -1 : Number(ws) < 5 ? -1 : 0;
-    const raw = itemsOf(p.evidence).map((t) => ({ t, tag: signOf(t) }));
+    // an online idea naming no city is not a gap: its "(?) no city was named" bullets are dropped (they never moved the score)
+    const raw = itemsOf(p.evidence).map((t) => ({ t, tag: signOf(t) })).filter(({ t, tag }) => !(online && (tag === "?" || isGapText(noCites(strip(t.replace(SIGN, ""))))) && LOCATION_GAP.test(t)));
     const ev0 = raw.map(({ t, tag }) => {
       const body = t.replace(SIGN, "");
       const sid = citesIn(body).find((c) => known.has(c));
@@ -432,7 +484,7 @@ export function parseReport(md: string, opts: { idea?: string; meta?: WriterMeta
     const evidence: EvidenceOut[] = ev0.map((e, i) => {
       const imp = imps[i]!;
       const kind: FindingKind = e.source ? (/\d/.test(e.text) ? "number" : "fact") : imp < 0 ? "risk" : imp > 0 ? "strength" : "estimate";
-      const display = e.source ? (/€\s?\d[\d.,]*(?:\s?[–-]\s?\d[\d.,]*)?|\d[\d.,]*\s?%/.exec(e.text)?.[0] ?? null) : null;
+      const display = e.source ? (/(?:[A-Z]{1,2})?[€$£¥₹]\s?\d[\d.,]*(?:\s?[–-]\s?\d[\d.,]*)?|\d[\d.,]*\s?(?:%|€)/.exec(e.text)?.[0] ?? null) : null;
       return { text: e.text, kind: e.unknown && !e.source ? "estimate" : kind, impact: imp, source: e.source, basis: e.source ? null : e.unknown ? "Not found in the research" : "No source cited in the report", display, competitor: null };
     });
     const key_numbers = tableOf(p["key numbers"])
@@ -462,7 +514,9 @@ export function parseReport(md: string, opts: { idea?: string; meta?: WriterMeta
   const vsec = secs.find((s) => /^verdict/i.test(s.head))?.body ?? "";
   const vLines = vsec.split("\n").filter((l) => l.trim());
   const vHead = noCites(strip(vLines.find((l) => !/^\s*[-*]\s/.test(l)) ?? ""));
-  const reasons = itemsOf(vLines).map((r) => noCites(strip(r)));
+  const reasons0 = itemsOf(vLines).map((r) => noCites(strip(r)));
+  // the same guard for the verdict reasons (keeping at least one)
+  const reasons = online && reasons0.some((r) => !LOCATION_GAP.test(r)) ? reasons0.filter((r) => !LOCATION_GAP.test(r)) : reasons0;
   const verdict_line = vHead && vHead.split(" ").length <= 4 && reasons[0] ? `${vHead.replace(/[.:]$/, "")}: ${reasons[0]}` : vHead || reasons[0] || "";
   const validate_first = checksOf((secs.find((s) => /validate/i.test(s.head))?.body ?? "").split("\n")).slice(0, 3);
   // strengths / weaknesses: the strongest + and − evidence across the blocks (sourced first)
@@ -497,37 +551,40 @@ const SECTION_SPEC = `Each of the four topic sections uses exactly this structur
 **What it means for you:** 2-4 sentences.
 **Next actions:** 3 numbered concrete actions for the next two weeks.`;
 
-const ECON_SPEC = `UNIT ECONOMICS (computed by code, do not do this arithmetic yourself):
+const ECON_SPEC = (code: string, kind: BusinessKind = "local") => `UNIT ECONOMICS (computed by code, do not do this arithmetic yourself):
 In the Money section, after Key numbers, write a **Unit economics** subsection that explains the inputs and uses these placeholders exactly where the computed figures go: {{NET_REVENUE_PER_UNIT}}, {{VARIABLE_COST_PER_UNIT}}, {{CONTRIBUTION_PER_UNIT}}, {{CONTRIBUTION_MARGIN_PCT}}, {{FIXED_MONTHLY}}, {{BREAK_EVEN_UNITS}} (a bare number: write the unit word after it yourself, e.g. "{{BREAK_EVEN_UNITS}} subscribers"), {{STARTUP_CAPITAL}}. Use the same placeholders anywhere else you mention these figures (executive summary, verdict, validation). Never write those numbers yourself.
 At the very end of your answer, after everything else, output the inputs and your scores as one fenced block:
 \`\`\`econ
-{"unit": "one unit of sale, e.g. one subscriber-month or one booked hour", "price_per_unit_gross_eur": 0, "vat_rate": 0.0, "share_kept": 1.0, "variable_costs_per_unit": [{"item": "", "eur": 0, "source": "S# or estimate", "quote": ""}], "fixed_monthly_costs": [{"item": "", "eur": 0, "source": "", "quote": ""}], "startup_costs": [{"item": "", "eur": 0, "source": "", "quote": ""}], "scores": {"customers": 0, "competition": 0, "money": 0, "risks": 0}, "scalability": {"reach": 0, "repeatable": 0, "margins": 0, "founder_free": 0, "digital": 0, "reach_label": "Neighbourhood", "why": "", "would_scale": [""]}, "pivot": {"idea": "", "why": ""}}
+{"unit": "one unit of sale, e.g. one subscriber-month or one booked hour", "price_per_unit_gross": 0, "vat_rate": 0.0, "share_kept": 1.0, "variable_costs_per_unit": [{"item": "", "amount": 0, "source": "S# or estimate", "quote": ""}], "fixed_monthly_costs": [{"item": "", "amount": 0, "source": "", "quote": ""}], "startup_costs": [{"item": "", "amount": 0, "source": "", "quote": ""}], "scores": {"customers": 0, "competition": 0, "money": 0, "risks": 0}, "scalability": {"reach": 0, "repeatable": 0, "margins": 0, "founder_free": 0, "digital": 0, "reach_label": "Neighbourhood", "why": "", "would_scale": [""]}, "pivot": {"idea": "", "why": ""}}
 \`\`\`
-price_per_unit_gross_eur is what the customer pays per unit incl. VAT; vat_rate is the VAT rate included in it; share_kept is the fraction of the net price the business keeps (1.0 if it sells directly, the commission rate if it is a marketplace). Variable costs are per unit and borne by the business.
+All money in this block is in ${code} (${symbolFor(code)}), the currency of the idea's own price. Never convert the idea's price into another currency and never assume an exchange rate; if a source states a price in another currency, quote it as found and do not use it as an input.
+price_per_unit_gross is what the customer pays per unit incl. VAT or sales tax; vat_rate is the VAT or sales-tax rate included in it (0 when prices are quoted before tax); share_kept is the fraction of the net price the business keeps (1.0 if it sells directly, the commission rate if it is a marketplace). Variable costs are per unit and borne by the business.
 Cost line sources: put an S# only when that research note literally states this figure as this cost; then copy the note's exact words that contain the figure into "quote". A price customers pay is not a cost (a walk price is not a walker's pay). Otherwise write "source": "estimate" and "quote": "".
-Never write 0 for a cost the research did not find: put your best realistic figure for this city and trade with "source": "estimate" (a €0 cost line makes the break-even meaningless and is shown as missing). Include rent, wages or owner pay, utilities, insurance and accounting in the fixed costs, and the main inputs, packaging and delivery or payment fees in the variable costs.
+Never write 0 for a cost the research did not find: put your best realistic figure for this market and trade with "source": "estimate" (a 0 cost line makes the break-even meaningless and is shown as missing). ${kind === "online" ? "Include owner pay, software and hosting, tools, marketing, insurance and accounting in the fixed costs, and the product or materials, packaging, shipping and payment or platform fees in the variable costs." : "Include rent, wages or owner pay, utilities, insurance and accounting in the fixed costs, and the main inputs, packaging and delivery or payment fees in the variable costs."}
 scores: 1-10 per topic section, how strongly its sourced evidence supports putting savings into the idea (5 = neutral). Score the evidence, not the gaps: data the research did not find is uncertainty, so it keeps the score near 5 and goes into "3 things to validate first" instead. Scores of 3 or below need sourced evidence against the idea, such as a saturated market shown by named competitors, sourced costs above the price, or a legal ban.
-scalability: each part 0-10 (a neighbourhood shop ~2-3, a single kiosk ~4, a city service ~5, software sold nationally 8+); reach_label is one of Neighbourhood, City, Country, Global; why is one sentence on why it stops where it stops; would_scale lists 1-3 concrete changes that raise it.
+scalability: each part 0-10 (a neighbourhood shop ~2-3, a single kiosk ~4, a city service ~5, an online shop that ships nationally ~6, software sold nationally 8+); reach_label is one of Neighbourhood, City, Country, Global; why is one sentence on why it stops where it stops; would_scale lists 1-3 concrete changes that raise it.
 pivot: when any section score is 4 or below, the single best concrete change of this idea that the research supports (idea: at most 14 words; why: one complete sentence of at most 30 words naming the evidence, no [S#] labels); otherwise null.`;
 
-const FIXES = `Rules:
+const FIXES = (kind: BusinessKind = "local") => `Rules:
 - Do not state a verdict (GO, NO-GO, GO WITH CONDITIONS) in the executive summary: code adds the verdict sentence there.
 - Monthly = weekly × 4.33.
 - Each validation threshold must be in the same unit as the figure it tests.
-- Write € or % once, never "€17 euros" or "%%".
+- Write the currency sign or % once, never "€17 euros", "$17 dollars" or "%%".
 - Keep figures consistent across sections.
 - Keep each source's own category (foreign nationality is not foreign-born) and say where a price was seen; never present a price from another part of the city as the target neighbourhood's.
-- Cite a source only for what that page is about (a guide for another trade is weak support: say so).`;
+- Cite a source only for what that page is about (a guide for another trade is weak support: say so).${kind === "online" ? `
+- This idea sells online. A missing city or neighbourhood is not a gap and never a reason: do not write (?) bullets, verdict reasons or validation items about the place.` : ""}`;
 
 /** Pure: the per-delivery arithmetic implied by the idea's own price ("€25 a month" + "weekly" → €5.77 per weekly
  *  delivery), so the writer never derives it from competitors' loaf prices. Empty when the idea has no such price. */
-export function priceHints(idea: string): string[] {
+export function priceHints(idea: string, code = currencyOf(idea).code): string[] {
   const out: string[] = [];
-  const m = /€\s?(\d+(?:[.,]\d{1,2})?)\s*(?:\/|a|per|each)\s*(month|week|year)\b/i.exec(idea) ?? /(\d+(?:[.,]\d{1,2})?)\s?€\s*(?:\/|a|per|each)\s*(month|week|year)\b/i.exec(idea);
+  const PER = String.raw`\s*(?:\/|a|per|each)\s*(month|week|year)\b`;
+  const m = new RegExp(String.raw`${MONEY_SIGN_SRC}\s?(\d+(?:[.,]\d{1,2})?)${PER}`, "i").exec(idea) ?? new RegExp(String.raw`(\d+(?:[.,]\d{1,2})?)\s?(?:${MONEY_SIGN_SRC}|[A-Z]{3}\b|euros?\b|dollars?\b|pesos?\b|pounds?\b)${PER}`, "i").exec(idea);
   if (!m) return out;
   const price = Number(m[1]!.replace(",", "."));
   const per = m[2]!.toLowerCase();
-  const fmt = (x: number) => `€${x.toFixed(2)}`;
+  const fmt = (x: number) => (code === "EUR" ? `€${x.toFixed(2)}` : fmtMoney(Math.round(x * 100) / 100, code).replace(/^(\D*[\d,]+)$/, "$1.00"));
   const weekly = /\bweekly\b|\bevery week\b|\bonce a week\b|\bper week\b/i.test(idea);
   const twice = /\btwice a week\b|\b2 (?:times|deliveries) a week\b/i.test(idea);
   if (per === "month" && (weekly || twice)) {
@@ -539,19 +596,23 @@ export function priceHints(idea: string): string[] {
   return out;
 }
 
-export function writerPrompt(idea: string, sections: ReadonlyArray<{ title: string; notes: string }>, opts: { note?: string; focus?: readonly BlockId[] } = {}): string {
+export function writerPrompt(idea: string, sections: ReadonlyArray<{ title: string; notes: string }>, opts: { note?: string; focus?: readonly BlockId[]; code?: string; kind?: BusinessKind } = {}): string {
+  const code = opts.code ?? currencyOf(idea).code;
+  const kind = opts.kind ?? businessKind(idea);
+  const hints = priceHints(idea, code);
+  const bchOnly = /\b(?:bch|sats?|satoshis?)\b/i.test(idea) && currencyOf(idea).why !== "price";
   const notes = sections.map((s) => `<notes topic="${s.title}">\n${s.notes}\n</notes>`).join("\n\n");
   const steer = opts.note
     ? `\n<ceo_note>${opts.note}</ceo_note>\nThe founder read the first report and wrote this note. Rewrite the report with that focus${opts.focus?.length ? `, above all the ${opts.focus.map((f) => BLOCK_LIBRARY[f].label).join(" and ")} section${opts.focus.length > 1 ? "s" : ""}` : ""}. Use only the research notes below; no new facts.`
     : "";
   return `Business idea: <idea>${idea}</idea>${steer}
 
-Write the complete founder report.${priceHints(idea).length ? `\nArithmetic from the idea's own price (done in code):\n${priceHints(idea).map((h) => `- ${h}`).join("\n")}` : ""}
+Write the complete founder report.${hints.length ? `\nArithmetic from the idea's own price (done in code):\n${hints.map((h) => `- ${h}`).join("\n")}` : ""}${bchOnly ? `\nThe idea prices in Bitcoin Cash: any ${code} figure for its price is an estimate; say so.` : ""}
 Research notes (the [S#] ids are the only sources you may cite):
 ${notes}
 
 Structure, in this order:
-# Founder report: <what and where, 4-8 words>
+# Founder report: ${kind === "online" ? "<what and who it is for, 4-8 words>" : "<what and where, 4-8 words>"}
 ## Executive summary
 5-7 sentences: the opportunity, the strongest evidence for and against, and the money picture with the break-even figure. No verdict here.
 ## Verdict
@@ -562,15 +623,15 @@ ${BLOCK_IDS.map((b) => `## ${BLOCK_LIBRARY[b].label}`).join("\n")}
 
 ${SECTION_SPEC}
 
-${ECON_SPEC}
+${ECON_SPEC(code, kind)}
 
-${FIXES}`;
+${FIXES(kind)}`;
 }
 
 // ───────────────────────────────────────────────────────────── the call
 
 const VERDICT_TALK = /\bverdict\b|\bno[- ]go\b|\bgo with conditions\b|\bconditional go\b|\bGO\b|\bPIVOT\b/;
-const sentencesOf = (t: string) => t.split(/(?<=[.!?])\s+(?=[A-Z0-9(“"€*])/).map((x) => x.trim()).filter(Boolean);
+const sentencesOf = (t: string) => t.split(/(?<=[.!?])\s+(?=[A-Z0-9(“"€$£*])/).map((x) => x.trim()).filter(Boolean);
 const flatText = (t: string) => noCites(strip(t)).toLowerCase().replace(/[^a-z0-9€]+/g, " ").trim();
 
 /** Pure: the one verdict sentence the executive summary carries, written in code from the computed verdict. */
@@ -669,6 +730,7 @@ export function econSummary(f: Pick<Finalized, "econ">, sources: readonly Report
     breakEven: c.be,
     startupCapital: capOk ? r2(c.cap) : null,
     ...(miss.length ? { missing: miss } : {}),
+    ...(f.econ.currency && f.econ.currency !== "EUR" ? { currency: f.econ.currency } : {}),
     lines: [...(e.variable_costs_per_unit ?? []).map(line("variable")), ...(e.fixed_monthly_costs ?? []).map(line("fixed")), ...(e.startup_costs ?? []).map(line("startup"))].slice(0, 30),
   };
 }
@@ -867,8 +929,12 @@ export async function writeReport(
   let fromNotes = false;
   let accessed: string | undefined;
   let notesText: string | undefined;
+  // one currency per report, from the idea (prepared samples and the examples are all in euros)
+  let code = currencyOf(idea).code;
+  const kind = businessKind(idea);
   if (config.mockAi) {
     const classic = v7SampleFor(idea);
+    if (classic) code = "EUR";
     const sample = classic ? REPORT_SAMPLES[classic.key] : undefined;
     const fromClassic = !sample && classic ? sampleMarkdown(classic) : null;
     raw = sample?.writer ?? fromClassic?.raw ?? genericMock(idea);
@@ -885,7 +951,7 @@ export async function writeReport(
     const labelled = labelResearch(research);
     sources = labelled.sources;
     notesText = labelled.sections.map((x) => x.notes).join("\n");
-    const prompt = writerPrompt(idea, labelled.sections, opts);
+    const prompt = writerPrompt(idea, labelled.sections, { ...opts, code, kind });
     try {
       raw = await callWriter(prompt, opts.budget, say).catch((e) => {
         if (e instanceof BudgetError) throw e;
@@ -900,7 +966,7 @@ export async function writeReport(
       fromNotes = true;
     }
   }
-  const fin = finalizeReport(raw, sources);
+  const fin = finalizeReport(raw, sources, code);
   if (fin.invalidCites) console.warn(`[report] removed ${fin.invalidCites} citation(s) not in the source list`);
   if (fin.econErr && !fromNotes) console.warn(`[report] econ: ${fin.econErr}`);
   const out = parseReport(fin.md, { idea, meta: fin.meta, sources, ...(accessed ? { accessed } : {}) });

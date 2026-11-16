@@ -19,7 +19,9 @@ export function bePace(v: View): { n: number; dec: number; per: "day" | "month";
   const S = v.sam!, X = v.sam6;
   const day = X?.be?.per_day ?? S.breakeven_units_per_day;
   const hr = X?.headroom;
-  if (day >= 1 || !X?.be?.per_month) return { n: day, dec: day < 10 && day % 1 ? 1 : 0, per: "day", m12: hr ? hr.m12_per_day : null };
+  // a subscription break-even is a number of paying subscribers a month, never "3.1 a day"
+  const monthly = /paying subscribers/.test(X?.be?.formula ?? "");
+  if ((day >= 1 && !monthly) || !X?.be?.per_month) return { n: day, dec: day < 10 && day % 1 ? 1 : 0, per: "day", m12: hr ? hr.m12_per_day : null };
   const k = X.be.per_month / (day || 1);
   return { n: X.be.per_month, dec: 0, per: "month", m12: hr ? Math.round(hr.m12_per_day * k) : null };
 }
