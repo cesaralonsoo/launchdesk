@@ -1,9 +1,12 @@
 import type { Stage } from "./types.js";
 
-try {
-  process.loadEnvFile?.(".env");
-} catch {
-  /* no .env: use the real environment */
+// Local .env first, then Render's secret file (/etc/secrets/.env). Neither overrides variables already set.
+for (const file of [".env", "/etc/secrets/.env"]) {
+  try {
+    process.loadEnvFile?.(file);
+  } catch {
+    /* file missing: use the real environment */
+  }
 }
 
 const env = process.env;
