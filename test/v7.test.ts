@@ -640,5 +640,119 @@ assert.equal(data.brandSignOf(data.SAMPLE_V7)?.name, "Pausa");
   assert.ok(Math.abs(derived.breakeven_units_per_day * days - esUsd!.breakEven!) <= 1, `Sam's break-even pace (${derived.breakeven_units_per_day}/day × ${days}) matches the report's ${esUsd!.breakEven}`);
 }
 
+// q3 (report side): citations, custody, dates, the memo's problem line
+{
+  const rp = await import("../server/report-v7.js");
+  const bl = await import("../server/blocks-v7.js");
+  const br = await import("../server/v7-bridge.js");
+  const { REPORT_SAMPLES } = await import("../server/v7-samples.js");
+  const ids = (md: string) => [...new Set([...md.replace(/\n## Sources[\s\S]*$/, "").matchAll(/\bS(\d+)\b/g)].map((m) => Number(m[1])))];
+  const listed = (md: string) => [...(/\n## Sources\n([\s\S]*)$/.exec(md)?.[1] ?? "").matchAll(/^- \[S(\d+)\]/gm)].map((m) => Number(m[1]));
+
+  // 1. a new report: no claim cites an unlisted page, and the listed numbers run 1..N (val1 #6, val0 #9)
+  const srcs = Array.from({ length: 14 }, (_, i) => ({ id: `S${i + 1}`, url: `https://ex.org/${i + 1}`, title: `Page ${i + 1}` }));
+  const econ = { unit: "one settled bill", price_per_unit_gross: 0.8, vat_rate: 0, share_kept: 1, variable_costs_per_unit: [{ item: "network fee", amount: 0.01, source: "S11", quote: "" }], fixed_monthly_costs: [{ item: "hosting", amount: 50, source: "S30", quote: "" }], startup_costs: [{ item: "build", amount: 5000, source: "estimate", quote: "" }], scores: { money: 4 }, problem: "Friends argue over who owes what after a group dinner [S3]" };
+  const raw = `# Founder report: Split bills\n\n## Executive summary\n\nMost groups split [S3]. Licences cost a lot [S9, S22]. Fees are low (S11).\n\n## Competition & alternatives\n\n**Key numbers:**\n| figure | value | source |\n|---|---|---|\n| Splitwise Pro | $59.99 | S8 |\n| Free scans | 4 a day | S13 (conflicts with S40) |\n| Made up | 3 | S41 |\n\n## Money\n\n**Takeaway:** Thin [S3].\n\n\`\`\`econ\n${JSON.stringify(econ)}\n\`\`\`\n`;
+  const fin = rp.finalizeReport(raw, srcs, "USD", { renumber: true });
+  assert.deepEqual(fin.sources!.map((s) => s.id), ["S1", "S2", "S3", "S4", "S5"], "S1..N, no gaps");
+  assert.deepEqual(fin.sources!.map((s) => s.url), ["https://ex.org/3", "https://ex.org/9", "https://ex.org/11", "https://ex.org/8", "https://ex.org/13"], "numbered in order of first use");
+  assert.deepEqual(listed(fin.md), [1, 2, 3, 4, 5]);
+  for (const n of ids(fin.md)) assert.ok(listed(fin.md).includes(n), `S${n} is cited and listed`);
+  assert.match(fin.md, /Licences cost a lot \[S2\]\./, "an unknown id inside a group is dropped, the known one kept");
+  assert.match(fin.md, /Fees are low \(S3\)\./);
+  assert.match(fin.md, /\| Made up \| 3 \| estimate \|/, "an unknown bare id in a table becomes 'estimate'");
+  assert.match(fin.md, /\| Free scans \| 4 a day \| S5 \(conflicts with\) \|/);
+  assert.equal(fin.econ!.inputs.variable_costs_per_unit![0]!.source, "S3", "cost lines are renumbered the same way");
+  assert.equal(fin.econ!.inputs.fixed_monthly_costs![0]!.source, "estimate", "an unlisted cost source becomes an estimate");
+  assert.ok(fin.invalidCites >= 4);
+  assert.equal(fin.meta.problem, "Friends argue over who owes what after a group dinner.", "problem: one sentence, no [S#]");
+  assert.equal(rp.econSummary(fin, fin.sources!, "2026-11-16")!.lines!.find((l) => l.item === "network fee")!.source!.url, "https://ex.org/11", "econ summary follows the new ids");
+  // without the flag (anything that re-finalizes stored text) nothing is renumbered
+  const old = rp.finalizeReport(raw, srcs, "USD");
+  assert.equal(old.sources, undefined);
+  assert.match(old.md, /\| Splitwise Pro \| \$59\.99 \| S8 \|/);
+  // the whole demo pipeline: every cited id is listed, numbered 1..N
+  const bakery = REPORT_SAMPLES.bakery!;
+  const research = await Promise.all(v7.BLOCK_IDS.map((id) => bl.researchBlock(bakery.idea, id)));
+  const w = await rp.writeReport(bakery.idea, research);
+  const L = listed(w.md);
+  assert.deepEqual(L, L.map((_, i) => i + 1), "demo report sources run 1..N");
+  for (const n of ids(w.md)) assert.ok(L.includes(n), `demo report cites S${n}, which is listed`);
+  assert.equal(w.sources!.length, L.length);
+  assert.equal(w.econ?.computed.be, 195, "the money is unchanged");
+  assert.ok(rp.econSummary(w, w.sources ?? [], w.accessed)!.lines!.some((l) => l.source?.url), "cost lines still find their pages");
+
+  // 2. money-moving ideas: research and writer weigh a non-custodial BCH design; others do not get the hint
+  const split = "A split-the-bill app for friends at restaurants, free to use, 1% fee on settled bills, paid in Bitcoin Cash";
+  for (const i of [split, "A peer-to-peer payments app for street vendors", "A crypto wallet app for teenagers", "A marketplace for used climbing gear where buyers pay sellers"]) assert.ok(bl.movesMoney(i), i);
+  for (const i of [bakery.idea, "A specialty coffee kiosk at a Barcelona metro exit, €3 flat whites for commuters", "Handmade candles sold on Etsy marketplace", "A paid newsletter that teaches small online shops how to accept Bitcoin Cash, $8 a month"]) assert.ok(!bl.movesMoney(i), i);
+  assert.match(bl.researchPrompt(split, "risks", "online"), /non-custodial Bitcoin Cash design/);
+  assert.match(bl.researchPrompt(split, "money", "online"), /non-custodial/);
+  assert.doesNotMatch(bl.researchPrompt(split, "customers", "online"), /custodial/);
+  assert.doesNotMatch(bl.researchPrompt(bakery.idea, "risks"), /custodial/);
+  const wpSplit = rp.writerPrompt(split, [{ title: "Money", notes: "- x [S1]" }]);
+  assert.match(wpSplit, /Do not assume the app holds it: weigh a non-custodial Bitcoin Cash design/);
+  assert.ok(wpSplit.length - rp.writerPrompt(bakery.idea, [{ title: "Money", notes: "- x [S1]" }]).length < 1200, "a hint, not a lecture");
+  assert.doesNotMatch(rp.writerPrompt(bakery.idea, []), /custodial/);
+  // ... and every report: fee is not profit, past dates in the past tense, rounded market sizes, pass marks are targets
+  const wp = rp.writerPrompt(bakery.idea, []);
+  assert.match(wp, /never call the fee the profit/);
+  assert.ok(wp.includes(`Today is ${new Date().toISOString().slice(0, 10)}`) && /took effect on 1 July 2026", never "takes effect"/.test(wp));
+  assert.match(wp, /2-3 significant figures \("USD 1\.0 billion", not "USD 1\.00538 billion";/);
+  assert.match(wp, /\*Pass:\*" \(the pass\/fail threshold: a target the test must reach, never the report's current estimate restated\)/);
+  assert.match(wp, /"problem": ""/);
+
+  // 5. the memo's problem is the customer's problem, never the weak points, and never ends in "…."
+  const s0 = sampleResults(V7_SAMPLES.coffee);
+  const weak = { ...s0.report!, weaknesses: [{ text: "A secondary blog says 68% reject new apps; if it holds, it means each…", finding: "x" }, { text: "Fees are high.", finding: "y" }], strengths: [{ text: "Demand is real. If it holds, it means each…", finding: "z" }, { text: "Restaurant bills are split most.", finding: "w" }] };
+  const block = (takeaway: string) => ({ id: "customers" as const, role: "demand" as const, title: "Customers", focus: [], status: "done" as const, takeaway, score: 5, verdict: null, evidence: [], meaning: "", actions: [], sources: [] });
+  const withBrief: ResultsV7 = { ...s0, report: weak, blocks: [block("Splitting bills is common.")], brief: { title: "x", summary: "y", validateFirst: [], researchedAt: "2026-11-16", problem: "Friends argue over who owes what after dinner" } };
+  const m1 = br.memoFromV7("idea", withBrief);
+  assert.equal(m1.problem, "Friends argue over who owes what after dinner.");
+  assert.ok(!m1.problem.includes("68%") && !/…\.|\.\.$/.test(m1.insight) && !/…\./.test(m1.problem), m1.insight);
+  assert.equal(m1.insight, "Demand is real. Restaurant bills are split most.", "a cut sentence is dropped, not closed with '….'");
+  const m2 = br.memoFromV7("idea", { ...withBrief, brief: { ...withBrief.brief!, problem: undefined } });
+  assert.equal(m2.problem, "Splitting bills is common.", "no writer sentence: the Customers takeaway");
+  assert.equal(br.memoFromV7("idea", { ...s0, report: weak }).problem, "", "no blocks: nothing rather than the weak points");
+  for (const [a, b] of [["Done….", "Done…"], ["Done..", "Done."], ["Done", "Done."], ["Done?!", "Done?"], ["", ""]]) assert.equal(br.endSentence(a!), b);
+}
+
+// ───────────────────────────────────────────── q3 fixer: one money model, mixed citations, no "(?)" in the verdict
+{
+  const rp = await import("../server/report-v7.js");
+  // val1 mugs: owner pay and a per-mug labour line count the founder's time twice; the report now counts it once
+  const mug = { unit: "one mug", price_per_unit_gross: 38, vat_rate: 0, share_kept: 1, variable_costs_per_unit: [{ item: "clay and glaze", amount: 6, source: "estimate" }, { item: "your labour per mug", amount: 10, source: "estimate" }, { item: "Etsy fees", amount: 3.06, source: "estimate" }, { item: "shipping box", amount: 10, source: "estimate" }], fixed_monthly_costs: [{ item: "owner pay", amount: 1200, source: "estimate" }, { item: "studio share", amount: 600, source: "estimate" }], startup_costs: [{ item: "kiln", amount: 3200, source: "estimate" }] };
+  const fin = rp.finalizeReport(`# Founder report: Mugs\n\n## Money\n\nEach mug leaves {{CONTRIBUTION_PER_UNIT}}; break-even is {{BREAK_EVEN_UNITS}} mugs.\n\n\`\`\`econ\n${JSON.stringify(mug)}\n\`\`\`\n`, [], "USD");
+  assert.equal(Math.round(fin.econ!.computed.contrib * 100) / 100, 18.94, "labour once: 38 − 6 − 3.06 − 10");
+  assert.equal(fin.econ!.computed.be, 96);
+  assert.match(fin.md, /Each mug leaves \$18\.94; break-even is 96 mugs/);
+  assert.match(fin.md, /Your own making time is paid through "owner pay" in the fixed costs/);
+  assert.ok(!fin.econ!.inputs.variable_costs_per_unit!.some((x) => /labour/.test(x.item)));
+  // the kit (anchorSam) then finds nothing counted twice: same contribution
+  assert.equal(rp.labourOnce({ ...mug, variable_costs_per_unit: [{ item: "your labour per mug", eur: 10 }], fixed_monthly_costs: [{ item: "owner pay", eur: 1200 }] } as never), null, "labour the only unit cost: kept (no fake zero)");
+  assert.equal(rp.labourOnce({ ...mug, variable_costs_per_unit: [{ item: "clay", eur: 6 }, { item: "barista labour per drink", eur: 1 }], fixed_monthly_costs: [{ item: "owner pay", eur: 1200 }] } as never), null, "hired staff are kept");
+
+  // val0 bot: Telegram keeps 65%; the margin is over the price, as the money card shows (64%), never 98%
+  const bot = { unit: "one subscriber-month", price_per_unit_gross_eur: 5, vat_rate: 0, share_kept: 0.65, variable_costs_per_unit: [{ item: "server and messages", eur: 0.07 }], fixed_monthly_costs: [{ item: "tools", eur: 495 }], startup_costs: [{ item: "setup", eur: 100 }] };
+  const b = rp.computeEcon(bot as never, "USD");
+  assert.equal(b.vals.CONTRIBUTION_PER_UNIT, rp.computeEcon(bot as never, "USD").vals.CONTRIBUTION_PER_UNIT);
+  assert.equal(b.vals.CONTRIBUTION_MARGIN_PCT, "64%");
+  assert.equal(rp.computeEcon(bot as never, "EUR").vals.CONTRIBUTION_MARGIN_PCT, "98%", "EUR keeps its stored wording");
+
+  // val1 #7: "($0.20, S9)" is renumbered with the rest
+  const srcs = ["S1", "S5", "S8", "S9"].map((id) => ({ id, url: `https://x.org/${id}`, title: id }));
+  const rn = rp.renumberCites("Demand [S5]. Listing fee ($0.20, S9), payment charge ($0.25, S8; S77). Unknown (note, S77).", srcs);
+  assert.equal(rn.md, "Demand [S1]. Listing fee ($0.20, S2), payment charge ($0.25, S3). Unknown (note).");
+
+  // val0 #5: the evidence tag "(?)" is not part of the verdict sentence
+  assert.equal(rp.verdictSentence("pivot", 5.5, "The research found no Telegram tax-reminder competitors (?)."), "Verdict: Test first (score 5.5/10). Main reason: The research found no Telegram tax-reminder competitors.".replace("Test first", (rp.verdictSentence("pivot", 5.5).match(/Verdict: ([^(]+) \(/) ?? [])[1]!));
+
+  // pass marks the month's test can produce; rounded counts; ratio words that match the arithmetic
+  const wp = rp.writerPrompt("A Telegram bot that sends daily crypto tax reminders to freelancers, $5 a month", []);
+  assert.match(wp, /scaled to its size \(20 people cannot log 2,000 loans in a month\), never the break-even or a figure "within six months"/);
+  assert.match(wp, /"about 93,000 listings", not "92,847"/);
+  assert.match(wp, /"double" is 2×/);
+}
+
 void (null as unknown as IdeaReport);
 console.log("v7 invariants: all passed");

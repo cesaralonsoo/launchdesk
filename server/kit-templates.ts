@@ -31,6 +31,51 @@ function aboutLine(name: string, kind: BizKind, city: string): string {
   return `${what} We start with one simple offer and grow from what you tell us.`;
 }
 
+/** Website copy for a free early-access list: nothing is sold up front, so no price, no payment, one email form. */
+function waitlistSite(input: KitInput, kind: BizKind): ModelSite {
+  const { brand } = input;
+  const city = brand.city ?? "";
+  const near = city ? ` in ${city}` : "";
+  const headline = trimDot(brand.tagline) || `${brand.name} is almost ready`;
+  const sub = `${brand.name} is getting ready${near}. Join the free early-access list and be the first to try it.`;
+  return {
+    seo: { title: `${brand.name}${brand.tagline ? ` · ${trimDot(brand.tagline)}` : ""}`, description: sub },
+    hero: { eyebrow: city ? `${brand.name} · ${city}` : brand.name, headline, sub, cta: "Join the list", secondary: "How it works" },
+    offer: { title: "Early access", item: "Free early access", bullets: ["Free to join", "Be among the first to try it", "One email when it opens"], note: "Nothing to pay now." },
+    how: {
+      title: "How it works",
+      steps: [
+        { icon: "check", title: "See what it does", body: "Everything is explained on this page, in plain words." },
+        { icon: "mail", title: "Join the list", body: "Leave your email. It takes a few seconds and costs nothing." },
+        { icon: "rocket", title: "Be first in", body: "We email you once when early access opens." },
+      ],
+    },
+    services: {
+      title: "What you get",
+      intro: brand.tagline ? trimDot(brand.tagline) + "." : "",
+      items: [
+        { icon: "check", title: "Free to join", body: "Joining the list costs nothing and you can leave at any time." },
+        { icon: "chat", title: "A real person", body: "Write to us and the founder answers." },
+        { icon: "lock", title: "Your email stays private", body: "We use it only to tell you when early access opens." },
+      ],
+    },
+    about: { title: `About ${brand.name}`, body: aboutLine(brand.name, kind === "pets" || kind === "local" ? kind : "online", city) },
+    local: { title: "", body: "", area: "", hours: "" },
+    faq: {
+      title: "Questions",
+      items: [
+        { q: "Does it cost anything to join?", a: "No. Joining the list is free, and you can leave at any time." },
+        { q: "What happens after I join?", a: "We email you once when early access opens. Nothing else." },
+        { q: "Is this a real business?", a: `Yes. ${brand.name} is just starting, and the first people on the list help shape it.` },
+      ],
+    },
+    proof: { title: "", picks: [] },
+    order: ["how-it-works-for-customer", "menu-or-services", "offer", "about", "faq"],
+    finalCta: { headline: "Be one of the first", sub: "Join the list and we will email you when it opens.", cta: "Join the list" },
+    footer: { tagline: brand.tagline || brand.name },
+  };
+}
+
 /** Website copy (the shape the website writer returns). */
 export function templateSite(input: KitInput): ModelSite {
   const { brand, report } = input;
@@ -108,6 +153,7 @@ export function templateSite(input: KitInput): ModelSite {
       ],
     },
   }[kind];
+  if (report.offer.free) return waitlistSite(input, kind);
   const sub = `${cap(what)}${near}. Reserve now from your phone, it takes a minute.`;
   return {
     seo: { title: `${brand.name}${brand.tagline ? ` · ${trimDot(brand.tagline)}` : ""}`, description: sub },
@@ -135,8 +181,53 @@ export function templateSite(input: KitInput): ModelSite {
 
 /** A 30-day plan (PlanV2) with no outside sources: only actions the founder controls and goals they set. */
 export function templatePlan(input: KitInput): PlanV2 {
+  // a free early-access list is for an app or service people sign up to online: online channels, never a shop window
+  return input.report.offer.free ? waitlistPlan(basePlan(input, "online"), input) : basePlan(input);
+}
+
+/** Plain-text rewrites for a free early-access list: nothing is reserved or paid, people join the list. */
+const TO_WAITLIST: Array<[RegExp, string]> = [
+  [/\bAdd up reservations and payments\b/g, "Add up sign-ups"],
+  [/\bReservations are open on the website\b/g, "The early-access list is open on the website"],
+  [/\bpaid reservations\b/gi, "early-access sign-ups"],
+  [/\breservations\b/gi, "sign-ups"],
+  [/\bthe reserve link\b/gi, "the sign-up link"],
+  [/\bReserve yours from the link\b/g, "Join the list from the link"],
+  [/\bReserve from the link\b/g, "Join the list from the link"],
+  [/\bwho reserved\b/gi, "who joined"],
+  [/\bcan find you and reserve\b/gi, "can find you and join the list"],
+  [/\bReserve from your phone in a minute\b/g, "Join the free list in seconds"],
+  [/\bReserve online and pay from your phone\b/g, "Join the free early-access list online"],
+  [/\bthe launch offer ends soon\b/gi, "early access opens soon"],
+];
+function waitlistPlan(plan: PlanV2, input: KitInput): PlanV2 {
+  const name = input.brand.name;
+  const goalN = plan.goal.target;
+  const fix = (t: string) => TO_WAITLIST.reduce((x, [re, to]) => x.replace(re, to), t);
+  const out = JSON.parse(JSON.stringify(plan), (_k, v) => (typeof v === "string" ? fix(v) : v)) as PlanV2;
+  out.goal = { ...out.goal, metric: "early-access sign-ups", unit: "people", why: "A goal you set for yourself: enough people asking for it to know they really want it.", how_counted: "Count the emails left on your website's list." };
+  out.headline = out.headline.replace(/customers/, "sign-ups");
+  out.kpis = [
+    { name: "Early-access sign-ups", target: `${goalN} by day 30`, how_to_count: "Emails left on your website.", count_from: "website" },
+    ...out.kpis.filter((k) => k.count_from !== "bch payments" && k.count_from !== "website"),
+  ];
+  const near = input.brand.city ? ` in ${input.brand.city}` : "";
+  const who = decap(trimDot(input.report.customer || "the people it is for"));
+  out.copy.posts = out.copy.posts.map((x, i) =>
+    i === 0 ? { ...x, hook: `${name} is almost ready${near}.`, body: `Made for ${who}. Join the free early-access list to try it first.` }
+    : i === 2 ? { ...x, hook: "Early access opens soon.", body: `If you want to try ${name} first, join the list now. Joining is free.` } : x);
+  out.copy.message = `Hi! I am starting ${name}${near}. Early access is free: would you join the list, or pass it on to someone who might? Here is the link:`;
+  out.copy.flyer = { ...out.copy.flyer, lines: [trimDot(input.brand.tagline) || `${name} is almost ready`, ...out.copy.flyer.lines.slice(1)] };
+  out.copy.profile = `${name}${near}. ${input.brand.tagline ? trimDot(input.brand.tagline) + ". " : ""}Join the free early-access list online.`;
+  out.copy.press = `${name} is getting ready to launch${near}. The founder started it for ${who}. The free early-access list is open on the website.`;
+  out.copy.email = { subject: `Thanks for joining ${name}`, body: `Hi,\n\nThank you for joining the early-access list for ${name}. Joining is free. We will email you once when early access opens.\n\nReply to this email with any question, I read every one.\n\nThank you,\nThe founder` };
+  out.decision = { ...out.decision, scale_if: `You reach ${goalN} sign-ups and people ask when they can start.`, adjust_if: "People look but few join: change the message or the page." };
+  return out;
+}
+
+function basePlan(input: KitInput, kindOverride?: BizKind): PlanV2 {
   const { brand, report } = input;
-  const kind = kindOf(input);
+  const kind = kindOverride ?? kindOf(input);
   const city = brand.city ?? "";
   const what = trimDot(report.offer.what || input.idea);
   const who = decap(trimDot(report.customer || "your first customers"));

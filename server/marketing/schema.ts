@@ -174,7 +174,7 @@ export function cleanPlan(raw: unknown, sources: readonly PlanSource[], ctx: { l
   }).sort((a: any, b: any) => a.amount - b.amount);
   if (tiers.length !== 3) warnings.push(`${tiers.length} budget tiers`);
 
-  const weeks = (Array.isArray(r.weeks) ? r.weeks : []).slice(0, 4).map((w: any, i: number) => ({
+  const weeks0 = (Array.isArray(r.weeks) ? r.weeks : []).slice(0, 4).map((w: any, i: number) => ({
     n: i + 1,
     theme: clean(w?.theme, 60),
     aim: noMarks(clean(w?.aim, 200)),
@@ -183,6 +183,7 @@ export function cleanPlan(raw: unknown, sources: readonly PlanSource[], ctx: { l
       .filter((d: any) => d.action)
       .sort((a: any, b: any) => a.day - b.day),
   }));
+  const weeks = checksAfterInputs(weeks0, warnings);
   if (weeks.length !== 4) warnings.push(`${weeks.length} weeks`);
 
   let kpis = (Array.isArray(r.kpis) ? r.kpis : []).map((k: any) => ({ name: clean(k?.name, 80), target: clean(k?.target, 60), how_to_count: noMarks(clean(k?.how_to_count, 200)), count_from: (["bch payments", "website", "by hand"].includes(k?.count_from) ? k.count_from : "by hand") as CountFrom })).filter((k: any) => k.name);
@@ -192,7 +193,7 @@ export function cleanPlan(raw: unknown, sources: readonly PlanSource[], ctx: { l
   const posts = (Array.isArray(c.posts) ? c.posts : []).slice(0, 3).map((p: any) => {
     const body = cleanBlock(p?.body, 900);
     if (words(body) > COPY_LIMITS.postWords) warnings.push(`post "${clean(p?.channel, 30)}" over ${COPY_LIMITS.postWords} words, trimmed`);
-    return { channel: clean(p?.channel, 40), hook: clean(p?.hook, 140), body: capWords(body, COPY_LIMITS.postWords), cta: clean(p?.cta, 120) };
+    return { channel: clean(p?.channel, 60), hook: clean(p?.hook, 140), body: capWords(body, COPY_LIMITS.postWords), cta: clean(p?.cta, 120) };
   });
   const emailBody = cleanBlock(c.email?.body, 1400);
   const profile = clean(c.profile, 2000);
@@ -249,6 +250,77 @@ export function cleanPlan(raw: unknown, sources: readonly PlanSource[], ctx: { l
     decision: { scale_if: noMarks(clean(r.decision?.scale_if, 240)), adjust_if: noMarks(clean(r.decision?.adjust_if, 240)), stop_if: noMarks(clean(r.decision?.stop_if, 240)) },
   };
   return { plan, warnings };
+}
+
+type Week = PlanV2["weeks"][number];
+/** "Check 2:", "Comprobación nº 2 —": a calendar day that runs report check n (its task starts with the label). */
+const checkDayRe = (n: number) => new RegExp(`^\\s*(?:check|comprobaci[oó]n)\\s*(?:n[ºo.°]?\\s*|#\\s*)?${n}\\s*[:.,—–-]`, "i");
+/** Where a check day states its pass mark ("Pass mark: …", "Go ahead only if: …", "Se pasa si …"). */
+const PASS_AT = /\b(?:pass(?:es)? mark|pass(?:es)? if|passes with|go ahead only if|se pasa (?:si|con)|pasa si|marca para pasar)\b\s*:?\s*/i;
+
+/**
+ * A check can only be judged once the days that produce its result have happened: a "Check 2" day whose pass mark
+ * counts owner answers that a later day collects moves to the day after that one (detected by the pass mark sharing
+ * most of its key words with the later day's task). Then the checks keep the report's order: Check 1 is never after
+ * Check 2, and so on (a later check moves to the earlier one's day, after it). Days without "Check n:" never move.
+ */
+export function checksAfterInputs(weeks: Week[], warnings: string[] = []): Week[] {
+  const all = weeks.flatMap((w) => w.days);
+  const isCheck = (d: Day) => [1, 2, 3].some((n) => checkDayRe(n).test(d.action));
+  const moved = new Map<Day, number>();
+  let prev = 0;
+  for (const n of [1, 2, 3]) {
+    const d = all.find((x) => checkDayRe(n).test(x.action));
+    if (!d) continue;
+    let day = d.day;
+    const pass = PASS_AT.exec(d.action) ? d.action.slice(PASS_AT.exec(d.action)!.index + PASS_AT.exec(d.action)![0].length) : "";
+    const k = keyWords(pass).length;
+    if (k >= 3) {
+      const need = Math.max(3, Math.ceil(k * 0.4));
+      // a day that names a check anywhere ("… Check 1 passes only if …") is that check's own measurement, not an input
+      const deps = all.filter((x) => x !== d && !isCheck(x) && ![1, 2, 3].some((m) => checkMark(m).test(x.action)) && x.day > d.day && overlap(pass, x.action) >= need).map((x) => x.day);
+      if (deps.length) {
+        const after = Math.min(30, Math.max(...deps) + 1);
+        if (after > day) { warnings.push(`check ${n} moved from day ${d.day} to day ${after}: its pass mark needs the result of day ${Math.max(...deps)}`); day = after; }
+      }
+    }
+    if (day < prev) { warnings.push(`check ${n} moved from day ${day} to day ${prev}: checks stay in the report's order`); day = prev; }
+    if (day !== d.day) moved.set(d, day);
+    prev = day;
+  }
+  if (!moved.size) return weeks;
+  // a moved day goes to the week that covers its new day number, after that day's other tasks
+  const out = weeks.map((w) => ({ ...w, days: w.days.filter((d) => !moved.has(d)) }));
+  const lastDay = (w: Week) => Math.max(0, ...w.days.map((d) => d.day));
+  for (const [d, day] of moved) {
+    const wi = out.findIndex((w, i) => i === out.length - 1 || lastDay(w) >= day);
+    out[Math.max(0, wi)]!.days.push({ ...d, day });
+  }
+  return out.map((w) => ({ ...w, days: [...w.days].sort((a, b) => a.day - b.day) }));
+}
+
+/**
+ * New plans only (planMarketing, never a saved plan): each budget tier's lines add up to at most the tier minus the
+ * reserve it keeps aside. Lines are listed by priority, so the cut comes from the last line up; a line cut to 0 is
+ * dropped (a line that was 0 on purpose, "time only", stays).
+ */
+export function fitReserve(plan: PlanV2, warnings: string[] = []): PlanV2 {
+  const pct = Math.max(0, Math.min(100, plan.budget.reserve_pct || 0));
+  const tiers = plan.budget.tiers.map((t) => {
+    const cap = Math.floor(t.amount * (1 - pct / 100));
+    const sum = t.lines.reduce((s, l) => s + l.amount, 0);
+    if (sum <= cap) return t;
+    let over = sum - cap;
+    const lines = t.lines.map((l) => ({ ...l }));
+    for (let i = lines.length - 1; i >= 0 && over > 0; i--) {
+      const cut = Math.min(lines[i]!.amount, over);
+      lines[i]!.amount = Math.round((lines[i]!.amount - cut) * 100) / 100;
+      over -= cut;
+    }
+    warnings.push(`budget tier ${t.amount}: lines added up to ${sum}, more than ${cap} after the ${pct}% reserve; cut from the last line`);
+    return { ...t, lines: lines.filter((l, i) => l.amount > 0 || t.lines[i]!.amount === 0) };
+  });
+  return { ...plan, budget: { ...plan.budget, tiers } };
 }
 
 /** The source numbers a plan really uses (the view lists only these). */
@@ -310,10 +382,10 @@ export function garbled(s: string): boolean {
 
 /** Which copy text implies which kind of channel; a day that uses it under an unrelated label is relabelled. */
 const COPY_CHANNEL: Partial<Record<CopyRef, { re: RegExp; en: string; es: string }>> = {
-  profile: { re: /google|maps|profile|listing|perfil|ficha/i, en: "Google Business Profile", es: "Perfil de Google" },
-  email: { re: /e-?mail|newsletter|waitlist|list|correo|lista/i, en: "Email to your list", es: "Email a tu lista" },
+  profile: { re: /google|maps|profile|listing|perfil|ficha|shop page|about section|\bbio\b|description|descripci[oó]n/i, en: "Google Business Profile", es: "Perfil de Google" },
+  email: { re: /e-?mail|newsletter|waitlist|list|correo|lista|buyers?\b|subscribers?\b|compradores|suscriptores/i, en: "Email to your list", es: "Email a tu lista" },
   press: { re: /press|newsletter|media|paper|journal|prensa|medios|blog/i, en: "Local press", es: "Prensa local" },
-  message: { re: /whatsapp|message|friends|network|word of mouth|contacts|mensaje|amigos|boca/i, en: "Personal messages", es: "Mensajes personales" },
+  message: { re: /whatsapp|message|friends|network|word of mouth|contacts|mensaje|amigos|boca|survey|questions?\b|interview|nudge|\bask\b|\bdms?\b|direct|encuesta|pregunta|entrevista/i, en: "Personal messages", es: "Mensajes personales" },
 };
 
 /**
@@ -343,7 +415,8 @@ export function saneDays(plan: PlanV2, fallback: readonly Day[], warnings: strin
       // a channel the plan chose, with a task that does not name the copy's kind: the copy reference is the mistake
       warnings.push(`day ${d.day}: the ${d.copy} text dropped (it does not fit "${channel}")`);
       return { ...d, channel, action, copy: null };
-    } else if (rule && !rule.re.test(channel)) {
+    } else if (rule && !rule.re.test(channel) && !(names.includes(channel) && overlap(channel, action) >= 1 && overlap(`${rule.en} ${rule.es}`, action) === 0)) {
+      // (a plan channel the task itself names, "List 6 mugs on Etsy" under "Etsy shop test", keeps its label)
       const named = names.find((n) => rule.re.test(n));
       const to = named ?? (lang ? rule[lang] : null);
       if (to && to !== channel) { warnings.push(`day ${d.day}: channel "${channel}" relabelled "${to}" (the task uses the ${d.copy} text)`); channel = to; }
@@ -369,6 +442,7 @@ export function gateReason(r: string | undefined): string {
   return String(r ?? "")
     .replace(/^\s*(?:test first|no-go|go|pivot)\s*[:.—–-]\s*/i, "")
     .replace(/\s*\[S\d+\]/g, "")
+    .replace(/\s*\(\?\)/g, "")
     .replace(/\s*[;,]\s*no source (?:id|cited)\b/gi, "")
     .replace(/\s*\((?=[^()]*(?:\.(?:com|org|net|es|cat|eu|io|guide|info)\b|\bundated\b|\b(?:19|20)\d{2}\s*(?:;\s*estimate)?\)))[^()]{1,90}\)/gi, "")
     .replace(/\s+([.,;:])/g, "$1")

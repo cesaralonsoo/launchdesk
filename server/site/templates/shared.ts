@@ -145,8 +145,14 @@ export const BCH_COIN = `<svg width="18" height="18" viewBox="0 0 100 100" aria-
 
 /** The primary "Reserve with BCH" button (a link to the sheet; JS opens it without a jump). */
 /** No reserve address (no founder wallet, or a read-only example): no button, since there is no sheet to open. */
-export const reserveBtn = (c: RenderCtx, label = reserveLabel(c), cls = "btn btn-p") =>
-  c.spec.reserve.address ? `<a class="${cls}" href="#reserve" data-reserve>${BCH_COIN}<span>${esc(label)}</span></a>` : "";
+/** A free early-access list: the same button, no coin, taking people to the email form in the offer section (none
+ *  where the form already sits next to it: pass nearForm). */
+export const reserveBtn = (c: RenderCtx, label = reserveLabel(c), cls = "btn btn-p", nearForm = false) =>
+  c.spec.reserve.address
+    ? `<a class="${cls}" href="#reserve" data-reserve>${BCH_COIN}<span>${esc(label)}</span></a>`
+    : c.spec.reserve.waitlist && !nearForm
+      ? `<a class="${cls}" href="#offer"><span>${esc(label === c.ui.reserve ? c.ui.joinList : label)}</span></a>`
+      : "";
 
 /** Price block: "€29  normally €39" + "Only 100 available". */
 export function priceLine(c: RenderCtx): string {

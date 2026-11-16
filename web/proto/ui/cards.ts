@@ -25,6 +25,11 @@ export function bePace(v: View): { n: number; dec: number; per: "day" | "month";
   const k = X.be.per_month / (day || 1);
   return { n: X.be.per_month, dec: 0, per: "month", m12: hr ? Math.round(hr.m12_per_day * k) : null };
 }
+/** "93 paying subscribers" for a subscription, "12 sales a month" / "186 sales a day" otherwise. */
+export function paceWords(v: View, n: number): string {
+  const p = bePace(v);
+  return /paying subscribers/.test(v.sam6?.be?.formula ?? "") ? `${n.toLocaleString("en-US")} paying subscribers` : `${n.toLocaleString("en-US")} sales a ${p.per}`;
+}
 export const est = (on = true) => (on ? `<span class="est" title="Estimate: an assumption, not a measured fact">Est.</span>` : "");
 const src = (v: View, id: number | null) => {
   const s = id != null ? v.leo?.sources.find((x) => x.id === id) : null;
@@ -229,8 +234,8 @@ function sam(v: View): { tabs: Array<[string, string]>; body: string } {
   const back = cashBack(v);
   const cashTxt = money(S.currency, S.cash_needed.value);
   const take = S.break_even.month != null
-    ? `Profitable from month ${S.break_even.month} at ${bePace(v).n.toLocaleString("en-US")} sales a ${bePace(v).per}. Your ${cashTxt} is back ${back.words}.`
-    : `Not profitable within 12 months: below ${bePace(v).n.toLocaleString("en-US")} sales a ${bePace(v).per} it loses money every month.`;
+    ? `Profitable from month ${S.break_even.month} at ${paceWords(v, bePace(v).n)}. Your ${cashTxt} is back ${back.words}.`
+    : `Not profitable within 12 months: below ${paceWords(v, bePace(v).n)} it loses money every month.`;
   const m12cash = S.months[S.months.length - 1]?.cash ?? 0;
   const sum = `
     <div class="c-hero hero-row hero-stack" data-st>
@@ -253,10 +258,12 @@ function sam(v: View): { tabs: Array<[string, string]>; body: string } {
   const u = X?.unit;
   const hr = X?.headroom;
   const pace = bePace(v);
+  const subs = /paying subscribers/.test(X?.be?.formula ?? "");
   const be = `
     <div class="c-hero hero-row">
-      <div class="h-num"><b class="big">${num(pace.n, pace.dec)}</b><span>sales a ${pace.per}<br/>to break even</span></div>
-      ${hr && pace.m12 != null ? `<div class="h-meta"><span>Month-12 plan</span><span><b>${num(pace.m12)}</b> a ${pace.per} · <b>${hr.multiple.toFixed(1)}×</b></span></div>` : ""}
+      <div class="h-num"><b class="big">${num(pace.n, pace.dec)}</b><span>${subs ? "paying subscribers" : `sales a ${pace.per}`}<br/>to break even</span></div>
+      ${hr && pace.m12 != null ? `<div class="h-meta"><span>Month-12 plan</span><span><b>${num(pace.m12)}</b> ${subs ? "subscribers" : `a ${pace.per}`} · <b>${hr.multiple.toFixed(1)}×</b></span></div>` : ""}
+      ${subs && /by month 12/.test(hr?.note ?? "") ? `<p class="basis">${I.info(13)}<span>${esc(hr?.note ?? "")}</span></p>` : ""}
     </div>
     ${hr && pace.m12 != null ? `<div class="headroom" style="--be:${(hr.breakeven_per_day / hr.m12_per_day).toFixed(3)}"><span class="hr-bar"><i></i><b></b></span><div class="hr-l"><span>0</span><span class="hr-be">Break-even ${pace.n.toLocaleString("en-US")}</span><span>Plan ${pace.m12.toLocaleString("en-US")}</span></div></div>` : ""}
     ${X?.be ? `<div class="math"><span class="lbl">The maths</span><code>${esc(X.be.formula)}</code></div>` : ""}
@@ -279,7 +286,9 @@ function sam(v: View): { tabs: Array<[string, string]>; body: string } {
       <div class="tr-ax"><span></span><span class="tr-axb"><span>${esc(money(S.currency, lo))}</span><span class="tr-z">${esc(S.currency)}0</span><span>${esc(money(S.currency, hi))}</span></span></div>
     </div>
     <ul class="sens-lines">${sens.map((r) => `<li>${esc(r.line)}</li>`).join("")}</ul>
-    ${X?.offer ? `<div class="callout"><span class="lbl">Launch offer</span><p><b>${esc(X.offer.display)}</b> instead of ${esc(X.offer.normal_display)} for the first ${X.offer.limit}: still ${esc(X.offer.contribution_display)} left each, ${esc(X.offer.revenue_display)} if they sell out.</p></div>` : ""}` : "";
+    ${X?.offer ? (X.offer.price > 0
+      ? `<div class="callout"><span class="lbl">Launch offer</span><p><b>${esc(X.offer.display)}</b> instead of ${esc(X.offer.normal_display)} for the first ${X.offer.limit}: still ${esc(X.offer.contribution_display)} left each, ${esc(X.offer.revenue_display)} if they sell out.</p></div>`
+      : `<div class="callout"><span class="lbl">Launch offer</span><p><b>${esc(X.offer.item)}</b>: a free early-access list. Nothing is charged before launch; sign-ups show who wants it.</p></div>`) : ""}` : "";
   const tabs: Array<[string, string]> = [["sum", "Summary"], ["be", "Break-even"]];
   if (matters) tabs.push(["sens", "Drivers"]);
   tabs.push(["asm", "Inputs"]);
@@ -332,7 +341,9 @@ export function sitePreview(v: View, full = false, bullets = false): string {
   const cur = v.sam?.currency ?? "";
   const O = v.sam6?.offer;
   const goal = v.preorderGoal;
-  const offer = O
+  // a free early-access list (price 0) has no price to strike through and takes no payment
+  const freeList = !!O && !(O.price > 0);
+  const offer = O && !freeList
     ? `<div class="site-offer"><div><b>${esc(O.display)}</b><s>${esc(O.normal_display)}</s></div><span>${esc(L.offer)}</span></div>`
     : `<div class="site-offer"><span>${esc(L.offer)}</span></div>`;
   // WP4: no fake "0 / goal" bar and no refund promise (nothing enforces either).
@@ -353,7 +364,7 @@ export function sitePreview(v: View, full = false, bullets = false): string {
       ${bullets || full ? `<ul class="site-bul">${L.bullets.map((b) => `<li>${esc(b)}</li>`).join("")}</ul>` : ""}
       ${full ? `${offer}${gate}
       <div class="site-faq">${L.faq.map((f, i) => `<details${i === 0 ? " open" : ""}><summary>${esc(f.q)}</summary><p>${esc(f.a)}</p></details>`).join("")}</div>
-      <div class="site-foot"><span>${esc(L.where_when ?? v.brand?.name ?? "")}</span><span>Paid in Bitcoin Cash, straight to ${esc(v.brand?.name ?? "the founder")}'s wallet.</span></div>` : ""}
+      <div class="site-foot"><span>${esc(L.where_when ?? v.brand?.name ?? "")}</span><span>${freeList ? "Free to join: nothing is paid before launch." : `Paid in Bitcoin Cash, straight to ${esc(v.brand?.name ?? "the founder")}'s wallet.`}</span></div>` : ""}
     </div>
   </div>`;
 }
@@ -376,7 +387,9 @@ function dex(v: View): { tabs: Array<[string, string]>; body: string } {
     <div class="logo-row" data-st role="radiogroup" aria-label="Logo options">${D.logos.map((l, i) => `<button type="button" role="radio" aria-checked="${i === 0}" class="logo-cell${i === 0 ? " on" : ""}" data-logo="${i}" data-concept="${esc(l.concept)}" style="background:${v.pal("Background")}">${brandLogo(v, i, 15)}<span class="lc-k">${i === 0 ? "Chosen · " : ""}${kind(i)}</span></button>`).join("")}</div>
     <dl class="facts f2" data-st>
       ${fact("Landing headline", `<span class="dd-text" style="font-family:${stackOf(v.fonts.display)}">${esc(D.landing.headline)}</span>`)}
-      ${v.sam6?.offer
+      ${v.sam6?.offer && !(v.sam6.offer.price > 0)
+        ? fact("Launch offer", `<span class="dd-text">${esc(v.sam6.offer.item)}</span>`, "", "A free early-access list: nothing is charged before launch")
+        : v.sam6?.offer
         ? fact("Launch offer", `${esc(v.sam6.offer.display)}<small> · was ${esc(v.sam6.offer.normal_display)}</small>`, "", `First ${v.sam6.offer.limit} · ${v.sam6.offer.contribution_display} still left each`)
         : fact("Opening offer", `<span class="dd-text">${esc(D.landing.offer)}</span>`)}
     </dl>`;

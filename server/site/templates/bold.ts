@@ -80,7 +80,7 @@ function section(c: RenderCtx, s: Section): string {
     case "offer":
       return `<section class="sec" id="offer"><div class="wrap"><p class="lbl">${esc(c.ui.offer)}</p><h2 class="h2 rv">${esc(s.title)}</h2><div class="offer rv"><div><div><h3>${esc(s.item)}</h3><ul class="ticks">${s.bullets
         .map((b) => `<li>${icon("check", 18, 2.2)}<span>${esc(b)}</span></li>`)
-        .join("")}</ul>${s.note ? `<p class="note">${esc(s.note)}</p>` : ""}</div><div class="side">${priceLine(c)}${scarcity(c)}${reserveBtn(c)}${waitlist(c, "wl")}</div></div></div></div></section>`;
+        .join("")}</ul>${s.note ? `<p class="note">${esc(s.note)}</p>` : ""}</div><div class="side">${priceLine(c)}${scarcity(c)}${reserveBtn(c, undefined, undefined, true)}${waitlist(c, "wl")}</div></div></div></div></section>`;
     case "about":
       return `<section class="sec about"><div class="wrap"><p class="lbl">${esc(s.title)}</p><p class="big rv">${esc(s.body)}</p></div></section>`;
     case "local":
@@ -111,7 +111,7 @@ export function body(c: RenderCtx): string {
 <div class="ctas">${reserveBtn(c, s.hero.cta)}<a class="btn btn-g" href="${how ? "#how" : "#offer"}">${esc(s.hero.secondary)}</a></div>${scarcity(c)}</div>
 <div class="card glass hcard rv"><div class="top">${mark(c, 44)}<div><small>${esc(c.ui.offer)}</small><b>${esc(offer?.item ?? c.brand.name)}</b></div></div>${hero ? `<div class="big ph">${photoImg(hero, true)}</div>` : `<div class="big">${mark(c, 200)}</div>`}<div class="row">${priceLine(c)}${reserveBtn(c, c.ui.reserve, "btn btn-p btn-sm")}</div></div></div></section>
 ${s.sections.map((x, i) => (i === 1 ? photoBand(c) : "") + section(c, x)).join("\n")}${s.sections.length < 2 ? photoBand(c) : ""}
-<section class="sec final"><div class="wrap"><div class="card rv"><h2 class="h2">${esc(s.finalCta.headline)}</h2>${s.finalCta.sub ? `<p class="lead">${esc(s.finalCta.sub)}</p>` : ""}<div class="ctas">${reserveBtn(c, s.finalCta.cta)}</div>${waitlist(c, "wl2")}</div></div></section>
+<section class="sec final"><div class="wrap"><div class="card rv"><h2 class="h2">${esc(s.finalCta.headline)}</h2>${s.finalCta.sub ? `<p class="lead">${esc(s.finalCta.sub)}</p>` : ""}<div class="ctas">${reserveBtn(c, s.finalCta.cta, undefined, true)}</div>${waitlist(c, "wl2")}</div></div></section>
 </main>
 <footer><div class="wrap"><span class="brand">${mark(c, 24)}<span>${esc(c.brand.name)}</span></span><span>${esc(s.footer.tagline)}</span>${credit(c)}${photoCreditLine(c)}</div></footer>
 ${chrome(c)}`;

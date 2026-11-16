@@ -81,7 +81,7 @@ function section(c: RenderCtx, s: Section, banded: boolean): string {
     case "offer":
       return `${open("offer")}<div class="wrap"><div class="center"><p class="lbl">${icon("gift", 18)}${esc(c.ui.offer)}</p><h2 class="h2 rv">${esc(s.title)}</h2></div><div class="offer rv"><div><h3>${esc(s.item)}</h3><ul class="ticks">${s.bullets
         .map((b) => `<li>${icon("check", 18, 2.2)}<span>${esc(b)}</span></li>`)
-        .join("")}</ul>${s.note ? `<p class="note">${esc(s.note)}</p>` : ""}</div><div class="pcard">${priceLine(c)}${scarcity(c)}${reserveBtn(c)}${waitlist(c, "wl")}</div></div></div>${close}`;
+        .join("")}</ul>${s.note ? `<p class="note">${esc(s.note)}</p>` : ""}</div><div class="pcard">${priceLine(c)}${scarcity(c)}${reserveBtn(c, undefined, undefined, true)}${waitlist(c, "wl")}</div></div></div>${close}`;
     case "about":
       return `${open("", " about")}<div class="wrap"><div class="box rv">${mark(c, 120)}<div><p class="lbl">${esc(s.title)}</p><p class="big">${esc(s.body)}</p></div></div></div>${close}`;
     case "local":
@@ -104,7 +104,7 @@ export function body(c: RenderCtx): string {
 <div class="ctas">${reserveBtn(c, s.hero.cta)}<a class="btn btn-g" href="${how ? "#how" : "#offer"}">${esc(s.hero.secondary)}</a></div>${scarcity(c)}</div>
 <div class="art rv${hero ? " has-ph" : ""}"><span class="blob2">${BLOB}</span>${hero ? `<span class="wph">${photoImg(hero, true)}</span>` : `<span class="blob">${BLOB}</span>${mark(c, 220)}`}${stickers.map((st, i) => `<span class="stk s${i + 1}">${icon(st.icon, 18)}${esc(st.title)}</span>`).join("")}${c.price ? `<span class="stk pr">${esc(c.price)}</span>` : ""}</div></div></section>
 ${s.sections.map((x, i) => (i === 1 ? photoBand(c) : "") + section(c, x, i % 2 === 0)).join("\n")}${s.sections.length < 2 ? photoBand(c) : ""}
-<section class="final"><div class="wrap"><div class="box rv"><h2 class="h2">${esc(s.finalCta.headline)}</h2>${s.finalCta.sub ? `<p class="intro">${esc(s.finalCta.sub)}</p>` : ""}<div class="ctas">${reserveBtn(c, s.finalCta.cta)}</div>${waitlist(c, "wl2")}</div></div></section>
+<section class="final"><div class="wrap"><div class="box rv"><h2 class="h2">${esc(s.finalCta.headline)}</h2>${s.finalCta.sub ? `<p class="intro">${esc(s.finalCta.sub)}</p>` : ""}<div class="ctas">${reserveBtn(c, s.finalCta.cta, undefined, true)}</div>${waitlist(c, "wl2")}</div></div></section>
 </main>
 <footer><div class="wrap"><span class="brand">${mark(c, 28)}<span>${esc(c.brand.name)}</span></span><span>${esc(s.footer.tagline)}</span>${credit(c)}${photoCreditLine(c)}</div></footer>
 ${chrome(c)}`;

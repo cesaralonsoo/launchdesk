@@ -3,7 +3,7 @@
 // and the build prompts quote exactly the same score, verdict and evidence as the v7 report (one number everywhere).
 import type { LeoV6 } from "./ai.js";
 import type { LeoOpportunity, Memo, Source } from "./types.js";
-import { ROLE_LIBRARY, VERDICT_RULE_V7, VERDICT_WORD, capWords, isSourced, type Finding, type IdeaReport, type ResultsV7 } from "./v7.js";
+import { ROLE_LIBRARY, VERDICT_RULE_V7, VERDICT_WORD, capWords, fullSentences, isSourced, type Finding, type IdeaReport, type ResultsV7 } from "./v7.js";
 
 const SIGNALS: Array<[string, Array<string>]> = [
   ["Demand", ["demand", "market", "viability"]],
@@ -56,6 +56,24 @@ export function leoFromV7(v: ResultsV7): LeoOpportunity & LeoV6 {
   };
 }
 
+/** One closing mark per sentence: never "…." or "..". */
+export function endSentence(t: string): string {
+  const s = String(t ?? "").trim().replace(/\s+([.!?…])/g, "$1");
+  if (!s) return "";
+  if (/…\.+$/.test(s)) return s.replace(/…\.+$/, "…");
+  if (/[.!?]{2,}$/.test(s)) return s.replace(/([.!?])[.!?]+$/, "$1");
+  return /[.!?…]$/.test(s) ? s : `${s}.`;
+}
+
+/** The customer's problem (never the idea's weak points): the writer's own sentence on new reports, else the
+ *  Customers section's takeaway. */
+export function problemFor(v: ResultsV7): string {
+  const own = v.brief?.problem?.trim();
+  if (own) return endSentence(fullSentences(own, 40));
+  const take = v.blocks?.find((b) => b.id === "customers")?.takeaway?.trim();
+  return take ? endSentence(fullSentences(take, 40)) : "";
+}
+
 /** Mia's one-page memo, derived from the v7 report (no model call). Quotes the v7 score exactly. */
 export function memoFromV7(idea: string, v: ResultsV7): Memo {
   const r: IdeaReport = v.report!;
@@ -65,8 +83,8 @@ export function memoFromV7(idea: string, v: ResultsV7): Memo {
   const team = v.roster.map((a) => ROLE_LIBRARY[a.role].dept.toLowerCase()).join(", ");
   return {
     purpose: capWords(`Decide whether to put money into: ${idea}`, 24),
-    problem: r.weaknesses.slice(0, 2).map((w) => w.text.replace(/\.?$/, ".")).join(" "),
-    insight: r.strengths.slice(0, 2).map((s) => s.text.replace(/\.?$/, ".")).join(" "),
+    problem: problemFor(v),
+    insight: r.strengths.slice(0, 2).map((s) => endSentence(fullSentences(s.text, 40))).filter(Boolean).join(" "),
     verdict_line: `${r.score.toFixed(1)}/10 · ${line} (team: ${team}).`,
     next_7_days: r.nextSteps.slice(0, 3),
   };

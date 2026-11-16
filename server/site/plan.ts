@@ -63,7 +63,9 @@ export function siteDigest(input: KitInput) {
     brand: { name: brand.name, tagline: brand.tagline, voice: brand.voice, lang: brand.lang, city: brand.city ?? "" },
     customer: report.customer,
     pain: report.pain,
-    offer: { what: report.offer.what, limit: report.offer.limit ?? null },
+    offer: report.offer.free
+      ? { what: report.offer.what, limit: null, free: true, note: "A free early-access list: nothing is sold yet. Buttons and FAQ say join the list (free), never reserve, pre-order or pay." }
+      : { what: report.offer.what, limit: report.offer.limit ?? null },
     stats: report.stats.map((s, i) => ({ i, value: s.value, label: s.label })),
     competitors: report.competitors.slice(0, 3),
   };

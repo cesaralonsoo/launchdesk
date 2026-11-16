@@ -144,6 +144,8 @@ export interface ReportBrief {
   /** Market the research assumed (city / country / currency), when the report names one. */
   market?: string;
   validateFirst: ValidateFirst[];
+  /** New reports only: the customer's problem in one sentence (the writer's econ block), for the memo. */
+  problem?: string;
   /** ISO date the research ran. */
   researchedAt: string;
 }

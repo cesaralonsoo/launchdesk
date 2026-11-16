@@ -64,7 +64,9 @@ export type SamAssumptionKey =
   | "gross_margin_pct"
   | "fixed_costs_month"
   | "startup_cost"
-  | "open_days_month";
+  | "open_days_month"
+  // added by code (never asked of the model) for a subscription: the share of active subscribers who cancel each month
+  | "churn_pct_month";
 export const SAM_ASSUMPTION_KEYS: readonly SamAssumptionKey[] = [
   "customers_per_day_m1",
   "customers_per_day_m12",
@@ -94,6 +96,8 @@ export type SamModel = {
   fixed_costs_breakdown: Array<{ label: string; value: number }>;
   // ↓ all derived from assumptions by deriveSam() (never from the model):
   months: Array<{ month: number; revenue: number; costs: number; cash: number }>; // 12 rows; cash = cumulative incl. startup_cost
+  /** Subscriptions only (a churn_pct_month assumption exists): active paying subscribers at the end of each month. */
+  subscribers?: number[];
   price: { value: number; display: string; note: string };
   startup_cost: { value: number; display: string; note: string };
   cash_needed: { value: number; display: string; month: number }; // lowest point of cumulative cash, as positive amount (month 0 = before opening)
@@ -309,10 +313,20 @@ export function deriveSam(d: SamDraft): SamModel {
   const s1 = sig(1), s12 = sig(12);
   let cash = -startup;
   let low = { value: cash, month: 0 };
+  // A subscription carries its subscribers over: "customers" are NEW subscribers a day, a share cancels each month,
+  // and a month's revenue is active subscribers × price. Without a churn assumption every sale is a new sale (as before).
+  const churnA = d.assumptions.find((x) => x.key === "churn_pct_month")?.value;
+  const churn = typeof churnA === "number" && Number.isFinite(churnA) ? Math.min(100, Math.max(0, churnA)) / 100 : null;
+  let active = 0;
+  const subscribers: number[] = [];
   const months = Array.from({ length: 12 }, (_, i) => {
     const m = i + 1;
     const cust = c1 + (c12 - c1) * ((sig(m) - s1) / (s12 - s1));
-    const revenue = round(cust * days * ticket);
+    if (churn != null) {
+      active = active * (1 - churn) + cust * days;
+      subscribers.push(round(active));
+    }
+    const revenue = churn != null ? round(active * ticket) : round(cust * days * ticket);
     const costs = round(fixed + revenue * (1 - margin));
     cash += revenue - costs;
     if (cash < low.value) low = { value: cash, month: m };
@@ -333,6 +347,7 @@ export function deriveSam(d: SamDraft): SamModel {
     assumptions: d.assumptions,
     fixed_costs_breakdown: d.fixed_costs_breakdown,
     months,
+    ...(churn != null ? { subscribers } : {}),
     price: { value: ticket, display: fmtMoney(cur, ticket, { cents: true }), note: d.price_note },
     startup_cost: { value: startup, display: fmtMoney(cur, startup), note: d.startup_note },
     cash_needed: { value: round(Math.max(0, -low.value)), display: fmtMoney(cur, Math.max(0, -low.value)), month: low.month },

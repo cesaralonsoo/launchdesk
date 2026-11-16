@@ -63,12 +63,18 @@ export function validateModelSite(raw: Partial<ModelSite> | null | undefined, in
   const lang = (brand.lang || "en").slice(0, 5);
   const ui = uiFor(lang);
   const offerItem = clean(report.offer.what, 90);
+  // a free early-access list sells nothing: every main button asks for the email, never for a reservation or payment
+  const free = report.offer.free === true;
+  const cta = (v: unknown, fallback: string) => {
+    const t = clean(v, 28);
+    return free ? (t && !/reserv|pre-?order|\bpay|\bbuy|\bbook|bch|bitcoin|checkout|\d/i.test(t) ? t : ui.joinList) : t || fallback;
+  };
 
   const hero = {
     eyebrow: clean(r.hero?.eyebrow, 36) || clean(brand.city ? `${brand.name} · ${brand.city}` : brand.name, 36),
     headline: clean(r.hero?.headline, 70) || clean(brand.tagline, 70) || brand.name,
     sub: clean(r.hero?.sub, 200) || clean(report.pain, 200),
-    cta: clean(r.hero?.cta, 28) || ui.reserve,
+    cta: cta(r.hero?.cta, ui.reserve),
     secondary: clean(r.hero?.secondary, 28) || ui.howItWorks,
   };
 
@@ -127,15 +133,17 @@ export function validateModelSite(raw: Partial<ModelSite> | null | undefined, in
     seo: { title: clean(r.seo?.title, 60) || clean(`${brand.name} · ${brand.tagline}`, 60), description: clean(r.seo?.description, 155) || hero.sub.slice(0, 155) },
     hero,
     sections: sections.filter((s) => !(s.kind === "about" && !s.body)),
-    finalCta: { headline: clean(r.finalCta?.headline, 60) || hero.headline, sub: clean(r.finalCta?.sub, 140), cta: clean(r.finalCta?.cta, 28) || ui.reserve },
+    finalCta: { headline: clean(r.finalCta?.headline, 60) || hero.headline, sub: clean(r.finalCta?.sub, 140), cta: cta(r.finalCta?.cta, ui.reserve) },
     footer: { tagline: clean(r.footer?.tagline, 80) || clean(brand.tagline, 80) },
-    reserve: {
-      address: (input.founderAddress || "").trim(),
-      price: Number(report.offer.price) > 0 ? Math.round(Number(report.offer.price) * 100) / 100 : 0,
-      normal: Number(report.offer.normal) > Number(report.offer.price) ? Number(report.offer.normal) : null,
-      limit: Number.isInteger(report.offer.limit) && Number(report.offer.limit) > 0 ? Number(report.offer.limit) : null,
-      currency: brand.currency || "$",
-    },
+    reserve: free
+      ? { address: "", price: 0, normal: null, limit: null, currency: brand.currency || "$", waitlist: true }
+      : {
+          address: (input.founderAddress || "").trim(),
+          price: Number(report.offer.price) > 0 ? Math.round(Number(report.offer.price) * 100) / 100 : 0,
+          normal: Number(report.offer.normal) > Number(report.offer.price) ? Number(report.offer.normal) : null,
+          limit: Number.isInteger(report.offer.limit) && Number(report.offer.limit) > 0 ? Number(report.offer.limit) : null,
+          currency: brand.currency || "$",
+        },
     ui,
   };
   return { spec, issues };

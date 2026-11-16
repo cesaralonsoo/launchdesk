@@ -176,7 +176,7 @@ export async function runV7(projectId: string, idea: string, _research?: Researc
     console.log(`[jobs7] ${projectId} report ready after ${ms}ms (${report.evidence.sourced}/${report.evidence.total} items sourced, report spend $${budget.spent.toFixed(4)}${w.invalidCites ? `, ${w.invalidCites} invalid cites removed` : ""})`);
     noteFor(projectId, t0, "viability")("status", `Report ready in ${Math.round(ms / 1000)} s`);
     // the summary never states its own verdict: the computed one is written in code
-    const brief = a.brief ? { ...a.brief, summary: alignSummary(a.brief.summary, verdictSentence(report.verdict, report.score, report.reasons?.[0])) } : a.brief;
+    const brief = a.brief ? { ...a.brief, summary: alignSummary(a.brief.summary, verdictSentence(report.verdict, report.score, report.reasons?.[0])), ...(w.meta.problem ? { problem: w.meta.problem } : {}) } : a.brief;
     await update(projectId, (v) => ({ ...v, roster, work, blocks: a.blocks, brief, report, status: "done", ...reportExtras(w, report), ...(cost.calls ? { cost } : {}), ms }));
   } catch (e) {
     noteFor(projectId, t0, "viability")("status", "The report could not be finished.");
@@ -336,7 +336,7 @@ async function runBlockSteer(projectId: string, idea: string, note: string, id: 
   }
   const rerun = Object.keys(freshByRole) as AnalystRole[];
   const { results, steer } = applySteer(base, { id, note, plan: { ...plan, rerun }, fresh: freshByRole, judge: { ...a.judge, econ: econSummary(w, w.sources ?? [], w.accessed, w.notesText) }, at: at(), replace: rerun });
-  await update(projectId, () => ({ ...results, blocks: refreshBlocks(a.blocks, results.work), brief: { ...a.brief, ...(results.report ? { summary: alignSummary(a.brief.summary, verdictSentence(results.report.verdict, results.report.score, results.report.reasons?.[0])) } : {}), researchedAt: prev.brief?.researchedAt ?? a.brief.researchedAt }, steers: [...base.steers, steer], ...reportExtras(w, results.report) }));
+  await update(projectId, () => ({ ...results, blocks: refreshBlocks(a.blocks, results.work), brief: { ...a.brief, ...(results.report ? { summary: alignSummary(a.brief.summary, verdictSentence(results.report.verdict, results.report.score, results.report.reasons?.[0])) } : {}), researchedAt: prev.brief?.researchedAt ?? a.brief.researchedAt, ...((w.meta.problem ?? prev.brief?.problem) ? { problem: w.meta.problem ?? prev.brief?.problem } : {}) }, steers: [...base.steers, steer], ...reportExtras(w, results.report) }));
   await syncV4(projectId, idea);
 }
 

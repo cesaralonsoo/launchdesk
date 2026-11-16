@@ -82,10 +82,18 @@ export const BRIEF_ONLINE: Record<BlockId, string> = {
   money: "Payment and platform fees, shipping or hosting cost per unit, tools and software subscriptions, ad cost per click or per customer for this niche, typical margins, capital needed; the sales tax or VAT only for the country the idea names.",
   risks: "Rules for selling this online in the country the idea names (or its main markets), platform or payment-provider dependency, chargebacks and refunds, shipping and returns, churn, and cheap ways to start (pre-sales, a waitlist, one marketplace).",
 };
+/** The idea moves or holds other people's money (splitting bills, payments, wallets, marketplaces, transfers). */
+export function movesMoney(idea: string): boolean {
+  return /\b(split(?:s|ting)?(?:[- ]the)?[- ](?:bills?|checks?|costs?|expenses?)|bill[- ]split\w*|payments? (?:app|platform|processor|gateway)|pay(?:s|ing)? (?:each other|friends|merchants)|(?:crypto |digital |mobile )?wallets? app|e-?wallet|remittances?|send(?:ing)? money|money transfers?|p2p (?:payments?|transfers?)|peer[- ]to[- ]peer (?:payments?|transfers?|lending)|escrow|crowdfund\w*|tipping app|settle[sd]? (?:the |group |shared )?(?:bills?|payments?|debts?)|settled bills?)\b/i.test(idea)
+    // a marketplace the founder runs (buyers pay sellers through it), not a shop that sells on Etsy or Amazon
+    || (/\bmarketplace\b/i.test(idea) && !/\b(etsy|amazon|ebay|shopify|on (?:a|the) marketplace|marketplace listings?)\b/i.test(idea));
+}
+/** A short hint, not a lecture: research the non-custodial Bitcoin Cash design for money-moving ideas. */
+export const CUSTODY_HINT = "This idea moves other people's money. Also look at a non-custodial Bitcoin Cash design (people pay each other or the seller directly from their own wallets; the app never holds the funds): whether that changes the money-transmitter or payment licence the idea needs where it runs, and what BCH network fees are.";
 export const NOTE_RULES = `Then write plain research notes: short factual lines starting with "- ", each one a specific fact or number with its year, backed by a citation. Say "not found" rather than guessing. Do not number the lines.`;
 export const researchPrompt = (idea: string, id: BlockId, kind: BusinessKind = "local") => `Research this business idea for a founder deciding whether to put their savings into it.
 <idea>${idea}</idea>
-Topic: ${BLOCK_LIBRARY[id].label}. ${(kind === "online" ? BRIEF_ONLINE : BRIEF)[id]}
+Topic: ${BLOCK_LIBRARY[id].label}. ${(kind === "online" ? BRIEF_ONLINE : BRIEF)[id]}${(id === "risks" || id === "money") && movesMoney(idea) ? ` ${CUSTODY_HINT}` : ""}
 Search the web once (at most ${SEARCHES_PER_BLOCK} search), preferring primary${kind === "online" ? "" : " and local"} sources (official statistics, operators' own sites and price lists, ${kind === "online" ? "trade press" : "local press"}). Then fetch the one result page most likely to state the exact figures this topic needs (at most ${FETCHES_PER_BLOCK} fetch: an official statistic, a price list, the regulation itself) and take the numbers from that page; skip the fetch only if the snippets already state every figure with its year. Keep each source's own wording for categories (for example "foreign nationality" is not "foreign-born") and say where a price was seen (${kind === "online" ? "which website, store or marketplace" : "which shop, market or street"}). ${NOTE_RULES} At most 15 lines.`;
 
 export interface BlockResearch {

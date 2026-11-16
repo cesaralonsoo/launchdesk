@@ -4,6 +4,7 @@ import { recordUsage } from "./cost.js";
 import { buildBriefFromV7 } from "./v7-bridge.js";
 import type { EconSummary, ResultsV7 } from "./v7.js";
 import { symbolFor } from "./money.js";
+import { founderLabourTwice } from "./report-v7.js";
 import { mockFor, mockMemo } from "./mocks.js";
 import {
   BANNED_FONTS,
@@ -58,6 +59,7 @@ export type LeoV6 = {
   signals: Array<LeoOpportunity["signals"][number] & { weight: number }>;
 };
 
+/** price 0 = a free early-access list (an idea that is free to its users or earns by fee, commission or ads). */
 export type LaunchOfferDraft = { item: string; price: number; normal_price: number; limit: number };
 export type SamOutcome = { value: number; year1_result: number; break_even_month: number | null; breakeven_per_day: number; cash_needed: number };
 export type SamV6 = {
@@ -303,10 +305,10 @@ Scoring (transparent, the founder sees the maths):
 
 Write:
 - currency: the symbol from the market.
-- assumptions: exactly one entry per key: ${SAM_ASSUMPTION_KEYS.join(", ")}. "customers" means sales (units) per open day; for low-volume businesses use decimals (0.3 bikes a day). avg_ticket = revenue per sale. gross_margin_pct = what is left after the cost of each sale (ingredients, walker pay, parts, payment fees). fixed_costs_month = the sum of fixed_costs_breakdown, including the founder's own minimum pay if they work in it. startup_cost = everything spent before the first sale. basis = max 10 words. is_estimate true unless sourced.
+- assumptions: exactly one entry per key: ${SAM_ASSUMPTION_KEYS.join(", ")}. "customers" means sales (units) per open day; for a subscription priced per month it means NEW subscribers a day (we carry subscribers over month to month and take off a monthly cancel rate, so never count renewals as new sales); for low-volume businesses use decimals (0.3 bikes a day). avg_ticket = revenue per sale. gross_margin_pct = what is left after the cost of each sale (ingredients, walker pay, parts, payment fees). fixed_costs_month = the sum of fixed_costs_breakdown, including the founder's own minimum pay if they work in it (count the founder's own time once: as owner pay in fixed costs, never also as labour in the cost of each sale). startup_cost = everything spent before the first sale. basis = max 10 words. is_estimate true unless sourced.
 - Ramp realism: month 1 is a new business nobody knows; month 12 must be reachable with the team and hours in the fixed costs (check capacity: a walker walks at most ~5 groups a day; a barista ~60 drinks an hour).
 - fixed_costs_breakdown: 3 to 5 lines that add up exactly to fixed_costs_month.
-- launch_offer: the pre-order the founder sells in week 3-4: ONE unit of the product (not a bundle), price = a launch price 10-30% under normal_price, normal_price = the list price of that unit, limit = how many at that price (at least Mia's gate). The offer must still leave money after the unit's direct cost.
+- launch_offer: when the idea is free to its users and earns by a fee, commission or ads, item = what joining the free early-access list gets (price 0). Otherwise the pre-order the founder sells in week 3-4: ONE unit of the product (not a bundle), price = a launch price 10-30% under normal_price, normal_price = the list price of that unit, limit = how many at that price (at least Mia's gate). The offer must still leave money after the unit's direct cost.
 - canvas: six lines, max 12 words each. unit_economics = the one number that makes it work, in words.
 - price_note: what a sale buys and the average ticket. startup_note: what the start-up cost covers.
 - main_risk: "<the assumption that most changes the result>: <the cheapest way to test it in 2 weeks>".
@@ -429,6 +431,66 @@ const nicePrice = (p: number) => (p >= 100 ? Math.round(p / 5) * 5 : p >= 20 ? M
 /** Sensitivity rows: volume (month 1 and month 12 together), margin, fixed costs. Price is set by the founder; volume is the unknown. */
 const SENS_KEYS: SamAssumptionKey[] = ["customers_per_day_m12", "gross_margin_pct", "fixed_costs_month"];
 
+/** A ticket paid once a month per subscriber ("$8 per subscriber-month", "€6 a month per stall"). */
+export function isSubscription(draft: Pick<SamDraft, "assumptions" | "price_note">): boolean {
+  const tk = draft.assumptions.find((x) => x.key === "avg_ticket");
+  return /subscri|member|per month|a month|monthly|\/mo\b/i.test(`${tk?.label ?? ""} ${tk?.unit ?? ""} ${draft.price_note ?? ""}`);
+}
+
+/** The monthly cancel rate used when Sam's model is a subscription. An assumption, shown with its value and marked as an estimate. */
+export const SUBSCRIPTION_CHURN_PCT = 8;
+
+/**
+ * A subscription's 12-month table carries subscribers over: the customer assumptions become NEW subscribers a day,
+ * and a churn_pct_month assumption (8% a month unless one is there, always marked as an estimate) is added, so
+ * deriveSam computes active subscribers × price for each month. Anything else is returned unchanged.
+ */
+export function withSubscriberCarryOver<T extends SamDraft>(v: T, idea = ""): T {
+  // Sam may price "per box" while the idea and its own canvas say it is paid every month ("$24 a month")
+  const monthly =
+    isSubscription(v) ||
+    /[$€£]\s?\d[\d.,]*\s*(?:a|per|\/)\s*month\b|\bsubscription\b|\bmonthly (?:box|plan|membership|subscription)\b/i.test(idea) ||
+    /\bper subscriber\b|\bsubscription\b|\bmonthly renewal\b/i.test(v.canvas?.revenue ?? "");
+  if (!monthly || v.assumptions.some((a) => a.key === "churn_pct_month")) return v;
+  for (const k of ["customers_per_day_m1", "customers_per_day_m12"] as const) {
+    const a = v.assumptions.find((x) => x.key === k);
+    if (a && !/\bnew\b/i.test(a.label)) a.label = `New subscribers a day, month ${k.endsWith("m1") ? 1 : 12}`;
+  }
+  v.assumptions.push({
+    key: "churn_pct_month",
+    label: "Subscribers who cancel each month",
+    value: SUBSCRIPTION_CHURN_PCT,
+    unit: "%",
+    basis: "Assumption, not measured: replace with your real rate",
+    is_estimate: true,
+  });
+  return v;
+}
+
+/**
+ * Free to its users, earning by a fee, commission, ads or a freemium model, with no paid tier priced in the idea
+ * ("a split-bill app, free with a 1% fee"). Such an idea has nothing to sell before launch: its launch offer is a free
+ * early-access list, never a priced "reserve".
+ */
+export function freeToUser(idea: string): boolean {
+  const t = String(idea ?? "");
+  // "free" about the price, never an adjective (stress-free, hassle free, free-range, free time, free of plastic)
+  const free = /(?<![-\w])(?<!\b(?:stress|hassle|worry|care|tax|duty|toll|risk|pain|clutter|guilt|waste|mess|ad|sugar|gluten|dairy|lactose|nut|alcohol|cruelty|plastic|caffeine|fragrance|chemical|pesticide|grain|meat|smoke|scent)\s)free(?![-\w])(?!\s+(?:shipping|delivery|returns?|trials?|consultations?|quotes?|samples?|tastings?|estimates?|gift|wrapping|time|from|range|spirit|hand|will|speech|parking|wi-?fi|refills?|setup|installation|pick-?up|lessons?|classes?|workshops?|first|demo)\b)(?!\s+of\s+(?!charge\b))/i.test(t);
+  // a fee, commission or ads as the way it earns ("1% fee", "takes a commission", "paid for by ads"); never a business
+  // that merely mentions ads or commissions ("writes Facebook ads for shops", "art commissions")
+  const fee = /\b\d+(?:\.\d+)?\s?%\s*(?:fee|commission|cut|take|of each|per (?:bill|booking|order|sale|transaction))|\b(?:(?:on|takes?|charges?|earns?|keeps?|via|by|through|from)\s+(?:a\s+)?(?:small\s+|flat\s+)?commissions?|commission[- ]based|ad-supported|(?:paid for|funded|supported|financed)\s+by\s+(?:ads|advertising|sponsors?)|(?:earns?|makes? money|revenue|income)\s+(?:\w+\s+)?(?:from|by|through|via)\s+(?:ads|advertising)|advertising revenue|ad revenue|freemium|transaction fees?|service fees?|small fee|booking fees?|platform fees?|takes? a (?:small )?(?:fee|cut))\b/i.test(t);
+  const paidTier = /\b(?:pro|premium|paid|plus|business)\s+(?:tier|plan|version|subscription|membership|account)\b/i.test(t) && /[$€£]\s?\d|\d\s?(?:usd|eur|gbp)\b/i.test(t);
+  return (free || fee) && !paidTier;
+}
+
+/** The free early-access offer for an idea that sells nothing up front (see freeToUser). */
+export function waitlistOffer(lo: Pick<LaunchOfferDraft, "normal_price" | "limit">): LaunchOfferDraft {
+  return { item: "Free early access", price: 0, normal_price: lo.normal_price, limit: lo.limit };
+}
+
+// founderLabourTwice lives with the report maths (the report counts the founder's time once too)
+export { founderLabourTwice };
+
 /** v6: the derived, always-consistent extras of Sam's model (unit maths, break-even formula, headroom, sensitivity). */
 export function deriveSamV6(draft: SamDraftV6, model: SamModel = deriveSam(draft)): SamModel & SamV6 {
   const cur = model.currency;
@@ -474,25 +536,32 @@ export function deriveSamV6(draft: SamDraftV6, model: SamModel = deriveSam(draft
   const lo = draft.launch_offer;
   const offerPrice = lo.price;
   const unitCost = r2(lo.normal_price * (1 - margin));
-  const m12 = a("customers_per_day_m12");
-  const multiple = perDay > 0 ? r1(m12 / perDay) : 0;
+  // a subscription with subscribers carried over: month 12 is the ACTIVE subscribers then, compared with the paying
+  // subscribers needed (the card shows m12_per_day × per_month / per_day, so it is stored in those units)
+  const subs = model.subscribers;
+  const activeM12 = subs?.[subs.length - 1];
+  const m12 = activeM12 != null && perMonth > 0 && perDay > 0 ? (activeM12 * perDay) / Math.ceil(perMonth) : a("customers_per_day_m12");
+  const multiple = activeM12 != null && perMonth > 0 ? r1(activeM12 / Math.ceil(perMonth)) : perDay > 0 ? r1(m12 / perDay) : 0;
   // a subscription is paid once a month, never "3.1 sales a day": the unit line and break-even read per subscriber-month
-  const tk = draft.assumptions.find((x) => x.key === "avg_ticket");
-  const recurring = /subscri|member|per month|a month|monthly|\/mo\b/i.test(`${tk?.label ?? ""} ${tk?.unit ?? ""} ${draft.price_note ?? ""}`);
+  const recurring = isSubscription(draft) || draft.assumptions.some((x) => x.key === "churn_pct_month");
   const per = recurring ? "subscriber a month" : "sale";
+  // a free early-access list (price 0) has nothing to discount or earn yet
+  const waitlist = !(offerPrice > 0);
   return {
     ...model,
     key_assumption: sensitivity[0]!.key,
-    launch_offer: {
-      ...lo,
-      display: money(offerPrice),
-      normal_display: money(lo.normal_price),
-      discount_pct: lo.normal_price > 0 ? Math.round((1 - offerPrice / lo.normal_price) * 100) : 0,
-      contribution: r2(offerPrice - unitCost),
-      contribution_display: money(r2(offerPrice - unitCost)),
-      revenue_if_sold_out: r2(offerPrice * lo.limit),
-      revenue_display: fmtMoney(cur, offerPrice * lo.limit),
-    },
+    launch_offer: waitlist
+      ? { ...lo, price: 0, display: "Free", normal_display: money(lo.normal_price), discount_pct: 0, contribution: 0, contribution_display: money(0), revenue_if_sold_out: 0, revenue_display: fmtMoney(cur, 0) }
+      : {
+          ...lo,
+          display: money(offerPrice),
+          normal_display: money(lo.normal_price),
+          discount_pct: lo.normal_price > 0 ? Math.round((1 - offerPrice / lo.normal_price) * 100) : 0,
+          contribution: r2(offerPrice - unitCost),
+          contribution_display: money(r2(offerPrice - unitCost)),
+          revenue_if_sold_out: r2(offerPrice * lo.limit),
+          revenue_display: fmtMoney(cur, offerPrice * lo.limit),
+        },
     unit: {
       price: ticket,
       variable_cost: r2(ticket - contribution),
@@ -514,7 +583,9 @@ export function deriveSamV6(draft: SamDraftV6, model: SamModel = deriveSam(draft
       m12_per_day: m12,
       breakeven_per_day: perDay,
       multiple,
-      note: multiple >= 1.5 ? `Month-12 plan is ${multiple}× break-even` : multiple >= 1 ? `Thin: month 12 is only ${multiple}× break-even` : `Month-12 plan stays under break-even`,
+      note: activeM12 != null
+        ? `${activeM12.toLocaleString("en-US")} paying subscribers by month 12 (after ${a("churn_pct_month")}% cancel each month, an estimate), ${multiple}× the ${Math.ceil(perMonth)} needed`
+        : multiple >= 1.5 ? `Month-12 plan is ${multiple}× break-even` : multiple >= 1 ? `Thin: month 12 is only ${multiple}× break-even` : `Month-12 plan stays under break-even`,
     },
     sensitivity,
   };
@@ -536,9 +607,12 @@ export function anchorSam(v: SamDraftV6, econ: EconSummary | null | undefined): 
   };
   const fromReport = "From the report's unit economics";
   set("avg_ticket", econ.price, fromReport, true);
-  if (econ.contribution != null) set("gross_margin_pct", Math.max(0, Math.round((econ.contribution / econ.price) * 10000) / 100), fromReport, true); // 2 decimals: ticket × margin = the report's contribution to the cent
+  // the founder's own time once: owner pay stays as the one fixed line, their per-sale labour leaves the unit cost
+  const twice = econ.contribution != null ? founderLabourTwice(econ.lines) : null;
+  const contribution = econ.contribution != null ? Math.round((econ.contribution + (twice?.labour ?? 0)) * 100) / 100 : null;
+  if (contribution != null) set("gross_margin_pct", Math.max(0, Math.round((contribution / econ.price) * 10000) / 100), twice ? `From the report, your own labour counted once (in ${twice.ownerPay})` : fromReport, true); // 2 decimals: ticket × margin = the report's contribution to the cent
   if (econ.fixedMonthly != null) {
-    const fx = lines("fixed").map((l) => ({ label: l.item, value: Math.round(Number(l.eur)) })).filter((l) => l.value > 0);
+    const fx = lines("fixed").map((l) => ({ label: twice && l.item === twice.ownerPay ? `${l.item} (covers your own time)` : l.item, value: Math.round(Number(l.eur)) })).filter((l) => l.value > 0);
     const top = fx.slice(0, 5);
     const rest = fx.slice(5).reduce((t, l) => t + l.value, 0);
     if (rest > 0) top.push({ label: "Other fixed costs", value: rest });
@@ -551,7 +625,7 @@ export function anchorSam(v: SamDraftV6, econ: EconSummary | null | undefined): 
 }
 
 /** What sanitize() may check an answer against: earlier results (offer price) and Leo's real sources (R2). */
-export type SanitizeCtx = { prior?: DeptResults; research?: Research | null };
+export type SanitizeCtx = { prior?: DeptResults; research?: Research | null; idea?: string };
 
 const SANITIZE: { [K in AiDept]: (v: ModelOut[K], c: SanitizeCtx) => NonNullable<DeptResults[K]> } = {
   mia: (v) => {
@@ -660,7 +734,11 @@ const SANITIZE: { [K in AiDept]: (v: ModelOut[K], c: SanitizeCtx) => NonNullable
     if (!(lo.price > 0 && lo.price < lo.normal_price && lo.price >= lo.normal_price * 0.6)) lo.price = nicePrice(lo.normal_price * 0.85);
     lo.limit = Math.max(1, Math.round(lo.limit));
     v.launch_offer = { item: cap(lo.item, 6), price: lo.price, normal_price: lo.normal_price, limit: lo.limit };
+    // free to its users (a fee, commission or ads): the launch offer is a free early-access list, not a priced reserve
+    if (c.idea && freeToUser(c.idea)) v.launch_offer = waitlistOffer(lo);
     v.main_risk = cap(v.main_risk, 30);
+    // a subscription's table carries subscribers over (mock Sam numbers stay as pinned by the quality tests)
+    if (!config.mockAi) withSubscriberCarryOver(v, c.idea);
     return deriveSamV6(v);
   },
   nova: (v) => {
@@ -698,7 +776,13 @@ const SANITIZE: { [K in AiDept]: (v: ModelOut[K], c: SanitizeCtx) => NonNullable
     const sam = samX(c.prior?.sam);
     const offer = sam?.launch_offer;
     const old = v.landing.offer_price;
-    if (sam && offer) {
+    if (sam && offer && !(offer.price > 0)) {
+      // a free early-access list: nothing to pre-order, the page asks for an email
+      v.landing.offer_price = 0;
+      v.landing.offer = `${offer.item}: join the list`;
+      v.landing.cta = "Join the list";
+      v.landing.normal_price = null;
+    } else if (sam && offer) {
       // v6: Dex and Rae run in parallel and both sell Sam's launch offer, so the page must match it exactly.
       if (Math.abs(old - offer.price) > 0.005) {
         v.landing.offer_price = offer.price;
@@ -921,11 +1005,11 @@ export type RunOpts = { research?: Promise<Research | null> | Research | null };
 export async function runDept<K extends AiDept>(dept: K, idea: string, prior: DeptResults, opts: RunOpts = {}): Promise<DeptOutput<K>> {
   if (config.mockAi) {
     await sleep(config.mockDelayMs ?? 2000 + Math.random() * 2000);
-    return { json: (SANITIZE[dept] as Sanitizer<K>)(mockFor(dept, idea), { prior }), model: "mock", usage: null };
+    return { json: (SANITIZE[dept] as Sanitizer<K>)(mockFor(dept, idea), { prior, idea }), model: "mock", usage: null };
   }
   const found = dept === "leo" ? await (opts.research !== undefined ? opts.research : research(idea, prior.mia?.market)) : null;
   const out = await callJson<ModelOut[K]>(dept, MODELS[dept], PROMPTS[dept](idea, prior, found), SCHEMAS[dept]);
-  const json = (SANITIZE[dept] as Sanitizer<K>)(out.value, { prior, research: found });
+  const json = (SANITIZE[dept] as Sanitizer<K>)(out.value, { prior, research: found, idea });
   return { json, model: out.model, usage: out.usage };
 }
 

@@ -24,7 +24,9 @@ export interface KitInput {
 export interface ReportDigest {
   customer: string;
   pain: string;
-  offer: { what: string; price: number; normal?: number; limit?: number };
+  /** free: a free early-access list (the idea is free to its users and earns by fee, commission or ads). Price is 0,
+   * nothing is sold up front: the website asks for an email and shows no Bitcoin Cash payment. */
+  offer: { what: string; price: number; normal?: number; limit?: number; free?: boolean };
   /** Sourced numbers, most useful first. kind: "demand" = about the customer or their problem; "price" = a market or
    * competitor price (context, never a headline number); "context" = population, rent, fees, rules (not for the page). */
   stats: Array<{ value: string; label: string; sourceUrl: string; sourceTitle?: string; kind?: "demand" | "price" | "context" }>;

@@ -78,7 +78,7 @@ function section(c: RenderCtx, s: Section, n: number): string {
     case "offer":
       return `<section class="sec" id="offer"><div class="wrap">${kick(n, c.ui.offer)}<h2 class="h2 rv">${esc(s.title)}</h2><div class="offer rv"><div class="l"><h3>${esc(s.item)}</h3><ul class="ticks">${s.bullets
         .map((b) => `<li>${icon("check", 18, 2)}<span>${esc(b)}</span></li>`)
-        .join("")}</ul>${s.note ? `<p class="note">${esc(s.note)}</p>` : ""}</div><div class="r">${priceLine(c)}${scarcity(c)}${reserveBtn(c)}${waitlist(c, "wl")}</div></div></div></section>`;
+        .join("")}</ul>${s.note ? `<p class="note">${esc(s.note)}</p>` : ""}</div><div class="r">${priceLine(c)}${scarcity(c)}${reserveBtn(c, undefined, undefined, true)}${waitlist(c, "wl")}</div></div></div></section>`;
     case "about":
       return `<section class="sec about"><div class="wrap">${kick(n, s.title)}<p class="big rv">${esc(s.body)}</p></div></section>`;
     case "local":
@@ -104,7 +104,7 @@ export function body(c: RenderCtx): string {
 <div class="ctas">${reserveBtn(c, s.hero.cta)}<a class="btn btn-g" href="${how ? "#how" : "#offer"}">${esc(s.hero.secondary)}</a></div>${scarcity(c)}</div>
 ${hero ? `<figure class="hph rv">${photoImg(hero, true)}${ticket}</figure>` : `<div class="plate rv"><span class="ring"></span>${mark(c, 240)}${ticket}</div>`}</div></section>
 ${s.sections.map((x, i) => (i === 1 ? photoBand(c) : "") + section(c, x, i + 1)).join("\n")}${s.sections.length < 2 ? photoBand(c) : ""}
-<section class="final"><div class="wrap"><h2 class="h2">${esc(s.finalCta.headline)}</h2>${s.finalCta.sub ? `<p class="lead">${esc(s.finalCta.sub)}</p>` : ""}<div class="ctas">${reserveBtn(c, s.finalCta.cta)}</div>${waitlist(c, "wl2")}</div></section>
+<section class="final"><div class="wrap"><h2 class="h2">${esc(s.finalCta.headline)}</h2>${s.finalCta.sub ? `<p class="lead">${esc(s.finalCta.sub)}</p>` : ""}<div class="ctas">${reserveBtn(c, s.finalCta.cta, undefined, true)}</div>${waitlist(c, "wl2")}</div></section>
 </main>
 <footer><div class="wrap"><span class="brand">${mark(c, 26)}<span>${esc(c.brand.name)}</span></span><span>${esc(s.footer.tagline)}</span>${credit(c)}${photoCreditLine(c)}</div></footer>
 ${chrome(c)}`;

@@ -1,0 +1,769 @@
+{
+ "newsletter": {
+  "idea": "A paid newsletter that teaches small online shops how to accept Bitcoin Cash, $8 a month",
+  "draft": {
+   "currency": "$",
+   "canvas": {
+    "customer": "Shopify or WooCommerce owners under 500 orders monthly, already mentioning crypto payments.",
+    "value": "Step-by-step Bitcoin Cash checkout guides they can install in a day.",
+    "revenue": "$8 monthly subscription, billed through a card or crypto payment provider.",
+    "channels": "Owner forums, crypto merchant mailing lists, and founder's own posts.",
+    "costs": "Founder time, freelance editing, email platform, and paywall hosting.",
+    "unit_economics": "Each subscriber-month nets $7.71; 93 subscribers cover fixed costs."
+   },
+   "assumptions": [
+    {
+     "key": "customers_per_day_m1",
+     "label": "New paid subscribers per day, month 1",
+     "value": 1,
+     "unit": "subscribers per day",
+     "basis": "Reaches Mia's 30-subscriber gate by week 4",
+     "is_estimate": true
+    },
+    {
+     "key": "customers_per_day_m12",
+     "label": "New paid subscribers per day, month 12",
+     "value": 4,
+     "unit": "subscribers per day",
+     "basis": "About 120 a month, above 93 break-even",
+     "is_estimate": true
+    },
+    {
+     "key": "avg_ticket",
+     "label": "Average revenue per subscriber-month",
+     "value": 8,
+     "unit": "$ per subscriber-month",
+     "basis": "From the report's unit economics",
+     "is_estimate": true
+    },
+    {
+     "key": "gross_margin_pct",
+     "label": "Gross margin after direct cost",
+     "value": 96,
+     "unit": "percent",
+     "basis": "From the report's unit economics",
+     "is_estimate": true
+    },
+    {
+     "key": "fixed_costs_month",
+     "label": "Fixed costs per month",
+     "value": 714,
+     "unit": "$ per month",
+     "basis": "From the report's unit economics",
+     "is_estimate": true
+    },
+    {
+     "key": "startup_cost",
+     "label": "One-time startup spend",
+     "value": 700,
+     "unit": "$",
+     "basis": "From the report's unit economics",
+     "is_estimate": true
+    },
+    {
+     "key": "open_days_month",
+     "label": "Days the business sends or sells per month",
+     "value": 30,
+     "unit": "days per month",
+     "basis": "Newsletter runs daily, so every calendar day counts",
+     "is_estimate": true
+    }
+   ],
+   "fixed_costs_breakdown": [
+    {
+     "label": "newsletter platform",
+     "value": 29
+    },
+    {
+     "label": "website and domain",
+     "value": 15
+    },
+    {
+     "label": "accounting",
+     "value": 20
+    },
+    {
+     "label": "marketing",
+     "value": 150
+    },
+    {
+     "label": "owner pay",
+     "value": 500
+    }
+   ],
+   "price_note": "$8 buys one month of guides; average ticket is $8.",
+   "startup_note": "Covers paywall setup, first guide batch, legal registration and tools.",
+   "main_risk": "Free readers converting to a paid $8 plan is unproven: run a two-week $6 pre-order to 30 shop owners via forums and email lists.",
+   "launch_offer": {
+    "item": "One month founding member access",
+    "price": 6,
+    "normal_price": 8,
+    "limit": 30
+   }
+  },
+  "econ": {
+   "unit": "one subscriber-month",
+   "price": 8,
+   "vatRate": 0,
+   "shareKept": 1,
+   "net": 8,
+   "variable": 0.29,
+   "contribution": 7.71,
+   "fixedMonthly": 714,
+   "breakEven": 93,
+   "startupCapital": 700,
+   "currency": "USD",
+   "lines": [
+    {
+     "group": "variable",
+     "item": "payment processing on subscription (3%)",
+     "eur": 0.24,
+     "source": null
+    },
+    {
+     "group": "variable",
+     "item": "email delivery per subscriber",
+     "eur": 0.05,
+     "source": null
+    },
+    {
+     "group": "fixed",
+     "item": "newsletter platform",
+     "eur": 29,
+     "source": null
+    },
+    {
+     "group": "fixed",
+     "item": "website and domain",
+     "eur": 15,
+     "source": null
+    },
+    {
+     "group": "fixed",
+     "item": "accounting",
+     "eur": 20,
+     "source": null
+    },
+    {
+     "group": "fixed",
+     "item": "marketing",
+     "eur": 150,
+     "source": null
+    },
+    {
+     "group": "fixed",
+     "item": "owner pay",
+     "eur": 500,
+     "source": null
+    },
+    {
+     "group": "startup",
+     "item": "design and launch page",
+     "eur": 300,
+     "source": null
+    },
+    {
+     "group": "startup",
+     "item": "tools and first-month platform",
+     "eur": 100,
+     "source": null
+    },
+    {
+     "group": "startup",
+     "item": "test marketing budget",
+     "eur": 300,
+     "source": null
+    }
+   ]
+  }
+ },
+ "splitbill": {
+  "idea": "A mobile app that splits restaurant bills among friends and settles in BCH, free with a 1% fee",
+  "draft": {
+   "currency": "$",
+   "canvas": {
+    "customer": "Crypto-holding friend groups splitting monthly restaurant bills in one city.",
+    "value": "Splits bills by item and settles shares in BCH, free.",
+    "revenue": "1% fee on each settled group bill, about $0.80.",
+    "channels": "Friend referrals from the 25 gate bills plus local crypto meetups.",
+    "costs": "Build and audit about $55,000, then $3,018 a month fixed.",
+    "unit_economics": "Each bill keeps $0.46; break-even needs 6,561 settled bills monthly."
+   },
+   "assumptions": [
+    {
+     "key": "customers_per_day_m1",
+     "label": "Settled bills per day, month 1",
+     "value": 0.5,
+     "unit": "bills/day",
+     "basis": "New app, friend groups only, one city",
+     "is_estimate": true
+    },
+    {
+     "key": "customers_per_day_m12",
+     "label": "Settled bills per day, month 12",
+     "value": 20,
+     "unit": "bills/day",
+     "basis": "About 150 active groups splitting 4 times monthly",
+     "is_estimate": true
+    },
+    {
+     "key": "avg_ticket",
+     "label": "Fee revenue per settled bill",
+     "value": 0.8,
+     "unit": "$ per bill",
+     "basis": "From the report's unit economics",
+     "is_estimate": true
+    },
+    {
+     "key": "gross_margin_pct",
+     "label": "Margin after direct cost per bill",
+     "value": 57,
+     "unit": "%",
+     "basis": "From the report's unit economics",
+     "is_estimate": true
+    },
+    {
+     "key": "fixed_costs_month",
+     "label": "Fixed costs per month",
+     "value": 3018,
+     "unit": "$ per month",
+     "basis": "From the report's unit economics",
+     "is_estimate": true
+    },
+    {
+     "key": "startup_cost",
+     "label": "Spend before first sale",
+     "value": 55000,
+     "unit": "$",
+     "basis": "From the report's unit economics",
+     "is_estimate": true
+    },
+    {
+     "key": "open_days_month",
+     "label": "Days the app takes bills per month",
+     "value": 30,
+     "unit": "days",
+     "basis": "Always on, counted as a 30-day month",
+     "is_estimate": true
+    }
+   ],
+   "fixed_costs_breakdown": [
+    {
+     "label": "Owner pay",
+     "value": 2500
+    },
+    {
+     "label": "Cloud hosting and monitoring",
+     "value": 60
+    },
+    {
+     "label": "App store developer account",
+     "value": 8
+    },
+    {
+     "label": "Accounting and bookkeeping",
+     "value": 200
+    },
+    {
+     "label": "Licence renewals and compliance set-aside",
+     "value": 250
+    }
+   ],
+   "price_note": "One settled group bill; 1% fee on an $80 average ticket.",
+   "startup_note": "App build, security audit, legal review of crypto handling, launch.",
+   "main_risk": "Customer volume stays below 20 bills a day: run 10 friend-group splits by hand in two weeks.",
+   "launch_offer": {
+    "item": "One settled group bill in BCH",
+    "price": 0.64,
+    "normal_price": 0.8,
+    "limit": 50
+   }
+  },
+  "econ": {
+   "unit": "one settled group bill",
+   "price": 0.8,
+   "vatRate": 0,
+   "shareKept": 1,
+   "net": 0.8,
+   "variable": 0.34,
+   "contribution": 0.46,
+   "fixedMonthly": 3018,
+   "breakEven": 6561,
+   "startupCapital": 55000,
+   "currency": "USD",
+   "lines": [
+    {
+     "group": "variable",
+     "item": "BCH network fee per settlement",
+     "eur": 0.01,
+     "source": null
+    },
+    {
+     "group": "variable",
+     "item": "Exchange or payout conversion spread",
+     "eur": 0.2,
+     "source": null
+    },
+    {
+     "group": "variable",
+     "item": "Hosting and notifications per bill",
+     "eur": 0.03,
+     "source": null
+    },
+    {
+     "group": "variable",
+     "item": "Support time per bill",
+     "eur": 0.1,
+     "source": null
+    },
+    {
+     "group": "fixed",
+     "item": "Owner pay",
+     "eur": 2500,
+     "source": null
+    },
+    {
+     "group": "fixed",
+     "item": "Cloud hosting and monitoring",
+     "eur": 60,
+     "source": null
+    },
+    {
+     "group": "fixed",
+     "item": "App store developer account",
+     "eur": 8,
+     "source": null
+    },
+    {
+     "group": "fixed",
+     "item": "Accounting and bookkeeping",
+     "eur": 200,
+     "source": null
+    },
+    {
+     "group": "fixed",
+     "item": "Licence renewals and compliance set-aside",
+     "eur": 250,
+     "source": null
+    },
+    {
+     "group": "startup",
+     "item": "App build",
+     "eur": 25000,
+     "source": null
+    },
+    {
+     "group": "startup",
+     "item": "Legal counsel and first-state licence application",
+     "eur": 30000,
+     "source": null
+    }
+   ]
+  }
+ },
+ "wallets": {
+  "idea": "Handmade leather wallets sold on Etsy from Austin, Texas, $45 each",
+  "draft": {
+   "currency": "$",
+   "canvas": {
+    "customer": "Austin men 25 to 40 who buy a wallet every two years.",
+    "value": "Hand-cut full-grain bifold, made in Austin, three-week lead time.",
+    "revenue": "$45 per wallet sold through one Etsy listing.",
+    "channels": "Etsy listing, Austin maker markets, repeat buyers via shop follow.",
+    "costs": "Leather, hardware, Etsy fees, card fees, packaging, $1,015 fixed monthly.",
+    "unit_economics": "Each sale keeps $8.28 after direct costs; break-even is 123 wallets."
+   },
+   "assumptions": [
+    {
+     "key": "customers_per_day_m1",
+     "label": "Wallets sold per open day, month 1",
+     "value": 0.3,
+     "unit": "wallets per open day",
+     "basis": "New shop with no reviews; about 8 sales a month",
+     "is_estimate": true
+    },
+    {
+     "key": "customers_per_day_m12",
+     "label": "Wallets sold per open day, month 12",
+     "value": 4,
+     "unit": "wallets per open day",
+     "basis": "One full-time maker at about 2 hours per wallet",
+     "is_estimate": true
+    },
+    {
+     "key": "avg_ticket",
+     "label": "Average revenue per wallet",
+     "value": 45,
+     "unit": "$ per wallet",
+     "basis": "From the report's unit economics",
+     "is_estimate": true
+    },
+    {
+     "key": "gross_margin_pct",
+     "label": "Margin left after direct costs",
+     "value": 18,
+     "unit": "% of revenue",
+     "basis": "From the report's unit economics",
+     "is_estimate": true
+    },
+    {
+     "key": "fixed_costs_month",
+     "label": "Fixed costs per month",
+     "value": 1015,
+     "unit": "$ per month",
+     "basis": "From the report's unit economics",
+     "is_estimate": true
+    },
+    {
+     "key": "startup_cost",
+     "label": "Spend before first sale",
+     "value": 900,
+     "unit": "$ one-time",
+     "basis": "From the report's unit economics",
+     "is_estimate": true
+    },
+    {
+     "key": "open_days_month",
+     "label": "Production and sale days per month",
+     "value": 26,
+     "unit": "days per month",
+     "basis": "Made-to-order; about six production days a week",
+     "is_estimate": true
+    }
+   ],
+   "fixed_costs_breakdown": [
+    {
+     "label": "owner pay",
+     "value": 800
+    },
+    {
+     "label": "test ad budget",
+     "value": 150
+    },
+    {
+     "label": "tools and software",
+     "value": 25
+    },
+    {
+     "label": "insurance and accounting",
+     "value": 40
+    }
+   ],
+   "price_note": "One wallet at $45 list; average ticket is one wallet.",
+   "startup_note": "Covers first leather and hardware stock, tools, samples, shop setup.",
+   "main_risk": "Sales volume reaching 4 wallets a day: pre-sell 20 wallets at $40 in four weeks via Etsy ads and two Austin maker markets.",
+   "launch_offer": {
+    "item": "One bifold wallet, made to order",
+    "price": 40,
+    "normal_price": 45,
+    "limit": 20
+   }
+  },
+  "econ": {
+   "unit": "one wallet sold",
+   "price": 45,
+   "vatRate": 0,
+   "shareKept": 0.935,
+   "net": 42.08,
+   "variable": 33.8,
+   "contribution": 8.27,
+   "fixedMonthly": 1015,
+   "breakEven": 123,
+   "startupCapital": 900,
+   "currency": "USD",
+   "lines": [
+    {
+     "group": "variable",
+     "item": "full-grain leather",
+     "eur": 8,
+     "source": null
+    },
+    {
+     "group": "variable",
+     "item": "hardware and thread",
+     "eur": 2.5,
+     "source": null
+    },
+    {
+     "group": "variable",
+     "item": "packaging",
+     "eur": 1.5,
+     "source": null
+    },
+    {
+     "group": "variable",
+     "item": "postage",
+     "eur": 5,
+     "source": null
+    },
+    {
+     "group": "variable",
+     "item": "labour, one hour at $15",
+     "eur": 15,
+     "source": null
+    },
+    {
+     "group": "variable",
+     "item": "payment processing",
+     "eur": 1.6,
+     "source": {
+      "url": "https://checkoutpage.com/blog/etsy-fees",
+      "title": "Etsy fees 2026: what you pay and keep per sale",
+      "domain": "checkoutpage.com",
+      "accessed": "2026-11-16"
+     },
+     "check": true
+    },
+    {
+     "group": "variable",
+     "item": "listing fee, one sale per listing",
+     "eur": 0.2,
+     "source": {
+      "url": "https://checkthat.ai/brands/etsy/pricing",
+      "title": "Etsy Pricing 2026: Complete Fee Breakdown & Cost Analysis - Etsy",
+      "domain": "checkthat.ai",
+      "accessed": "2026-11-16"
+     }
+    },
+    {
+     "group": "fixed",
+     "item": "owner pay",
+     "eur": 800,
+     "source": null
+    },
+    {
+     "group": "fixed",
+     "item": "test ad budget",
+     "eur": 150,
+     "source": null
+    },
+    {
+     "group": "fixed",
+     "item": "tools and software",
+     "eur": 25,
+     "source": null
+    },
+    {
+     "group": "fixed",
+     "item": "insurance and accounting",
+     "eur": 40,
+     "source": null
+    },
+    {
+     "group": "startup",
+     "item": "sewing machine",
+     "eur": 450,
+     "source": null
+    },
+    {
+     "group": "startup",
+     "item": "cutting and finishing tools",
+     "eur": 250,
+     "source": null
+    },
+    {
+     "group": "startup",
+     "item": "starter leather and hardware stock",
+     "eur": 200,
+     "source": null
+    }
+   ]
+  }
+ },
+ "coffeebox": {
+  "idea": "A monthly box of specialty coffee beans for remote workers, $24 a month, shipped across the US",
+  "draft": {
+   "currency": "$",
+   "canvas": {
+    "customer": "Remote workers who buy whole-bean coffee online, spending $30+ monthly",
+    "value": "Fresh specialty beans each month, one 250g box, no reordering",
+    "revenue": "$24 per subscriber per month, charged at each monthly renewal",
+    "channels": "Pre-order page, coffee communities, referrals from first subscribers",
+    "costs": "Beans, packaging, shipping about $17.20 per box; $2,110 fixed monthly",
+    "unit_economics": "Break-even at 311 active subscribers; each box leaves $6.80"
+   },
+   "assumptions": [
+    {
+     "key": "customers_per_day_m1",
+     "label": "New subscribers per day, month 1",
+     "value": 0.3,
+     "unit": "new subscribers per day",
+     "basis": "No audience yet; pre-order launch estimate",
+     "is_estimate": true
+    },
+    {
+     "key": "customers_per_day_m12",
+     "label": "New subscribers per day, month 12",
+     "value": 1.5,
+     "unit": "new subscribers per day",
+     "basis": "About 45 new subscribers a month by month 12",
+     "is_estimate": true
+    },
+    {
+     "key": "avg_ticket",
+     "label": "Average revenue per box",
+     "value": 24,
+     "unit": "USD per box",
+     "basis": "From the report's unit economics",
+     "is_estimate": true
+    },
+    {
+     "key": "gross_margin_pct",
+     "label": "Gross margin after direct costs",
+     "value": 28.33,
+     "unit": "percent",
+     "basis": "From the report's unit economics",
+     "is_estimate": true
+    },
+    {
+     "key": "fixed_costs_month",
+     "label": "Fixed costs per month",
+     "value": 2110,
+     "unit": "USD per month",
+     "basis": "From the report's unit economics",
+     "is_estimate": true
+    },
+    {
+     "key": "startup_cost",
+     "label": "Cash needed before first sale",
+     "value": 2300,
+     "unit": "USD one-time",
+     "basis": "From the report's unit economics",
+     "is_estimate": true
+    },
+    {
+     "key": "open_days_month",
+     "label": "Trading days per month",
+     "value": 30,
+     "unit": "days",
+     "basis": "Monthly shipping cycle, calendar days",
+     "is_estimate": true
+    }
+   ],
+   "fixed_costs_breakdown": [
+    {
+     "label": "Owner minimum draw",
+     "value": 1000
+    },
+    {
+     "label": "Store and hosting",
+     "value": 150
+    },
+    {
+     "label": "Marketing",
+     "value": 800
+    },
+    {
+     "label": "Insurance",
+     "value": 60
+    },
+    {
+     "label": "Bookkeeping",
+     "value": 100
+    }
+   ],
+   "price_note": "Each sale buys one 250g box; average ticket $24.",
+   "startup_note": "First roast order, packaging, samples, pre-order page setup.",
+   "main_risk": "New subscribers per day: run a two-week pre-order test on one coffee community, target 25 paid pre-orders at $21.",
+   "launch_offer": {
+    "item": "One 250g box of specialty whole beans",
+    "price": 21,
+    "normal_price": 24,
+    "limit": 25
+   }
+  },
+  "econ": {
+   "unit": "one subscriber-month: one 12 oz box shipped once",
+   "price": 24,
+   "vatRate": 0,
+   "shareKept": 1,
+   "net": 24,
+   "variable": 17.2,
+   "contribution": 6.8,
+   "fixedMonthly": 2110,
+   "breakEven": 311,
+   "startupCapital": 2300,
+   "currency": "USD",
+   "lines": [
+    {
+     "group": "variable",
+     "item": "Beans from roaster (12 oz)",
+     "eur": 8,
+     "source": null
+    },
+    {
+     "group": "variable",
+     "item": "Packaging",
+     "eur": 1.2,
+     "source": null
+    },
+    {
+     "group": "variable",
+     "item": "Shipping (US, 12 oz box)",
+     "eur": 7,
+     "source": null
+    },
+    {
+     "group": "variable",
+     "item": "Payment processing fees",
+     "eur": 1,
+     "source": null
+    },
+    {
+     "group": "fixed",
+     "item": "Owner minimum draw",
+     "eur": 1000,
+     "source": null
+    },
+    {
+     "group": "fixed",
+     "item": "Store and hosting",
+     "eur": 150,
+     "source": null
+    },
+    {
+     "group": "fixed",
+     "item": "Marketing",
+     "eur": 800,
+     "source": null
+    },
+    {
+     "group": "fixed",
+     "item": "Insurance",
+     "eur": 60,
+     "source": null
+    },
+    {
+     "group": "fixed",
+     "item": "Bookkeeping",
+     "eur": 100,
+     "source": null
+    },
+    {
+     "group": "startup",
+     "item": "Website and store setup",
+     "eur": 500,
+     "source": null
+    },
+    {
+     "group": "startup",
+     "item": "Branding and packaging design",
+     "eur": 600,
+     "source": null
+    },
+    {
+     "group": "startup",
+     "item": "First stock",
+     "eur": 1000,
+     "source": null
+    },
+    {
+     "group": "startup",
+     "item": "Business registration and permits",
+     "eur": 200,
+     "source": null
+    }
+   ]
+  }
+ }
+}

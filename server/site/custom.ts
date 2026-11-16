@@ -104,7 +104,7 @@ Review the plan against the subject: if any part would look the same for any oth
 - In any two-column section, both columns carry content (text, a list, a photo or the form). Never leave one half empty, never let a short text column sit next to a photo three times its height: split photos match the text block (\`align-items: center\`, photo height at most about 1.3 times the text).
 - Not everything centered. Prefer asymmetric splits (for example 5/7 or 1.08fr/1fr), left-aligned text, a large photo bleeding to one edge.
 - The hero sizes to its content: \`min-height\` at most \`min(820px, 100svh)\` on desktop, never forced full height on phones, and never more than 120px of empty space above the headline or the photo (no vertical centering in a box taller than its content).
-- Phone hero (below 560px): the header is a solid bar above the hero (the wordmark never sits on the photo), then the hero photo at full width with at least a 4:3 crop (\`aspect-ratio: 4/3\` or \`5/4\`), then the kicker, headline, price and the reserve button. No empty padding above the photo. The overlay label on the photo becomes a small chip (at most 25% of the photo) or moves below the photo; give that overlay element the class \`hero-tag\`.
+- Phone hero (below 560px): the header is a solid bar above the hero (the wordmark never sits on the photo), then the hero photo at full width with at least a 4:3 crop (\`aspect-ratio: 4/3\` or \`5/4\`), then the kicker, headline, price and the reserve button. No empty padding above the photo. The overlay label on the photo becomes a small chip (at most 25% of the photo) or moves below the photo; give that overlay element the class \`hero-tag\`. It keeps every line it has on desktop (never hide one of its rows on phones): if it would be too big, move it below the photo.
 - Breakpoints: one at about 900px (splits stack to one column, three-column grids go to two) and one at about 560px (everything single column, primary buttons full width, secondary nav links hidden). Nothing may make the page wider than the screen: no fixed widths over 340px, no \`min-width\` on content, no \`100vw\` widths (they include the scrollbar).
 - Do not use \`position: fixed\` (the platform adds its own sticky reserve bar on phones). \`position: sticky\` is fine on desktop only.
 - Page order (fixed; merge or drop a step that would be thin, 5 to 7 sections in total):
@@ -162,13 +162,39 @@ Review the plan against the subject: if any part would look the same for any oth
 
 - Exactly one \`<h1>\`. Headings in order. Every \`<img>\` uses \`ld-photo:\` with a given id, has alt, width and height, and no id is used twice.
 - At least three \`data-ld="reserve"\` links (if reserve is enabled) and exactly one \`<form data-ld="waitlist">\` with an \`<input name="email">\`.
-- No invented numbers, quotes, names, addresses, hours or claims. Every statistic links to its source.
+- No invented numbers, quotes, names, addresses, hours or claims. Every statistic links to its source. No earnings, payouts, rewards or savings for the visitor that the idea does not state.
 - No \`<script>\`, no \`style=""\` attributes, no event attributes, no external URLs other than statistic sources.
 - At 390px nothing is wider than the screen, the header sits above the hero photo, the hero label covers at most a quarter of the photo, no photo except the hero is portrait, and the first screen shows name, photo and headline; at 1280px the hero is a strong composition with the photo big and no portrait photo tower is taller than about 560px.
 - One closing section only, at most one dark band, no empty half-columns, no heading touching its paragraph.
 - The page would not look the same for a different business.
 
 Output the fragment now: start your reply with \`<style>\` and end it with \`</footer>\`.`;
+
+/**
+ * The hero label keeps its rows on phones: a designer rule that hides part of it (".hero-tag dl div:nth-child(2)
+ * {display:none}" lost the "Time" row on mobile) is dropped when the page is made. Stored pages are not touched.
+ */
+export function keepHeroTagRows(css: string): string {
+  return String(css ?? "").replace(/(^|[{};\s])([^{};]*\.hero-tag[^{};]*)\{\s*display\s*:\s*none\s*(?:!important)?\s*;?\s*\}/g, "$1");
+}
+
+/**
+ * The hero label under the photo on phones: when the page's own phone rules put both the hero image and the label
+ * back in the flow (position:static), the image keeps "height:100%" from the desktop overlay and fills the whole box,
+ * so the label spills over the headline (q3: "Made slow, for" hidden at 390px). The image then takes its own height.
+ * New pages only (applied when the page is made); stored pages are not touched.
+ */
+export function heroTagInFlow(css: string): string {
+  const src = String(css ?? "");
+  const STATIC = /position\s*:\s*static/i;
+  for (const m of src.matchAll(/@media[^{]*max-width\s*:\s*(\d+)px[^{]*\{((?:[^{}]*\{[^{}]*\})*)\s*\}/gi)) {
+    const rules = [...m[2]!.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((r) => ({ sel: r[1]!.trim(), body: r[2]! }));
+    const tag = rules.some((r) => /\.hero-tag(?![\w-])(?![^,]*\s)/.test(r.sel) && STATIC.test(r.body));
+    const img = rules.some((r) => /\bimg\b/.test(r.sel) && /hero/.test(r.sel) && STATIC.test(r.body));
+    if (tag && img) return `${src}\n@media(max-width:${m[1]}px){[data-hero] :has(> .hero-tag) > img{height:auto!important}}`;
+  }
+  return src;
+}
 
 const RATIOS: Array<[string, number]> = [["1:1", 1], ["4:5", 0.8], ["3:4", 0.75], ["2:3", 2 / 3], ["9:16", 9 / 16], ["5:4", 1.25], ["4:3", 4 / 3], ["3:2", 1.5], ["16:9", 16 / 9], ["2:1", 2]];
 export function aspectOf(w: number, h: number): string {
@@ -187,6 +213,21 @@ export function reserveLabel(price: string, lang: string): string {
 
 const orientationOf = (w: number, h: number) => (!(w > 0 && h > 0) ? "landscape" : w / h > 1.1 ? "landscape" : w / h < 0.9 ? "portrait" : "square");
 
+/**
+ * The (at most two) customer numbers a page may lead with: newest first, and never two counts of the same thing
+ * ("562 million crypto holders, 2024" next to "about 742 million, 2026": only the 2026 one is kept).
+ */
+export function demandStats<T extends { value: string; label: string; kind?: string }>(stats: readonly T[]): T[] {
+  const yearOf = (s: T) => Math.max(0, ...[...`${s.label} ${s.value}`.matchAll(/\b(20\d\d)\b/g)].map((m) => Number(m[1])));
+  const words = (s: T) => new Set((s.label.toLowerCase().match(/[a-z]{4,}/g) ?? []).map((w) => w.replace(/s$/, "")));
+  const same = (a: T, b: T) => { const x = words(a), y = words(b); const n = [...x].filter((w) => y.has(w)).length; return n > 0 && n >= Math.min(x.size, y.size) * 0.5; };
+  const out: T[] = [];
+  for (const s of stats.filter((x) => x.kind === "demand").map((x, i) => ({ x, i })).sort((a, b) => yearOf(b.x) - yearOf(a.x) || a.i - b.i).map((e) => e.x)) {
+    if (out.length < 2 && !out.some((o) => same(o, s))) out.push(s);
+  }
+  return out;
+}
+
 /** The user message (see "Input" in the prompt notes). No address, no slug, no risks, no offer limit. */
 export function customBrief(input: KitInput, photos: CustomPhoto[]) {
   const { brand, report } = input;
@@ -199,9 +240,11 @@ export function customBrief(input: KitInput, photos: CustomPhoto[]) {
     report: {
       customer: report.customer,
       pain: report.pain,
-      offer: { what: report.offer.what, price: report.offer.price, ...(report.offer.normal ? { normal: report.offer.normal } : {}) },
+      offer: report.offer.free
+        ? { what: report.offer.what, price: 0, free: true, note: "Free early-access list: nothing is sold yet. No price, no payment, no reserve buttons and no \"$0\" or \"Free\" price block; the email signup is the main action (\"Join the list\"). Say only what the idea says about money: no earnings, payouts or rewards for users unless the idea states them." }
+        : { what: report.offer.what, price: report.offer.price, ...(report.offer.normal ? { normal: report.offer.normal } : {}) },
       // Only numbers about the customer may become a headline; market prices are context; population, rent, fees are left out.
-      stats: sourced.filter((s) => s.kind === "demand").slice(0, 2).map((s) => ({ value: s.value, label: s.label, sourceUrl: s.sourceUrl })),
+      stats: demandStats(sourced).map((s) => ({ value: s.value, label: s.label, sourceUrl: s.sourceUrl })),
       marketPrices: sourced.filter((s) => s.kind === "price").slice(0, 3).map((s) => ({ value: s.value, label: s.label, sourceUrl: s.sourceUrl })),
       competitors: report.competitors.slice(0, 3),
     },
@@ -338,6 +381,7 @@ export async function generateCustomSite(input: KitInput, photos: CustomPhoto[],
   if (msg.stop_reason === "max_tokens") return { ...base, html: null, issues: ["the page was cut off (too long)"], warnings: [] };
   const text = msg.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("");
   const s = sanitize(extractFragment(text), storeCtx(input, photos));
+  s.css = heroTagInFlow(keepHeroTagRows(s.css));
   if (s.problems.length) console.warn(`[site-custom] rejected: ${s.problems.join("; ")}`);
   return { ...base, html: s.problems.length ? null : `<style>${s.css}</style>${s.body}`, issues: s.problems, warnings: s.warnings };
 }

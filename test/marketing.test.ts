@@ -4,9 +4,10 @@ import assert from "node:assert/strict";
 process.env.MOCK_AI = "1";
 process.env.DATABASE_URL ??= ":memory:";
 
-const { cleanPlan, saneDays, withValidateFirst, garbled, usedSources, PLAN_SCHEMA, PLAN_SCHEMA_A, PLAN_SCHEMA_B, BANNED, COPY_LIMITS, assumeWord } = await import("../server/marketing/schema.js");
+const { cleanPlan, saneDays, withValidateFirst, checksAfterInputs, fitReserve, garbled, usedSources, PLAN_SCHEMA, PLAN_SCHEMA_A, PLAN_SCHEMA_B, BANNED, COPY_LIMITS, assumeWord } = await import("../server/marketing/schema.js");
 const { templatePlan } = await import("../server/kit-templates.js");
-const { planMarketing, loadFixture, fixtureKeyFor, mergeSources, promptA, promptB, FIXTURE_KEYS } = await import("../server/marketing/plan.js");
+const { planMarketing, loadFixture, fixtureKeyFor, mergeSources, promptA, promptB, FIXTURE_KEYS, offerLine, placeLine, onlineEvents } = await import("../server/marketing/plan.js");
+const { gateReason } = await import("../server/marketing/schema.js");
 const { locationOf, researchPrompt } = await import("../server/marketing/research.js");
 type PlanV2 = import("../server/marketing/schema.js").PlanV2;
 
@@ -274,6 +275,138 @@ await test("a rejected channel gets no budget; first actions carry no day number
   assert.deepEqual(t100.lines.map((l) => l.channel), ["Forum posts"]);
   assert.ok(warnings.some((w) => /rejected channel/.test(w)));
   assert.equal(plan.channels[0]!.first_action, "Send the first 25");
+});
+
+// q3: budget lines keep the reserve aside (new plans only)
+await test("new plans: each tier's lines fit the tier minus the reserve; saved fixtures are not re-cut", async () => {
+  const base = structuredClone(loadFixture("bakery-es")!.result.plan as PlanV2);
+  // the val0 newsletter plan: 15% reserve, the 100 tier spent 90 and the 500 tier 450
+  const plan: PlanV2 = { ...base, budget: { reserve_pct: 15, reallocate_rule: "x", tiers: [
+    { amount: 0, label: "Free", lines: [{ channel: "Email", amount: 0, for: "time" }, { channel: "Forums", amount: 0, for: "time" }] },
+    { amount: 100, label: "Small", lines: [{ channel: "Page", amount: 30, for: "domain" }, { channel: "Newsletter", amount: 25, for: "platform" }, { channel: "Sponsor", amount: 35, for: "slot" }] },
+    { amount: 500, label: "Larger", lines: [{ channel: "Page", amount: 50, for: "tools" }, { channel: "Newsletter", amount: 50, for: "platform" }, { channel: "Sponsor", amount: 350, for: "slot" }, { channel: "Extra", amount: 20, for: "x" }] },
+  ] } };
+  const w: string[] = [];
+  const out = fitReserve(plan, w);
+  for (const t of out.budget.tiers) assert.ok(t.lines.reduce((s, l) => s + l.amount, 0) <= t.amount * 0.85, `tier ${t.amount}`);
+  assert.deepEqual(out.budget.tiers[0]!.lines.map((l) => l.amount), [0, 0], "time-only lines stay");
+  assert.deepEqual(out.budget.tiers[1]!.lines.map((l) => l.amount), [30, 25, 30], "cut from the last (lowest-priority) line");
+  assert.deepEqual(out.budget.tiers[2]!.lines.map((l) => [l.channel, l.amount]), [["Page", 50], ["Newsletter", 50], ["Sponsor", 325]], "a line cut to 0 is dropped");
+  assert.equal(w.length, 2);
+  assert.deepEqual(fitReserve(out, []), out, "idempotent");
+  // a plan that already fits is unchanged
+  const ok = { ...plan, budget: { ...plan.budget, reserve_pct: 0 } };
+  assert.deepEqual(fitReserve(ok, []).budget.tiers.map((t) => t.lines.length), [2, 3, 4]);
+  // the saved real fixtures (bakery-es 500 tier: 460 with 12% kept) come back exactly as saved in demo mode
+  for (const key of FIXTURE_KEYS) {
+    const f = loadFixture(key)!;
+    const r = await planMarketing(f.input, { mock: true });
+    assert.deepEqual(r.plan.budget, f.result.plan.budget, `${key}: saved budget untouched`);
+  }
+});
+
+await test("a check is judged after the days that produce its result, in the report's order (val0 #9)", () => {
+  const base = structuredClone(loadFixture("bikes-en")!.result.plan as PlanV2);
+  const d = (day: number, action: string) => ({ day, time: "", channel: "Direct email", action, copy: null, hours: 1 });
+  // the val0 newsletter calendar: Check 3 on day 1, Check 2 on day 3 (its owner answers come on day 12), Check 1 on day 6
+  const W1 = [
+    d(1, "Check 3: Price the real newsletter platform, payment processor and hosting for one month. Pass mark: contribution of 96% or higher."),
+    d(2, "Read ten recent crypto threads on Shopify Community and write down the unanswered questions."),
+    d(3, "Check 2: Set up a BTCPay Server test store on a real shop and time every step. Pass mark: at least 3 of 5 owners name a step that free docs did not solve, and it is one a paid guide could fix."),
+    d(6, "Check 1: Build one page with the $8 price and a BCH pay button. Pass mark: at least 6 of every 100 visitors start the sign-up."),
+  ];
+  const W2 = [d(8, "Send the waitlist email to the first 25 shops in your sheet."), d(12, "Call five shop owners who replied and ask what they could not solve from free docs. Count how many name a step a paid guide could fix."), d(14, "Send the email to the remaining 75 shops.")];
+  const weeks = [{ ...base.weeks[0]!, days: W1 }, { ...base.weeks[1]!, days: W2 }, ...base.weeks.slice(2)];
+  const w: string[] = [];
+  const out = checksAfterInputs(weeks, w);
+  const dayOf = (n: number) => out.flatMap((x) => x.days).find((x) => x.action.startsWith(`Check ${n}:`))!.day;
+  assert.equal(dayOf(1), 6, "Check 1 stays (nothing later collects its result)");
+  assert.equal(dayOf(2), 13, "Check 2 moves after day 12, where the owner answers come in");
+  assert.equal(dayOf(3), 13, "Check 3 keeps the order: never before Check 2");
+  const wk2 = out[1]!.days.map((x) => x.action.slice(0, 8));
+  assert.ok(wk2.indexOf("Check 2:") < wk2.indexOf("Check 3:") && out[1]!.days.every((x, i, a) => i === 0 || a[i - 1]!.day <= x.day), "week 2 in day order, Check 2 before Check 3");
+  assert.equal(out[0]!.days.length, 2);
+  assert.equal(w.length, 2);
+  assert.deepEqual(checksAfterInputs(out, []), out, "idempotent");
+  // through cleanPlan, then the gate reads the new days
+  const { plan } = cleanPlan({ ...base, weeks }, SRC, { lang: "en", currency: "USD" });
+  const gated = withValidateFirst(plan, { verdict: "pivot", mainReason: "x", validateFirst: [1, 2, 3].map((i) => ({ what: `Check what ${i}`, how: `How ${i}.`, passIf: `Pass ${i}.` })) });
+  assert.deepEqual(gated.gate!.checks.map((c) => c.day), [6, 13, 13]);
+  // a plan without numbered checks is untouched
+  assert.deepEqual(checksAfterInputs(base.weeks, []), base.weeks);
+  // the prompt: a pass mark is a target, not the current estimate, judged when its result exists
+  const f = loadFixture("bikes-en")!;
+  const a = promptA({ ...f.input, report: { ...f.input.report, verdict: "pivot", mainReason: "x", validateFirst: [] } } as never, { notes: [], sources: [], queries: [], ok: false }, []);
+  assert.match(a, /pass mark is a target the test must reach/);
+  assert.match(a, /never the report's current estimate restated/);
+  assert.match(promptB({ ...f.input, report: { ...f.input.report, verdict: "go", validateFirst: [] } } as never, { notes: [], sources: [], queries: [], ok: false }, [], {}), /after the days that collect it/);
+});
+
+await test("q3: a free offer is never sold in BCH; marketplace buyers stay on the marketplace; online plans have no town", () => {
+  const f = loadFixture("bikes-en")!;
+  const R = { notes: [], sources: [], queries: [], ok: false };
+  const free = { ...f.input, idea: "A free mobile app where neighbours lend tools to each other, earning from a $2 insurance fee per loan", brand: { ...f.input.brand, city: undefined }, report: { ...f.input.report, offer: { what: "Free early access", price: 0, free: true }, verdict: "pivot", mainReason: "x", validateFirst: [] } };
+  const a = promptA(free as never, R, []);
+  assert.match(a, /The offer is free: the website collects free early-access sign-ups by email and has NO payment button/);
+  assert.doesNotMatch(a, /The founder takes payments in Bitcoin Cash/);
+  assert.doesNotMatch(a, /its BCH reserve button are live/);
+  assert.match(a, /count_from is one of: website, by hand/);
+  assert.match(a, /free sign-ups through it are the demand test/);
+  assert.match(a, /sells online, to buyers anywhere in its country/);
+  assert.match(a, /online only \(this business has no town\)/);
+  // priced, with a town: the old BCH line and no online note
+  assert.match(offerLine(f.input), /^The founder takes payments in Bitcoin Cash \(BCH\) on their own website: each pre-order or booking is one payment they can count\.$/);
+  assert.equal(placeLine({ brand: { ...f.input.brand, city: "Leeds" } } as never), "");
+  // Etsy: no off-Etsy pay links
+  const etsy = offerLine({ ...f.input, idea: "Handmade ceramic mugs sold on Etsy from Portland, Oregon, $38 each" });
+  assert.match(etsy, /Never send Etsy buyers off Etsy to pay/);
+  // one pass mark per check, runnable inside the 30 days
+  const pa = promptA({ ...f.input, report: { ...f.input.report, verdict: "pivot", mainReason: "x", validateFirst: [] } } as never, R, []);
+  assert.match(pa, /One pass mark per check/);
+  assert.match(pa, /Every check must be runnable inside these 30 days with this budget/);
+  assert.match(promptB(f.input, R, [], {}), /Every task fits its day/);
+  // in-person events are dropped for an online business
+  const w: string[] = [];
+  const ev = onlineEvents([{ name: "Culver City Old Tool Swap Meet", date: "2026-11-21", where: "Culver City, CA", source: 1 }, { name: "Maker livestream", date: "2026-11-25", where: "Online (YouTube)", source: 2 }], w);
+  assert.deepEqual(ev.map((e) => e.name), ["Maker livestream"]);
+  assert.equal(w.length, 1);
+});
+
+await test("q3: '(?)' never reaches the gate reason; post channels keep their full name", () => {
+  assert.equal(gateReason("Test first: The research found no Telegram tax-reminder competitors (?)."), "The research found no Telegram tax-reminder competitors.");
+  const base = structuredClone(loadFixture("bikes-en")!.result.plan as PlanV2);
+  const long = "Direct replies in tax and payment threads";
+  const { plan } = cleanPlan({ ...base, copy: { ...base.copy, posts: base.copy.posts.map((p, i) => (i === 1 ? { ...p, channel: long } : p)) } }, SRC, { lang: "en", currency: "USD" });
+  assert.equal(plan.copy.posts[1]!.channel, long);
+});
+
+await test("q3: the copy a day uses is kept when the task fits it; a channel the task names keeps its label", () => {
+  const base = structuredClone(loadFixture("bikes-en")!.result.plan as PlanV2);
+  const channels = ["Survey and short interviews with freelancers", "Paid subscribers' feedback and renewals", "Etsy shop test", "Studio and potter circles"].map((name) => ({ ...base.channels[0]!, name }));
+  const d = (day: number, channel: string, copy: string, action: string) => ({ day, time: "", channel, action, copy: copy as never, hours: 1 });
+  const days = [
+    d(2, channels[0]!.name, "message", "Send a five-question survey link to 30 freelancers who report crypto income."),
+    d(21, channels[1]!.name, "email", "Message each pre-order buyer with one question: did the reminder come at a useful time?"),
+    d(25, channels[1]!.name, "message", "Ask buyers what they would change and whether they plan to continue at $5 a month."),
+    d(1, "Etsy shop test", "profile", "List 6 to 8 mugs at $38 on Etsy with clear photos of glaze and size, and fill in the shop About section."),
+  ];
+  const plan = { ...base, channels, weeks: [{ ...base.weeks[0]!, days }, ...base.weeks.slice(1).map((w) => ({ ...w, days: [] }))] };
+  const w: string[] = [];
+  const out = saneDays(plan, [], w).weeks[0]!.days;
+  assert.deepEqual(out.map((x) => x.copy), ["message", "email", "message", "profile"], w.join("; "));
+  assert.equal(out[3]!.channel, "Etsy shop test", "not relabelled 'Google Business Profile'");
+});
+
+await test("q3: a day that measures a check is not an input that pushes the check after it (val2 #3)", () => {
+  const base = structuredClone(loadFixture("bikes-en")!.result.plan as PlanV2);
+  const d = (day: number, action: string) => ({ day, time: "", channel: "Neighbourhood groups", action, copy: null, hours: 1 });
+  const W1 = [d(7, "Check 1: Offer the $2 cover on 40 tool requests in the groups. Pass mark: at least 10 of 40 borrowers pay the $2 cover.")];
+  const W4 = [d(28, "Count the borrowers who paid the $2 cover out of the 40 requests. Check 1 passes only if at least 10 of 40 borrowers paid.")];
+  const weeks = [{ ...base.weeks[0]!, days: W1 }, base.weeks[1]!, base.weeks[2]!, { ...base.weeks[3]!, days: W4 }];
+  const w: string[] = [];
+  const out = checksAfterInputs(weeks, w);
+  assert.equal(out.flatMap((x) => x.days).find((x) => x.action.startsWith("Check 1:"))!.day, 7);
+  assert.equal(w.length, 0);
 });
 
 console.log(`marketing: ${n} tests passed`);

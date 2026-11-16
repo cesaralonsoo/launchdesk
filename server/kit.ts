@@ -11,7 +11,7 @@
 //   site2 server/site/custom.ts   generateCustomSite(...)  one page designed for this business, after the copy is
 //                                 ready; it becomes the live design unless the founder already chose one by hand.
 import { statKind } from "./site/stat-kind.js";
-import { runDept } from "./ai.js";
+import { freeToUser, runDept } from "./ai.js";
 import { config } from "./config.js";
 import { Budget, BudgetError, costOf, costScope } from "./cost.js";
 import { exec, getProject, getProjectRow } from "./db.js";
@@ -170,7 +170,10 @@ export function digestOf(p: Project, v7: ResultsV7 | null): ReportDigest & Repor
   return {
     customer: p.results.mia?.brief.for ?? "",
     pain: customerPain(p, v7),
-    offer: lo ? { what: lo.item, price: lo.price, normal: lo.normal_price, limit: lo.limit } : { what: p.results.mia?.title ?? p.idea, price: sam?.price.value ?? 0 },
+    // an idea that is free to its users (fee, commission, ads) sells nothing up front: a free early-access list
+    offer: (lo && !(lo.price > 0)) || freeToUser(p.idea)
+      ? { what: lo && !(lo.price > 0) ? lo.item : "Free early access", price: 0, ...(lo?.limit ? { limit: lo.limit } : {}), free: true }
+      : lo ? { what: lo.item, price: lo.price, normal: lo.normal_price, limit: lo.limit } : { what: p.results.mia?.title ?? p.idea, price: sam?.price.value ?? 0 },
     stats,
     competitors,
     risks,

@@ -115,6 +115,8 @@ export const CATEGORIES: Category[] = [
   { key: "plants", match: /plant|flor|flower|garden|jard[ií]n|botan|succulent|nursery|vivero/i, hero: ["houseplants", "plant shop"], detail: ["snake plant", "monstera", "pothos", "potted plant"], people: ["woman watering plants"] },
   { key: "dogs", match: /\bdogs?\b|perr|puppy|\bpets?\b|mascota|\bcats?\b|gato|canine/i, hero: ["dog walking", "dog walker"], detail: ["dog leash", "dog park", "puppy"], people: ["woman walking dog"] },
   { key: "fitness", match: /yoga|fitness|\bgym|pilates|exercis|workout|stretch|senior|elderly|mayores|run(ning|ners?)\b|personal train/i, hero: ["yoga class", "seniors exercise"], detail: ["yoga mat", "stretching", "fitness"], people: ["seniors exercise"] },
+  // A phone app is photographed as phones in hands, never as the place it is used in (no chef for a bill-splitting app).
+  { key: "mobile", match: /\b(?:mobile|phone|iphone|android|ios)\s+apps?\b/i, hero: ["friends phone", "smartphone hands"], detail: ["phone payment", "smartphone", "phone screen hand"], people: ["people using phone"] },
   { key: "food", match: /restaurant|food|meal|kitchen|cook|chef|comida|cater|lunch|dinner|pizza|taco|burger|vegan|recipe/i, hero: ["restaurant table", "chef cooking"], detail: ["fresh vegetables", "plated food", "kitchen"], people: ["chef cooking"] },
   { key: "beauty", match: /hair|salon|beauty|nail|barber|peluquer|makeup|skincare|spa\b|massage/i, hero: ["hair salon", "barber shop"], detail: ["hairdresser", "makeup brushes", "skincare"], people: ["hairdresser"] },
   { key: "kids", match: /\bkids?\b|child|niñ|baby|toddler|school|tutor|nanny|daycare|guarder/i, hero: ["children playing", "kids learning"], detail: ["children books", "crayons drawing", "toys"], people: ["teacher child"] },
@@ -154,16 +156,88 @@ export function areaOf(idea: string, city?: string): string {
   return a && a.toLowerCase() !== c.toLowerCase() ? a.slice(0, 40) : "";
 }
 
-/** Model queries first (cleaned), then the category defaults; de-duplicated, at most 4 per role. */
+// ───────────────────────────────────────────────────────────── the product noun
+/** Words that describe the product but are not what a photo shows ("handmade", "monthly", "paid"). */
+const PRODUCT_ADJ = new Set(["handmade", "hand", "made", "homemade", "monthly", "weekly", "daily", "yearly", "specialty", "speciality", "premium", "artisan", "artisanal", "custom", "personalised", "personalized", "organic", "small", "local", "online", "paid", "free", "mobile", "digital", "new", "best", "simple", "affordable", "cheap", "luxury", "quality", "sustainable", "eco", "friendly", "independent", "curated", "restored", "vintage", "fresh", "my", "our", "your", "first", "own"]);
+/** Nouns that name the kind of business, not the thing sold ("plant shop" → plant). */
+const BUSINESS_NOUN = new Set(["shop", "store", "studio", "service", "services", "business", "company", "startup", "brand", "kiosk", "stand", "stall", "cart", "boutique", "club", "subscription", "box", "app", "apps", "application", "platform", "website", "site", "tool", "software", "saas", "marketplace", "agency", "newsletter", "course", "class", "classes"]);
+const CLAUSE_CUT = /\s*[,;:]\s*|\s+(?:that|which|who|where|how|what|why|when|sold|selling|made|shipped|shipping|delivered|for|from|in|on|at|near|with|to|by|via|across|among|between|and|or|around|each|per|priced|costing|starting|under|over|plus)\s+/i;
+const CONTAINER = /^(?:\w+\s+){0,2}?(?:box|boxes|set|sets|pack|packs|kit|kits|bundle|bundles|subscription|collection|range|line|selection|crate|basket|batch|club)\s+(?:of|with)\s+/i;
+/** Plain English plural → singular, enough for photo words ("wallets" → wallet, "boxes" → box, "berries" → berry). */
+export function singular(w: string): string {
+  if (w.length <= 3 || /(ss|us|is)$/.test(w)) return w;
+  if (/ies$/.test(w)) return w.slice(0, -3) + "y";
+  if (/(ch|sh|x|z|ss)es$/.test(w)) return w.slice(0, -2);
+  return w.endsWith("s") ? w.slice(0, -1) : w;
+}
+/** Lower-case letter words of a text (word level: "cut" is never found inside "haircut"). */
+export function wordsOf(text: string): string[] {
+  return String(text ?? "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().split(/[^a-z]+/).filter((w) => w.length >= 2);
+}
+const isEnglish = (idea: string) => /\b(a|an|the|for|that|with|and|of|sold|in|to)\b/i.test(idea) && !/[ñçàèéíòóúü]/i.test(idea);
+const phraseOf = (s: string) => {
+  // "each other" / "one another" name no thing (a tool-lending app once searched photos for "each other": two lions)
+  const ws = wordsOf(s.split(CLAUSE_CUT)[0] ?? "").filter((w) => !PRODUCT_ADJ.has(w) && !/^(a|an|the|each|other|others|another|one|ones)$/.test(w));
+  return ws.slice(-3);
+};
+
+/**
+ * What the business sells, as 1-3 plain English words a stock photo is tagged with: "Handmade leather wallets sold
+ * on Etsy" → { phrase: "leather wallets", head: "wallet" }; "A monthly box of specialty coffee beans" → "coffee beans";
+ * "A mobile app that splits restaurant bills" → "restaurant bills" (the thing the app is about). Null when the idea
+ * is not in English or names nothing concrete.
+ */
+export function productOf(idea: string): { phrase: string; head: string } | null {
+  if (!isEnglish(idea)) return null;
+  const first = String(idea).split(/[.!?(\n]|\s[-–—]\s|[$€£]/)[0] ?? "";
+  const s = first.toLowerCase().replace(/^\s*(?:a|an|the|my|our)\s+/, "").replace(CONTAINER, "");
+  let words = phraseOf(s);
+  // after a verb, plural "tools" are things people hold ("lend tools to each other"), not a software tool
+  let biz = (w: string) => BUSINESS_NOUN.has(singular(w));
+  // "an app that splits restaurant bills" / "an online shop for road bikes": the thing it is about follows the verb
+  if (!words.length || words.every((w) => BUSINESS_NOUN.has(singular(w)))) {
+    // "an app where neighbours lend tools to each other": subject and verb, then the thing
+    const where = /\bwhere\s+(?:\w+\s+){1,2}?(?:can\s+|could\s+)?(?:lend|borrow|swap|share|sell|buy|rent|trade|find|book|order|post|list|give|exchange|get|offer|hire)s?\s+(.+)/.exec(s);
+    const m = where ?? /\b(?:that|which|to|for|of)\s+(?:(?:helps?|lets?)\s+\w+\s+)?(?:(?:\w+s|\w+e)\s+)?(.+)/.exec(s);
+    const after = (w: string) => w !== "tools" && BUSINESS_NOUN.has(singular(w));
+    const rest = m?.[1] ? phraseOf(m[1].replace(/^(?:a|an|the|their|your|other|each)\s+/, "")) : [];
+    if (rest.filter((w) => !after(w)).length) {
+      words = rest;
+      biz = after;
+    }
+  }
+  const concrete = words.filter((w) => !biz(w) && !ABSTRACT_WORD.has(w));
+  if (!concrete.length) return null;
+  // the phrase keeps a trailing business noun only when it names a place photo ("plant shop"), never "app"
+  const keep = words.filter((w) => !ABSTRACT_WORD.has(w) && !["app", "apps", "application", "platform", "software", "saas", "tool", "website", "site", "subscription", "box", "newsletter"].includes(w));
+  const phrase = keep.slice(-3).join(" ");
+  return phrase.length >= 3 ? { phrase, head: singular(concrete[concrete.length - 1]!) } : null;
+}
+const ABSTRACT_WORD = new Set(["solution", "solutions", "service", "services", "business", "company", "best", "premium", "quality", "thing", "things", "stuff", "product", "products", "idea", "way", "people", "everyone", "anyone"]);
+
+/** Model queries first (cleaned), then the product noun, then the category defaults; de-duplicated, at most 4 per role. */
 export function buildQueries(input: { idea: string; city?: string; area?: string; queries?: Partial<PhotoQueries> }): PhotoQueries {
   const cat = categoryOf(input.idea) ?? GENERIC;
   const merge = (a: string[] | undefined, b: string[], max = 4) => [...new Set([...(a ?? []), ...b].map(cleanQuery).filter((q) => q.length >= 3))].slice(0, max);
+  const prod = productOf(input.idea);
+  const one = prod ? prod.phrase.split(" ").map((w, i, a) => (i === a.length - 1 ? singular(w) : w)).join(" ") : "";
+  // the thing sold leads hero and detail; the category's stock scenes follow (a generic "small shop" only when nothing else is known)
+  if (prod) {
+    const generic = cat === GENERIC;
+    const lead = generic
+      ? { hero: [prod.phrase, one], detail: [`${one} closeup`, one], people: [`${one} hands`] }
+      : { hero: [prod.phrase], detail: one !== prod.phrase ? [one] : [], people: [] };
+    const pick = (role: "hero" | "detail" | "people", max = 4) => merge([...(input.queries?.[role] ?? []), ...lead[role]], generic ? [] : cat[role], max);
+    return { hero: pick("hero"), detail: pick("detail"), people: pick("people", 3), place: placeQueries(input) };
+  }
+  return { hero: merge(input.queries?.hero, cat.hero), detail: merge(input.queries?.detail, cat.detail), people: merge(input.queries?.people, cat.people, 3), place: placeQueries(input) };
+}
+function placeQueries(input: { idea: string; city?: string; area?: string; queries?: Partial<PhotoQueries> }): string[] {
   const city = cleanCity(input.city);
   const area = cleanCity(input.area ?? areaOf(input.idea, input.city));
   // The neighbourhood first ("Leith Edinburgh", "Leith street"); the city alone only when there is no area.
   const defaults = area ? [`${area} ${city}`, `${area} street`] : city ? [`${city} street`, city] : [];
-  const place = [...new Set([...(input.queries?.place ?? []).map((q) => String(q).replace(/[^\p{L} ]+/gu, " ").replace(/\s+/g, " ").trim().slice(0, 40)), ...defaults].filter((q) => q.length >= 3))].slice(0, 3);
-  return { hero: merge(input.queries?.hero, cat.hero), detail: merge(input.queries?.detail, cat.detail), people: merge(input.queries?.people, cat.people, 3), place };
+  return [...new Set([...(input.queries?.place ?? []).map((q) => String(q).replace(/[^\p{L} ]+/gu, " ").replace(/\s+/g, " ").trim().slice(0, 40)), ...defaults].filter((q) => q.length >= 3))].slice(0, 3);
 }
 const cleanCity = (c?: string) => String(c ?? "").replace(/[^\p{L} '-]+/gu, " ").replace(/\s+/g, " ").trim().slice(0, 40);
 
@@ -226,6 +300,89 @@ export function keepCandidate(c: Candidate, idea = ""): boolean {
   if (c.provider === "rawpixel" && BAD_RAWPIXEL_PATH.test(rawpixelPath(c.url))) return false;
   if (c.creator && ARCHIVE_CREATOR.test(c.creator)) return false;
   return true;
+}
+
+// ───────────────────────────────────────────────────────────── on-topic check (word level)
+/**
+ * Kinds of thing a stock photo can be about. A photo whose title or description names a thing from a group this idea
+ * is not about ("fresh cut flowers" for a wallet shop, a chef for a bill-splitting app) is off-topic, unless it also
+ * names the product itself. Words are singular and matched as whole words.
+ */
+export const PHOTO_GROUPS: Record<string, string[]> = {
+  coffee: ["coffee", "cafe", "espresso", "latte", "barista", "cappuccino", "mug", "roaster", "roastery"],
+  tea: ["tea", "teapot", "teacup", "matcha"],
+  bakery: ["bread", "bakery", "baker", "croissant", "pastry", "cake", "cupcake", "cookie", "sourdough", "loaf", "donut", "muffin", "bun"],
+  food: ["restaurant", "chef", "meal", "pizza", "burger", "sandwich", "pancake", "salad", "pasta", "sushi", "taco", "soup", "dish", "banana", "fruit", "vegetable", "tomato", "lemon", "breakfast", "lunch", "dinner", "cooking", "cook", "kitchen", "dining", "diner", "waiter", "menu"],
+  drinks: ["wine", "beer", "cocktail", "whiskey", "brewery", "vineyard", "bartender", "pub"],
+  flowers: ["flower", "florist", "bouquet", "rose", "tulip", "blossom", "daisy", "sunflower", "peony", "orchid", "lily"],
+  plants: ["plant", "houseplant", "cactus", "succulent", "monstera", "pothos", "fern", "flowerpot", "greenhouse", "nursery", "garden", "gardening", "gardener"],
+  pets: ["dog", "puppy", "cat", "kitten", "pet", "leash"],
+  fitness: ["yoga", "gym", "fitness", "workout", "dumbbell", "pilates", "stretching", "exercise", "runner", "jogging"],
+  beauty: ["salon", "hairdresser", "haircut", "barber", "makeup", "lipstick", "manicure", "nail", "skincare", "cosmetic", "spa", "massage", "perfume"],
+  kids: ["child", "children", "kid", "toddler", "baby", "toy", "crayon", "playground"],
+  tools: ["tool", "ladder", "bicycle", "bike", "wrench", "toolbox", "workbench", "carpenter", "hammer", "drill", "screwdriver", "mechanic", "plumber"],
+  bags: ["handbag", "bag", "tote", "purse", "backpack", "luggage", "suitcase"],
+  wallets: ["wallet", "cardholder", "billfold"],
+  shoes: ["shoe", "sneaker", "boot", "sandal"],
+  jewelry: ["jewelry", "jewellery", "necklace", "earring", "bracelet", "pendant"],
+  clothing: ["dress", "shirt", "tshirt", "jacket", "sweater", "hoodie", "jean", "clothing", "clothes", "hat", "scarf", "sock"],
+  crafts: ["leather", "sewing", "stitching", "needle", "thread", "knitting", "yarn", "pottery", "ceramic", "candle", "soap"],
+  books: ["book", "bookstore", "bookshop", "library", "novel"],
+  cars: ["car", "truck", "vehicle", "taxi"],
+  work: ["laptop", "computer", "desk", "office", "keyboard", "calculator", "receipt", "spreadsheet", "notebook", "typing"],
+  phone: ["phone", "smartphone", "iphone", "mobile", "tablet", "app"],
+  money: ["cash", "coin", "banknote", "bitcoin", "crypto", "payment", "bill", "card"],
+};
+/** The groups a category is about (a coffee idea may show a croissant; a phone app shows phones, payments and desks). */
+const CATEGORY_GROUPS: Record<string, string[]> = {
+  coffee: ["coffee", "tea", "bakery"], bakery: ["bakery", "coffee"], plants: ["plants", "flowers"], dogs: ["pets"], fitness: ["fitness"],
+  mobile: ["phone", "money", "work"], food: ["food", "coffee", "drinks", "bakery"], beauty: ["beauty"], kids: ["kids", "books"], tools: ["tools"], work: ["work", "phone", "money"],
+};
+/** Idea words that say nothing about what a photo should show. */
+const IDEA_STOP = new Set(["a", "an", "the", "and", "or", "for", "with", "of", "to", "in", "on", "at", "from", "by", "via", "per", "each", "that", "which", "who", "how", "is", "are", "be", "it", "its", "their", "your", "our", "my", "we", "you", "they", "them", "this", "sold", "sell", "sells", "selling", "made", "make", "makes", "month", "monthly", "week", "weekly", "year", "day", "daily", "price", "priced", "fee", "small", "local", "online", "shop", "store", "business", "service", "services", "app", "apps", "mobile", "platform", "website", "site", "new", "free", "paid", "across", "around", "among", "between", "into", "who", "people", "customer", "customers", "shipped", "shipping", "delivered", "delivery", "handmade", "custom", "premium", "specialty", "box", "subscription", "us", "usa", "uk", "eu", "near", "about", "just", "only", "also", "more", "most", "very", "using", "use", "uses", "help", "helps", "lets", "first", "one", "two", "three", "settles", "takes", "take", "plus", "than", "less", "small", "big", "best", "other", "others", "another", "where", "when", "earning", "earn", "earns"]);
+
+export interface PhotoTopic {
+  /** Any of these in a photo's text makes it about this idea. */
+  topic: Set<string>;
+  /** The product itself and the idea's own kinds of thing: they excuse a stray word from another group. */
+  core: Set<string>;
+  /** Things from other groups: in a photo's title or description they make it off-topic (unless a core word is there too). */
+  foreign: Set<string>;
+}
+/** What a photo for this idea may and may not show, at word level. */
+export function topicOf(idea: string, city?: string): PhotoTopic {
+  const cat = categoryOf(idea);
+  const prod = productOf(idea);
+  // proper nouns (Etsy, Austin, Texas) and the city say nothing about the scene
+  const proper = new Set((String(idea).match(/(?<=\S\s+)\p{Lu}[\p{L}'’]+/gu) ?? []).map((w) => w.toLowerCase()));
+  wordsOf(city ?? "").forEach((w) => proper.add(w));
+  const ideaWords = wordsOf(idea).map(singular).filter((w) => w.length >= 3 && !IDEA_STOP.has(w) && !proper.has(w));
+  const groupsOf = (w: string) => Object.entries(PHOTO_GROUPS).filter(([, ws]) => ws.includes(w)).map(([g]) => g);
+  const own = new Set<string>(cat ? CATEGORY_GROUPS[cat.key] ?? [] : []);
+  const headWords = prod ? [prod.head, ...prod.phrase.split(" ").map(singular)] : [];
+  if (prod) groupsOf(prod.head).forEach((g) => own.add(g));
+  // with no product and no category, every idea word's group is the idea's own
+  if (!prod && !cat) ideaWords.forEach((w) => groupsOf(w).forEach((g) => own.add(g)));
+  const ownWords = [...own].flatMap((g) => PHOTO_GROUPS[g] ?? []);
+  const topic = new Set([...ideaWords, ...ownWords, ...headWords]);
+  // With a known product only the product excuses a stray word: a laptop next to a plant is not a photo of a Telegram
+  // bot. Without one, the idea's own kinds of thing do.
+  const core = new Set(prod ? [prod.head] : ownWords);
+  const foreign = new Set(Object.values(PHOTO_GROUPS).flat().filter((w) => !topic.has(w)));
+  return { topic, core, foreign };
+}
+
+/**
+ * Word-level relevance of a stock candidate: its text (title, tags, description, the photo check's alt) must name
+ * something this idea is about, and its subject (title, description, alt) must not name another kind of thing unless
+ * it also names the product. An off-topic photo is worse than none.
+ */
+export function onTopic(c: Pick<Candidate, "title" | "tags" | "desc">, t: PhotoTopic, alt?: string): boolean {
+  const subject = new Set([...wordsOf(`${c.title} ${c.desc ?? ""} ${alt ?? ""}`)].map(singular));
+  const all = new Set([...subject, ...wordsOf(c.tags.join(" ")).map(singular)]);
+  if (![...all].some((w) => t.topic.has(w))) return false;
+  const stray = [...subject].some((w) => t.foreign.has(w));
+  return !stray || [...subject].some((w) => t.core.has(w));
 }
 
 /** Words that name the main subject of a photo ("monstera", "leash"), for keeping detail photos different. */
@@ -565,7 +722,13 @@ export async function findPhotos(input: FindPhotosInput): Promise<SitePhoto[]> {
         alts = v.alts;
       }
     }
-    const photos = await pickAndDownload(ranked, { f, signal: all, alts, log, category });
+    // Word-level relevance after the photo check (its alt text counts): a photo about another product is dropped,
+    // and fewer photos (or none, the page then shows without them) is the result rather than an off-topic one.
+    const topic = topicOf(input.idea, input.city);
+    const before = ranked.length;
+    ranked = ranked.filter((c) => c.provider === "wikimedia" || onTopic(c, topic, alts.get(c.id)));
+    if (ranked.length < before) log(`[photos] ${before - ranked.length} off-topic candidates dropped`);
+    const photos = await pickAndDownload(ranked, { f, signal: all, alts, log, category, topic });
     log(`[photos] ${photos.length} photos in ${Date.now() - started} ms (${pool.length} candidates)`);
     return photos;
   } catch (e) {
@@ -655,15 +818,17 @@ async function search(q: PhotoQueries, ctx: Ctx): Promise<Candidate[]> {
 }
 
 /** Fills the slots (hero, 3 detail, people, place) with downloaded, verified photos. Each slot tries ≤3 candidates. */
-async function pickAndDownload(pool: Candidate[], ctx: { f: typeof fetch; signal: AbortSignal; alts: Map<string, string>; log: (m: string) => void; category?: string }): Promise<SitePhoto[]> {
+async function pickAndDownload(pool: Candidate[], ctx: { f: typeof fetch; signal: AbortSignal; alts: Map<string, string>; log: (m: string) => void; category?: string; topic?: PhotoTopic }): Promise<SitePhoto[]> {
   const slots: PhotoRole[] = ["hero", "detail", "detail", "detail", "people", "place"];
   const claimed = new Set<string>();
   // Main-subject words already used by a picked photo: two "monstera" or two "leash" details read as one photo twice.
   const usedWords = new Set<string>();
+  // a photo that names the product itself ("leather wallet") beats one that is only near the topic
+  const coreBonus = (c: Candidate) => (ctx.topic && wordsOf(`${c.title} ${ctx.alts.get(c.id) ?? ""}`).map(singular).some((w) => ctx.topic!.core.has(w)) ? 8 : 0);
   const next = (role: PhotoRole): Candidate | null => {
     const fit = pool
       .filter((c) => !claimed.has(c.id) && ratioOk(c, role) && (role === "place" ? c.provider === "wikimedia" : c.provider !== "wikimedia"))
-      .sort((a, b) => score(b, role, ctx.category) - score(a, role, ctx.category));
+      .sort((a, b) => score(b, role, ctx.category) + coreBonus(b) - (score(a, role, ctx.category) + coreBonus(a)));
     const fresh = role === "place" ? fit : fit.filter((c) => !subjectWords(`${ctx.alts.get(c.id) ?? ""} ${c.title}`).some((w) => usedWords.has(w)));
     const c = fresh[0] ?? fit[0] ?? null;
     if (c) {
@@ -747,7 +912,7 @@ function fixtureDir(): string | null {
   return null;
 }
 /** Which fixture set stands in for an idea's category (bakery/food look closest to the coffee set). */
-const MOCK_SET: Record<string, string> = { coffee: "coffee", bakery: "coffee", food: "coffee", plants: "plants", dogs: "dogs", work: "work", fitness: "", beauty: "", kids: "", tools: "" };
+const MOCK_SET: Record<string, string> = { mobile: "work", coffee: "coffee", bakery: "coffee", food: "coffee", plants: "plants", dogs: "dogs", work: "work", fitness: "", beauty: "", kids: "", tools: "" };
 
 export function mockPhotos(idea: string, opts: { fill?: boolean } = {}): SitePhoto[] {
   const dir = fixtureDir();

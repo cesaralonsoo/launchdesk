@@ -37,6 +37,8 @@ export interface Reserve {
   normal: number | null;
   limit: number | null;
   currency: string;
+  /** A free early-access list: nothing is sold, so no payment sheet; the main button takes people to the email form. */
+  waitlist?: boolean;
 }
 
 export interface SiteSpec {

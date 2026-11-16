@@ -11,7 +11,7 @@ import type { KitInput, MarketingResult } from "../kit-contract.js";
 import { templatePlan } from "../kit-templates.js";
 import { budgetTiersFor, codeFor } from "../money.js";
 import { emptyMarketingResearch, researchMarketing, type MarketingResearch } from "./research.js";
-import { assumeWord, BANNED, cleanPlan, datedEvents, COPY_LIMITS, gateReason, PLAN_SCHEMA_A, PLAN_SCHEMA_B, saneDays, type PlanSource, type PlanV2, type ReportGate } from "./schema.js";
+import { assumeWord, BANNED, cleanPlan, datedEvents, fitReserve, COPY_LIMITS, gateReason, PLAN_SCHEMA_A, PLAN_SCHEMA_B, saneDays, type PlanSource, type PlanV2, type ReportGate } from "./schema.js";
 
 const envModel = (name: string, dflt: string) => (process.env[name] && /^claude-[a-z0-9-]+$/.test(process.env[name]!) ? process.env[name]! : dflt);
 /** Writer model (both steps). MODEL_MARKETING=claude-opus-5-5 if the copy feels flat (about 2x the writer cost). */
@@ -41,10 +41,14 @@ ${checks.join("\n") || "- none"}
 const gateRule = (input: KitInput) => {
   const g = input.report as ReportGate;
   if (!g.verdict) return "";
-  return g.verdict === "go"
+  return (g.verdict === "go"
     ? `\n- The report says Go. Still run its validate_first checks in week 1, alongside the first sales actions, each day's task starting "Check 1:", "Check 2:"… (in Spanish "Comprobación 1:"…).`
-    : `\n- The report says ${g.verdict === "no-go" ? "No-go" : "Test first"}, and the founder chose to build anyway. The plan starts by checking the deciding reason and the validate_first items (for example: confirm the permit before opening day). Week 1 is checks and pre-orders only: no opening, no printing, no spending until each check passes. Put each check as an early day with its pass mark, and start that day's task with "Check 1:", "Check 2:" or "Check 3:" (in Spanish "Comprobación 1:"…), so the founder can match it to the report. Keep the report's order: Check 1 is on the earliest day, then Check 2, then Check 3, and a check whose pass mark needs results from later days goes after those days. Make the decision say: stop if a check fails. The website and its BCH reserve button are live from day 1 (they are part of this kit): never plan to "open" or "turn on" the pay button later; pre-orders through it are the demand test, not spending.`;
+    : `\n- The report says ${g.verdict === "no-go" ? "No-go" : "Test first"}, and the founder chose to build anyway. The plan starts by checking the deciding reason and the validate_first items (for example: confirm the permit before opening day). Week 1 is checks and pre-orders only: no opening, no printing, no spending until each check passes. Put each check as an early day with its pass mark, and start that day's task with "Check 1:", "Check 2:" or "Check 3:" (in Spanish "Comprobación 1:"…), so the founder can match it to the report. Keep the report's order: Check 1 is on the earliest day, then Check 2, then Check 3, and a check whose pass mark needs results from later days goes after those days. Make the decision say: stop if a check fails. ${input.report.offer.free ? `The website and its free sign-up form are live from day 1 (they are part of this kit): free sign-ups through it are the demand test.` : `The website and its BCH reserve button are live from day 1 (they are part of this kit): never plan to "open" or "turn on" the pay button later; pre-orders through it are the demand test, not spending.`}`) + PASS_RULE;
 };
+/** A pass mark is something to reach, judged on a day when its result exists. */
+const PASS_RULE = `\n- Each check's pass mark is a target the test must reach (for example "10 paid pre-orders by day 14"), never the report's current estimate restated (not "a 96% margin" when the report already computes 96%). Put each check on a day when its result can be counted, after the days that collect it.
+- One pass mark per check: when validate_first gives a pass mark this month's test can reach, use it as written; when it is a long-run figure (break-even, "within six months") or bigger than the test can produce, set one 30-day target for the same test and use that same number on the check day, in the goal, in the KPIs and in the decision. Never an earlier deadline or a stricter number on the check day than in the goal and decision.
+- Every check must be runnable inside these 30 days with this budget: schedule the days that create its input (build, buy, list or send what it measures), and pay for any purchase it needs from a budget line.`;
 
 export function contextBlock(input: KitInput, research: MarketingResearch, sources: readonly PlanSource[]): string {
   const { brand, report } = input;
@@ -70,8 +74,29 @@ ${research.notes.join("\n") || "- No web research came back. Use no local facts;
 <sources>
 ${sources.map((s) => `[${s.n}] ${s.title}`).join("\n") || "none"}
 </sources>
-The founder takes payments in Bitcoin Cash (BCH) on their own website: each pre-order or booking is one payment they can count.
+${offerLine(input)}${placeLine(input)}
 ${dayOne()}`;
+}
+/** How the plan counts demand: BCH payments for a priced offer, free sign-ups for a free one (no pay button exists). */
+export function offerLine(input: Pick<KitInput, "report" | "idea">): string {
+  if (input.report.offer.free)
+    return `The offer is free: the website collects free early-access sign-ups by email and has NO payment button. The goal, KPIs and checks count sign-ups (count_from "website") or things counted by hand; never ask anyone to pay in Bitcoin Cash, never call a sign-up a pre-order, and test willingness to pay the fee by hand (asking, or one real paid use) only.`;
+  const market = MARKETPLACE.exec(input.idea)?.[0];
+  return `The founder takes payments in Bitcoin Cash (BCH) on their own website: each pre-order or booking is one payment they can count.${market ? ` The idea sells on ${market}: its sales happen on ${market}, under ${market}'s rules. Never send ${market} buyers off ${market} to pay (no website or BCH link in the listing, shop page or messages to ${market} buyers); the website's BCH pre-order is for people who reach the website from your own posts and lists, and ${market} sales are counted in ${market}'s own orders.` : ""}`;
+}
+const MARKETPLACE = /\b(?:Etsy|Amazon|eBay|Shopify Marketplace|Depop|Vinted|Not On The High Street|Wallapop|Mercado Libre|Fiverr|Upwork|App Store|Google Play)\b/i;
+/** An online business (no city): plan for buyers anywhere, not in the founder's town. */
+export function placeLine(input: Pick<KitInput, "brand">): string {
+  return input.brand.city ? "" : `\nThis business sells online, to buyers anywhere in its country: plan online channels and customers, not the founder's own town, even if the idea names it. No in-person markets, fairs, swap meets or visits, and no travel in the budget (an online event is fine).`;
+}
+/** New plans for an online business (no city): an event the founder would have to travel to is dropped. */
+export function onlineEvents(events: PlanV2["events"], warnings: string[] = []): PlanV2["events"] {
+  const ONLINE = /\b(?:online|virtual|zoom|webinar|livestream|live stream|web|internet|discord|telegram|reddit|youtube|twitch|x spaces?|twitter|remote)\b/i;
+  return events.filter((e) => {
+    if (ONLINE.test(`${e.where ?? ""} ${e.name ?? ""}`)) return true;
+    warnings.push(`event "${e.name}" is in person (${e.where || "no place"}) and this business has no town: dropped`);
+    return false;
+  });
 }
 /** Day 1 of the plan is tomorrow: a dated event goes on its matching day number (an event on day 5 is 4 days after day 1). */
 const dayOne = () => {
@@ -97,13 +122,13 @@ ${contextBlock(input, research, sources)}
 Rules:
 ${commonRules(input)}
 - headline: one sentence that says the whole plan to a busy person.
-- goal: ONE number for day 30 that the founder can count (pre-orders, paid bookings, first clients), realistic for one person, tied to the offer price. Say why that number (what it proves) and how it is counted.
+- goal: ONE number for day 30 that the founder can count (${input.report.offer.free ? "free sign-ups, people who used it once, first partners" : "pre-orders, paid bookings, first clients"}), realistic for one person, tied to the offer${input.report.offer.free ? "" : " price"}. Say why that number (what it proves) and how it is counted.
 - customer.places: 2-4 concrete places or moments where this customer already is (a named street, market, group, forum, time of day). Put its [n] number in source when the research states it, else 0.
 - channels: 3 or 4, each with a role (one of: awareness, first sales, proof, repeat), why THIS customer is there (with source [n] when you use a research fact; if not sourced, start the why with "${assumeWord(input.brand.lang)}"), weekly hours, cost in ${cur} for the month, and the very first action (concrete: who, where, what).
 - rejected: 1 or 2 obvious channels you do NOT use (for example paid ads or TikTok) and why not, for this business.
-- budget.tiers: exactly 3 tiers: ${tierWords(cur)} ${cur}. Lines per channel only for channels in "channels" (never one in "rejected"), adding up to at most the tier minus the reserve; reserve_pct 10-15; a rule for days 22-30 to move money to what works.
-- kpis: at most 5. Each with a target and how to count it; count_from is one of: bch payments, website, by hand.
-- local: up to 6 facts from the research that matter for this plan, each with its [n]. events: named events in the next 30 days from the research only, each with date, place and [n]. None in the research: empty lists.
+- budget.tiers: exactly 3 tiers: ${tierWords(cur)} ${cur}. Lines per channel only for channels in "channels" (never one in "rejected"), adding up to at most the tier minus the reserve (the amount any day or assumption spends is that line, never the whole tier); reserve_pct 10-15; a rule for days 22-30 to move money to what works.
+- kpis: at most 5. Each with a target and how to count it; count_from is one of: ${input.report.offer.free ? "website, by hand (the offer is free: no BCH payments come in)" : "bch payments, website, by hand"}.
+- local: up to 6 facts from the research that matter for this plan, each with its [n]. events: named events in the next 30 days from the research only, each with date, place and [n]${input.brand.city ? "" : ", online only (this business has no town)"}. Never list an event or channel you put in "rejected". None in the research: empty lists.
 - assumptions: 2-5 things this plan assumes that the founder should check.
 - decision: what the day-30 numbers mean: scale, adjust or stop.${gateRule(input)}`;
 }
@@ -117,6 +142,7 @@ ${JSON.stringify(strategy)}
 
 Rules:
 ${commonRules(input)}
+- Every task fits its day: something that takes days (making, drying and firing, printing, shipping, building the product) starts early enough to be ready when a later day uses it, and nothing is sold, shipped or asked about before a day makes it. A check judged by day 30 measures something 30 days can show (not repeat buyers after months).
 - Use only the strategy's channels. Every text uses the real offer and price. No invented quotes, reviews, awards, customer counts or "sold out". Say "our website" for the link; it is added later.
 - weeks: exactly 4 (prepare, soft launch, offer, proof and last call). 3-5 days each, day numbers 1-30 in order, a time at the customer's moment, the channel, one concrete action (where, with whom, what), the text it uses in copy (one of post-1, post-2, post-3, message, email, flyer, profile, press, or "" for none) and hours. Never announce results before they happen.
 - copy.posts: 3 posts for the strategy's channels (channel, hook, body ≤${COPY_LIMITS.postWords - 10} words, call to action).
@@ -211,7 +237,9 @@ export async function planMarketing(input: KitInput, opts: { budget?: Budget; on
   const b = await callJson("marketing:calendar", promptB(input, research, sources, a), PLAN_SCHEMA_B, EST_WRITER_USD.b, budget, opts.onCost);
   const cleaned = cleanPlan({ ...a, ...b }, sources, { lang: input.brand.lang, currency: input.brand.currency });
   const warnings = cleaned.warnings;
-  const plan = saneDays(cleaned.plan, templatePlan(input).weeks.flatMap((w) => w.days), warnings);
+  if (!input.brand.city) cleaned.plan.events = onlineEvents(cleaned.plan.events, warnings);
+  // a new plan keeps its reserve aside in every tier (saved plans are never re-cut)
+  const plan = fitReserve(saneDays(cleaned.plan, templatePlan(input).weeks.flatMap((w) => w.days), warnings), warnings);
   if (warnings.length) console.warn(`[marketing] cleaned: ${warnings.join("; ")}`);
   return { plan, sources, warnings };
 }

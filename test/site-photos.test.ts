@@ -167,7 +167,9 @@ test("findPhotos: ≤6 verified photos, hero first, roles, ≤6 searches, credit
   P._resetRateLimit();
   const { f, calls } = fakeFetch();
   const photos = await P.findPhotos({ idea: "A plant shop in Leith", city: "Leith Shore", mock: false, fetch: f, cache: null, log: quiet });
-  assert.ok(photos.length >= 4 && photos.length <= 6, `got ${photos.length}`);
+  // the fake search answers every query with the same mixed hits: only the plant photos (+ the place) are on topic
+  assert.ok(photos.length >= 3 && photos.length <= 6, `got ${photos.length}`);
+  assert.deepEqual(photos.filter((p) => p.provider !== "wikimedia").map((p) => p.id).sort(), ["rawpixel:a1", "wordpress:a2"], "no laptop, barista or dog photo for a plant shop");
   assert.equal(photos[0]!.role, "hero");
   assert.ok(photos[0]!.width / photos[0]!.height >= 1.25, "hero is landscape");
   assert.deepEqual(photos.map((p) => p.n), photos.map((_, i) => i + 1));
