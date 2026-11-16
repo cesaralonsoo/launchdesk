@@ -33,9 +33,10 @@
 .pv-print:hover { background: var(--pv-fill); }
 
 /* tabs */
-.pv-tabs { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid var(--pv-line); margin: 0 -2px; padding: 0 2px; }
+/* Tabs wrap onto a second row in a narrow column instead of scrolling (a scrolled strip clipped "The plan"). */
+.pv-tabs { display: flex; flex-wrap: wrap; gap: 0 2px; border-bottom: 1px solid var(--pv-line); margin: 0 -2px; padding: 0 2px; }
 .pv-tabs::-webkit-scrollbar { display: none; }
-.pv-tabs button { flex: none; border: 0; background: none; padding: 9px 10px 10px; font-size: 13.5px !important; font-weight: 550; color: var(--pv-muted); border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; }
+.pv-tabs button { flex: none; border: 0; background: none; padding: 9px 8px 10px; font-size: 13.5px !important; font-weight: 550; color: var(--pv-muted); border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; }
 .pv-tabs button[aria-selected="true"] { color: var(--pv-ink); border-bottom-color: var(--pv-brand); }
 .pv-panel { min-width: 0; }
 .pv-panel > :first-child { margin-top: 2px; }

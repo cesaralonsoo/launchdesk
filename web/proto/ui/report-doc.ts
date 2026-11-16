@@ -16,7 +16,10 @@ import { ldMark } from "./logo";
 import { badge } from "./pixel";
 
 const one = (n: number) => (Math.round(n * 10) / 10).toFixed(1);
-const VERDICT = { go: "Go", pivot: "Pivot", "no-go": "No-go" } as const;
+// display words; the enum stays "pivot": an uncertain idea is something to test, not a failure
+const VERDICT = { go: "Go", pivot: "Test first", "no-go": "No-go" } as const;
+/** Pivot text as a full sentence: [S#] labels are research-note ids, not this page's source numbers. */
+const plain = (t: string) => t.replace(/\s*\[S\d+\]/g, "").replace(/\s+([.,;:])/g, "$1").trim();
 const CHIP: Record<BlockVerdict, string> = { strong: "Strong", mixed: "Mixed", weak: "Weak" };
 /** Only http(s) links leave the app. */
 const safeUrl = (u: string) => (/^https?:\/\//i.test(u) ? u : "");
@@ -179,11 +182,11 @@ export function econHtml(b: ReportBlock, e: EconSummary | null | undefined, err?
     if (!ls.length) return "";
     return `<h4>${title}</h4><ul class="rd-econ-lines">${ls.map((x) => {
       const n = x.source ? b.sources.findIndex((s) => s.url === x.source!.url) + 1 : 0;
-      return `<li><span>${esc(x.item)}</span><b class="num">${x.eur > 0 ? esc(money(x.eur)) : "missing"}</b>${x.source ? srcLink(x.source, n) : estimate()}</li>`;
+      return `<li><span>${esc(x.item)}</span><b class="num">${x.eur > 0 ? esc(money(x.eur)) : "missing"}</b>${x.source ? `${srcLink(x.source, n)}${x.check ? `<span class="rd-est rd-check" title="This figure was not found in the cited page's research note"><b>Check</b> · figure not confirmed in the source</span>` : ""}` : estimate()}</li>`;
     }).join("")}</ul>`;
   };
   return `<h3>Unit economics</h3>
-    <p class="rd-note">Computed in code from the inputs listed below; every input without a source is an estimate.</p>
+    <p class="rd-note">Computed in code from the inputs listed below; every input without a source is an estimate, and “Check” means the source does not show that figure.</p>
     <table class="rd-econ"><tbody>${rows.map(([k, x]) => `<tr><th scope="row">${k}</th><td>${x}</td></tr>`).join("")}</tbody></table>
     ${e.missing?.length ? `<p class="rd-miss">Missing cost inputs: ${e.missing.map(esc).join("; ")}. The figures that depend on them are not shown until you get a quote.</p>` : ""}
     ${group("variable", "Variable costs per unit")}${group("fixed", "Fixed costs per month")}${group("startup", "Start-up costs")}`;
@@ -241,6 +244,8 @@ export function reportDocHtml(f: ProtoFlowV7): string {
   const paths = (S.paths ?? []).slice(0, 3);
   const flat = (x: string) => x.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
   const reasons = (r.reasons ?? []).filter((x) => x.trim() && !flat(r.verdictLine).includes(flat(x)));
+  const unknowns = ((r as IdeaReport & { unknowns?: string[] }).unknowns ?? []).slice(0, 4);
+  const pv = r.pivot ? { idea: plain(r.pivot.idea), why: plain(r.pivot.why) } : null;
   return `
   <div class="rdoc">
     <div class="rd-bar no-print">
@@ -259,6 +264,7 @@ export function reportDocHtml(f: ProtoFlowV7): string {
         </div>
         <p class="rd-line">${esc(r.verdictLine)}</p>
         ${reasons.length ? `<ul class="rd-why">${reasons.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
+        ${r.verdict === "pivot" && unknowns.length ? `<p class="rd-line">Not known yet, so test these before you commit savings (they lower the confidence, not the score):</p><ul class="rd-why">${unknowns.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
         <p class="rd-meta"><span class="num">${r.evidence.total}</span> pieces of evidence · <span class="num">${r.evidence.sourced}</span> with a web source · ${esc(r.confidence)} confidence${hero ? "" : " · the score is provisional until at least 6 findings, 3 of them sourced"}</p>
       </header>
 
@@ -279,7 +285,7 @@ export function reportDocHtml(f: ProtoFlowV7): string {
         <header class="rd-sh"><span class="rd-n num">${blocks.length + 1}</span><div><span class="eyebrow">Scalability</span><h2>How far it can grow</h2></div><span class="rd-chip" data-v="${S.score >= 6.5 ? "strong" : S.score >= 4.5 ? "mixed" : "weak"}"><span class="num">${one(S.score)}</span>/10</span></header>
         <p class="rd-take">Reach today: ${esc(S.reach)}. ${esc(S.why)}</p>
         ${paths.length ? `<h3>Ways it could scale</h3><ol class="rd-act">${paths.map((x) => `<li><b>${esc(x.label)}.</b> ${esc(x.how)}</li>`).join("")}</ol>` : S.wouldScale.length ? `<h3>What would raise the ceiling</h3><ol class="rd-act">${S.wouldScale.map((x) => `<li>${esc(x)}</li>`).join("")}</ol>` : ""}
-        ${r.pivot ? `<h3>A pivot to consider</h3><p class="rd-mean"><b>${esc(r.pivot.idea)}.</b> ${esc(r.pivot.why)}</p>` : ""}
+        ${pv ? `<h3>${r.verdict === "pivot" ? "A change worth testing" : "A pivot to consider"}</h3><p class="rd-mean"><b>${esc(pv.idea)}.</b> ${esc(pv.why)}</p>` : ""}
       </section>
 
       <section class="rd-sources">
@@ -290,11 +296,11 @@ export function reportDocHtml(f: ProtoFlowV7): string {
     </article>
 
     <footer class="rd-decide no-print">
-      <div><b>What next?</b><span>${canGrow ? "Happy with what you read? Your next step is a plan: brand, site and a launch month." : `This idea should not grow as it stands. ${r.pivot ? "Try the pivot or another idea." : "Try another idea, or tell your team what to re-check."}`}</span></div>
+      <div><b>What next?</b><span>${canGrow ? `Happy with what you read? Your next step is a plan: brand, site and a launch month.${pv ? ` A change worth testing first: ${esc(pv.idea)}.` : ""}` : `This idea should not grow as it stands. ${pv ? `A better version to try: <b>${esc(pv.idea)}.</b> ${esc(pv.why)}` : "Try another idea, or tell your team what to re-check."} You can still build the launch kit to see it.`}</span></div>
       <div class="rd-btns">
         <button class="btn btn-ghost" data-act="back" type="button">${I.back(15)}<span>Back</span></button>
         <button class="btn btn-ghost" data-act="steer" type="button"><span>Tell your team</span></button>
-        ${canGrow ? `<button class="btn btn-primary" data-act="grow" type="button"><span>Continue: make the plan</span>${I.arrow(16)}</button>` : `<button class="btn btn-primary" data-act="pivot" type="button"><span>${r.pivot ? "Try the pivot" : "Try another idea"}</span>${I.arrow(16)}</button>`}
+        ${canGrow ? `<button class="btn btn-primary" data-act="grow" type="button"><span>Continue: make the plan</span>${I.arrow(16)}</button>` : `<button class="btn btn-ghost" data-act="grow" type="button"><span>Build the launch kit anyway</span></button><button class="btn btn-primary" data-act="pivot" type="button"><span>Try another idea</span>${I.arrow(16)}</button>`}
       </div>
     </footer>
   </div>`;

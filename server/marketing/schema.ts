@@ -262,3 +262,103 @@ export function usedSources(p: PlanV2): number[] {
   for (const x of p.events) s.add(x.source);
   return [...s].sort((a, b) => a - b);
 }
+
+// ───────────────────────────────────────────────────────────── report gate + day sanity (pure)
+
+/** What the plan needs from the report's decision: the verdict, the deciding reason and the "validate first" checks. */
+export interface ReportGate {
+  verdict?: "go" | "pivot" | "no-go";
+  mainReason?: string;
+  validateFirst?: Array<{ what: string; how: string; passIf: string }>;
+}
+
+type Day = PlanV2["weeks"][number]["days"][number];
+const STOP = new Set("about after again also before being from have into just more most once only other over same some than that their them then there these they this those very what when where which while with without your yours would could should first every each week weeks month".split(" "));
+/** Content words (≥ 4 letters, lower case, light plural strip) for keyword overlap. */
+export const keyWords = (s: string): string[] =>
+  [...new Set((s.toLowerCase().match(/\p{L}[\p{L}-]{3,}/gu) ?? []).map((w) => w.replace(/(?<=\p{L}{3})s$/u, "")).filter((w) => !STOP.has(w)))];
+const overlap = (a: string, b: string) => { const kb = new Set(keyWords(b)); return keyWords(a).filter((w) => kb.has(w)).length; };
+
+/** Text a writer garbled: too short, repeated words, leftover markup or labels, or cut mid-sentence. */
+export function garbled(s: string): boolean {
+  const t = s.trim();
+  if (words(t) < 4) return true;
+  if (/\b(\w+)\s+\1\b/i.test(t) && !/\b(very very|no no)\b/i.test(t)) return true;
+  if (/[{}<>]|\b(undefined|null|NaN|TODO|lorem)\b|\[(?:S)?\d+\]/.test(t)) return true;
+  if (/(.)\1{4,}/.test(t)) return true;
+  if (/\b(and|or|the|to|with|a|an|of|for|y|el|la|de|con|para)$/i.test(t.replace(/[.,;:!?…]+$/, ""))) return true;
+  const letters = (t.match(/\p{L}/gu) ?? []).length;
+  return letters / t.length < 0.55;
+}
+
+/** Which copy text implies which kind of channel; a day that uses it under an unrelated label is relabelled. */
+const COPY_CHANNEL: Partial<Record<CopyRef, { re: RegExp; en: string; es: string }>> = {
+  profile: { re: /google|maps|profile|listing|perfil|ficha/i, en: "Google Business Profile", es: "Perfil de Google" },
+  email: { re: /e-?mail|newsletter|waitlist|list|correo|lista/i, en: "Email to your list", es: "Email a tu lista" },
+  press: { re: /press|newsletter|media|paper|journal|prensa|medios|blog/i, en: "Local press", es: "Prensa local" },
+  message: { re: /whatsapp|message|friends|network|word of mouth|contacts|mensaje|amigos|boca/i, en: "Personal messages", es: "Mensajes personales" },
+};
+
+/**
+ * Code-side check of the calendar: a day whose channel label does not fit its own text is relabelled (to the plan
+ * channel the text names, else a plain label for the copy it uses), and a garbled or empty action is replaced by the
+ * nearest template line. `fallback` = the template plan's days for the same business.
+ */
+export function saneDays(plan: PlanV2, fallback: readonly Day[], warnings: string[] = []): PlanV2 {
+  const names = plan.channels.map((c) => c.name);
+  const lang = plan.lang === "es" ? "es" : plan.lang === "en" ? "en" : null;
+  const used = new Set<string>();
+  const fix = (d: Day): Day => {
+    let { channel, action } = d;
+    if (garbled(action)) {
+      const near = [...fallback].filter((f) => !used.has(f.action)).sort((a, b) => Math.abs(a.day - d.day) - Math.abs(b.day - d.day))[0];
+      warnings.push(`day ${d.day}: unclear task replaced by a template line`);
+      if (near) { used.add(near.action); return { ...d, channel: near.channel, action: near.action, copy: near.copy }; }
+      return { ...d, action: "Count what each channel brought so far and write it down." };
+    }
+    const rule = d.copy ? COPY_CHANNEL[d.copy] : undefined;
+    if (rule && !rule.re.test(channel)) {
+      const named = names.find((n) => rule.re.test(n));
+      const to = named ?? (lang ? rule[lang] : null);
+      if (to && to !== channel) { warnings.push(`day ${d.day}: channel "${channel}" relabelled "${to}" (the task uses the ${d.copy} text)`); channel = to; }
+    } else if (names.includes(channel) && overlap(channel, action) === 0) {
+      const best = names.map((n) => ({ n, s: overlap(n, action) })).sort((a, b) => b.s - a.s)[0];
+      if (best && best.s >= 2) { warnings.push(`day ${d.day}: channel "${channel}" relabelled "${best.n}"`); channel = best.n; }
+    }
+    return { ...d, channel, action };
+  };
+  return { ...plan, weeks: plan.weeks.map((w) => ({ ...w, days: w.days.map(fix) })) };
+}
+
+/**
+ * On a No-go or Pivot, week 1 starts with the report's "validate first" checks (before opening or spending money).
+ * A check the writer already put in week 1 (shared key words) is not repeated. Go: the plan is unchanged.
+ */
+export function withValidateFirst(plan: PlanV2, gate: ReportGate | undefined): PlanV2 {
+  const checks = (gate?.validateFirst ?? []).filter((v) => v?.what && v?.how).slice(0, 3);
+  if (!gate?.verdict || gate.verdict === "go" || !checks.length || !plan.weeks.length) return plan;
+  const es = plan.lang === "es";
+  const w1 = plan.weeks[0]!;
+  const text = w1.days.map((d) => d.action).join(" ");
+  // Covered only when most of the check's own key words are in week 1 (sharing "kiosk" or "exit" is not enough).
+  const have = new Set(keyWords(text));
+  const share = (s: string) => { const k = keyWords(s); return k.length ? k.filter((w) => have.has(w)).length / k.length : 0; };
+  const missing = checks.filter((c) => share(c.what) < 0.6 && share(c.how) < 0.6);
+  const first = (s: string) => (s.trim().match(/^.*?[.!?](?=\s|$)/)?.[0] ?? s.trim()).replace(/\s*\((?:estimate|estimación)\)/gi, "").replace(/\.?\s*$/, ".");
+  if (!missing.length) return plan;
+  const free = (n: number, taken: Set<number>) => { while (taken.has(n) && n < 7) n++; taken.add(n); return n; };
+  const taken = new Set<number>();
+  const label = es ? "Comprobar primero" : "Check first";
+  const added: Day[] = missing.map((c, i) => ({
+    day: free(i + 1, taken),
+    time: "",
+    channel: label,
+    action: clean(`${i === 0 ? (es ? "Antes de abrir o gastar dinero: " : "Before you open or spend money: ") : ""}${first(c.how)} ${es ? "Sigue solo si" : "Go ahead only if"}: ${first(c.passIf).replace(/^./, (x) => x.toLowerCase())}`, 420),
+    copy: null,
+    hours: 2,
+  }));
+  const shift = Math.max(...added.map((d) => d.day));
+  // The writer's own week-1 days move after the checks so nothing opens before they pass.
+  const rest = w1.days.map((d) => ({ ...d, day: Math.min(7, d.day + shift) }));
+  return { ...plan, weeks: [{ ...w1, days: [...added, ...rest].sort((a, b) => a.day - b.day) }, ...plan.weeks.slice(1)] };
+}

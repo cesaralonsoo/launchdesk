@@ -1,0 +1,2853 @@
+{
+ "_note": "Real live run, 16 Nov 2026 (live2). Idea: specialty coffee kiosk, Barcelona metro exit, €2.50 flat white. Validate $0.0715 (Haiku 5.5, 7 calls, 4 searches, 3 fetches); Launch kit $0.1533 (Sonnet 5.5 + Haiku 5.5), run via the No-go \"Build the launch kit anyway\" path. Verdict No-go 3.5/10. All URLs are the real pages the tools returned; txids replaced with dev-example; the founder address is the public test merchant address. Kit is in project.results.kit (brand, logo options, site spec, 30-day plan). Not wired into MOCK replay: see .notes/next/live2-result.md.",
+ "slug": "sortida",
+ "project": {
+  "id": "wr1b0iC1xy",
+  "idea": "A specialty coffee kiosk at a busy Barcelona metro exit, takeaway only, €2.50 flat white",
+  "created_at": 1794792945705,
+  "payments": {
+   "validate": {
+    "txid": "dev-example",
+    "sats": 0,
+    "cents": 10,
+    "at": 1794792945711
+   }
+  },
+  "status": {
+   "mia": "done",
+   "leo": "done",
+   "sam": "done"
+  },
+  "results": {
+   "mia": {
+    "title": "Specialty coffee kiosk in Barcelona",
+    "one_liner": "Barcelona's fastest specialty flat white, ready at the metro exit for €2.50.",
+    "brief": {
+     "concept": "Takeaway-only specialty coffee kiosk at a busy Barcelona metro exit, selling flat whites at €2.50.",
+     "for": "Office workers passing this metro exit before 9am who already buy takeaway coffee on their way in.",
+     "goal": "Prove 40 paid pre-orders at €2.50 within four weeks. The week 4 gate decides go or no-go."
+    },
+    "market": {
+     "city": "Barcelona",
+     "country_iso": "ES",
+     "currency": "€",
+     "language": "en"
+    },
+    "gate": {
+     "metric": "paid pre-orders",
+     "target": 40,
+     "by_week": 4
+    },
+    "checklist": [
+     {
+      "week": 1,
+      "task": "Count passers-by at the exit at peak hours",
+      "how": "Stand at the chosen exit for three weekday mornings, 7:30 to 9:30, tallying people with coffee cups against total passers-by.",
+      "done_when": "3 mornings logged with totals and cup counts recorded.",
+      "helped_by": "sam",
+      "est_hours": 6
+     },
+     {
+      "week": 1,
+      "task": "Interview commuters about their current coffee routine",
+      "how": "Ask 20 people leaving the metro what they buy, what they pay, and what stops them buying more, in five-minute chats.",
+      "done_when": "20 interviews logged, 8+ say they would pre-order.",
+      "helped_by": "leo",
+      "est_hours": 5
+     },
+     {
+      "week": 2,
+      "task": "Build a paid pre-order page with pickup times",
+      "how": "Publish one page that takes card payment for a flat white or cortado, with three pickup time slots at the metro exit.",
+      "done_when": "Page live with working checkout and 3 time slots.",
+      "helped_by": "dex",
+      "est_hours": 8
+     },
+     {
+      "week": 2,
+      "task": "Run a small paid pre-order test at the exit",
+      "how": "Hand 100 cards with a QR code to commuters, offering pre-paid flat whites at €2.50 for next week's pickup.",
+      "done_when": "100 cards handed out, 15+ paid pre-orders taken.",
+      "helped_by": null,
+      "est_hours": 6
+     },
+     {
+      "week": 3,
+      "task": "Write brand name, menu and one-page sign",
+      "how": "Draft a name, a three-item menu and a sign stating price and pickup, then read the wording aloud to five interviewees.",
+      "done_when": "Name chosen and 5 people repeat the offer back correctly.",
+      "helped_by": "nova",
+      "est_hours": 4
+     },
+     {
+      "week": 3,
+      "task": "Post the offer in two local neighbourhood channels",
+      "how": "Share the pre-order link in one neighbourhood group and one local office community, with price and pickup times.",
+      "done_when": "2 channels posted, link clicked 100+ times.",
+      "helped_by": "rae",
+      "est_hours": 3
+     },
+     {
+      "week": 3,
+      "task": "Confirm supplier and cost per cup",
+      "how": "Get two quotes for beans, milk and cups, then calculate cost per flat white against the €2.50 price.",
+      "done_when": "Two quotes received and margin per cup calculated.",
+      "helped_by": "sam",
+      "est_hours": 3
+     },
+     {
+      "week": 3,
+      "task": "Update the live pre-order page for launch",
+      "how": "Replace test copy with the final name, menu, pickup rules and refund policy, then check the checkout on a phone.",
+      "done_when": "Page shows final name, 3 menu items and refund policy.",
+      "helped_by": "pip",
+      "est_hours": 3
+     },
+     {
+      "week": 4,
+      "task": "Run a live pickup test with 10 orders",
+      "how": "Take 10 real pre-orders over two mornings to time the queue and confirm preparation steps work under pressure.",
+      "done_when": "10 orders served, average wait under 3 minutes recorded.",
+      "helped_by": null,
+      "est_hours": 6
+     },
+     {
+      "week": 4,
+      "task": "Check the gate and decide go or no-go",
+      "how": "On day 28, count paid pre-orders against the target of 40 and write one page on what worked and what to change.",
+      "done_when": "Paid pre-orders counted against 40, decision written.",
+      "helped_by": "sam",
+      "est_hours": 2
+     }
+    ]
+   },
+   "leo": {
+    "score": 3.5,
+    "verdict": "no-go",
+    "headline": "No-go: The permit route is unknown. The municipality decides the activity permit…",
+    "summary": "No-go: The permit route is unknown. The municipality decides the activity permit and building works, but the research found no concession or permit rule for a kiosk on public space at a station. Savings should not be committed until this is confirmed. 30 findings, 24 with a source.",
+    "signals": [
+     {
+      "name": "Demand",
+      "score": 5,
+      "why": "Barcelona had 1,729,963 registered inhabitants on 1 January 2026.",
+      "source_id": 1
+     },
+     {
+      "name": "Competition gap",
+      "score": 4,
+      "why": "Three Marks in Fort Pienc lists a flat white at €2.50 and…",
+      "source_id": 3
+     },
+     {
+      "name": "Price acceptance",
+      "score": 4,
+      "why": "A 27 m² unit in the same area as the Dreta de…",
+      "source_id": 8
+     },
+     {
+      "name": "Channel",
+      "score": 5,
+      "why": "Barcelona had 1,729,963 registered inhabitants on 1 January 2026.",
+      "source_id": 1
+     },
+     {
+      "name": "Timing",
+      "score": 1.5,
+      "why": "A food safety plan (APPCC/HACCP) is required under EU Regulation 852/2004, Article…",
+      "source_id": 12
+     }
+    ],
+    "why_go": "Barcelona had 1,729,963 registered inhabitants on 1 January 2026.",
+    "risks": [
+     {
+      "risk": "Two districts lost population between 2025 and 2026: l'Antiga Esquerra de l'Eixample (−2.5%) and Sants (−1.2%).",
+      "mitigation": "Ask the Ajuntament de Barcelona in writing which procedure and fees apply to a takeaway stand on public space near a metro station, and ask the transport operator who controls the exit space.",
+      "severity": "high"
+     },
+     {
+      "risk": "A 97 m² unit on Carrer de Llança in La Nova Esquerra de l'Eixample is listed at €1,100 a month, about €11.3/m². This is a larger unit, not a kiosk.",
+      "mitigation": "Count people leaving the exit during the morning peak on three weekdays, and count how many stop or look at a sign. Use a 1-in-50 conversion as a starting assumption (estimate).",
+      "severity": "high"
+     },
+     {
+      "risk": "An 85 m² ground-floor unit in Sant Gervasi – La Bonanova is listed at €1,300 a month, about €15.29/m². The Zona Alta average is listed at €19.29/m².",
+      "mitigation": "Run a two-week pop-up or a sign test at €2.50 against a €3.00 price at the same exit, counting cups per morning.",
+      "severity": "high"
+     }
+    ],
+    "pivot": {
+     "idea": "Takeaway coffee and croissant bundle at a fixed price",
+     "why": "Bicioci sells a coffee and croissant combo under €3 [S9] and Pasta Madre sells one for €1.60 [S9], though both come from undated travel…"
+    },
+    "next_step": "Ask the Ajuntament de Barcelona in writing which procedure and fees apply to a takeaway stand on public space near a metro station, and ask the transport operator who controls the exit space.",
+    "market_facts": [
+     {
+      "fact": "Barcelona had 1,729,963 registered inhabitants on 1 January 2026.",
+      "source_id": 1,
+      "is_estimate": false
+     },
+     {
+      "fact": "Eixample (277,353) and Sant Martí (253,139) were the two most populated districts in 2026.",
+      "source_id": 1,
+      "is_estimate": false
+     },
+     {
+      "fact": "Two districts lost population between 2025 and 2026: l'Antiga Esquerra de l'Eixample (−2.5%) and Sants (−1.2%).",
+      "source_id": 1,
+      "is_estimate": false
+     },
+     {
+      "fact": "Native-born registered residents make up 44.6% of the total, the lowest share in recent history. This counts place of birth, not nationality.",
+      "source_id": 2,
+      "is_estimate": false
+     },
+     {
+      "fact": "Three Marks in Fort Pienc lists a flat white at €2.50 and an espresso at €2.00. The page does not give the year of these prices.",
+      "source_id": 3,
+      "is_estimate": false
+     }
+    ],
+    "competitors": [],
+    "you": {
+     "price": 5,
+     "differentiation": 7
+    },
+    "sources": [
+     {
+      "id": 1,
+      "url": "https://portaldades.ajuntament.barcelona.cat/en/report/flaix-de-la-poblacio-de-barcelona-2026-en",
+      "title": "Barcelona Datastore",
+      "domain": "portaldades.ajuntament.barcelona.cat",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 2,
+      "url": "https://dades.ajuntament.barcelona.cat/informe-padro-estrangers/en/seccio_3.html",
+      "title": "3 Place of birth",
+      "domain": "dades.ajuntament.barcelona.cat",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 3,
+      "url": "https://guidavera.com/spain/barcelona/best-specialty-coffee",
+      "title": "Best Specialty Coffee in Barcelona",
+      "domain": "guidavera.com",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 4,
+      "url": "https://guidavera.com/spain/barcelona/coffee",
+      "title": "Best Specialty Coffee in Barcelona (2026)",
+      "domain": "guidavera.com",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 5,
+      "url": "https://www.barcelonatourism.org/2026/08/09/coffee-shops/",
+      "title": "Barcelona Coffee Culture: The Best Specialty Coffee Shops and Cafes ...",
+      "domain": "barcelonatourism.org",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 6,
+      "url": "https://thespiritedexplorer.com/best-specialty-coffee-shops-barcelona/",
+      "title": "The Best Specialty Coffee Shops in Barcelona: Ultimate Guide",
+      "domain": "thespiritedexplorer.com",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 7,
+      "url": "https://barcelonaurbana.com/en/blog/specialty-coffee-barcelona",
+      "title": "Coffee Culture in Barcelona: How the City Built One of Europe's ...",
+      "domain": "barcelonaurbana.com",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 8,
+      "url": "https://m.habitaclia.com/alquiler-locales_comerciales-barcelona-8.htm",
+      "title": "1.448 Alquiler Locales Comerciales en Barcelona - habitaclia",
+      "domain": "m.habitaclia.com",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 9,
+      "url": "https://www.habitaclia.com/alquiler-locales_comerciales-barcelona-39.htm",
+      "title": "Alquiler locales comerciales en Barcelona - habitaclia",
+      "domain": "habitaclia.com",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 10,
+      "url": "https://www.idealista.com/geo/alquiler-locales/zona-alta-1/",
+      "title": "Locales o naves en alquiler, Zona Alta, Barcelona — idealista",
+      "domain": "idealista.com",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 11,
+      "url": "https://www.locales.es/barcelona/alquiler/locales",
+      "title": "Locales en alquiler en Barcelona - 132 locales comerciales 2026",
+      "domain": "locales.es",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 12,
+      "url": "https://relotus-relocation.com/en/journal/how-to-open-a-cafe-in-spain/",
+      "title": "How to Open a Café in Spain (2026): Licences, APPCC, Costs",
+      "domain": "relotus-relocation.com",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 13,
+      "url": "https://barna.news/becoming-an-aut-nomo-in-barcelona-a-foreigner-s-guide/",
+      "title": "Becoming an autonomo in Barcelona: foreigner's guide",
+      "domain": "barna.news",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 14,
+      "url": "https://www.waiterio.com/blog/en/open-restaurant-barcelona/",
+      "title": "Permits to Open a Restaurant in Barcelona, Spain",
+      "domain": "waiterio.com",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 15,
+      "url": "https://myspainvisa.com/starting-business-spain/",
+      "title": "Starting A Business In Spain Guide 2026",
+      "domain": "myspainvisa.com",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 16,
+      "url": "https://spainhandbook.com/spain-work-permit-for-self-employed-autonomo-step-by-step/",
+      "title": "Spain Work Permit for Self‑Employed (Autónomo): Step‑by‑Step ...",
+      "domain": "spainhandbook.com",
+      "accessed": "2026-11-16"
+     }
+    ],
+    "interviews": {
+     "who": "",
+     "where": "",
+     "questions": [],
+     "good_sign": "",
+     "target": 0
+    },
+    "kill_criteria": [],
+    "score_math": "0.24×5.0 + 0.29×4.0 + 0.18×4.0 + 0.29×1.5 = 3.5",
+    "verdict_rule": "Go from 6.5 with no factor at 3 or below · Pivot 4.5–6.4 · No-go under 4.5",
+    "confidence": {
+     "level": "high",
+     "note": "24 of 30 findings cite a source"
+    }
+   },
+   "sam": {
+    "currency": "€",
+    "canvas": {
+     "customer": "Office workers leaving the metro before 9am who already buy takeaway coffee.",
+     "value": "Fast specialty flat white on the walk to work, no queue.",
+     "revenue": "Flat white sales at €2.50 plus occasional pastry add-ons.",
+     "channels": "Walk-up takeaway at the metro exit; pre-orders by phone or app.",
+     "costs": "Kiosk rent, one barista's pay, beans, milk, cups, fit-out.",
+     "unit_economics": "About €1.82 contribution per flat white; break-even near 72 cups a day."
+    },
+    "assumptions": [
+     {
+      "key": "customers_per_day_m1",
+      "label": "Sales per open day, month 1",
+      "value": 45,
+      "unit": "sales/day",
+      "basis": "New kiosk with no footfall history; typical early ramp",
+      "is_estimate": true
+     },
+     {
+      "key": "customers_per_day_m12",
+      "label": "Sales per open day, month 12",
+      "value": 150,
+      "unit": "sales/day",
+      "basis": "About 37 drinks an hour over 4 hours, one barista",
+      "is_estimate": true
+     },
+     {
+      "key": "avg_ticket",
+      "label": "Average revenue per sale",
+      "value": 2.6,
+      "unit": "€ per sale",
+      "basis": "Flat white €2.50 plus occasional pastry add-on",
+      "is_estimate": true
+     },
+     {
+      "key": "gross_margin_pct",
+      "label": "Gross margin after direct costs",
+      "value": 70,
+      "unit": "%",
+      "basis": "Beans, milk, cup and card fees per sale",
+      "is_estimate": true
+     },
+     {
+      "key": "fixed_costs_month",
+      "label": "Fixed costs per month",
+      "value": 3400,
+      "unit": "€/month",
+      "basis": "Sum of the fixed cost breakdown lines",
+      "is_estimate": true
+     },
+     {
+      "key": "startup_cost",
+      "label": "Start-up cost before first sale",
+      "value": 14500,
+      "unit": "€",
+      "basis": "Typical espresso kiosk fit-out and equipment",
+      "is_estimate": true
+     },
+     {
+      "key": "open_days_month",
+      "label": "Trading days per month",
+      "value": 26,
+      "unit": "days/month",
+      "basis": "Monday to Saturday, metro commuter hours",
+      "is_estimate": true
+     }
+    ],
+    "fixed_costs_breakdown": [
+     {
+      "label": "Founder minimum pay",
+      "value": 1200
+     },
+     {
+      "label": "Kiosk rent (concession)",
+      "value": 1800
+     },
+     {
+      "label": "Utilities and insurance",
+      "value": 250
+     },
+     {
+      "label": "Cleaning, waste, software",
+      "value": 150
+     }
+    ],
+    "months": [
+     {
+      "month": 1,
+      "revenue": 3042,
+      "costs": 4313,
+      "cash": -15771
+     },
+     {
+      "month": 2,
+      "revenue": 3251,
+      "costs": 4375,
+      "cash": -16895
+     },
+     {
+      "month": 3,
+      "revenue": 3604,
+      "costs": 4481,
+      "cash": -17772
+     },
+     {
+      "month": 4,
+      "revenue": 4164,
+      "costs": 4649,
+      "cash": -18257
+     },
+     {
+      "month": 5,
+      "revenue": 4979,
+      "costs": 4894,
+      "cash": -18172
+     },
+     {
+      "month": 6,
+      "revenue": 6022,
+      "costs": 5207,
+      "cash": -17357
+     },
+     {
+      "month": 7,
+      "revenue": 7160,
+      "costs": 5548,
+      "cash": -15745
+     },
+     {
+      "month": 8,
+      "revenue": 8203,
+      "costs": 5861,
+      "cash": -13403
+     },
+     {
+      "month": 9,
+      "revenue": 9018,
+      "costs": 6105,
+      "cash": -10490
+     },
+     {
+      "month": 10,
+      "revenue": 9578,
+      "costs": 6273,
+      "cash": -7185
+     },
+     {
+      "month": 11,
+      "revenue": 9931,
+      "costs": 6379,
+      "cash": -3633
+     },
+     {
+      "month": 12,
+      "revenue": 10140,
+      "costs": 6442,
+      "cash": 65
+     }
+    ],
+    "price": {
+     "value": 2.6,
+     "display": "€2.60",
+     "note": "Flat white €2.50; average sale €2.60 with add-ons."
+    },
+    "startup_cost": {
+     "value": 14500,
+     "display": "€15k",
+     "note": "Machine, grinder, kiosk fit-out, licence deposit, first stock."
+    },
+    "cash_needed": {
+     "value": 18257,
+     "display": "€18k",
+     "month": 4
+    },
+    "break_even": {
+     "month": 5,
+     "note": "Revenue covers costs from month 5"
+    },
+    "breakeven_units_per_day": 72,
+    "year1": {
+     "revenue": "€79k",
+     "costs": "€65k",
+     "result": "+€15k",
+     "monthly_profit_m12": "€3.7k",
+     "payback": "Month 12"
+    },
+    "main_risk": "Sales per day in month 1 (45 assumed): stand at the exit three mornings and count flat white buyers before signing any lease.",
+    "key_assumption": "customers_per_day_m12",
+    "launch_offer": {
+     "item": "One flat white",
+     "price": 2,
+     "normal_price": 2.5,
+     "limit": 60,
+     "display": "€2",
+     "normal_display": "€2.50",
+     "discount_pct": 20,
+     "contribution": 1.25,
+     "contribution_display": "€1.25",
+     "revenue_if_sold_out": 120,
+     "revenue_display": "€120"
+    },
+    "unit": {
+     "price": 2.6,
+     "variable_cost": 0.78,
+     "contribution": 1.82,
+     "margin_pct": 70,
+     "line": "€2.60 a sale − €0.78 direct cost = €1.82 left"
+    },
+    "breakeven": {
+     "per_month": 1869,
+     "per_day": 72,
+     "formula": "€3,400 fixed ÷ €1.82 per sale ÷ 26 days = 72 sales a day"
+    },
+    "headroom": {
+     "m12_per_day": 150,
+     "breakeven_per_day": 72,
+     "multiple": 2.1,
+     "note": "Month-12 plan is 2.1× break-even"
+    },
+    "sensitivity": [
+     {
+      "key": "customers_per_day_m12",
+      "label": "Sales per open day",
+      "low": {
+       "value": 120,
+       "year1_result": 3492,
+       "break_even_month": 7,
+       "breakeven_per_day": 72,
+       "cash_needed": 20864
+      },
+      "base": {
+       "value": 150,
+       "year1_result": 14565,
+       "break_even_month": 5,
+       "breakeven_per_day": 72,
+       "cash_needed": 18257
+      },
+      "high": {
+       "value": 180,
+       "year1_result": 25638,
+       "break_even_month": 4,
+       "breakeven_per_day": 72,
+       "cash_needed": 16387
+      },
+      "swing": 22146,
+      "line": "Sales per open day ±20%: year 1 from +€3.5k to +€26k"
+     },
+     {
+      "key": "fixed_costs_month",
+      "label": "Fixed costs per month",
+      "low": {
+       "value": 2720,
+       "year1_result": 22725,
+       "break_even_month": 4,
+       "breakeven_per_day": 58,
+       "cash_needed": 15732
+      },
+      "base": {
+       "value": 3400,
+       "year1_result": 14565,
+       "break_even_month": 5,
+       "breakeven_per_day": 72,
+       "cash_needed": 18257
+      },
+      "high": {
+       "value": 4080,
+       "year1_result": 6405,
+       "break_even_month": 6,
+       "breakeven_per_day": 87,
+       "cash_needed": 21572
+      },
+      "swing": 16320,
+      "line": "Fixed costs per month ±20%: year 1 from +€6.4k to +€23k"
+     },
+     {
+      "key": "gross_margin_pct",
+      "label": "Gross margin after direct costs",
+      "low": {
+       "value": 60,
+       "year1_result": 6655,
+       "break_even_month": 6,
+       "breakeven_per_day": 84,
+       "cash_needed": 20077
+      },
+      "base": {
+       "value": 70,
+       "year1_result": 14565,
+       "break_even_month": 5,
+       "breakeven_per_day": 72,
+       "cash_needed": 18257
+      },
+      "high": {
+       "value": 80,
+       "year1_result": 22473,
+       "break_even_month": 5,
+       "breakeven_per_day": 63,
+       "cash_needed": 16851
+      },
+      "swing": 15818,
+      "line": "Gross margin after direct costs ±10 pts: year 1 from +€6.7k to +€22k"
+     }
+    ]
+   },
+   "v7": {
+    "version": 7,
+    "roster": [
+     {
+      "id": "demand",
+      "role": "demand",
+      "name": "Ava",
+      "color": "#22A06B",
+      "mission": "Who buys, how many of them, how often, what they spend and why they would switch",
+      "why": "Customers & demand",
+      "weight": 0.24
+     },
+     {
+      "id": "competition",
+      "role": "competition",
+      "name": "Leo",
+      "color": "#3B82F6",
+      "mission": "Named rivals and substitutes, their prices, strengths and the gap left open",
+      "why": "Competition & alternatives",
+      "weight": 0.29
+     },
+     {
+      "id": "pricing",
+      "role": "pricing",
+      "name": "Theo",
+      "color": "#CA8A04",
+      "mission": "Price you can charge, cost per unit, margin, fixed costs, break-even volume",
+      "why": "Money",
+      "weight": 0.18
+     },
+     {
+      "id": "viability",
+      "role": "viability",
+      "name": "Mia",
+      "color": "#8B7CF6",
+      "mission": "What kills it (rules, dependencies, timing), the cheapest first test and the path to scale",
+      "why": "Risks & how to start",
+      "weight": 0.29
+     }
+    ],
+    "work": [
+     {
+      "analyst": "demand",
+      "status": "done",
+      "findings": [
+       {
+        "id": "demand-0",
+        "analyst": "demand",
+        "kind": "number",
+        "text": "Barcelona had 1,729,963 registered inhabitants on 1 January 2026.",
+        "source": {
+         "url": "https://portaldades.ajuntament.barcelona.cat/en/report/flaix-de-la-poblacio-de-barcelona-2026-en",
+         "title": "Barcelona Datastore",
+         "domain": "portaldades.ajuntament.barcelona.cat",
+         "accessed": "2026-11-16"
+        },
+        "impact": 2,
+        "t": 0
+       },
+       {
+        "id": "demand-1",
+        "analyst": "demand",
+        "kind": "number",
+        "text": "Eixample (277,353) and Sant Martí (253,139) were the two most populated districts in 2026.",
+        "source": {
+         "url": "https://portaldades.ajuntament.barcelona.cat/en/report/flaix-de-la-poblacio-de-barcelona-2026-en",
+         "title": "Barcelona Datastore",
+         "domain": "portaldades.ajuntament.barcelona.cat",
+         "accessed": "2026-11-16"
+        },
+        "impact": 1,
+        "t": 0
+       },
+       {
+        "id": "demand-2",
+        "analyst": "demand",
+        "kind": "number",
+        "text": "Two districts lost population between 2025 and 2026: l'Antiga Esquerra de l'Eixample (−2.5%) and Sants (−1.2%).",
+        "display": "2.5%",
+        "source": {
+         "url": "https://portaldades.ajuntament.barcelona.cat/en/report/flaix-de-la-poblacio-de-barcelona-2026-en",
+         "title": "Barcelona Datastore",
+         "domain": "portaldades.ajuntament.barcelona.cat",
+         "accessed": "2026-11-16"
+        },
+        "impact": -2,
+        "t": 0
+       },
+       {
+        "id": "demand-3",
+        "analyst": "demand",
+        "kind": "number",
+        "text": "Native-born registered residents make up 44.6% of the total, the lowest share in recent history. This counts place of birth, not nationality.",
+        "display": "44.6%",
+        "source": {
+         "url": "https://dades.ajuntament.barcelona.cat/informe-padro-estrangers/en/seccio_3.html",
+         "title": "3 Place of birth",
+         "domain": "dades.ajuntament.barcelona.cat",
+         "accessed": "2026-11-16"
+        },
+        "impact": 0,
+        "t": 0
+       },
+       {
+        "id": "demand-4",
+        "analyst": "demand",
+        "kind": "risk",
+        "text": "Footfall at metro exits, station-level demand, household coffee spending and growth in specialty or takeaway demand in Barcelona were not found. The research has no evidence for or against volume.",
+        "source": null,
+        "basis": "Not found in the research",
+        "impact": -2,
+        "t": 0
+       },
+       {
+        "id": "demand-5",
+        "analyst": "demand",
+        "kind": "estimate",
+        "text": "The exit is not specified, so no station-level data is included.",
+        "source": null,
+        "basis": "No source cited in the report",
+        "impact": 0,
+        "t": 0
+       }
+      ],
+      "score": 5,
+      "headline": "The city is large, and two districts in the centre carry most of the registered population, so commuter demand is plausible. No evidence on metro-exit footfall, coffee spending or growth was found, so demand at this exit is unproven."
+     },
+     {
+      "analyst": "competition",
+      "status": "done",
+      "findings": [
+       {
+        "id": "competition-0",
+        "analyst": "competition",
+        "kind": "number",
+        "text": "Three Marks in Fort Pienc lists a flat white at €2.50 and an espresso at €2.00. The page does not give the year of these prices.",
+        "display": "€2.50",
+        "source": {
+         "url": "https://guidavera.com/spain/barcelona/best-specialty-coffee",
+         "title": "Best Specialty Coffee in Barcelona",
+         "domain": "guidavera.com",
+         "accessed": "2026-11-16"
+        },
+        "impact": 2,
+        "t": 0
+       },
+       {
+        "id": "competition-1",
+        "analyst": "competition",
+        "kind": "number",
+        "text": "Syra Coffee in Gràcia, which started as a small takeaway hatch, lists a flat white at €3.90.",
+        "display": "€3.90.",
+        "source": {
+         "url": "https://guidavera.com/spain/barcelona/coffee",
+         "title": "Best Specialty Coffee in Barcelona (2026)",
+         "domain": "guidavera.com",
+         "accessed": "2026-11-16"
+        },
+        "impact": -1,
+        "t": 0
+       },
+       {
+        "id": "competition-2",
+        "analyst": "competition",
+        "kind": "number",
+        "text": "Sensorial Coffee Roasters and The Miners Coffee, both in Poblenou, list flat whites at €3.50. Nomad Coffee lists €3–4, and BeBo lists €3.20.",
+        "display": "€3.50.",
+        "source": {
+         "url": "https://guidavera.com/spain/barcelona/best-specialty-coffee",
+         "title": "Best Specialty Coffee in Barcelona",
+         "domain": "guidavera.com",
+         "accessed": "2026-11-16"
+        },
+        "impact": -1,
+        "t": 0
+       },
+       {
+        "id": "competition-3",
+        "analyst": "competition",
+        "kind": "number",
+        "text": "Traditional bars sell a café con leche for €1.50–2.50, and one May 2026 blog puts espressos at €1.20–1.50 with variable quality.",
+        "display": "€1.50–2.50,",
+        "source": {
+         "url": "https://www.barcelonatourism.org/2026/08/09/coffee-shops/",
+         "title": "Barcelona Coffee Culture: The Best Specialty Coffee Shops and Cafes ...",
+         "domain": "barcelonatourism.org",
+         "accessed": "2026-11-16"
+        },
+        "impact": -1,
+        "t": 0
+       },
+       {
+        "id": "competition-4",
+        "analyst": "competition",
+        "kind": "number",
+        "text": "Bicioci in Gràcia sells a coffee and croissant combo under €3, and Pasta Madre in the Gothic Quarter sells one for €1.60. Both come from undated travel blogs, so they are weak support for current pricing.",
+        "display": "€3,",
+        "source": {
+         "url": "https://thespiritedexplorer.com/best-specialty-coffee-shops-barcelona/",
+         "title": "The Best Specialty Coffee Shops in Barcelona: Ultimate Guide",
+         "domain": "thespiritedexplorer.com",
+         "accessed": "2026-11-16"
+        },
+        "impact": 0,
+        "t": 0
+       },
+       {
+        "id": "competition-5",
+        "analyst": "competition",
+        "kind": "fact",
+        "text": "Dalston Coffee, a very small takeaway shop near Universitat, is a nearby rival for commuter trade, but its prices were not found.",
+        "source": {
+         "url": "https://thespiritedexplorer.com/best-specialty-coffee-shops-barcelona/",
+         "title": "The Best Specialty Coffee Shops in Barcelona: Ultimate Guide",
+         "domain": "thespiritedexplorer.com",
+         "accessed": "2026-11-16"
+        },
+        "impact": 0,
+        "t": 0
+       },
+       {
+        "id": "competition-6",
+        "analyst": "competition",
+        "kind": "number",
+        "text": "Coffee subscriptions start from €24 a month, and roasters mainly sell beans for home brewing, which is a different product from café drinks.",
+        "display": "€24",
+        "source": {
+         "url": "https://barcelonaurbana.com/en/blog/specialty-coffee-barcelona",
+         "title": "Coffee Culture in Barcelona: How the City Built One of Europe's ...",
+         "domain": "barcelonaurbana.com",
+         "accessed": "2026-11-16"
+        },
+        "impact": 0,
+        "t": 0
+       }
+      ],
+      "score": 4,
+      "headline": "The €2.50 flat white is at the low end of specialty pricing, but cheaper traditional bars and a few takeaway combos set the floor. Price is the main lever, and it is untested at a metro exit."
+     },
+     {
+      "analyst": "pricing",
+      "status": "done",
+      "findings": [
+       {
+        "id": "pricing-0",
+        "analyst": "pricing",
+        "kind": "number",
+        "text": "A 27 m² unit in the same area as the Dreta de l'Eixample search is listed at €820 a month, about €30/m² by calculation.",
+        "display": "€820",
+        "source": {
+         "url": "https://m.habitaclia.com/alquiler-locales_comerciales-barcelona-8.htm",
+         "title": "1.448 Alquiler Locales Comerciales en Barcelona - habitaclia",
+         "domain": "m.habitaclia.com",
+         "accessed": "2026-11-16"
+        },
+        "impact": 2,
+        "t": 0
+       },
+       {
+        "id": "pricing-1",
+        "analyst": "pricing",
+        "kind": "number",
+        "text": "A 57 m² unit near Sant Adrià is listed at €450 a month (about €7.9/m²), available from 1 April 2026.",
+        "display": "€450",
+        "source": {
+         "url": "https://www.habitaclia.com/alquiler-locales_comerciales-barcelona-39.htm",
+         "title": "Alquiler locales comerciales en Barcelona - habitaclia",
+         "domain": "habitaclia.com",
+         "accessed": "2026-11-16"
+        },
+        "impact": 2,
+        "t": 0
+       },
+       {
+        "id": "pricing-2",
+        "analyst": "pricing",
+        "kind": "number",
+        "text": "A 97 m² unit on Carrer de Llança in La Nova Esquerra de l'Eixample is listed at €1,100 a month, about €11.3/m². This is a larger unit, not a kiosk.",
+        "display": "€1,100",
+        "source": {
+         "url": "https://m.habitaclia.com/alquiler-locales_comerciales-barcelona-8.htm",
+         "title": "1.448 Alquiler Locales Comerciales en Barcelona - habitaclia",
+         "domain": "m.habitaclia.com",
+         "accessed": "2026-11-16"
+        },
+        "impact": -2,
+        "t": 0
+       },
+       {
+        "id": "pricing-3",
+        "analyst": "pricing",
+        "kind": "number",
+        "text": "An 85 m² ground-floor unit in Sant Gervasi – La Bonanova is listed at €1,300 a month, about €15.29/m². The Zona Alta average is listed at €19.29/m².",
+        "display": "€1,300",
+        "source": {
+         "url": "https://www.idealista.com/geo/alquiler-locales/zona-alta-1/",
+         "title": "Locales o naves en alquiler, Zona Alta, Barcelona — idealista",
+         "domain": "idealista.com",
+         "accessed": "2026-11-16"
+        },
+        "impact": -2,
+        "t": 0
+       },
+       {
+        "id": "pricing-4",
+        "analyst": "pricing",
+        "kind": "number",
+        "text": "The market-wide median of €2,067 a month is from an old page, so the research does not rely on it.",
+        "display": "€2,067",
+        "source": {
+         "url": "https://www.locales.es/barcelona/alquiler/locales",
+         "title": "Locales en alquiler en Barcelona - 132 locales comerciales 2026",
+         "domain": "locales.es",
+         "accessed": "2026-11-16"
+        },
+        "impact": 0,
+        "t": 0
+       },
+       {
+        "id": "pricing-5",
+        "analyst": "pricing",
+        "kind": "risk",
+        "text": "No costs were found for espresso machines, grinders, fit-out, barista wages, employer social security, kiosk licences, or coffee inputs.",
+        "source": null,
+        "basis": "Not found in the research",
+        "impact": -2,
+        "t": 0
+       },
+       {
+        "id": "pricing-6",
+        "analyst": "pricing",
+        "kind": "estimate",
+        "text": "Ongoing social security for a sole trader is about €200 a month at the lowest income band in 2026 (estimate; no source id was attached to this figure in the research).",
+        "source": null,
+        "basis": "No source cited in the report",
+        "impact": 0,
+        "t": 0
+       }
+      ],
+      "score": 4,
+      "headline": "Rent is the largest fixed cost, and small units in Barcelona range widely in asking price. Every rent figure here is an asking price, not a signed lease, and the kiosk fee for a metro exit is unknown. Break-even depends on volume that is not yet measured."
+     },
+     {
+      "analyst": "viability",
+      "status": "done",
+      "findings": [
+       {
+        "id": "viability-0",
+        "analyst": "viability",
+        "kind": "fact",
+        "text": "The municipality decides the activity permit, building works and any terrace approval, and the procedure differs from other cities. This guide is written for relocation generally, not for kiosks on public space, so it is weak support for the metro-exit case.",
+        "source": {
+         "url": "https://relotus-relocation.com/en/journal/how-to-open-a-cafe-in-spain/",
+         "title": "How to Open a Café in Spain (2026): Licences, APPCC, Costs",
+         "domain": "relotus-relocation.com",
+         "accessed": "2026-11-16"
+        },
+        "impact": -1,
+        "t": 0
+       },
+       {
+        "id": "viability-1",
+        "analyst": "viability",
+        "kind": "risk",
+        "text": "No rules were found for a kiosk on public space at a metro station, including whether a concession is needed.",
+        "source": null,
+        "basis": "Not found in the research",
+        "impact": -1,
+        "t": 0
+       },
+       {
+        "id": "viability-2",
+        "analyst": "viability",
+        "kind": "number",
+        "text": "A food safety plan (APPCC/HACCP) is required under EU Regulation 852/2004, Article 5 and is checked by the health inspectorate.",
+        "source": {
+         "url": "https://relotus-relocation.com/en/journal/how-to-open-a-cafe-in-spain/",
+         "title": "How to Open a Café in Spain (2026): Licences, APPCC, Costs",
+         "domain": "relotus-relocation.com",
+         "accessed": "2026-11-16"
+        },
+        "impact": 2,
+        "t": 0
+       },
+       {
+        "id": "viability-3",
+        "analyst": "viability",
+        "kind": "fact",
+        "text": "Spain does not issue a state food handler certificate; staff training is the employer's responsibility.",
+        "source": {
+         "url": "https://relotus-relocation.com/en/journal/how-to-open-a-cafe-in-spain/",
+         "title": "How to Open a Café in Spain (2026): Licences, APPCC, Costs",
+         "domain": "relotus-relocation.com",
+         "accessed": "2026-11-16"
+        },
+        "impact": 0,
+        "t": 0
+       },
+       {
+        "id": "viability-4",
+        "analyst": "viability",
+        "kind": "number",
+        "text": "The first-year flat rate for social security is €80 a month in some 2026 guides, and €88.72 in another. An older guide cites €60 a month. Verify the figure before budgeting.",
+        "display": "€80",
+        "source": {
+         "url": "https://barna.news/becoming-an-aut-nomo-in-barcelona-a-foreigner-s-guide/",
+         "title": "Becoming an autonomo in Barcelona: foreigner's guide",
+         "domain": "barna.news",
+         "accessed": "2026-11-16"
+        },
+        "impact": -1,
+        "t": 0
+       },
+       {
+        "id": "viability-5",
+        "analyst": "viability",
+        "kind": "fact",
+        "text": "Sole traders are personally liable for business debts under an older guide. The year is unclear, so treat it as dated.",
+        "source": {
+         "url": "https://www.waiterio.com/blog/en/open-restaurant-barcelona/",
+         "title": "Permits to Open a Restaurant in Barcelona, Spain",
+         "domain": "waiterio.com",
+         "accessed": "2026-11-16"
+        },
+        "impact": -1,
+        "t": 0
+       },
+       {
+        "id": "viability-6",
+        "analyst": "viability",
+        "kind": "fact",
+        "text": "EU citizens need no visa. Non-EU founders on the autónomo visa are limited to one autonomous community and the approved sector for the first year.",
+        "source": {
+         "url": "https://myspainvisa.com/starting-business-spain/",
+         "title": "Starting A Business In Spain Guide 2026",
+         "domain": "myspainvisa.com",
+         "accessed": "2026-11-16"
+        },
+        "impact": 0,
+        "t": 0
+       },
+       {
+        "id": "viability-7",
+        "analyst": "viability",
+        "kind": "fact",
+        "text": "A physical café application requires proof of funds for the rent deposit, renovations, machines and stock.",
+        "source": {
+         "url": "https://spainhandbook.com/spain-work-permit-for-self-employed-autonomo-step-by-step/",
+         "title": "Spain Work Permit for Self‑Employed (Autónomo): Step‑by‑Step ...",
+         "domain": "spainhandbook.com",
+         "accessed": "2026-11-16"
+        },
+        "impact": -1,
+        "t": 0
+       },
+       {
+        "id": "viability-8",
+        "analyst": "viability",
+        "kind": "fact",
+        "text": "The relocation guide names high competition and expensive rent in central districts. This is general, not kiosk-specific.",
+        "source": {
+         "url": "https://relotus-relocation.com/en/journal/how-to-open-a-cafe-in-spain/",
+         "title": "How to Open a Café in Spain (2026): Licences, APPCC, Costs",
+         "domain": "relotus-relocation.com",
+         "accessed": "2026-11-16"
+        },
+        "impact": -1,
+        "t": 0
+       },
+       {
+        "id": "viability-9",
+        "analyst": "viability",
+        "kind": "estimate",
+        "text": "The research did not find café failure rates, input cost trends, or delivery platform dependency for Barcelona in 2026.",
+        "source": null,
+        "basis": "No source cited in the report",
+        "impact": 0,
+        "t": 0
+       }
+      ],
+      "score": 1.5,
+      "headline": "The permit route, food safety and business registration are manageable, but the metro-exit kiosk rules are not covered by the research. Verify the permit first, because it decides whether the location exists at all."
+     }
+    ],
+    "report": {
+     "score": 3.5,
+     "verdict": "no-go",
+     "verdictLine": "No-go: The permit route is unknown. The municipality decides the activity permit and building works, but the research found no concession or permit rule for a kiosk on public space at a station. Savings should not be committed until this is confirmed.",
+     "factors": [
+      {
+       "analyst": "demand",
+       "label": "Customers",
+       "weight": 0.24,
+       "score": 5,
+       "findings": [
+        "demand-0",
+        "demand-1",
+        "demand-2",
+        "demand-3",
+        "demand-4",
+        "demand-5"
+       ],
+       "sourced": 4,
+       "total": 6
+      },
+      {
+       "analyst": "competition",
+       "label": "Competition",
+       "weight": 0.29,
+       "score": 4,
+       "findings": [
+        "competition-0",
+        "competition-1",
+        "competition-2",
+        "competition-3",
+        "competition-4",
+        "competition-5",
+        "competition-6"
+       ],
+       "sourced": 7,
+       "total": 7
+      },
+      {
+       "analyst": "pricing",
+       "label": "Pricing",
+       "weight": 0.18,
+       "score": 4,
+       "findings": [
+        "pricing-0",
+        "pricing-1",
+        "pricing-2",
+        "pricing-3",
+        "pricing-4",
+        "pricing-5",
+        "pricing-6"
+       ],
+       "sourced": 5,
+       "total": 7
+      },
+      {
+       "analyst": "viability",
+       "label": "Viability",
+       "weight": 0.29,
+       "score": 1.5,
+       "findings": [
+        "viability-0",
+        "viability-1",
+        "viability-2",
+        "viability-3",
+        "viability-4",
+        "viability-5",
+        "viability-6",
+        "viability-7",
+        "viability-8",
+        "viability-9"
+       ],
+       "sourced": 8,
+       "total": 10
+      }
+     ],
+     "math": "0.24×5.0 + 0.29×4.0 + 0.18×4.0 + 0.29×1.5 = 3.5",
+     "evidence": {
+      "total": 30,
+      "sourced": 24,
+      "sourcedShare": 0.8,
+      "sources": [
+       {
+        "url": "https://portaldades.ajuntament.barcelona.cat/en/report/flaix-de-la-poblacio-de-barcelona-2026-en",
+        "title": "Barcelona Datastore",
+        "domain": "portaldades.ajuntament.barcelona.cat",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://dades.ajuntament.barcelona.cat/informe-padro-estrangers/en/seccio_3.html",
+        "title": "3 Place of birth",
+        "domain": "dades.ajuntament.barcelona.cat",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://guidavera.com/spain/barcelona/best-specialty-coffee",
+        "title": "Best Specialty Coffee in Barcelona",
+        "domain": "guidavera.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://guidavera.com/spain/barcelona/coffee",
+        "title": "Best Specialty Coffee in Barcelona (2026)",
+        "domain": "guidavera.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://www.barcelonatourism.org/2026/08/09/coffee-shops/",
+        "title": "Barcelona Coffee Culture: The Best Specialty Coffee Shops and Cafes ...",
+        "domain": "barcelonatourism.org",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://thespiritedexplorer.com/best-specialty-coffee-shops-barcelona/",
+        "title": "The Best Specialty Coffee Shops in Barcelona: Ultimate Guide",
+        "domain": "thespiritedexplorer.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://barcelonaurbana.com/en/blog/specialty-coffee-barcelona",
+        "title": "Coffee Culture in Barcelona: How the City Built One of Europe's ...",
+        "domain": "barcelonaurbana.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://m.habitaclia.com/alquiler-locales_comerciales-barcelona-8.htm",
+        "title": "1.448 Alquiler Locales Comerciales en Barcelona - habitaclia",
+        "domain": "m.habitaclia.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://www.habitaclia.com/alquiler-locales_comerciales-barcelona-39.htm",
+        "title": "Alquiler locales comerciales en Barcelona - habitaclia",
+        "domain": "habitaclia.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://www.idealista.com/geo/alquiler-locales/zona-alta-1/",
+        "title": "Locales o naves en alquiler, Zona Alta, Barcelona — idealista",
+        "domain": "idealista.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://www.locales.es/barcelona/alquiler/locales",
+        "title": "Locales en alquiler en Barcelona - 132 locales comerciales 2026",
+        "domain": "locales.es",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://relotus-relocation.com/en/journal/how-to-open-a-cafe-in-spain/",
+        "title": "How to Open a Café in Spain (2026): Licences, APPCC, Costs",
+        "domain": "relotus-relocation.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://barna.news/becoming-an-aut-nomo-in-barcelona-a-foreigner-s-guide/",
+        "title": "Becoming an autonomo in Barcelona: foreigner's guide",
+        "domain": "barna.news",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://www.waiterio.com/blog/en/open-restaurant-barcelona/",
+        "title": "Permits to Open a Restaurant in Barcelona, Spain",
+        "domain": "waiterio.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://myspainvisa.com/starting-business-spain/",
+        "title": "Starting A Business In Spain Guide 2026",
+        "domain": "myspainvisa.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://spainhandbook.com/spain-work-permit-for-self-employed-autonomo-step-by-step/",
+        "title": "Spain Work Permit for Self‑Employed (Autónomo): Step‑by‑Step ...",
+        "domain": "spainhandbook.com",
+        "accessed": "2026-11-16"
+       }
+      ]
+     },
+     "confidence": "high",
+     "scalability": {
+      "score": 3.1,
+      "cap": 0,
+      "reach": "Neighbourhood",
+      "why": "One counter at one exit serves one passing flow, so volume is capped by station footfall and one espresso machine.",
+      "wouldScale": [
+       "Open a second kiosk at another metro exit under the same permit route",
+       "Sell bagged beans by subscription for home brewing [S11]",
+       "Add pre-order collection, if the permit and platform terms allow it"
+      ],
+      "parts": [
+       {
+        "label": "Reach",
+        "score": 3
+       },
+       {
+        "label": "Repeatable",
+        "score": 4
+       },
+       {
+        "label": "Margins at scale",
+        "score": 4
+       },
+       {
+        "label": "Founder-free",
+        "score": 2
+       },
+       {
+        "label": "Digital leverage",
+        "score": 2
+       }
+      ]
+     },
+     "strengths": [
+      {
+       "text": "Barcelona had 1,729,963 registered inhabitants on 1 January 2026.",
+       "finding": "demand-0"
+      },
+      {
+       "text": "Three Marks in Fort Pienc lists a flat white at €2.50 and an espresso at €2.00. The page does not give the year of these prices.",
+       "finding": "competition-0"
+      },
+      {
+       "text": "A 27 m² unit in the same area as the Dreta de l'Eixample search is listed at €820 a month, about €30/m² by calculation.",
+       "finding": "pricing-0"
+      }
+     ],
+     "weaknesses": [
+      {
+       "text": "Two districts lost population between 2025 and 2026: l'Antiga Esquerra de l'Eixample (−2.5%) and Sants (−1.2%).",
+       "finding": "demand-2"
+      },
+      {
+       "text": "A 97 m² unit on Carrer de Llança in La Nova Esquerra de l'Eixample is listed at €1,100 a month, about €11.3/m². This is a larger unit, not a kiosk.",
+       "finding": "pricing-2"
+      },
+      {
+       "text": "An 85 m² ground-floor unit in Sant Gervasi – La Bonanova is listed at €1,300 a month, about €15.29/m². The Zona Alta average is listed at €19.29/m².",
+       "finding": "pricing-3"
+      }
+     ],
+     "nextSteps": [
+      "Ask the Ajuntament de Barcelona in writing which procedure and fees apply to a takeaway stand on public space near a metro station, and ask the transport operator who controls the exit space.",
+      "Count people leaving the exit during the morning peak on three weekdays, and count how many stop or look at a sign. Use a 1-in-50 conversion as a starting assumption (estimate).",
+      "Run a two-week pop-up or a sign test at €2.50 against a €3.00 price at the same exit, counting cups per morning."
+     ],
+     "pivot": {
+      "idea": "Takeaway coffee and croissant bundle at a fixed price",
+      "why": "Bicioci sells a coffee and croissant combo under €3 [S9] and Pasta Madre sells one for €1.60 [S9], though both come from undated travel…"
+     },
+     "reasons": [
+      "The permit route is unknown. The municipality decides the activity permit and building works, but the research found no concession or permit rule for a kiosk on public space at a station. Savings should not be committed until this is confirmed.",
+      "The price is at the low end of the specialty market. The €2.50 flat white matches Three Marks, but Barcelona Tourism's range for third-wave cafés is €3–4.50, so a lower price cannot be assumed to win customers.",
+      "Cheap traditional bars set the floor. A café con leche costs €1.50–2.50, and one May 2026 blog puts traditional-bar espressos at €1.20–1.50. Buyers who want speed and low cost have cheaper options.",
+      "Volume is the whole case. Break-even is 2,637 cups a month. No metro-exit footfall data was found, so the volume is untested.",
+      "Savings at risk are material. Startup capital is €17,000. Conditions: confirm the permit route, measure footfall at the chosen exit, and test the €2.50 price before any purchase."
+     ]
+    },
+    "steers": [],
+    "status": "done",
+    "blocks": [
+     {
+      "id": "customers",
+      "role": "demand",
+      "title": "Customers & demand",
+      "focus": [
+       "Who would pay for this, and how many are there?",
+       "How often would they buy, and why switch?"
+      ],
+      "status": "done",
+      "takeaway": "The city is large, and two districts in the centre carry most of the registered population, so commuter demand is plausible. No evidence on metro-exit footfall, coffee spending or growth was found, so demand at this exit is unproven.",
+      "score": 5,
+      "verdict": "mixed",
+      "evidence": [
+       "demand-0",
+       "demand-1",
+       "demand-2",
+       "demand-3",
+       "demand-4",
+       "demand-5"
+      ],
+      "meaning": "Population is a city-wide figure, not a footfall count for one exit. The demand question is whether the specific exit has enough commuters who buy a coffee on the way. You need counts before you commit, and the district data only says the city is large.",
+      "actions": [
+       "Choose two or three candidate metro exits and count weekday morning flow at each for three days.",
+       "Record how many people at each exit stop, look at a menu, or ask for a coffee, and divide by the flow to estimate conversion.",
+       "Note the nearest rivals at each exit, and whether they serve takeaway at the morning peak."
+      ],
+      "keyNumbers": [
+       {
+        "label": "Barcelona population, 1 Jan 2026",
+        "value": "1,729,963",
+        "source": {
+         "url": "https://portaldades.ajuntament.barcelona.cat/en/report/flaix-de-la-poblacio-de-barcelona-2026-en",
+         "title": "Barcelona Datastore",
+         "domain": "portaldades.ajuntament.barcelona.cat",
+         "accessed": "2026-11-16"
+        }
+       },
+       {
+        "label": "Eixample population, 2026",
+        "value": "277,353",
+        "source": {
+         "url": "https://portaldades.ajuntament.barcelona.cat/en/report/flaix-de-la-poblacio-de-barcelona-2026-en",
+         "title": "Barcelona Datastore",
+         "domain": "portaldades.ajuntament.barcelona.cat",
+         "accessed": "2026-11-16"
+        }
+       },
+       {
+        "label": "Sant Martí population, 2026",
+        "value": "253,139",
+        "source": {
+         "url": "https://portaldades.ajuntament.barcelona.cat/en/report/flaix-de-la-poblacio-de-barcelona-2026-en",
+         "title": "Barcelona Datastore",
+         "domain": "portaldades.ajuntament.barcelona.cat",
+         "accessed": "2026-11-16"
+        }
+       },
+       {
+        "label": "Sants population change, 2025–2026",
+        "value": "−1.2%",
+        "source": {
+         "url": "https://portaldades.ajuntament.barcelona.cat/en/report/flaix-de-la-poblacio-de-barcelona-2026-en",
+         "title": "Barcelona Datastore",
+         "domain": "portaldades.ajuntament.barcelona.cat",
+         "accessed": "2026-11-16"
+        }
+       }
+      ],
+      "sources": [
+       {
+        "url": "https://portaldades.ajuntament.barcelona.cat/en/report/flaix-de-la-poblacio-de-barcelona-2026-en",
+        "title": "Barcelona Datastore",
+        "domain": "portaldades.ajuntament.barcelona.cat",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://dades.ajuntament.barcelona.cat/informe-padro-estrangers/en/seccio_3.html",
+        "title": "3 Place of birth",
+        "domain": "dades.ajuntament.barcelona.cat",
+        "accessed": "2026-11-16"
+       }
+      ],
+      "ms": {
+       "done": 85968
+      }
+     },
+     {
+      "id": "competition",
+      "role": "competition",
+      "title": "Competition & alternatives",
+      "focus": [
+       "Who do customers use today instead?",
+       "What do they charge, and where are they weak?"
+      ],
+      "status": "done",
+      "takeaway": "The €2.50 flat white is at the low end of specialty pricing, but cheaper traditional bars and a few takeaway combos set the floor. Price is the main lever, and it is untested at a metro exit.",
+      "score": 4,
+      "verdict": "weak",
+      "evidence": [
+       "competition-0",
+       "competition-1",
+       "competition-2",
+       "competition-3",
+       "competition-4",
+       "competition-5",
+       "competition-6"
+      ],
+      "meaning": "A flat white at €2.50 is competitive, but only with a clear reason for a commuter to pick you over a traditional bar at €1.50–2.50 or a nearby specialty café. Speed and convenience at the exit are your differentiators, and you need to prove them with counts. The research does not cover the rivals directly at your exit.",
+      "actions": [
+       "Visit the three nearest specialty and bar rivals at your shortlisted exits and record the flat white price, espresso price and whether they have a takeaway counter.",
+       "Time a takeaway order at each rival at the morning peak, to set a service-speed benchmark.",
+       "Ask Three Marks or another roaster whether their €2.50 flat white is still current, and in which year it was set."
+      ],
+      "keyNumbers": [
+       {
+        "label": "Three Marks flat white",
+        "value": "€2.50",
+        "source": {
+         "url": "https://guidavera.com/spain/barcelona/best-specialty-coffee",
+         "title": "Best Specialty Coffee in Barcelona",
+         "domain": "guidavera.com",
+         "accessed": "2026-11-16"
+        }
+       },
+       {
+        "label": "Sensorial / The Miners flat white",
+        "value": "€3.50",
+        "source": {
+         "url": "https://guidavera.com/spain/barcelona/best-specialty-coffee",
+         "title": "Best Specialty Coffee in Barcelona",
+         "domain": "guidavera.com",
+         "accessed": "2026-11-16"
+        }
+       },
+       {
+        "label": "Third-wave flat white range",
+        "value": "€3–4.50",
+        "source": {
+         "url": "https://www.barcelonatourism.org/2026/08/09/coffee-shops/",
+         "title": "Barcelona Coffee Culture: The Best Specialty Coffee Shops and Cafes ...",
+         "domain": "barcelonatourism.org",
+         "accessed": "2026-11-16"
+        }
+       },
+       {
+        "label": "Traditional bar café con leche",
+        "value": "€1.50–2.50",
+        "source": {
+         "url": "https://www.barcelonatourism.org/2026/08/09/coffee-shops/",
+         "title": "Barcelona Coffee Culture: The Best Specialty Coffee Shops and Cafes ...",
+         "domain": "barcelonatourism.org",
+         "accessed": "2026-11-16"
+        }
+       }
+      ],
+      "sources": [
+       {
+        "url": "https://guidavera.com/spain/barcelona/best-specialty-coffee",
+        "title": "Best Specialty Coffee in Barcelona",
+        "domain": "guidavera.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://guidavera.com/spain/barcelona/coffee",
+        "title": "Best Specialty Coffee in Barcelona (2026)",
+        "domain": "guidavera.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://www.barcelonatourism.org/2026/08/09/coffee-shops/",
+        "title": "Barcelona Coffee Culture: The Best Specialty Coffee Shops and Cafes ...",
+        "domain": "barcelonatourism.org",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://thespiritedexplorer.com/best-specialty-coffee-shops-barcelona/",
+        "title": "The Best Specialty Coffee Shops in Barcelona: Ultimate Guide",
+        "domain": "thespiritedexplorer.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://barcelonaurbana.com/en/blog/specialty-coffee-barcelona",
+        "title": "Coffee Culture in Barcelona: How the City Built One of Europe's ...",
+        "domain": "barcelonaurbana.com",
+        "accessed": "2026-11-16"
+       }
+      ],
+      "ms": {
+       "done": 85968
+      }
+     },
+     {
+      "id": "money",
+      "role": "pricing",
+      "title": "Money",
+      "focus": [
+       "What price can it charge, and what does one sale cost?",
+       "How many sales a month to break even?"
+      ],
+      "status": "done",
+      "takeaway": "Rent is the largest fixed cost, and small units in Barcelona range widely in asking price. Every rent figure here is an asking price, not a signed lease, and the kiosk fee for a metro exit is unknown. Break-even depends on volume that is not yet measured.",
+      "score": 4,
+      "verdict": "weak",
+      "evidence": [
+       "pricing-0",
+       "pricing-1",
+       "pricing-2",
+       "pricing-3",
+       "pricing-4",
+       "pricing-5",
+       "pricing-6"
+      ],
+      "meaning": "The model only works if the exit delivers a volume near 2,637 cups a month at €2.50. Rent is the lever you can most easily test, because asking prices for small units are available, but the kiosk permit and fee are not. Do not sign anything until you know the exit's occupancy route and the actual fee.",
+      "actions": [
+       "Get a written permit route and fee from the Ajuntament for a takeaway stand at your shortlisted exit.",
+       "Request two quotes for a used espresso machine and grinder, and one quote for a kiosk build, to replace the estimates.",
+       "Ask a gestoría to confirm the takeaway VAT rate, the current social security band, and the start-up flat-rate fee, and whether the flat rate applies to you."
+      ],
+      "keyNumbers": [
+       {
+        "label": "Asking rent per m², 27 m² unit",
+        "value": "About €30/m²",
+        "source": {
+         "url": "https://m.habitaclia.com/alquiler-locales_comerciales-barcelona-8.htm",
+         "title": "1.448 Alquiler Locales Comerciales en Barcelona - habitaclia",
+         "domain": "m.habitaclia.com",
+         "accessed": "2026-11-16"
+        }
+       },
+       {
+        "label": "Asking rent per m², El Clot 53 m²",
+        "value": "About €12.3/m²",
+        "source": {
+         "url": "https://m.habitaclia.com/alquiler-locales_comerciales-barcelona-8.htm",
+         "title": "1.448 Alquiler Locales Comerciales en Barcelona - habitaclia",
+         "domain": "m.habitaclia.com",
+         "accessed": "2026-11-16"
+        }
+       },
+       {
+        "label": "Asking rent per m², Claramunt 57 m²",
+        "value": "About €7.9/m²",
+        "source": {
+         "url": "https://www.habitaclia.com/alquiler-locales_comerciales-barcelona-39.htm",
+         "title": "Alquiler locales comerciales en Barcelona - habitaclia",
+         "domain": "habitaclia.com",
+         "accessed": "2026-11-16"
+        }
+       },
+       {
+        "label": "Assumed kiosk footprint",
+        "value": "20 m²",
+        "source": null,
+        "basis": "estimate"
+       }
+      ],
+      "math": [
+       "Price per unit (incl. VAT 10%): €2.50",
+       "Share kept by the business: 100%",
+       "Net revenue per unit: €2.27",
+       "Variable cost per unit: €1.04",
+       "Contribution per unit: €1.23 (54%)",
+       "Fixed costs per month: €3,250",
+       "Break-even (units per month): 2,637",
+       "Start-up capital: €17,000"
+      ],
+      "sources": [
+       {
+        "url": "https://m.habitaclia.com/alquiler-locales_comerciales-barcelona-8.htm",
+        "title": "1.448 Alquiler Locales Comerciales en Barcelona - habitaclia",
+        "domain": "m.habitaclia.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://www.habitaclia.com/alquiler-locales_comerciales-barcelona-39.htm",
+        "title": "Alquiler locales comerciales en Barcelona - habitaclia",
+        "domain": "habitaclia.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://www.idealista.com/geo/alquiler-locales/zona-alta-1/",
+        "title": "Locales o naves en alquiler, Zona Alta, Barcelona — idealista",
+        "domain": "idealista.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://www.locales.es/barcelona/alquiler/locales",
+        "title": "Locales en alquiler en Barcelona - 132 locales comerciales 2026",
+        "domain": "locales.es",
+        "accessed": "2026-11-16"
+       }
+      ],
+      "ms": {
+       "done": 85969
+      }
+     },
+     {
+      "id": "risks",
+      "role": "viability",
+      "title": "Risks & how to start",
+      "focus": [
+       "What could stop it: rules, suppliers, timing?",
+       "What is the cheapest first test, and how could it grow?"
+      ],
+      "status": "done",
+      "takeaway": "The permit route, food safety and business registration are manageable, but the metro-exit kiosk rules are not covered by the research. Verify the permit first, because it decides whether the location exists at all.",
+      "score": 1.5,
+      "verdict": "weak",
+      "evidence": [
+       "viability-0",
+       "viability-1",
+       "viability-2",
+       "viability-3",
+       "viability-4",
+       "viability-5",
+       "viability-6",
+       "viability-7",
+       "viability-8",
+       "viability-9"
+      ],
+      "meaning": "The regulatory steps are known in outline, but the kiosk-specific route is the blocking unknown. Budget the first-year social security figure with a range until a gestoría confirms it. If you are non-EU, check your visa scope against a single location and sector before signing a lease.",
+      "actions": [
+       "Ask the Ajuntament and the health inspectorate which permits and food safety checks apply to a takeaway kiosk at a station exit.",
+       "Book a gestoría session to confirm the flat-rate social security figure, the Modelo 036/037 registration, and quarterly VAT and income filings.",
+       "Draft the APPCC food safety plan with a consultant, and budget that task inside the startup capital."
+      ],
+      "keyNumbers": [
+       {
+        "label": "Activity permit decider",
+        "value": "Town council",
+        "source": {
+         "url": "https://relotus-relocation.com/en/journal/how-to-open-a-cafe-in-spain/",
+         "title": "How to Open a Café in Spain (2026): Licences, APPCC, Costs",
+         "domain": "relotus-relocation.com",
+         "accessed": "2026-11-16"
+        }
+       },
+       {
+        "label": "Food safety plan requirement",
+        "value": "APPCC/HACCP, EU Reg. 852/2004 Art. 5",
+        "source": {
+         "url": "https://relotus-relocation.com/en/journal/how-to-open-a-cafe-in-spain/",
+         "title": "How to Open a Café in Spain (2026): Licences, APPCC, Costs",
+         "domain": "relotus-relocation.com",
+         "accessed": "2026-11-16"
+        }
+       },
+       {
+        "label": "First-year social security flat rate",
+        "value": "€80 a month (conflicting figures)",
+        "source": {
+         "url": "https://barna.news/becoming-an-aut-nomo-in-barcelona-a-foreigner-s-guide/",
+         "title": "Becoming an autonomo in Barcelona: foreigner's guide",
+         "domain": "barna.news",
+         "accessed": "2026-11-16"
+        }
+       },
+       {
+        "label": "Ongoing social security, lowest band",
+        "value": "About €200 a month",
+        "source": null,
+        "basis": "estimate"
+       }
+      ],
+      "sources": [
+       {
+        "url": "https://relotus-relocation.com/en/journal/how-to-open-a-cafe-in-spain/",
+        "title": "How to Open a Café in Spain (2026): Licences, APPCC, Costs",
+        "domain": "relotus-relocation.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://barna.news/becoming-an-aut-nomo-in-barcelona-a-foreigner-s-guide/",
+        "title": "Becoming an autonomo in Barcelona: foreigner's guide",
+        "domain": "barna.news",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://www.waiterio.com/blog/en/open-restaurant-barcelona/",
+        "title": "Permits to Open a Restaurant in Barcelona, Spain",
+        "domain": "waiterio.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://myspainvisa.com/starting-business-spain/",
+        "title": "Starting A Business In Spain Guide 2026",
+        "domain": "myspainvisa.com",
+        "accessed": "2026-11-16"
+       },
+       {
+        "url": "https://spainhandbook.com/spain-work-permit-for-self-employed-autonomo-step-by-step/",
+        "title": "Spain Work Permit for Self‑Employed (Autónomo): Step‑by‑Step ...",
+        "domain": "spainhandbook.com",
+        "accessed": "2026-11-16"
+       }
+      ],
+      "ms": {
+       "done": 85969
+      }
+     }
+    ],
+    "notes": [
+     {
+      "analyst": "demand",
+      "kind": "status",
+      "text": "Digging into customers & demand…",
+      "at": 7
+     },
+     {
+      "analyst": "competition",
+      "kind": "status",
+      "text": "Digging into competition & alternatives…",
+      "at": 13
+     },
+     {
+      "analyst": "pricing",
+      "kind": "status",
+      "text": "Digging into money…",
+      "at": 14
+     },
+     {
+      "analyst": "viability",
+      "kind": "status",
+      "text": "Digging into risks & how to start…",
+      "at": 15
+     },
+     {
+      "analyst": "competition",
+      "kind": "search",
+      "text": "Searching: Barcelona specialty coffee flat white price 2026",
+      "at": 1259
+     },
+     {
+      "analyst": "demand",
+      "kind": "search",
+      "text": "Searching: Barcelona population by neighbourhood 2026",
+      "at": 1699
+     },
+     {
+      "analyst": "viability",
+      "kind": "search",
+      "text": "Searching: Barcelona coffee shop licence permit self-employed autònomo cost 2026",
+      "at": 1770
+     },
+     {
+      "analyst": "pricing",
+      "kind": "search",
+      "text": "Searching: Barcelona local comercial alquiler precio m2 2026",
+      "at": 1866
+     },
+     {
+      "analyst": "viability",
+      "kind": "read",
+      "text": "Reading relotus-relocation.com…",
+      "at": 4230
+     },
+     {
+      "analyst": "competition",
+      "kind": "read",
+      "text": "Reading guidavera.com…",
+      "at": 4542
+     },
+     {
+      "analyst": "demand",
+      "kind": "read",
+      "text": "Reading portaldades.ajuntament.barcelona.cat…",
+      "at": 4683
+     },
+     {
+      "analyst": "demand",
+      "kind": "found",
+      "text": "Found 10 facts, 3 sources",
+      "at": 14995
+     },
+     {
+      "analyst": "pricing",
+      "kind": "found",
+      "text": "Found 5 facts, 4 sources",
+      "at": 18657
+     },
+     {
+      "analyst": "viability",
+      "kind": "found",
+      "text": "Found 11 facts, 6 sources",
+      "at": 21128
+     },
+     {
+      "analyst": "competition",
+      "kind": "found",
+      "text": "Found 13 facts, 8 sources",
+      "at": 21725
+     },
+     {
+      "analyst": "viability",
+      "kind": "status",
+      "text": "Writing the report…",
+      "at": 21736
+     },
+     {
+      "analyst": "viability",
+      "kind": "status",
+      "text": "First lines of the report are in…",
+      "at": 57445
+     },
+     {
+      "analyst": "viability",
+      "kind": "status",
+      "text": "Writing the executive summary…",
+      "at": 57450
+     },
+     {
+      "analyst": "viability",
+      "kind": "status",
+      "text": "Writing the verdict…",
+      "at": 59142
+     },
+     {
+      "analyst": "viability",
+      "kind": "status",
+      "text": "Writing the 3 things to validate first…",
+      "at": 60856
+     },
+     {
+      "analyst": "demand",
+      "kind": "status",
+      "text": "Writing Customers & demand…",
+      "at": 64284
+     },
+     {
+      "analyst": "competition",
+      "kind": "status",
+      "text": "Writing Competition & alternatives…",
+      "at": 67407
+     },
+     {
+      "analyst": "pricing",
+      "kind": "status",
+      "text": "Writing Money…",
+      "at": 71530
+     },
+     {
+      "analyst": "viability",
+      "kind": "status",
+      "text": "Writing Risks & how to start…",
+      "at": 78183
+     },
+     {
+      "analyst": "pricing",
+      "kind": "found",
+      "text": "Break-even: 2,637 flat white sold ats a month",
+      "at": 85962
+     },
+     {
+      "analyst": "viability",
+      "kind": "status",
+      "text": "Report ready in 86 s",
+      "at": 85974
+     }
+    ],
+    "firstFindingMs": 14995,
+    "researched": 21,
+    "brief": {
+     "title": "Takeaway coffee kiosk at a Barcelona metro exit",
+     "summary": "A takeaway-only specialty kiosk at a busy Barcelona metro exit would sell one product, a €2.50 flat white, to passing commuters. The strongest support is price: Three Marks, a Fort Pienc roaster, lists the same €2.50 flat white, and Barcelona's city population is 1,729,963 as of January 2026. The strongest case against is that Barcelona's third-wave cafés mostly charge €3–4.50 for a flat white, while traditional bars sell a café con leche for €1.50–2.50. The research has no footfall counts for metro exits, no evidence that a kiosk permit exists for station-adjacent public space, and no local price list beyond a few shops. The money case rests on estimates: startup capital is €17,000, fixed costs are €3,250 a month, and break-even is 2,637 cups a month at the stated price. Each contribution per cup is €1.23, a margin of 54%. The business works only if a single exit delivers that volume, which the research does not show. Verdict: No-go (score 3.5/10). Main reason: The permit route is unknown. The municipality decides the activity permit and building works, but the research found no concession or permit rule for a kiosk on public space at a station.",
+     "validateFirst": [
+      {
+       "what": "A kiosk can be licensed at the chosen metro exit, at an occupancy cost near €600 a month",
+       "how": "Ask the Ajuntament de Barcelona in writing which procedure and fees apply to a takeaway stand on public space near a metro station, and ask the transport operator who controls the exit space.",
+       "passIf": "A written procedure exists, and total monthly occupancy cost (rent plus any fee) is no higher than €600 (estimate)."
+      },
+      {
+       "what": "Passing footfall at the exit supports 2,637 cups a month",
+       "how": "Count people leaving the exit during the morning peak on three weekdays, and count how many stop or look at a sign. Use a 1-in-50 conversion as a starting assumption (estimate).",
+       "passIf": "The projected monthly cups, using the counted flow and the conversion, reach 2,637 cups a month, with at least 30 operating days."
+      },
+      {
+       "what": "Customers will pay €2.50 for a flat white at this exit",
+       "how": "Run a two-week pop-up or a sign test at €2.50 against a €3.00 price at the same exit, counting cups per morning.",
+       "passIf": "At €2.50, cups per morning reach at least the daily rate implied by 2,637 cups a month, with no drop in volume against the €3.00 price."
+      }
+     ],
+     "researchedAt": "2026-11-16"
+    },
+    "reportMd": "# Founder report: Takeaway coffee kiosk at a Barcelona metro exit\n\n## Executive summary\n\nA takeaway-only specialty kiosk at a busy Barcelona metro exit would sell one product, a €2.50 flat white, to passing commuters. The strongest support is price: Three Marks, a Fort Pienc roaster, lists the same €2.50 flat white [S4], and Barcelona's city population is 1,729,963 as of January 2026 [S1]. The strongest case against is that Barcelona's third-wave cafés mostly charge €3–4.50 for a flat white [S7], while traditional bars sell a café con leche for €1.50–2.50 [S7]. The research has no footfall counts for metro exits, no evidence that a kiosk permit exists for station-adjacent public space, and no local price list beyond a few shops. The money case rests on estimates: startup capital is €17,000, fixed costs are €3,250 a month, and break-even is 2,637 cups a month at the stated price. Each contribution per cup is €1.23, a margin of 54%. The business works only if a single exit delivers that volume, which the research does not show. Verdict: No-go (score 3.5/10). Main reason: The permit route is unknown. The municipality decides the activity permit and building works, but the research found no concession or permit rule for a kiosk on public space at a station.\n\n## Verdict\n\n**NO-GO** (score 3.5/10)\n\n- **The permit route is unknown.** The municipality decides the activity permit and building works [S16], but the research found no concession or permit rule for a kiosk on public space at a station. Savings should not be committed until this is confirmed.\n- **The price is at the low end of the specialty market.** The €2.50 flat white matches Three Marks [S4], but Barcelona Tourism's range for third-wave cafés is €3–4.50 [S7], so a lower price cannot be assumed to win customers.\n- **Cheap traditional bars set the floor.** A café con leche costs €1.50–2.50 [S7], and one May 2026 blog puts traditional-bar espressos at €1.20–1.50 [S10]. Buyers who want speed and low cost have cheaper options.\n- **Volume is the whole case.** Break-even is 2,637 cups a month. No metro-exit footfall data was found, so the volume is untested.\n- **Savings at risk are material.** Startup capital is €17,000. Conditions: confirm the permit route, measure footfall at the chosen exit, and test the €2.50 price before any purchase.\n\n## 3 things to validate first\n\n1. **A kiosk can be licensed at the chosen metro exit, at an occupancy cost near €600 a month.**\n   - *Why it matters:* If no permit route exists, or the concession fee is high, the fixed cost base changes and the location may be unavailable. Break-even is 2,637 cups a month at the current fixed-cost estimate of €3,250.\n   - *Test this month:* Ask the Ajuntament de Barcelona in writing which procedure and fees apply to a takeaway stand on public space near a metro station, and ask the transport operator who controls the exit space.\n   - *Pass:* A written procedure exists, and total monthly occupancy cost (rent plus any fee) is no higher than €600 (estimate).\n\n2. **Passing footfall at the exit supports 2,637 cups a month.**\n   - *Why it matters:* Volume drives everything. If passing commuters are fewer than the break-even needs, the kiosk cannot cover fixed costs at any price in the research range.\n   - *Test this month:* Count people leaving the exit during the morning peak on three weekdays, and count how many stop or look at a sign. Use a 1-in-50 conversion as a starting assumption (estimate).\n   - *Pass:* The projected monthly cups, using the counted flow and the conversion, reach 2,637 cups a month, with at least 30 operating days.\n\n3. **Customers will pay €2.50 for a flat white at this exit.**\n   - *Why it matters:* The price sits between traditional bars at €1.50–2.50 [S7] and third-wave cafés at €3–4.50 [S7]. If buyers balk at €2.50, or if the margin needs a higher price, the model changes.\n   - *Test this month:* Run a two-week pop-up or a sign test at €2.50 against a €3.00 price at the same exit, counting cups per morning.\n   - *Pass:* At €2.50, cups per morning reach at least the daily rate implied by 2,637 cups a month, with no drop in volume against the €3.00 price.\n\n## Customers & demand\n\n**Takeaway:** The city is large, and two districts in the centre carry most of the registered population, so commuter demand is plausible. No evidence on metro-exit footfall, coffee spending or growth was found, so demand at this exit is unproven.\n\n**Evidence:**\n- (+) Barcelona had 1,729,963 registered inhabitants on 1 January 2026 [S1].\n- (+) Eixample (277,353) and Sant Martí (253,139) were the two most populated districts in 2026 [S1].\n- (−) Two districts lost population between 2025 and 2026: l'Antiga Esquerra de l'Eixample (−2.5%) and Sants (−1.2%) [S1].\n- (=) Native-born registered residents make up 44.6% of the total, the lowest share in recent history. This counts place of birth, not nationality [S2].\n- (−) Footfall at metro exits, station-level demand, household coffee spending and growth in specialty or takeaway demand in Barcelona were not found. The research has no evidence for or against volume.\n- (=) The exit is not specified, so no station-level data is included.\n\n**Key numbers:**\n\n| Figure | Value | Source |\n|---|---|---|\n| Barcelona population, 1 Jan 2026 | 1,729,963 | [S1] |\n| Eixample population, 2026 | 277,353 | [S1] |\n| Sant Martí population, 2026 | 253,139 | [S1] |\n| Sants population change, 2025–2026 | −1.2% | [S1] |\n| Native-born share of registered population | 44.6% | [S2] |\n| Metro-exit footfall | Not found | — |\n| Coffee spend per household | Not found | — |\n\n**What it means for you:** Population is a city-wide figure, not a footfall count for one exit. The demand question is whether the specific exit has enough commuters who buy a coffee on the way. You need counts before you commit, and the district data only says the city is large.\n\n**Next actions:**\n1. Choose two or three candidate metro exits and count weekday morning flow at each for three days.\n2. Record how many people at each exit stop, look at a menu, or ask for a coffee, and divide by the flow to estimate conversion.\n3. Note the nearest rivals at each exit, and whether they serve takeaway at the morning peak.\n\n## Competition & alternatives\n\n**Takeaway:** The €2.50 flat white is at the low end of specialty pricing, but cheaper traditional bars and a few takeaway combos set the floor. Price is the main lever, and it is untested at a metro exit.\n\n**Evidence:**\n- (+) Three Marks in Fort Pienc lists a flat white at €2.50 and an espresso at €2.00 [S4]. The page does not give the year of these prices.\n- (−) Syra Coffee in Gràcia, which started as a small takeaway hatch, lists a flat white at €3.90 [S5][S4].\n- (−) Sensorial Coffee Roasters and The Miners Coffee, both in Poblenou, list flat whites at €3.50 [S4]. Nomad Coffee lists €3–4 [S6], and BeBo lists €3.20 [S8].\n- (−) Traditional bars sell a café con leche for €1.50–2.50 [S7], and one May 2026 blog puts espressos at €1.20–1.50 with variable quality [S10].\n- (=) Bicioci in Gràcia sells a coffee and croissant combo under €3 [S9], and Pasta Madre in the Gothic Quarter sells one for €1.60 [S9]. Both come from undated travel blogs, so they are weak support for current pricing.\n- (=) Dalston Coffee, a very small takeaway shop near Universitat, is a nearby rival for commuter trade, but its prices were not found [S9].\n- (=) Coffee subscriptions start from €24 a month [S11], and roasters mainly sell beans for home brewing [S4], which is a different product from café drinks.\n\n**Key numbers:**\n\n| Figure | Value | Source |\n|---|---|---|\n| Three Marks flat white | €2.50 | [S4] |\n| Sensorial / The Miners flat white | €3.50 | [S4] |\n| Third-wave flat white range | €3–4.50 | [S7] |\n| Traditional bar café con leche | €1.50–2.50 | [S7] |\n| Traditional bar espresso (blog) | €1.20–1.50 | [S10] |\n| Coffee-and-croissant combo | Under €3 to €1.60 | [S9] (undated blog) |\n| Subscription from | €24 a month | [S11] |\n\n**What it means for you:** A flat white at €2.50 is competitive, but only with a clear reason for a commuter to pick you over a traditional bar at €1.50–2.50 or a nearby specialty café. Speed and convenience at the exit are your differentiators, and you need to prove them with counts. The research does not cover the rivals directly at your exit.\n\n**Next actions:**\n1. Visit the three nearest specialty and bar rivals at your shortlisted exits and record the flat white price, espresso price and whether they have a takeaway counter.\n2. Time a takeaway order at each rival at the morning peak, to set a service-speed benchmark.\n3. Ask Three Marks or another roaster whether their €2.50 flat white is still current, and in which year it was set.\n\n## Money\n\n**Takeaway:** Rent is the largest fixed cost, and small units in Barcelona range widely in asking price. Every rent figure here is an asking price, not a signed lease, and the kiosk fee for a metro exit is unknown. Break-even depends on volume that is not yet measured.\n\n**Evidence:**\n- (+) A 27 m² unit in the same area as the Dreta de l'Eixample search is listed at €820 a month, about €30/m² by calculation [S12].\n- (+) A 57 m² unit near Sant Adrià is listed at €450 a month (about €7.9/m²), available from 1 April 2026 [S13].\n- (−) A 97 m² unit on Carrer de Llança in La Nova Esquerra de l'Eixample is listed at €1,100 a month, about €11.3/m² [S12]. This is a larger unit, not a kiosk.\n- (−) An 85 m² ground-floor unit in Sant Gervasi – La Bonanova is listed at €1,300 a month, about €15.29/m² [S14]. The Zona Alta average is listed at €19.29/m² [S14].\n- (=) The market-wide median of €2,067 a month [S15] is from an old page, so the research does not rely on it.\n- (−) No costs were found for espresso machines, grinders, fit-out, barista wages, employer social security, kiosk licences, or coffee inputs.\n- (=) Ongoing social security for a sole trader is about €200 a month at the lowest income band in 2026 (estimate; no source id was attached to this figure in the research).\n\n**Key numbers:**\n\n| Figure | Value | Source or \"estimate\" |\n|---|---|---|\n| Asking rent per m², 27 m² unit | About €30/m² | [S12] |\n| Asking rent per m², El Clot 53 m² | About €12.3/m² | [S12] |\n| Asking rent per m², Claramunt 57 m² | About €7.9/m² | [S13] |\n| Assumed kiosk footprint | 20 m² | estimate |\n| Assumed rent | 20 m² × €30/m² = €600 a month | estimate, using [S12] |\n| Retail price per flat white (gross) | €2.50 | [S4] |\n| VAT on drinks served on the premises | 10% | [S16]; takeaway rate not found, so this is an estimate |\n| Startup capital | €17,000 | estimate |\n| Fixed monthly costs | €3,250 | estimate |\n\n**Unit economics**\n\nThe unit is one cup of flat white. The retail price is €2.50 including VAT, taken from Three Marks [S4]. The VAT rate is 10%, the on-premises rate given in [S16]. The research did not give the takeaway rate, so the rate here is an estimate, and it should be confirmed with a gestoría before pricing. Net revenue per cup is €2.27.\n\nVariable costs per cup cover beans, milk, cup, lid and sleeve, and card payment fees. All are estimates. The research did not find input costs. Variable cost per cup is €1.04. Contribution per cup is €1.23, which is a contribution margin of 54%.\n\nFixed monthly costs include rent of €600 on the 20 m² assumption, owner pay, cover for a second person at peak, utilities, insurance, accounting, the social security estimate, and a point-of-sale software fee. Total fixed monthly costs are €3,250. Break-even is fixed costs divided by contribution per cup, which gives 2,637 cups a month. Each figure is an estimate built from the inputs above, and the research did not confirm any of them for Barcelona.\n\nStartup capital covers the espresso machine, grinder, kiosk build, a rent deposit, permit and design costs, the food safety plan, and opening stock. It totals €17,000. The machine, grinder, build and permit costs are estimates, because the research found no Barcelona prices for them.\n\n**What it means for you:** The model only works if the exit delivers a volume near 2,637 cups a month at €2.50. Rent is the lever you can most easily test, because asking prices for small units are available, but the kiosk permit and fee are not. Do not sign anything until you know the exit's occupancy route and the actual fee.\n\n**Next actions:**\n1. Get a written permit route and fee from the Ajuntament for a takeaway stand at your shortlisted exit.\n2. Request two quotes for a used espresso machine and grinder, and one quote for a kiosk build, to replace the estimates.\n3. Ask a gestoría to confirm the takeaway VAT rate, the current social security band, and the start-up flat-rate fee, and whether the flat rate applies to you.\n\n**Computed unit economics** (unit: one flat white sold at the metro-exit kiosk; arithmetic done in code from the inputs below)\n\n| line | value |\n|---|---|\n| Price per unit (incl. VAT 10%) | €2.50 |\n| Share kept by the business | 100% |\n| Net revenue per unit | €2.27 |\n| Variable cost per unit | €1.04 |\n| Contribution per unit | €1.23 (54%) |\n| Fixed costs per month | €3,250 |\n| Break-even (units per month) | 2,637 |\n| Start-up capital | €17,000 |\n\n| variable cost per unit | € | source |\n|---|---|---|\n| Espresso beans, double shot | €0.30 | estimate |\n| Whole milk, 250 ml | €0.45 | estimate |\n| Cup, lid and sleeve | €0.25 | estimate |\n| Card payment fees | €0.04 | estimate |\n\n| fixed cost per month | € | source |\n|---|---|---|\n| Kiosk rent, 20 m² at €30/m² | €600 | estimate |\n| Owner pay | €1,200 | estimate |\n| Cover for second person at peak | €900 | estimate |\n| Utilities | €150 | estimate |\n| Insurance | €40.00 | estimate |\n| Accounting (gestoría) | €120 | estimate |\n| Social security, lowest band | €200 | estimate |\n| Point-of-sale software | €40.00 | estimate |\n\n| start-up cost | € | source |\n|---|---|---|\n| Espresso machine (used) | €5,000 | estimate |\n| Grinder | €800 | estimate |\n| Kiosk build and fit-out | €8,000 | estimate |\n| Rent deposit, about two months | €1,200 | estimate |\n| Permits, design and food safety plan | €1,500 | estimate |\n| Opening stock | €500 | estimate |\n\n## Risks & how to start\n\n**Takeaway:** The permit route, food safety and business registration are manageable, but the metro-exit kiosk rules are not covered by the research. Verify the permit first, because it decides whether the location exists at all.\n\n**Evidence:**\n- (−) The municipality decides the activity permit, building works and any terrace approval, and the procedure differs from other cities [S16]. This guide is written for relocation generally, not for kiosks on public space, so it is weak support for the metro-exit case.\n- (−) No rules were found for a kiosk on public space at a metro station, including whether a concession is needed.\n- (+) A food safety plan (APPCC/HACCP) is required under EU Regulation 852/2004, Article 5 and is checked by the health inspectorate [S16].\n- (=) Spain does not issue a state food handler certificate; staff training is the employer's responsibility [S16].\n- (−) The first-year flat rate for social security is €80 a month in some 2026 guides [S17], and €88.72 in another [S17]. An older guide cites €60 a month [S17]. Verify the figure before budgeting.\n- (−) Sole traders are personally liable for business debts under an older guide [S18]. The year is unclear, so treat it as dated.\n- (=) EU citizens need no visa. Non-EU founders on the autónomo visa are limited to one autonomous community and the approved sector for the first year [S19][S20].\n- (−) A physical café application requires proof of funds for the rent deposit, renovations, machines and stock [S21].\n- (−) The relocation guide names high competition and expensive rent in central districts [S16]. This is general, not kiosk-specific.\n- (=) The research did not find café failure rates, input cost trends, or delivery platform dependency for Barcelona in 2026.\n\n**Key numbers:**\n\n| Figure | Value | Source or \"estimate\" |\n|---|---|---|\n| Activity permit decider | Town council | [S16] |\n| Food safety plan requirement | APPCC/HACCP, EU Reg. 852/2004 Art. 5 | [S16] |\n| First-year social security flat rate | €80 a month (conflicting figures) | [S17] |\n| Ongoing social security, lowest band | About €200 a month | estimate |\n| Metro-exit kiosk permit rules | Not found | — |\n\n**What it means for you:** The regulatory steps are known in outline, but the kiosk-specific route is the blocking unknown. Budget the first-year social security figure with a range until a gestoría confirms it. If you are non-EU, check your visa scope against a single location and sector before signing a lease.\n\n**Next actions:**\n1. Ask the Ajuntament and the health inspectorate which permits and food safety checks apply to a takeaway kiosk at a station exit.\n2. Book a gestoría session to confirm the flat-rate social security figure, the Modelo 036/037 registration, and quarterly VAT and income filings.\n3. Draft the APPCC food safety plan with a consultant, and budget that task inside the startup capital.\n\n## Sources\n- [S1] [Barcelona Datastore](https://portaldades.ajuntament.barcelona.cat/en/report/flaix-de-la-poblacio-de-barcelona-2026-en)\n- [S2] [3 Place of birth](https://dades.ajuntament.barcelona.cat/informe-padro-estrangers/en/seccio_3.html)\n- [S4] [Best Specialty Coffee in Barcelona](https://guidavera.com/spain/barcelona/best-specialty-coffee)\n- [S5] [Best Specialty Coffee in Barcelona (2026)](https://guidavera.com/spain/barcelona/coffee)\n- [S6] [Barcelona Breakfast & Brunch Guide 2026: Best Morning Spots](https://www.barcelonatourism.org/2026/07/08/breakfast-brunch/)\n- [S7] [Barcelona Coffee Culture: The Best Specialty Coffee Shops and Cafes ...](https://www.barcelonatourism.org/2026/08/09/coffee-shops/)\n- [S8] [Specialty coffee in Barcelona](https://www.bebocoldpress.com/en/specialty-coffee-barcelona)\n- [S9] [The Best Specialty Coffee Shops in Barcelona: Ultimate Guide](https://thespiritedexplorer.com/best-specialty-coffee-shops-barcelona/)\n- [S10] [Where to Find the Best Espresso in Barcelona 2026: A Local’s Guide](https://eurovistatrips.com/best-espresso-barcelona-2026/)\n- [S11] [Coffee Culture in Barcelona: How the City Built One of Europe's ...](https://barcelonaurbana.com/en/blog/specialty-coffee-barcelona)\n- [S12] [1.448 Alquiler Locales Comerciales en Barcelona - habitaclia](https://m.habitaclia.com/alquiler-locales_comerciales-barcelona-8.htm)\n- [S13] [Alquiler locales comerciales en Barcelona - habitaclia](https://www.habitaclia.com/alquiler-locales_comerciales-barcelona-39.htm)\n- [S14] [Locales o naves en alquiler, Zona Alta, Barcelona — idealista](https://www.idealista.com/geo/alquiler-locales/zona-alta-1/)\n- [S15] [Locales en alquiler en Barcelona - 132 locales comerciales 2026](https://www.locales.es/barcelona/alquiler/locales)\n- [S16] [How to Open a Café in Spain (2026): Licences, APPCC, Costs](https://relotus-relocation.com/en/journal/how-to-open-a-cafe-in-spain/)\n- [S17] [Becoming an autonomo in Barcelona: foreigner's guide](https://barna.news/becoming-an-aut-nomo-in-barcelona-a-foreigner-s-guide/)\n- [S18] [Permits to Open a Restaurant in Barcelona, Spain](https://www.waiterio.com/blog/en/open-restaurant-barcelona/)\n- [S19] [Starting A Business In Spain Guide 2026](https://myspainvisa.com/starting-business-spain/)\n- [S20] [Self-employment Visa in Spain 2026 (Autónomo Visa): Full Guide](https://www.immigrationspain.es/en/self-employment-visa/)\n- [S21] [Spain Work Permit for Self‑Employed (Autónomo): Step‑by‑Step ...](https://spainhandbook.com/spain-work-permit-for-self-employed-autonomo-step-by-step/)\n",
+    "econ": {
+     "unit": "one flat white sold at the metro-exit kiosk",
+     "price": 2.5,
+     "vatRate": 0.1,
+     "shareKept": 1,
+     "net": 2.27,
+     "variable": 1.04,
+     "contribution": 1.23,
+     "fixedMonthly": 3250,
+     "breakEven": 2637,
+     "startupCapital": 17000,
+     "lines": [
+      {
+       "group": "variable",
+       "item": "Espresso beans, double shot",
+       "eur": 0.3,
+       "source": null
+      },
+      {
+       "group": "variable",
+       "item": "Whole milk, 250 ml",
+       "eur": 0.45,
+       "source": null
+      },
+      {
+       "group": "variable",
+       "item": "Cup, lid and sleeve",
+       "eur": 0.25,
+       "source": null
+      },
+      {
+       "group": "variable",
+       "item": "Card payment fees",
+       "eur": 0.04,
+       "source": null
+      },
+      {
+       "group": "fixed",
+       "item": "Kiosk rent, 20 m² at €30/m²",
+       "eur": 600,
+       "source": null
+      },
+      {
+       "group": "fixed",
+       "item": "Owner pay",
+       "eur": 1200,
+       "source": null
+      },
+      {
+       "group": "fixed",
+       "item": "Cover for second person at peak",
+       "eur": 900,
+       "source": null
+      },
+      {
+       "group": "fixed",
+       "item": "Utilities",
+       "eur": 150,
+       "source": null
+      },
+      {
+       "group": "fixed",
+       "item": "Insurance",
+       "eur": 40,
+       "source": null
+      },
+      {
+       "group": "fixed",
+       "item": "Accounting (gestoría)",
+       "eur": 120,
+       "source": null
+      },
+      {
+       "group": "fixed",
+       "item": "Social security, lowest band",
+       "eur": 200,
+       "source": null
+      },
+      {
+       "group": "fixed",
+       "item": "Point-of-sale software",
+       "eur": 40,
+       "source": null
+      },
+      {
+       "group": "startup",
+       "item": "Espresso machine (used)",
+       "eur": 5000,
+       "source": null
+      },
+      {
+       "group": "startup",
+       "item": "Grinder",
+       "eur": 800,
+       "source": null
+      },
+      {
+       "group": "startup",
+       "item": "Kiosk build and fit-out",
+       "eur": 8000,
+       "source": null
+      },
+      {
+       "group": "startup",
+       "item": "Rent deposit, about two months",
+       "eur": 1200,
+       "source": null
+      },
+      {
+       "group": "startup",
+       "item": "Permits, design and food safety plan",
+       "eur": 1500,
+       "source": null
+      },
+      {
+       "group": "startup",
+       "item": "Opening stock",
+       "eur": 500,
+       "source": null
+      }
+     ]
+    },
+    "ms": 85973
+   },
+   "memo": {
+    "purpose": "Decide whether to put money into: A specialty coffee kiosk at a busy Barcelona metro exit, takeaway only, €2.50 flat white",
+    "problem": "Two districts lost population between 2025 and 2026: l'Antiga Esquerra de l'Eixample (−2.5%) and Sants (−1.2%). A 97 m² unit on Carrer de Llança in La Nova Esquerra de l'Eixample is listed at €1,100 a month, about €11.3/m². This is a larger unit, not a kiosk.",
+    "insight": "Barcelona had 1,729,963 registered inhabitants on 1 January 2026. Three Marks in Fort Pienc lists a flat white at €2.50 and an espresso at €2.00. The page does not give the year of these prices.",
+    "verdict_line": "3.5/10, no-go: No-go: The permit route is unknown. The municipality decides the activity permit and building works, but the research found no concession or permit rule for a kiosk on public space at a station. Savings should not be committed until this is confirmed. (team: customers, competition, pricing, viability).",
+    "next_7_days": [
+     "Ask the Ajuntament de Barcelona in writing which procedure and fees apply to a takeaway stand on public space near a metro station, and ask the transport operator who controls the exit space.",
+     "Count people leaving the exit during the morning peak on three weekdays, and count how many stop or look at a sign. Use a 1-in-50 conversion as a starting assumption (estimate).",
+     "Run a two-week pop-up or a sign test at €2.50 against a €3.00 price at the same exit, counting cups per morning."
+    ]
+   },
+   "kit": {
+    "brand": {
+     "name": "Sortida",
+     "tagline": "Your coffee, one step out.",
+     "voice": "Warm, Brief, Local, Precise. Write short, plain lines in the commuter's own words; state the price and the wait, never hype.",
+     "palette": {
+      "primary": "#2A1B14",
+      "accent": "#2F6F5E",
+      "bg": "#F6EFE4",
+      "ink": "#2A1B14"
+     },
+     "fonts": {
+      "display": "Fraunces",
+      "text": "Instrument Sans"
+     },
+     "lang": "en",
+     "city": "Barcelona",
+     "currency": "€"
+    },
+    "status": {
+     "brand": "done",
+     "logo": "done",
+     "site": "done",
+     "marketing": "done"
+    },
+    "site": {
+     "spec": {
+      "v": 1,
+      "lang": "en",
+      "seo": {
+       "title": "Sortida: Specialty Flat White at a Barcelona Metro Exit",
+       "description": "Takeaway specialty coffee at a busy Barcelona metro exit. Grab a flat white on your way to the office, pay with Bitcoin Cash."
+      },
+      "hero": {
+       "eyebrow": "Barcelona metro exit",
+       "headline": "Your flat white, one step out of the metro",
+       "sub": "Sortida is a small specialty coffee kiosk at a busy Barcelona metro exit. Takeaway only, made fast for people heading to the office before 9am.",
+       "cta": "Reserve your flat white",
+       "secondary": "See how it works"
+      },
+      "sections": [
+       {
+        "kind": "how-it-works-for-customer",
+        "title": "Three steps to coffee",
+        "steps": [
+         {
+          "icon": "phone",
+          "title": "Reserve on your phone",
+          "body": "Choose your flat white and pay with Bitcoin Cash straight from your phone."
+         },
+         {
+          "icon": "route",
+          "title": "Step out of the metro",
+          "body": "Come up the stairs. The kiosk is right at the exit, no detour."
+         },
+         {
+          "icon": "coffee",
+          "title": "Take your coffee",
+          "body": "Show your reservation, pick up your flat white and walk on to work."
+         }
+        ]
+       },
+       {
+        "kind": "menu-or-services",
+        "title": "What you can get",
+        "intro": "A short offer, made well. Right now we start with one drink.",
+        "items": [
+         {
+          "icon": "coffee",
+          "title": "Flat white",
+          "body": "Specialty coffee with smooth steamed milk, served in a cup to take away."
+         },
+         {
+          "icon": "bag",
+          "title": "Takeaway only",
+          "body": "No tables and no queue for a seat. Your coffee is ready to carry."
+         },
+         {
+          "icon": "clock",
+          "title": "Made for mornings",
+          "body": "Built for the rush before 9am, when every minute counts on the way to work."
+         }
+        ]
+       },
+       {
+        "kind": "offer",
+        "title": "Your first flat white",
+        "item": "One flat white, made at the kiosk and ready to take away.",
+        "bullets": [
+         "Specialty coffee, takeaway only",
+         "Right at the metro exit",
+         "Limited to 60 flat whites"
+        ],
+        "note": "Reserve on your phone, then pick it up at the kiosk window."
+       },
+       {
+        "kind": "proof-stats",
+        "title": "Coffee prices around the city",
+        "stats": [
+         {
+          "value": "€2.50",
+          "label": "Three Marks flat white",
+          "sourceUrl": "https://guidavera.com/spain/barcelona/best-specialty-coffee",
+          "source": "guidavera.com"
+         },
+         {
+          "value": "€3.50",
+          "label": "Sensorial / The Miners flat white",
+          "sourceUrl": "https://guidavera.com/spain/barcelona/best-specialty-coffee",
+          "source": "guidavera.com"
+         }
+        ]
+       },
+       {
+        "kind": "about",
+        "title": "Why Sortida exists",
+        "body": "Many of us buy a takeaway coffee on the way into the office. We wanted that coffee to be better and to be right where you leave the metro. Short line, clear wait, honest drink."
+       },
+       {
+        "kind": "local",
+        "title": "Find us at the exit",
+        "body": "Sortida is a takeaway kiosk at a busy metro exit in Barcelona, made for people passing through on their way to work.",
+        "area": "Barcelona",
+        "hours": ""
+       },
+       {
+        "kind": "faq",
+        "title": "Quick questions",
+        "items": [
+         {
+          "q": "How do I pay?",
+          "a": "You pay with Bitcoin Cash from your phone when you reserve. It takes a few seconds and you don't need cash or a card."
+         },
+         {
+          "q": "What do I get?",
+          "a": "One flat white, made at the kiosk and ready to take away."
+         },
+         {
+          "q": "Can I sit down and drink it?",
+          "a": "No. Sortida is takeaway only, so you pick up your coffee and take it with you."
+         },
+         {
+          "q": "How many flat whites are available?",
+          "a": "The first round is limited to 60 flat whites, so reserve yours early."
+         },
+         {
+          "q": "Where do I collect it?",
+          "a": "At the kiosk right at the metro exit in Barcelona. Show your reservation at the window."
+         }
+        ]
+       }
+      ],
+      "finalCta": {
+       "headline": "Your coffee is one step out",
+       "sub": "Only 60 flat whites in this first round. Reserve yours before your next commute.",
+       "cta": "Reserve your flat white"
+      },
+      "footer": {
+       "tagline": "Your coffee, one step out."
+      },
+      "reserve": {
+       "address": "bitcoincash:qp9d679zvayvudj65nd9zlgezvjplr8g3vea64wad0",
+       "price": 2,
+       "normal": 2.5,
+       "limit": 60,
+       "currency": "€"
+      },
+      "ui": {
+       "reserve": "Reserve with BCH",
+       "reserveFor": "Reserve for {price}",
+       "joinList": "Join the list",
+       "emailPlaceholder": "Your email",
+       "thanks": "You're on the list. We'll write when it opens.",
+       "privacy": "We only use your email to tell you when it opens.",
+       "scan": "Scan with any Bitcoin Cash wallet",
+       "openWallet": "Open my wallet",
+       "copy": "Copy address",
+       "copied": "Copied",
+       "close": "Close",
+       "normally": "normally {price}",
+       "only": "Only {n} available",
+       "reserved": "{n} reserved so far",
+       "source": "Source",
+       "madeWith": "Made with LaunchDesk",
+       "faq": "Questions",
+       "howItWorks": "How it works",
+       "offer": "Opening offer"
+      }
+     },
+     "template": "editorial"
+    },
+    "logo": {
+     "options": [
+      {
+       "id": "lg1",
+       "family": "literal",
+       "idea": "A metro exit doorway with one green step: Sortida means exit.",
+       "svg": "<g transform=\"translate(-2.46 -2.46) scale(1.08)\"><path d=\"M6 6H58V46H6Z\" fill=\"#2A1B14\"/><path d=\"M20 46V26A12 12 0 0 1 44 26V46Z\" fill=\"#F6EFE4\"/><rect x=\"6\" y=\"50\" width=\"40\" height=\"8\" fill=\"#2F6F5E\"/></g>"
+      },
+      {
+       "id": "lg3",
+       "family": "monogram",
+       "idea": "A bold S whose lower tail points out, one step toward the exit.",
+       "svg": "<path d=\"M52 22A12 12 0 0 0 40 10H28A12 12 0 0 0 28 32H36A12 12 0 0 1 36 54H12\" fill=\"none\" stroke=\"#2A1B14\" stroke-width=\"12\"/><rect x=\"44\" y=\"48\" width=\"14\" height=\"12\" fill=\"#2F6F5E\"/>"
+      },
+      {
+       "id": "lg5",
+       "family": "geometric",
+       "idea": "A round passage with a green light at its end: the way out.",
+       "svg": "<g transform=\"translate(-2.46 -2.46) scale(1.08)\"><circle cx=\"32\" cy=\"32\" r=\"26\" fill=\"#2A1B14\"/><path d=\"M24 58V30A8 8 0 0 1 40 30V58Z\" fill=\"#F6EFE4\"/><path d=\"M24 30A8 8 0 0 1 40 30Z\" fill=\"#2F6F5E\"/></g>"
+      },
+      {
+       "id": "lg2",
+       "family": "literal",
+       "idea": "Stairs up from the metro, a green person stepping into the street.",
+       "svg": "<rect x=\"6\" y=\"44\" width=\"17\" height=\"14\" fill=\"#2A1B14\"/><rect x=\"23\" y=\"32\" width=\"17\" height=\"26\" fill=\"#2A1B14\"/><rect x=\"40\" y=\"20\" width=\"18\" height=\"38\" fill=\"#2A1B14\"/><circle cx=\"49\" cy=\"10\" r=\"6\" fill=\"#2F6F5E\"/>"
+      },
+      {
+       "id": "lg4",
+       "family": "monogram",
+       "idea": "An S made of two quarter turns, joined by a green path.",
+       "svg": "<g transform=\"translate(-2.46 -2.46) scale(1.08)\"><path d=\"M6 30V30A24 24 0 0 1 30 6H58V30H30Z\" fill=\"#2A1B14\"/><path d=\"M58 34V34A24 24 0 0 1 34 58H6V34H34Z\" fill=\"#2A1B14\"/><rect x=\"20\" y=\"26\" width=\"24\" height=\"12\" fill=\"#2F6F5E\"/></g>"
+      },
+      {
+       "id": "lg6",
+       "family": "geometric",
+       "idea": "A rising sun-like arc sliced open: morning, and a quick step out.",
+       "svg": "<g transform=\"translate(-2.46 -15.32) scale(1.08)\"><path d=\"M6 56A26 26 0 0 1 58 56Z\" fill=\"#2A1B14\"/><path d=\"M30 56L44 30L50 34L38 56Z\" fill=\"#F6EFE4\"/><path d=\"M44 56A14 14 0 0 0 58 56Z\" fill=\"#2F6F5E\"/></g>"
+      }
+     ],
+     "chosen": "lg1",
+     "fallback": false
+    },
+    "marketing": {
+     "plan": {
+      "lang": "en",
+      "currency": "€",
+      "headline": "Sell 60 pre-paid flat whites at €2 (normal €2.50) in 30 days to office workers leaving this metro exit before 9am, using a sign at the kiosk, a pre-order page paid in BCH, and a handful of nearby office doors.",
+      "goal": {
+       "metric": "Pre-paid flat white pre-orders paid in BCH on the website",
+       "target": 60,
+       "unit": "pre-orders",
+       "by_day": 30,
+       "why": "60 paid pre-orders at €2 shows commuters will commit to a coffee before they see the queue, and that the €2 launch price is enough to make them switch from their usual place. It is about two a day, which one person can serve.",
+       "how_counted": "Each pre-order is one BCH payment on the website. Count the payments in the wallet, one per coffee, and match each to a collected coffee on the day."
+      },
+      "customer": {
+       "who": "Office workers who walk past this metro exit before 9am and already buy a takeaway coffee on the way in.",
+       "places": [
+        {
+         "place": "The metro exit itself, 7:30 to 9:00 on weekdays, in the queue and on the pavement",
+         "when": "Weekdays before 9am",
+         "source": null
+        },
+        {
+         "place": "Office entrances and reception desks within a few minutes' walk of the exit",
+         "when": "Weekdays 8:00 to 9:00 and lunch",
+         "source": null
+        },
+        {
+         "place": "Barcelona Coffee Club on Meetup, a small coffee group",
+         "when": "Any day, post once in week 1",
+         "source": 2
+        },
+        {
+         "place": "Business hub of Plaça de Francesc Macià, where kiosk-style coffee has been tried before",
+         "when": "Weekday mornings, one visit to watch the flow",
+         "source": 1
+        }
+       ]
+      },
+      "channels": [
+       {
+        "name": "Kiosk sign and counter card",
+        "role": "first sales",
+        "why": "We assume most buyers are people who already pass the exit every morning, so the sign is the cheapest way to reach them at the moment they decide.",
+        "source": null,
+        "weekly_hours": 12,
+        "cost": 0,
+        "first_action": "Write on the kiosk board: 'Flat white €2 until 60 are sold. Normally €2.50. Wait: about 2 minutes.' Add a QR card to the pre-order page."
+       },
+       {
+        "name": "BCH pre-order page on own website",
+        "role": "proof",
+        "why": "We assume commuters who pre-pay skip the queue and each payment is a clear count of real demand.",
+        "source": null,
+        "weekly_hours": 2,
+        "cost": 0,
+        "first_action": "Set up one page with one product, flat white at €2, pickup window 7:30 to 9:00, limit 60, and test a payment yourself."
+       },
+       {
+        "name": "Office door visits",
+        "role": "awareness",
+        "why": "We assume small offices near the exit have people who buy coffee together and one friendly mention can bring several of them.",
+        "source": null,
+        "weekly_hours": 4,
+        "cost": 0,
+        "first_action": "Walk to five office receptions nearest the exit on day 2 and leave a small card with the price, the wait and the QR code."
+       },
+       {
+        "name": "Regulars card",
+        "role": "repeat",
+        "why": "We assume people who liked the coffee will come back if the next one is easy to get and the price is clear.",
+        "source": null,
+        "weekly_hours": 2,
+        "cost": 0,
+        "first_action": "From day 8, hand every buyer a card for a stamp on the 5th flat white at €2.50 normal price, with the pre-order QR on the back."
+       }
+      ],
+      "rejected": [
+       {
+        "name": "Paid ads",
+        "why_not": "Only people passing the exit matter, and a small ad budget cannot target them. A sign at the exit reaches them for free."
+       },
+       {
+        "name": "TikTok",
+        "why_not": "It takes many hours for videos, and the buyers are on one street before 9am, not a wide audience."
+       }
+      ],
+      "budget": {
+       "tiers": [
+        {
+         "amount": 0,
+         "label": "No spend",
+         "lines": [
+          {
+           "channel": "Kiosk sign and counter card",
+           "amount": 0,
+           "for": "Handwritten board and cards"
+          },
+          {
+           "channel": "BCH pre-order page on own website",
+           "amount": 0,
+           "for": "Own page"
+          },
+          {
+           "channel": "Office door visits",
+           "amount": 0,
+           "for": "Walking, handing out cards"
+          }
+         ]
+        },
+        {
+         "amount": 100,
+         "label": "Small print run",
+         "lines": [
+          {
+           "channel": "Kiosk sign and counter card",
+           "amount": 30,
+           "for": "Printed price sign and QR cards"
+          },
+          {
+           "channel": "Office door visits",
+           "amount": 45,
+           "for": "Flyer print run for offices"
+          },
+          {
+           "channel": "Regulars card",
+           "amount": 15,
+           "for": "Stamp cards"
+          }
+         ]
+        },
+        {
+         "amount": 500,
+         "label": "Wider reach",
+         "lines": [
+          {
+           "channel": "Kiosk sign and counter card",
+           "amount": 60,
+           "for": "Better sign and QR cards"
+          },
+          {
+           "channel": "Office door visits",
+           "amount": 200,
+           "for": "Larger flyer print run plus one paid hand-out round"
+          },
+          {
+           "channel": "Regulars card",
+           "amount": 40,
+           "for": "Stamp cards"
+          },
+          {
+           "channel": "Free coffee samples",
+           "amount": 150,
+           "for": "Tasting cups at the exit in weeks 2 and 3"
+          }
+         ]
+        }
+       ],
+       "reserve_pct": 12,
+       "reallocate_rule": "On day 22, check which source brought the most BCH payments. Move the unspent money and the reserve to that one and cut the one with the fewest. If none is clearly ahead, keep the budget on the kiosk sign."
+      },
+      "weeks": [
+       {
+        "n": 1,
+        "theme": "Prepare",
+        "aim": "Get the sign, the pre-order page and the first office cards ready.",
+        "days": [
+         {
+          "day": 1,
+          "time": "07:30",
+          "channel": "Kiosk sign and counter card",
+          "action": "At the kiosk, write the board: flat white €2 until 60 are sold, normally €2.50, wait about 2 minutes. Time one real flat white and fix the wait on the sign.",
+          "copy": null,
+          "hours": 3
+         },
+         {
+          "day": 2,
+          "time": "08:00",
+          "channel": "Office door visits",
+          "action": "Walk to the five office receptions nearest the exit. Leave a card with the price, the wait and the QR code. Ask the receptionist if you may leave it on the desk.",
+          "copy": "flyer",
+          "hours": 3
+         },
+         {
+          "day": 3,
+          "time": "20:00",
+          "channel": "BCH pre-order page on own website",
+          "action": "At home, set up one page with one product: flat white €2, pickup 7:30 to 9:00, limit 60. Pay once yourself in BCH to test it and check the payment shows in your wallet.",
+          "copy": null,
+          "hours": 2
+         },
+         {
+          "day": 5,
+          "time": "19:00",
+          "channel": "Kiosk sign and counter card",
+          "action": "Update the Google Business Profile with the kiosk description, then message friends and the shop next door about the opening.",
+          "copy": "profile",
+          "hours": 2
+         }
+        ]
+       },
+       {
+        "n": 2,
+        "theme": "Soft launch",
+        "aim": "Serve the first commuters, fix what is slow, and collect the first pre-orders.",
+        "days": [
+         {
+          "day": 8,
+          "time": "07:30",
+          "channel": "Kiosk sign and counter card",
+          "action": "Open at the metro exit. Show the board and the QR card on the counter. Tally every coffee on paper at the end of the shift.",
+          "copy": "post-1",
+          "hours": 4
+         },
+         {
+          "day": 9,
+          "time": "08:00",
+          "channel": "Regulars card",
+          "action": "Hand every buyer a stamp card: the 5th flat white at the normal price gets a stamp, with the pre-order QR on the back.",
+          "copy": null,
+          "hours": 2
+         },
+         {
+          "day": 10,
+          "time": "08:15",
+          "channel": "Office door visits",
+          "action": "Visit five more office receptions near the exit. Write each one in your list with what you left.",
+          "copy": "flyer",
+          "hours": 3
+         },
+         {
+          "day": 12,
+          "time": "19:00",
+          "channel": "BCH pre-order page on own website",
+          "action": "Message friends and the neighbour shop with the pre-order link. Ask them to tell one colleague who walks past the exit.",
+          "copy": "message",
+          "hours": 2
+         }
+        ]
+       },
+       {
+        "n": 3,
+        "theme": "Offer",
+        "aim": "Push the €2 flat white to commuters and offices, and email the waitlist.",
+        "days": [
+         {
+          "day": 15,
+          "time": "07:30",
+          "channel": "Kiosk sign and counter card",
+          "action": "At the exit, point the board at the queue. Post the offer in the Barcelona Coffee Club group on Meetup.",
+          "copy": "post-2",
+          "hours": 4
+         },
+         {
+          "day": 16,
+          "time": "07:00",
+          "channel": "BCH pre-order page on own website",
+          "action": "Send the email to everyone on the waitlist. Check page visits in the website stats.",
+          "copy": "email",
+          "hours": 2
+         },
+         {
+          "day": 18,
+          "time": "08:15",
+          "channel": "Office door visits",
+          "action": "Return to the offices you visited in week 1. Ask at reception whether anyone ordered, and leave fresh cards.",
+          "copy": "flyer",
+          "hours": 3
+         },
+         {
+          "day": 20,
+          "time": "19:00",
+          "channel": "Regulars card",
+          "action": "Count the stamp cards with two or more stamps. Note which sources brought the most payments.",
+          "copy": null,
+          "hours": 2
+         }
+        ]
+       },
+       {
+        "n": 4,
+        "theme": "Proof and last call",
+        "aim": "Count real results, tell people how many €2 coffees are left, and decide next steps.",
+        "days": [
+         {
+          "day": 22,
+          "time": "19:00",
+          "channel": "BCH pre-order page on own website",
+          "action": "Count BCH payments in the wallet. Move the budget to the source that brought the most payments, as the plan says.",
+          "copy": null,
+          "hours": 2
+         },
+         {
+          "day": 24,
+          "time": "07:30",
+          "channel": "Kiosk sign and counter card",
+          "action": "At the exit, change the board to show the true number of €2 coffees left. Post the same line online.",
+          "copy": "post-3",
+          "hours": 4
+         },
+         {
+          "day": 27,
+          "time": "08:00",
+          "channel": "Office door visits",
+          "action": "Send a short pitch to a local newsletter or neighbourhood paper, then visit the offices that ordered most and thank them.",
+          "copy": "press",
+          "hours": 3
+         },
+         {
+          "day": 30,
+          "time": "19:00",
+          "channel": "BCH pre-order page on own website",
+          "action": "Count total payments and repeat buyers from the stamp cards. Choose scale, adjust or stop using the plan's rules.",
+          "copy": null,
+          "hours": 2
+         }
+        ]
+       }
+      ],
+      "kpis": [
+       {
+        "name": "Pre-orders paid",
+        "target": "60 by day 30",
+        "how_to_count": "Count payments received in the wallet, one per flat white.",
+        "count_from": "bch payments"
+       },
+       {
+        "name": "Visits to the pre-order page",
+        "target": "300 by day 30",
+        "how_to_count": "Read page visits in the website stats each Sunday.",
+        "count_from": "website"
+       },
+       {
+        "name": "Coffees sold at the counter",
+        "target": "20 a day by day 30",
+        "how_to_count": "Tally marks on paper at the end of each shift.",
+        "count_from": "by hand"
+       },
+       {
+        "name": "Offices visited",
+        "target": "15 by day 14",
+        "how_to_count": "List each reception visited and what was left there.",
+        "count_from": "by hand"
+       },
+       {
+        "name": "Repeat buyers",
+        "target": "15 people buy a second coffee",
+        "how_to_count": "Count stamp cards with two or more stamps.",
+        "count_from": "by hand"
+       }
+      ],
+      "copy": {
+       "posts": [
+        {
+         "channel": "Kiosk sign and counter card",
+         "hook": "Flat white €2. Wait: about 2 minutes.",
+         "body": "Sortida is open at this metro exit. Takeaway only. The flat white is €2 for the first 60, normally €2.50. Walk up, order, go to work. Pre-order on our website and pick it up between 7:30 and 9:00.",
+         "cta": "Scan the QR card and pre-order."
+        },
+        {
+         "channel": "Barcelona Coffee Club on Meetup",
+         "hook": "New takeaway coffee at a metro exit.",
+         "body": "I run Sortida, a small coffee kiosk at the metro exit. Flat white €2 for the first 60, normally €2.50. It is takeaway only and the wait is about 2 minutes. I would like to hear what you think of the coffee.",
+         "cta": "Pre-order on our website."
+        },
+        {
+         "channel": "Kiosk sign and counter card",
+         "hook": "Your coffee, one step out.",
+         "body": "The €2 flat whites are going. The board at the kiosk shows how many are left today. After they are gone the flat white is €2.50. Pre-pay on our website and skip the wait.",
+         "cta": "Pre-order before 9am."
+        }
+       ],
+       "message": "Hi! I'm opening Sortida, a coffee kiosk at the metro exit. Flat white €2 for the first 60, normally €2.50, about 2 minutes wait. Could you tell one colleague who walks past in the morning? You can pre-order on our website. Thanks!",
+       "email": {
+        "subject": "Flat white €2 at the metro exit",
+        "body": "Hi,\n\nSortida is open at the metro exit. Takeaway only.\n\nThe flat white is €2 for the first 60 pre-orders, normally €2.50. The wait is about 2 minutes. You can pre-pay on our website in BCH and pick it up between 7:30 and 9:00.\n\nCome by on your way in.\n\nSortida\nYour coffee, one step out."
+       },
+       "flyer": {
+        "headline": "Flat white €2. One step out.",
+        "lines": [
+         "Normally €2.50. €2 for the first 60.",
+         "Wait: about 2 minutes. Takeaway only.",
+         "Pre-order on our website. Pick up 7:30 to 9:00."
+        ]
+       },
+       "profile": "Sortida is a small takeaway coffee kiosk at a busy metro exit in Barcelona. We serve specialty flat whites for people on their way to work. Launch price: flat white €2 for the first 60 (normally €2.50). The wait is about 2 minutes. You can pre-order on our website and pick up between 7:30 and 9:00. Your coffee, one step out.",
+       "press": "Sortida is a new takeaway coffee kiosk at a Barcelona metro exit, serving flat whites for people on their way to work. For the first 60 coffees the price is €2 instead of €2.50, and the wait is about 2 minutes. I would be happy to talk to you or send a photo of the kiosk."
+      },
+      "local": [
+       {
+        "fact": "News & Coffee ran newsstand-style kiosks on Passeig de Sant Joan and at Plaça de Francesc Macià per a 2021 review. Current status is not verified.",
+        "source": 1
+       },
+       {
+        "fact": "Three Marks sells a flat white at €2.50.",
+        "source": 12
+       },
+       {
+        "fact": "Sensorial and The Miners sell a flat white at €3.50.",
+        "source": 12
+       },
+       {
+        "fact": "The Barcelona Coffee Club group on Meetup lists 39 members.",
+        "source": 2
+       }
+      ],
+      "events": [],
+      "assumptions": [
+       "The exit has enough commuters before 9am to sell about 20 coffees a day at the kiosk.",
+       "You can serve a flat white in about 2 minutes, so the wait written on the sign is true.",
+       "The €2 price still leaves a margin per cup. Check it against your milk and bean cost.",
+       "Your kiosk permit and location are settled before day 1.",
+       "Commuters will pay in BCH on a phone before they walk up, or you accept card or cash at the counter as well.",
+       "Cortal Printing lists 1,000 single-sided A5 flyers at €65, year not stated."
+      ],
+      "decision": {
+       "scale_if": "60 or more BCH pre-orders by day 30 and at least 15 people came back for a second coffee: raise the price toward €2.50 and add a second pickup window.",
+       "adjust_if": "30 to 59 pre-orders: keep the price, move effort to the channel with the most payments, and test the sign wording and pickup time.",
+       "stop_if": "Under 30 pre-orders and few counter sales despite daily presence: the exit is not working, so test another exit before spending more."
+      }
+     },
+     "sources": [
+      {
+       "n": 1,
+       "url": "https://www.we-heart.com/2021/02/15/news-coffee-barcelona-newsstand-magazines-coffee/",
+       "title": "Offering a new lease of life to Barcelona's ailing newsstands, ..."
+      },
+      {
+       "n": 2,
+       "url": "https://www.meetup.com/lp/social-and-community/coffee-chats-barcelona/",
+       "title": "Coffee Chats Barcelona"
+      },
+      {
+       "n": 3,
+       "url": "https://www.barcelona-metropolitan.com/living/community--friends/",
+       "title": "Groups: Community, Friends and Families - (barcelona-metropolitan.com)"
+      },
+      {
+       "n": 4,
+       "url": "https://www.meetup.com/lp/social-and-community/community-groups-barcelona/",
+       "title": "Community Groups Barcelona"
+      },
+      {
+       "n": 5,
+       "url": "https://www.idealista.com/en/news/lifestyle-in-spain/2025/09/12/859844-barcelona-like-a-local-local-neighbourhoods-real-eats-and-savvy-tips",
+       "title": "Barcelona like a local: local neighbourhoods, real eats, and tips ..."
+      },
+      {
+       "n": 6,
+       "url": "https://luxury.it/barcelona-christmas-markets-2026-dates-hotels/",
+       "title": "Barcelona Christmas Markets 2026: Dates and Key Hotels"
+      },
+      {
+       "n": 7,
+       "url": "https://www.barcelona-tickets.com/travel-guide/best-time-to-visit/barcelona-in-december/",
+       "title": "Barcelona in December"
+      },
+      {
+       "n": 8,
+       "url": "https://www.barcelona-life.com/barcelona/christmas",
+       "title": "Christmas in Barcelona 2026 ~ Christmas Markets, Events & Traditions"
+      },
+      {
+       "n": 9,
+       "url": "https://www.gaytravel4u.com/event/barcelona-christmas-markets/",
+       "title": "Barcelona Christmas Markets 2026"
+      },
+      {
+       "n": 10,
+       "url": "https://www.barcelona.com/things-to-do-in-barcelona/what-to-do-in-barcelona-in-december",
+       "title": "What to do in Barcelona in December 2026"
+      },
+      {
+       "n": 11,
+       "url": "https://portaldades.ajuntament.barcelona.cat/en/report/flaix-de-la-poblacio-de-barcelona-2026-en",
+       "title": "Barcelona population, 1 Jan 2026"
+      },
+      {
+       "n": 12,
+       "url": "https://guidavera.com/spain/barcelona/best-specialty-coffee",
+       "title": "Three Marks flat white"
+      }
+     ],
+     "warnings": [
+      "local fact without a valid source moved to assumptions",
+      "place \"The metro exit itself, 7:30 to 9:00 on weekdays, in the queue and on the pavement\": number without a source"
+     ]
+    }
+   }
+  },
+  "timings": {
+   "validate": {
+    "started": 1794792945714,
+    "finished": 1794793046661
+   }
+  },
+  "models": {
+   "mia": "claude-haiku-5-5",
+   "leo": "v7",
+   "sam": "claude-haiku-5-5"
+  },
+  "attempts": {
+   "mia": 1,
+   "leo": 1,
+   "sam": 1
+  }
+ }
+}

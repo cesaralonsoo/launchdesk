@@ -290,7 +290,7 @@ assert.equal(data.brandSignOf(data.SAMPLE_V7)?.name, "Pausa");
   assert.deepEqual(lab.sources.map((s) => s.id), ["S1", "S2"]);
   assert.ok(lab.sections[0]!.notes.includes("[S1]") && lab.sections[2]!.notes.includes("Rent €14/m² [S2]") && lab.sections[2]!.notes.includes("Same page [S1]"));
   assert.equal(lab.sections[1]!.notes, "not found");
-  assert.ok(rp.writerPrompt("x", lab.sections).includes("Monthly = weekly × 4.33") && rp.writerPrompt("x", lab.sections).includes("must match the Verdict exactly"));
+  assert.ok(rp.writerPrompt("x", lab.sections).includes("Monthly = weekly × 4.33") && rp.writerPrompt("x", lab.sections).includes("Do not state a verdict"));
 
   // unit economics in code: reproduces the measured V1-a report (net €24.04, break-even 195, capital €66,600)
   const v1a = {
@@ -365,8 +365,11 @@ assert.equal(data.brandSignOf(data.SAMPLE_V7)?.name, "Pausa");
     const rep = v7.buildReport(v7.blockRoster(), work, a.judge);
     assert.ok(rep.score >= 0 && rep.score <= 10 && ["go", "pivot", "no-go"].includes(rep.verdict));
     if (md === shipped.md) {
-      // the writer's section scores steer the arithmetic: the money block (3/10) lands in the weak band
-      assert.equal(a.blocks.find((b) => b.id === "money")!.verdict, "weak");
+      // the writer's money score (3/10) rested only on a gap ("costs … were not found"): an unknown never moves the
+      // score, and context (=) facts are never turned into −, so the block stays neutral and the gap becomes a test
+      assert.equal(a.blocks.find((b) => b.id === "money")!.verdict, "mixed");
+      assert.ok(out.blocks.money!.evidence.some((e) => e.impact === 0 && e.basis === "Not found in the research"));
+      assert.ok(rep.unknowns?.some((u) => /not found/.test(u)), "gaps are listed as unknowns");
       assert.equal(a.judge.scalability.parts.Reach, 2);
     }
   }
@@ -380,7 +383,8 @@ assert.equal(data.brandSignOf(data.SAMPLE_V7)?.name, "Pausa");
   assert.deepEqual(down.slice(0, 2), [0, 0], "neutral facts stay neutral even when the section score is low");
   assert.ok(down[2]! < 0);
   assert.equal(rp.inferSign("The municipal register counted 25,514 residents across 87.8 hectares [S1]."), null);
-  assert.equal(rp.inferSign("Ingredient costs, baker wages and VAT on bread were not found in the research."), -1);
+  assert.equal(rp.inferSign("Ingredient costs, baker wages and VAT on bread were not found in the research."), null, "a gap is an unknown, not a −");
+  assert.equal(rp.inferSign("Demand at this price is unproven."), -1);
 
   // zero costs are missing inputs, never facts (live run 2026-11-16: €0 rent/wages gave "break-even 4", "capital €150")
   {
@@ -398,10 +402,11 @@ assert.equal(data.brandSignOf(data.SAMPLE_V7)?.name, "Pausa");
     assert.equal(rp.unitPlural("booked walk-hour"), "booked walk-hours");
     assert.ok(rp.priceHints("Weekly bread subscriptions at €25 a month")[0]!.includes("€5.77 per delivery"));
     assert.deepEqual(rp.priceHints("A dog-walking app, €12 a walk"), []);
-    assert.equal(v7.alignVerdictLine("GO WITH CONDITIONS: Demand is plausible", "pivot"), "Pivot: Demand is plausible");
+    assert.equal(v7.alignVerdictLine("GO WITH CONDITIONS: Demand is plausible", "pivot"), "Test first: Demand is plausible");
     assert.equal(v7.alignVerdictLine("NO-GO on committing savings now.", "no-go"), "No-go on committing savings now.");
     const am = rp.alignVerdictMd("## Verdict\n\n**GO WITH CONDITIONS**\n\n- reason", "pivot", 4.8);
-    assert.ok(am.includes("**PIVOT** (score 4.8/10; the writer's own call was GO WITH CONDITIONS)"));
+    assert.ok(am.includes("**TEST FIRST** (score 4.8/10)") && !am.includes("GO WITH CONDITIONS"));
+    assert.equal(rp.alignVerdictMd(am, "pivot", 4.8), am, "idempotent with the new word");
     assert.equal(rp.adjustConfidence("high", { econMissing: false, gaps: 1, total: 20 }), "high");
     assert.equal(rp.adjustConfidence("high", { econMissing: true, gaps: 7, total: 20 }), "low");
   }

@@ -19,7 +19,9 @@ import { kitOfferHtml } from "./kit-screen";
 export const KIT_CENTS = 50;
 
 export const KIND_LABEL: Record<FindingKind, string> = { fact: "Fact", number: "Number", competitor: "Competitor", risk: "Risk", strength: "Strength", estimate: "Estimate" };
-const VERDICT = { go: "Go", pivot: "Pivot", "no-go": "No-go" } as const;
+// display words; the enum stays "pivot": an uncertain idea is something to test, not a failure
+const VERDICT = { go: "Go", pivot: "Test first", "no-go": "No-go" } as const;
+const plain = (t: string) => t.replace(/\s*\[S\d+\]/g, "").replace(/\s+([.,;:])/g, "$1").trim();
 export const BUILD_DOING: Record<BuildDept, string> = { nova: "Choosing your name and colours", dex: "Drawing your logo", rae: "Writing your 30-day plan", pip: "Putting your website online" };
 const BUILD_ROLE: Record<BuildDept, string> = { nova: "Brand", dex: "Logo", rae: "30-day plan", pip: "Website" };
 
@@ -290,9 +292,9 @@ function nextPage(f: ProtoFlowV7, r: IdeaReport, read: boolean): string {
   const canGrow = r.scalability.cap >= 1 && r.verdict !== "no-go";
   return `
   <ol class="steps7" data-st>${r.nextSteps.map((s, i) => `<li><span class="n7">${i + 1}</span><span>${esc(s)}</span></li>`).join("")}</ol>
-  ${r.pivot ? `<div class="pivot" data-st><span class="eyebrow">Pivot to consider</span><p><b>${esc(r.pivot.idea)}</b> ${esc(r.pivot.why)}</p></div>` : ""}
+  ${r.pivot ? `<div class="pivot" data-st><span class="eyebrow">${r.verdict === "pivot" ? "A change worth testing" : "Pivot to consider"}</span><p><b>${esc(plain(r.pivot.idea))}.</b> ${esc(plain(r.pivot.why))}</p></div>` : ""}
   ${read ? "" : `<div class="rp-acts" data-st>
-    ${canGrow ? `<button class="btn btn-primary btn-grow" data-act="grow" type="button">${levelGlyph(1, 16)}<span>Grow into an office</span></button>` : `<button class="btn btn-primary" data-act="pivot" type="button"><span>${r.pivot ? "Try the pivot" : "Try another idea"}</span>${I.arrow(16)}</button>`}
+    ${canGrow ? `<button class="btn btn-primary btn-grow" data-act="grow" type="button">${levelGlyph(1, 16)}<span>Grow into an office</span></button>` : `${r.verdict === "no-go" ? `<button class="btn btn-ghost" data-act="grow" type="button"><span>Build the launch kit anyway</span></button>` : ""}<button class="btn btn-primary" data-act="pivot" type="button"><span>Try another idea</span>${I.arrow(16)}</button>`}
     <button class="btn btn-ghost" data-act="steer" type="button"><span>Tell your team</span></button>
   </div>
   ${canGrow ? "" : `<p class="rp-note" data-st>Not every idea should grow. That is a result too.</p>`}`}`;

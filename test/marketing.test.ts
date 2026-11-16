@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 process.env.MOCK_AI = "1";
 process.env.DATABASE_URL ??= ":memory:";
 
-const { cleanPlan, usedSources, PLAN_SCHEMA, PLAN_SCHEMA_A, PLAN_SCHEMA_B, BANNED, COPY_LIMITS, assumeWord } = await import("../server/marketing/schema.js");
+const { cleanPlan, saneDays, withValidateFirst, garbled, usedSources, PLAN_SCHEMA, PLAN_SCHEMA_A, PLAN_SCHEMA_B, BANNED, COPY_LIMITS, assumeWord } = await import("../server/marketing/schema.js");
 const { planMarketing, loadFixture, fixtureKeyFor, mergeSources, promptA, promptB, FIXTURE_KEYS } = await import("../server/marketing/plan.js");
 const { locationOf, researchPrompt } = await import("../server/marketing/research.js");
 type PlanV2 = import("../server/marketing/schema.js").PlanV2;
@@ -167,6 +167,45 @@ await test("prompts carry the rules and the report's sourced numbers", () => {
   assert.match(a, /Suponemos/);
   const b = promptB(f.input, { notes: [], sources: [], queries: [], ok: false }, sources, { channels: [] });
   assert.match(b, /<strategy>/);
+});
+
+await test("sanity pass: channel follows the copy text, garbled tasks fall back to a template line", () => {
+  const base = loadFixture("bikes-en")!.result.plan as PlanV2;
+  const plan = structuredClone(base);
+  plan.lang = "en";
+  plan.channels = [{ ...plan.channels[0]!, name: "Kiosk sign and counter card" }, ...plan.channels.slice(1)];
+  plan.weeks[0]!.days = [
+    { day: 1, time: "", channel: "Kiosk sign and counter card", action: "Update the Google Business Profile with the kiosk description.", copy: "profile", hours: 1 },
+    { day: 2, time: "", channel: "Kiosk sign and counter card", action: "the the", copy: null, hours: 1 },
+    { day: 3, time: "", channel: "Kiosk sign and counter card", action: "Write the price on the kiosk sign and put the QR card on the counter.", copy: null, hours: 1 },
+  ];
+  const w: string[] = [];
+  const out = saneDays(plan, [{ day: 2, time: "", channel: "By hand", action: "Count your reservations and write down what people asked.", copy: null, hours: 1 }], w);
+  const d = out.weeks[0]!.days;
+  assert.equal(d[0]!.channel, "Google Business Profile");
+  assert.equal(d[1]!.action, "Count your reservations and write down what people asked.");
+  assert.equal(d[2]!.channel, "Kiosk sign and counter card");
+  assert.equal(w.length, 2);
+  assert.ok(garbled("Send to [S3] the"));
+  assert.ok(!garbled("Hand every buyer a stamp card with the pre-order QR on the back."));
+});
+
+await test("a No-go plan starts with the report's validate-first checks; Go is unchanged", () => {
+  const plan = structuredClone(loadFixture("bikes-en")!.result.plan as PlanV2);
+  const gate = { verdict: "no-go" as const, mainReason: "The permit route is unknown.", validateFirst: [{ what: "A kiosk permit can be granted at the metro exit", how: "Ask the city hall in writing which permit applies.", passIf: "A written procedure exists." }] };
+  const out = withValidateFirst(plan, gate);
+  const first = out.weeks[0]!.days[0]!;
+  assert.equal(first.day, 1);
+  assert.equal(first.channel, "Check first");
+  assert.match(first.action, /^Before you open or spend money: Ask the city hall/);
+  assert.match(first.action, /Go ahead only if: a written procedure exists\./);
+  assert.ok(out.weeks[0]!.days.slice(1).every((d) => d.day > 1 && d.day <= 7));
+  assert.deepEqual(withValidateFirst(plan, { ...gate, verdict: "go" }), plan);
+  assert.deepEqual(withValidateFirst(out, gate).weeks[0]!.days.length, out.weeks[0]!.days.length, "not added twice");
+  const f = loadFixture("bakery-es")!;
+  const a = promptA({ ...f.input, report: { ...f.input.report, ...gate } } as never, { notes: [], sources: [], queries: [], ok: false }, []);
+  assert.match(a, /<report_verdict verdict="no-go">The permit route is unknown\.<\/report_verdict>/);
+  assert.match(a, /confirm the permit before opening day/);
 });
 
 console.log(`marketing: ${n} tests passed`);

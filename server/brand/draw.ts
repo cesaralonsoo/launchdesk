@@ -16,7 +16,7 @@ import { remapPalette } from "./compose.js";
 import { fitSymbol, lintSymbol, normHex, type LintResult } from "./lint.js";
 import { fallbackOptions, repairPrompt, type Candidate, type Failed } from "./repair.js";
 
-export const PROMPT_VERSION = 3;
+export const PROMPT_VERSION = 4;
 const FAMILIES = ["literal", "monogram", "geometric"] as const;
 type Family = (typeof FAMILIES)[number];
 
@@ -64,6 +64,18 @@ What a great mark is:
 - Specific to THIS business: it comes from the name's story or the customer's moment, not from the generic category.
 - Optically balanced and big: the mark fills a 52 to 56 unit square centred in the 64 canvas.
 
+Marks that worked for other small businesses (for the level of idea, never to copy):
+- A dog-walking service called "Ronda": five upright bars (the weekdays) with one accent bar cutting across them all (the midday walk). Counting and routine in one sign.
+- The same brand: a thick ring (the round) with one accent dot sitting on it (the walker on the route).
+- A coffee stop called "Pausa": two bars like a pause button, one in the accent colour (a real pause before the train).
+- A day split in two: a circle whose top half is the accent (the midday) and bottom half ink.
+What made them good: the name's meaning is drawn, the accent is the second meaning, you can say the idea in one breath.
+Marks that were rejected as first-sketch level:
+- A letter drawn with one even-width stroke, with a small accent square or dot stuck on the end.
+- A plain doorway, arch or ring outline with nothing else going on.
+- A letter in a circle or a tile; two shapes side by side that do not interact.
+First work out what the name means (translate it if it is not English) and what the customer's moment looks like; draw from that.
+
 Never: clip-art or emoji pictograms${cl ? ` (for this business especially: ${cl})` : ""}, houses, light bulbs, globes, rockets, leaves, hearts, swooshes, speech bubbles, thin outlines, many small details, gradients, shadows, letters made of type.
 ${avoid.length ? `Already shown to the founder, do something different from: ${avoid.map((a) => `"${a}"`).join("; ")}.\n` : ""}
 Technical rules (code checks each one and throws away a mark that breaks it):
@@ -76,14 +88,14 @@ Draw 6 candidates, each a truly different silhouette, best first within its fami
 - 2 "literal": the customer's moment or the name's story, reduced to 2 to 4 geometric shapes (a sign, not an illustration).
 - 2 "monogram": the letter "${initialOf(b.name)}" constructed from geometry (bars, arcs, quarter circles) and fused with one idea from the business. It must still read clearly as "${initialOf(b.name)}" at 16 px. Not a font letter, not a letter in a box or circle, not a letter with a dot added.
 - 2 "geometric": one memorable abstract shape plus one accent cut or dot that carries the meaning.
-For each: family; construction = how it is built on the grid in max 25 words (shapes, sizes, where the cut is), decided before you write the svg; idea = max 14 words in ${b.lang === "es" ? "Spanish" : b.lang === "ca" ? "Catalan" : "English"}, plain words a shop owner understands: what it shows and why it fits their customers; svg.`;
+For each: family; two_meanings = "what you see = what it means", the two meanings that meet in the mark (for example "five bars + one cross bar = weekdays + the midday walk"); construction = how it is built on the grid in max 25 words (shapes, sizes, where the cut is), decided before you write the svg; strength = your honest 1 to 5 rating as a senior designer (5 = a final a client would keep for years, 3 = a decent first sketch, 1 = generic); idea = max 14 words in ${b.lang === "es" ? "Spanish" : b.lang === "ca" ? "Catalan" : "English"}, plain words a shop owner understands: what it shows and why it fits their customers; svg.`;
 }
 
 const SYSTEM = `You are a senior brand identity designer at a studio known for simple, geometric, memorable marks (think Pentagram, Koto, Collins). Small business owners hire you; they get a mark they will put on a sign, a cup, a van and an app icon for years. You draw in clean SVG on a strict grid, with very few shapes. Taste over cleverness; never clip-art.`;
 
 const obj = (properties: Record<string, unknown>) => ({ type: "object", properties, required: Object.keys(properties), additionalProperties: false });
 export const DRAW_SCHEMA = obj({
-  candidates: { type: "array", items: obj({ family: { type: "string", enum: [...FAMILIES] }, construction: { type: "string" }, idea: { type: "string" }, svg: { type: "string" } }) },
+  candidates: { type: "array", items: obj({ family: { type: "string", enum: [...FAMILIES] }, two_meanings: { type: "string" }, construction: { type: "string" }, strength: { type: "integer" }, idea: { type: "string" }, svg: { type: "string" } }) },
 });
 
 // ───────────────────────────────────────────────────────────── calls
@@ -133,14 +145,50 @@ const cleanIdea = (s: unknown) => String(s ?? "").replace(/\s+/g, " ").trim().sp
 let seq = 0;
 const optionOf = (l: Linted, prefix: string): LogoOption => ({ id: `${prefix}${++seq}`, family: famOf(l.candidate.family), idea: cleanIdea(l.candidate.idea), svg: fitSymbol(l.lint) });
 
-/** Survivors ordered so the first three cover three families when possible; the rest keep the model's order. */
-export function rank(options: readonly LogoOption[]): LogoOption[] {
+/**
+ * How clear the mark's idea is, from what code can check plus the designer's own rating. Penalised: outline-only
+ * marks (one even stroke), a single shape, an accent that is only a tiny dot or square stuck on, no second meaning.
+ * A monogram starts lower: it has to earn its place among the first three.
+ */
+export function markScore(c: Pick<Candidate, "family" | "svg" | "two_meanings" | "strength">, svg: string, accent: string): number {
+  const shapes = svg.match(/<(path|circle|rect|ellipse|polygon|polyline|line)\b[^>]*>/g) ?? [];
+  const filled = shapes.filter((t) => !/fill="none"/i.test(t));
+  const acc = shapes.filter((t) => t.toUpperCase().includes(accent.toUpperCase()));
+  const tiny = (t: string) => {
+    const n = (k: string) => Number(t.match(new RegExp(`\\b${k}="([\\d.]+)"`))?.[1] ?? NaN);
+    if (/^<circle/.test(t)) return n("r") <= 5;
+    if (/^<rect/.test(t)) return n("width") * n("height") <= 64;
+    return false;
+  };
+  const meanings = String(c.two_meanings ?? "").split(/\s*(?:=|\+|;|\bmeans\b)\s*/).filter((x) => x.trim().length > 2);
+  let s = Math.max(1, Math.min(5, Number(c.strength) || 3));
+  if (!filled.length) s -= 1.5; // outline only
+  if (shapes.length < 2) s -= 1;
+  if (!acc.length || acc.every(tiny)) s -= c.family === "monogram" ? 1 : 0.5; // accent stuck on, not part of the idea
+  if (meanings.length < 2) s -= 0.5;
+  if (c.family === "monogram") s -= 0.75;
+  return s;
+}
+/** A monogram goes in the first three only with a score at least this high. */
+export const STRONG_MONOGRAM = 3.5;
+
+/** Survivors ordered so the first three cover three families when possible; the rest keep the given order.
+ *  `weak` ids (plain monograms) never take a first-three slot while another option can fill it. */
+export function rank(options: readonly LogoOption[], weak: ReadonlySet<string> = new Set()): LogoOption[] {
   const first: LogoOption[] = [];
   for (const f of FAMILIES) {
-    const o = options.find((x) => x.family === f && !first.includes(x));
+    const o = options.find((x) => x.family === f && !first.includes(x) && !weak.has(x.id));
     if (o) first.push(o);
   }
+  for (const o of options) if (first.length < 3 && !first.includes(o) && !weak.has(o.id)) first.push(o);
   return [...first, ...options.filter((o) => !first.includes(o))];
+}
+
+/** Linted survivors → options, best idea first, plain monograms marked weak. */
+function scored(ok: readonly Linted[], prefix: string, accent: string): { options: LogoOption[]; weak: Set<string> } {
+  const rows = ok.map((l) => { const o = optionOf(l, prefix); return { o, s: markScore(l.candidate, o.svg, accent) }; }).sort((a, b) => b.s - a.s);
+  const weak = new Set(rows.filter((r) => r.o.family === "monogram" && r.s < STRONG_MONOGRAM).map((r) => r.o.id));
+  return { options: rows.map((r) => r.o), weak };
 }
 
 // ───────────────────────────────────────────────────────────── mock fixtures
@@ -204,8 +252,9 @@ export async function drawLogos(brand: KitBrand, avoid: readonly string[] = [], 
   const model = LOGO_MODEL();
   const out = await callCandidates("logo.draw", model, "medium", drawPrompt({ ...ctx, brand: brandN }, avoid), 12000);
   const linted = lintAll(out.candidates, brandN);
+  const sc = scored(linted.filter((l) => l.lint.ok), "lg", brandN.palette.accent);
   return {
-    options: rank(linted.filter((l) => l.lint.ok).map((l) => optionOf(l, "lg"))),
+    options: rank(sc.options, sc.weak),
     failed: linted.filter((l) => !l.lint.ok).map((l) => ({ ...l.candidate, family: famOf(l.candidate.family), errors: l.lint.errors })),
     costUsd: out.cost.usd,
     model: out.model,

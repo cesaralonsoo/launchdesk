@@ -6,7 +6,10 @@
 //   factor  = clamp(5 + Σ impact × step, 0, 10), step = 1.0 for a sourced finding, 0.5 for an estimate
 //             (a factor with no sourced finding is capped at 7.5)
 //   score   = Σ weight × factor over the hired analysts (weights from ROLE_LIBRARY, normalised), one decimal
-//   verdict = Go ≥ 6.5 with no factor ≤ 3 · Pivot 4.5–6.4 · No-go < 4.5 (5.0 = neutral evidence)
+//   verdict = Go ≥ 6.5 with no factor ≤ 3 · Pivot ("Test first") 4.5–6.4 · No-go < 4.5 AND sourced evidence against
+//             (evidenceAgainst: a saturated market or weak demand/pricing shown by sourced findings, costs per unit
+//             above the price from sourced cost lines, a legal ban). Under 4.5 without it = Pivot: missing data is
+//             uncertainty, not evidence against, so it lowers confidence and becomes a "test first" item instead.
 //   scale   = weighted parts (Reach 25 %, Repeatable 20 %, Margins at scale 20 %, Founder-free 15 %, Digital 20 %)
 //   cap     = levelCapFor(scale, verdict): no-go 0 · < 4 floor · 4–6.9 building · ≥ 7 district
 
@@ -67,6 +70,10 @@ export interface IdeaReport {
   pivot?: { idea: string; why: string } | null;
   /** Additive (written report): the Verdict section's reason bullets, full sentences. */
   reasons?: string[];
+  /** Additive: the sourced evidence against the idea that a No-go rests on (empty = nothing sourced counts against it). */
+  against?: string[];
+  /** Additive: what the research could not find (unknowns): they lower confidence, not the score; test them first. */
+  unknowns?: string[];
 }
 export interface SteerChange { what: "score" | "factor" | "scalability" | "verdict" | "finding" | "roster"; key?: string; before: string | number | null; after: string | number | null; why: string }
 export interface SteerResult {
@@ -120,7 +127,8 @@ export interface EconSummary {
   startupCapital: number | null;
   /** Inputs the writer left at €0 or empty: the figures that depend on them are not shown as facts. */
   missing?: string[];
-  lines?: Array<{ group: "variable" | "fixed" | "startup"; item: string; eur: number; source: SourceRef | null }>;
+  /** `check`: the line cites a source, but its figure could not be found in that source's research note. */
+  lines?: Array<{ group: "variable" | "fixed" | "startup"; item: string; eur: number; source: SourceRef | null; check?: boolean }>;
 }
 export interface AgentNote { analyst: AnalystRole; kind: "search" | "read" | "found" | "status"; text: string; at: number }
 export const NOTES_MAX = 60;
@@ -146,7 +154,43 @@ export const SCALE_WEIGHTS: Record<ScalePart, number> = { Reach: 0.25, Repeatabl
 export const SCALE_PARTS = Object.keys(SCALE_WEIGHTS) as ScalePart[];
 export const SCORE_RULE = "Each factor starts at 5.0: a sourced finding moves it 1 point per impact step, an estimate 0.5. No source: max 7.5.";
 export const VERDICT_BANDS_V7 = { go: 6.5, pivot: 4.5, floor: 3 } as const;
-export const VERDICT_RULE_V7 = "Go from 6.5 with no factor at 3 or below · Pivot 4.5–6.4 · No-go under 4.5";
+export const VERDICT_RULE_V7 = "Go from 6.5 with no factor at 3 or below · Test first 4.5–6.4, or lower when nothing sourced counts against the idea · No-go under 4.5 with sourced evidence against it";
+/** A section counts against the idea when its sourced findings lean this many points more against than for. */
+export const AGAINST_NET = 3;
+
+/** An item that reports missing data (an unknown), not a fact: "… was not found", "could not check", "unverified". */
+export const isGapText = (t: string) =>
+  /\bnot found\b|\bno [^.]{0,80}\b(?:was|were) found\b|\bthe research (?:found|has|gives) no\b|\bthe research did not (?:find|cover|confirm|check)\b|\bno source (?:gives|shows|confirms)\b|\b(?:was|were|is|are) not confirmed\b|\bcould not (?:be )?(?:check|confirm|verif)\w*\b|\bnot covered by the research\b/i.test(t);
+/** A sourced finding that says the activity is not allowed at all (a ban, not a requirement that can be met). */
+export const BAN_TEXT = /\b(?:banned|prohibited|forbidden|illegal|not (?:allowed|permitted|legal)|no (?:new )?(?:licen[cs]es?|permits?|concessions?) (?:are|is|will be) (?:issued|granted)|moratorium)\b(?![^.]{0,40}\b(?:without|unless|except)\b)/i;
+
+/** Pure: the sourced evidence against the idea, one plain sentence per reason (empty when there is none).
+ *  Only sourced findings that are not gaps count. Rules & risks: only a ban (a requirement such as a licence or
+ *  insurance is a cost or a task, not a reason the idea fails). Other sections: sourced findings that lean at least
+ *  AGAINST_NET points more against than for, in a factor at the floor. Money: per-unit costs from sourced cost lines
+ *  already above what one sale brings in. */
+export function evidenceAgainst(
+  factors: readonly Pick<ScoreFactor, "analyst" | "label" | "score">[],
+  findings: readonly Finding[],
+  econ?: { net: number; lines?: ReadonlyArray<{ group: string; eur: number; source: SourceRef | null; check?: boolean }> } | null,
+): string[] {
+  const out: string[] = [];
+  for (const f of factors) {
+    const fs = findings.filter((x) => x.analyst === f.analyst && isSourced(x) && !isGapText(x.text));
+    if (f.analyst === "viability") {
+      const ban = fs.find((x) => (x.impact ?? 0) < 0 && BAN_TEXT.test(x.text));
+      if (ban) out.push(`${f.label}: ${ban.text}`);
+      continue;
+    }
+    const net = fs.reduce((t, x) => t + Math.sign(x.impact ?? 0), 0);
+    if (net <= -AGAINST_NET && f.score <= VERDICT_BANDS_V7.floor) out.push(`${f.label}: ${-net} more sourced findings count against the idea than for it.`);
+  }
+  if (econ && econ.net > 0) {
+    const sourcedVar = (econ.lines ?? []).filter((l) => l.group === "variable" && l.source && !l.check).reduce((t, l) => t + (Number(l.eur) || 0), 0);
+    if (sourcedVar > econ.net) out.push(`Money: sourced costs per sale (€${sourcedVar.toFixed(2)}) are above the €${econ.net.toFixed(2)} each sale brings in.`);
+  }
+  return out;
+}
 
 const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, Number.isFinite(n) ? n : lo));
 export const r1 = (n: number) => Math.round((n + 1e-9) * 10) / 10;
@@ -289,6 +333,8 @@ export interface JudgeDraft {
   pivot?: { idea: string; why: string } | null;
   /** Written report only: the Verdict section's reason bullets. */
   reasons?: string[];
+  /** Written report only: the computed unit economics, so a negative margin from sourced costs can decide a No-go. */
+  econ?: Parameters<typeof evidenceAgainst>[2];
 }
 
 export function scalabilityScore(parts: Partial<Record<ScalePart, number>>): number {
@@ -296,8 +342,9 @@ export function scalabilityScore(parts: Partial<Record<ScalePart, number>>): num
 }
 export const reachLabel = (reach: number) => (reach <= 3 ? "Neighbourhood" : reach <= 5 ? "City" : reach <= 7.5 ? "Country" : "Global");
 
-export const VERDICT_WORD: Record<IdeaReport["verdict"], string> = { go: "Go", pivot: "Pivot", "no-go": "No-go" };
-const WRITER_VERDICT = /^\s*(?:\*\*)?\s*(?:go with conditions|conditional go|no[- ]go|not decided|pivot|go)\b\s*(?:\*\*)?\s*[.:—–-]*\s*/i;
+/** Display words (the enum names stay): an uncertain idea is "Test first", not a failure. */
+export const VERDICT_WORD: Record<IdeaReport["verdict"], string> = { go: "Go", pivot: "Test first", "no-go": "No-go" };
+const WRITER_VERDICT = /^\s*(?:\*\*)?\s*(?:go with conditions|conditional go|no[- ]go|not decided|test first|pivot|go)\b\s*(?:\*\*)?\s*[.:—–-]*\s*/i;
 /** The written report's own verdict word ("GO WITH CONDITIONS: …") replaced by the computed verdict, so the line
  *  under the badge never contradicts it. A line without a verdict word gets the computed one in front. */
 export function alignVerdictLine(line: string, verdict: IdeaReport["verdict"]): string {
@@ -309,8 +356,39 @@ export function alignVerdictLine(line: string, verdict: IdeaReport["verdict"]): 
   return `${VERDICT_WORD[verdict]}: ${rest.charAt(0).toUpperCase()}${rest.slice(1)}`;
 }
 
-export function verdictFor(score: number, factors: readonly { score: number }[]): IdeaReport["verdict"] {
-  if (score < VERDICT_BANDS_V7.pivot) return "no-go";
+// Topic words per scored analyst, and the words that mark a reason as for or against the idea (plain heuristics).
+const REASON_TOPIC: Record<string, RegExp> = {
+  demand: /\b(?:demand|customers?|buyers?|bookings?|usage|audience|footfall|subscribers?|wants?|will pay)\b/i,
+  competition: /\b(?:compet\w*|saturat\w*|crowded|rivals?|incumbents?|alternatives?|chains?|market is)\b/i,
+  pricing: /\b(?:pric\w*|margins?|premium|break-even|contribution|economics|per walk|per unit|€)/i,
+  viability: /\b(?:costs?|rent|wages?|insurance|licen[cs]\w*|legal|regulat\w*|capital|savings|exposure|liabilit\w*|break-even|permits?|social security|viab\w*)\b/i,
+};
+const REASON_NEG = /\b(?:no|not|none|nothing|unproven|missing|saturated|crowded|risk\w*|exposure|without|lacks?|weak|fails?|never|cannot|can't|unknown|unclear|too (?:high|low|small)|below|thin|loss\w*|expensive|undercut\w*)\b/gi;
+const REASON_POS = /\b(?:in range|defensible|strong\w*|growing|proven|underserved|gap in|room for|willing|healthy|profitable|cheap\w*|clear demand|demand exists)\b/gi;
+const hits = (re: RegExp, s: string) => (s.match(re) ?? []).length;
+
+/** Pure: the index of the reason that best explains the computed verdict. No-go / Pivot: the most negative reason on
+ *  the weakest scored sections; Go: the most positive one on the strongest. Ties keep the writer's order. */
+export function leadReason(reasons: readonly string[], verdict: IdeaReport["verdict"], factors: ReadonlyArray<{ analyst: string; score: number }>): number {
+  if (!reasons.length) return -1;
+  const against = verdict !== "go";
+  const weight = (f: { score: number }) => (against ? Math.max(0, 5 - f.score) : Math.max(0, f.score - 5));
+  let best = 0;
+  let top = -Infinity;
+  reasons.forEach((r, i) => {
+    const neg = hits(REASON_NEG, r);
+    const pos = hits(REASON_POS, r);
+    const topic = factors.reduce((t, f) => t + (REASON_TOPIC[f.analyst]?.test(r) ? weight(f) : 0), 0);
+    const s = (against ? 2 * neg - 3 * pos : 2 * pos - 2 * neg) + topic;
+    if (s > top) (top = s), (best = i);
+  });
+  return best;
+}
+
+/** `against` (from evidenceAgainst): under the Pivot band the verdict is No-go only when sourced evidence counts
+ *  against the idea; otherwise it is Pivot ("Test first"). Omitted = the old rule (classic callers). */
+export function verdictFor(score: number, factors: readonly { score: number }[], against?: readonly string[]): IdeaReport["verdict"] {
+  if (score < VERDICT_BANDS_V7.pivot) return against && !against.length ? "pivot" : "no-go";
   if (score < VERDICT_BANDS_V7.go || factors.some((f) => f.score <= VERDICT_BANDS_V7.floor)) return "pivot";
   return "go";
 }
@@ -335,8 +413,14 @@ export function buildReport(roster: readonly Analyst[], work: readonly AnalystWo
   // weights are two decimals adding up to 1.00 (rosterWeights) and factor scores one decimal, so the maths string
   // below, written with exactly these numbers, always adds up to the score shown.
   const score = r1(factors.reduce((t, f) => t + Math.round(f.weight * 100) * Math.round(f.score * 10), 0) / 1000);
-  const verdict = verdictFor(score, factors);
   const all = work.flatMap((w) => w.findings);
+  const against = evidenceAgainst(factors, all, judge.econ);
+  // the evidence-against rule decides written reports (live runs); the prepared demo samples keep their bands
+  const verdict = verdictFor(score, factors, judge.fullText ? against : undefined);
+  const unknowns = all.filter((f) => !isSourced(f) && isGapText(f.text)).map((f) => capWords(f.text, cap.point)).slice(0, 4);
+  // a low score with nothing sourced against it rests on unknowns: it never claims high confidence
+  const conf = confidenceFor({ factors, findings: all });
+  const confidence = judge.fullText && score < VERDICT_BANDS_V7.pivot && !against.length && conf === "high" ? "medium" : conf;
   const sources: SourceRef[] = [];
   for (const f of all) if (isSourced(f) && !sources.some((s) => s.url === f.source!.url)) sources.push(f.source!);
   const sourced = all.filter(isSourced).length;
@@ -355,14 +439,18 @@ export function buildReport(roster: readonly Analyst[], work: readonly AnalystWo
   };
   const strengths = pick(judge.strengths, byImpact.filter((f) => (f.impact ?? 0) > 0).concat(byImpact));
   const weaknesses = pick(judge.weaknesses, [...byImpact].reverse().filter((f) => (f.impact ?? 0) < 0).concat([...byImpact].reverse()));
+  // a written report leads with the reason that decides the computed verdict, not the writer's first bullet
+  const li = judge.fullText && judge.reasons?.length ? leadReason(judge.reasons, verdict, factors) : -1;
+  const reasons = li >= 0 ? [judge.reasons![li]!, ...judge.reasons!.filter((_, i) => i !== li)] : judge.reasons;
+  const line = li >= 0 ? `${VERDICT_WORD[verdict]}: ${reasons![0]}` : judge.fullText ? alignVerdictLine(judge.verdictLine, verdict) : judge.verdictLine;
   return {
     score,
     verdict,
-    verdictLine: capWords(judge.fullText ? alignVerdictLine(judge.verdictLine, verdict) : judge.verdictLine, cap.verdict),
+    verdictLine: capWords(line, cap.verdict),
     factors,
     math: factors.map((f) => `${f.weight.toFixed(2)}×${f.score.toFixed(1)}`).join(" + ") + ` = ${score.toFixed(1)}`,
     evidence: { total: all.length, sourced, sourcedShare: share, sources },
-    confidence: confidenceFor({ factors, findings: all }),
+    confidence,
     scalability: {
       score: sScore,
       cap: levelCapFor(sScore, verdict),
@@ -375,7 +463,9 @@ export function buildReport(roster: readonly Analyst[], work: readonly AnalystWo
     weaknesses,
     nextSteps: judge.nextSteps.slice(0, 3).map((x) => capWords(x, cap.step)),
     pivot: verdict === "go" ? null : (judge.pivot ?? null),
-    ...(judge.reasons?.length ? { reasons: judge.reasons.slice(0, 5).map((x) => capWords(x, 60)) } : {}),
+    ...(reasons?.length ? { reasons: reasons.slice(0, 5).map((x) => capWords(x, 60)) } : {}),
+    ...(judge.fullText && against.length ? { against } : {}),
+    ...(judge.fullText && unknowns.length ? { unknowns } : {}),
   };
 }
 

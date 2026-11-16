@@ -28,7 +28,7 @@ body{background:var(--bg)}
 .hcard{box-shadow:0 40px 80px -30px rgb(0 0 0/.7)}.hcard .top{display:flex;align-items:center;gap:14px}.hcard .top small{display:block;font-size:13px;color:var(--mu)}.hcard .top b{font:700 18px/1.2 var(--fd)}
 .hcard .big{margin:28px 0 22px;display:grid;place-items:center;aspect-ratio:16/10;border-radius:20px;background:radial-gradient(60% 80% at 50% 40%,color-mix(in srgb,var(--p) 45%,transparent),transparent),color-mix(in srgb,var(--ink) 4%,transparent)}
 .hcard .big .mark{width:42%;height:auto;filter:drop-shadow(0 18px 30px rgb(0 0 0/.5))}
-.hcard .row{display:flex;align-items:center;justify-content:space-between;gap:12px}.hcard .price b{font-size:40px}
+.hcard .row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}.hcard .price{gap:8px;min-width:0}.hcard .price b{font-size:40px}.hcard .price .was{white-space:nowrap;font-size:14px}.hcard .row .btn{flex:none}
 .sec{padding:96px 0}@media(min-width:900px){.sec{padding:128px 0}}
 .lbl{display:inline-flex;font:600 13px/1 var(--fb);letter-spacing:.12em;text-transform:uppercase;color:var(--a);margin-bottom:18px}
 .h2{font:800 clamp(38px,5.6vw,72px)/.98 var(--fd);letter-spacing:-.04em;max-width:16ch;text-wrap:balance}

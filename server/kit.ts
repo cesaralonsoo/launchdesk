@@ -17,6 +17,7 @@ import type { Kit, KitBrand, KitInput, LogoOption, LogoResult, MarketingResult, 
 import type { NovaBrand, Project } from "./types.js";
 import { normHex } from "./brand/lint.js";
 import { templatePlan, templateSite } from "./kit-templates.js";
+import { withValidateFirst, type PlanV2, type ReportGate } from "./marketing/schema.js";
 import type { SiteRow } from "./site/db.js";
 import type { SiteSpec } from "./site/spec.js";
 import { asSiteSpec, luminance, validateModelSite } from "./site/validate.js";
@@ -98,7 +99,7 @@ export function safeBrand(b: KitBrand): KitBrand {
 }
 
 /** The report, reduced to what the kit needs. Stats only with a real source link. */
-export function digestOf(p: Project, v7: ResultsV7 | null): ReportDigest {
+export function digestOf(p: Project, v7: ResultsV7 | null): ReportDigest & ReportGate {
   const sam = p.results.sam as (Project["results"]["sam"] & { launch_offer?: { item: string; price: number; normal_price: number; limit: number } }) | undefined;
   const lo = sam?.launch_offer;
   const stats: ReportDigest["stats"] = [];
@@ -116,7 +117,17 @@ export function digestOf(p: Project, v7: ResultsV7 | null): ReportDigest {
     stats,
     competitors,
     risks,
+    ...gateOf(v7),
   };
+}
+
+/** The report's decision for the plan: verdict, deciding reason (the verdict line without its verdict word), checks. */
+export function gateOf(v7: ResultsV7 | null): ReportGate {
+  const r = v7?.report;
+  if (!r) return {};
+  const mainReason = r.verdictLine.replace(/^\s*(?:go|pivot|no-go)\s*[:.—–-]?\s*/i, "").trim();
+  const validateFirst = (v7?.brief?.validateFirst ?? []).filter((v) => v?.what).slice(0, 3).map((v) => ({ what: v.what, how: v.how, passIf: v.passIf }));
+  return { verdict: r.verdict, ...(mainReason ? { mainReason } : {}), ...(validateFirst.length ? { validateFirst } : {}) };
 }
 
 // ───────────────────────────────────────────── fallbacks (no AI)
@@ -350,7 +361,7 @@ async function runKitInner(projectId: string, deps: KitDeps, stage: string): Pro
       () => ({ spec: fallbackSite(input), template: templateFor(input.idea) }),
       (r) => (kit.site = r),
     ),
-    part<MarketingResult>("marketing", KIT_EST.marketing, () => deps.marketing(input), () => fallbackMarketing(input), (r) => (kit.marketing = r)),
+    part<MarketingResult>("marketing", KIT_EST.marketing, () => deps.marketing(input), () => fallbackMarketing(input), (r) => (kit.marketing = { ...r, plan: r.plan && typeof r.plan === "object" && Array.isArray((r.plan as PlanV2).weeks) ? withValidateFirst(r.plan as PlanV2, input.report as ReportGate) : r.plan })),
   ]);
   await save();
   return kit;

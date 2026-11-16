@@ -648,7 +648,8 @@ export interface EconSummary {
   breakEven: number | null;
   startupCapital: number | null;
   missing?: string[];
-  lines?: Array<{ group: "variable" | "fixed" | "startup"; item: string; eur: number; source: SourceRef | null }>;
+  /** `check`: the line cites a source, but its figure could not be found in that source's research note. */
+  lines?: Array<{ group: "variable" | "fixed" | "startup"; item: string; eur: number; source: SourceRef | null; check?: boolean }>;
 }
 /** One project = one world. */
 export interface ProjectV7 {

@@ -3,7 +3,7 @@
 import type { KitBrand, LogoOption } from "../kit-contract.js";
 import { normHex } from "./lint.js";
 
-export interface Candidate { family: LogoOption["family"]; idea: string; svg: string }
+export interface Candidate { family: LogoOption["family"]; idea: string; svg: string; construction?: string; two_meanings?: string; strength?: number }
 export interface Failed extends Candidate { errors: string[] }
 
 export function repairPrompt(brand: KitBrand, failed: readonly Failed[]): string {

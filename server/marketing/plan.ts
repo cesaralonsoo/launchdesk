@@ -10,7 +10,7 @@ import { Budget, recordUsage, type CostLine } from "../cost.js";
 import type { KitInput, MarketingResult } from "../kit-contract.js";
 import { templatePlan } from "../kit-templates.js";
 import { emptyMarketingResearch, researchMarketing, type MarketingResearch } from "./research.js";
-import { assumeWord, BANNED, cleanPlan, datedEvents, COPY_LIMITS, PLAN_SCHEMA_A, PLAN_SCHEMA_B, type PlanSource, type PlanV2 } from "./schema.js";
+import { assumeWord, BANNED, cleanPlan, datedEvents, COPY_LIMITS, PLAN_SCHEMA_A, PLAN_SCHEMA_B, saneDays, type PlanSource, type PlanV2, type ReportGate } from "./schema.js";
 
 const envModel = (name: string, dflt: string) => (process.env[name] && /^claude-[a-z0-9-]+$/.test(process.env[name]!) ? process.env[name]! : dflt);
 /** Writer model (both steps). MODEL_MARKETING=claude-opus-5-5 if the copy feels flat (about 2x the writer cost). */
@@ -26,6 +26,24 @@ export type PlanResult = MarketingResult & { plan: PlanV2; warnings: string[] };
 
 const LANG_NAME: Record<string, string> = { es: "Spanish (Spain)", en: "English", ca: "Catalan", fr: "French", de: "German", pt: "Portuguese", it: "Italian" };
 const SYSTEM = "You are the launch lead for small, one-person businesses. You plan only what one person can do in 30 days, with real places and plain words. You never invent facts, numbers, names, quotes, reviews or events.";
+
+/** The report's decision: verdict, deciding reason and the checks to run before opening or spending money. */
+export function gateBlock(g: ReportGate): string {
+  if (!g.verdict) return "";
+  const checks = (g.validateFirst ?? []).slice(0, 3).map((v, i) => `${i + 1}. ${v.what}. How: ${v.how} Pass if: ${v.passIf}`);
+  return `<report_verdict verdict="${g.verdict}">${g.mainReason ?? ""}</report_verdict>
+<validate_first>
+${checks.join("\n") || "- none"}
+</validate_first>`;
+}
+
+const gateRule = (input: KitInput) => {
+  const g = input.report as ReportGate;
+  if (!g.verdict) return "";
+  return g.verdict === "go"
+    ? `\n- The report says Go. Still run its validate_first checks in week 1, alongside the first sales actions.`
+    : `\n- The report says ${g.verdict === "no-go" ? "No-go" : "Pivot"}, and the founder chose to build anyway. The plan starts by checking the deciding reason and the validate_first items (for example: confirm the permit before opening day). Week 1 is checks and pre-orders only: no opening, no printing, no spending until each check passes. Put each check as an early day with its pass mark, and make the decision say: stop if a check fails.`;
+};
 
 export function contextBlock(input: KitInput, research: MarketingResearch, sources: readonly PlanSource[]): string {
   const { brand, report } = input;
@@ -44,6 +62,7 @@ ${statLines.join("\n") || "- none"}
 </report_numbers>
 <competitors>${report.competitors.map((c) => `${c.name} (gap: ${c.gap})`).join("; ") || "none named"}</competitors>
 <risks>${report.risks.join("; ")}</risks>
+${gateBlock(report as ReportGate)}
 <research>
 ${research.notes.join("\n") || "- No web research came back. Use no local facts; put everything local in assumptions."}
 </research>
@@ -73,7 +92,7 @@ ${commonRules(input)}
 - kpis: at most 5. Each with a target and how to count it; count_from is one of: bch payments, website, by hand.
 - local: up to 6 facts from the research that matter for this plan, each with its [n]. events: named events in the next 30 days from the research only, each with date, place and [n]. None in the research: empty lists.
 - assumptions: 2-5 things this plan assumes that the founder should check.
-- decision: what the day-30 numbers mean: scale, adjust or stop.`;
+- decision: what the day-30 numbers mean: scale, adjust or stop.${gateRule(input)}`;
 }
 
 export function promptB(input: KitInput, research: MarketingResearch, sources: readonly PlanSource[], strategy: unknown): string {
@@ -92,7 +111,8 @@ ${commonRules(input)}
 - copy.email: an email to the waitlist (subject + body ≤${COPY_LIMITS.emailWords - 20} words).
 - copy.flyer: a headline + exactly 3 short lines.
 - copy.profile: a Google Business Profile or shop description, ≤${COPY_LIMITS.profileChars - 50} characters.
-- copy.press: a 3-sentence pitch to local press or a newsletter.`;
+- copy.press: a 3-sentence pitch to local press or a newsletter.
+- Each day's channel is the channel that action actually uses (a Google profile update is not "kiosk sign"). Each action is 1-2 plain sentences that make sense read alone; state any card or discount rule exactly (for example "buy 5, the 6th is free").${gateRule(input)}`;
 }
 
 // ───────────────────────────────────────────────────────────── writer calls
@@ -173,7 +193,9 @@ export async function planMarketing(input: KitInput, opts: { budget?: Budget; on
   const sources = mergeSources(research.sources, input);
   const a = await callJson("marketing:strategy", promptA(input, research, sources), PLAN_SCHEMA_A, EST_WRITER_USD.a, budget, opts.onCost);
   const b = await callJson("marketing:calendar", promptB(input, research, sources, a), PLAN_SCHEMA_B, EST_WRITER_USD.b, budget, opts.onCost);
-  const { plan, warnings } = cleanPlan({ ...a, ...b }, sources, { lang: input.brand.lang, currency: input.brand.currency });
+  const cleaned = cleanPlan({ ...a, ...b }, sources, { lang: input.brand.lang, currency: input.brand.currency });
+  const warnings = cleaned.warnings;
+  const plan = saneDays(cleaned.plan, templatePlan(input).weeks.flatMap((w) => w.days), warnings);
   if (warnings.length) console.warn(`[marketing] cleaned: ${warnings.join("; ")}`);
   return { plan, sources, warnings };
 }

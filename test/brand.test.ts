@@ -9,7 +9,7 @@ process.env.MOCK_AI = "1";
 const { lintSymbol, pathPoints } = await import("../server/brand/lint.js");
 const { lockupSvg, darkSymbol, remapPalette } = await import("../server/brand/compose.js");
 const { PAIRINGS, googleFontsHref, casedName } = await import("../server/brand/fonts.js");
-const { makeLogos, moreLogos, mockOptions, rank, loadFixtures, drawPrompt } = await import("../server/brand/draw.js");
+const { makeLogos, moreLogos, mockOptions, rank, loadFixtures, drawPrompt, markScore, STRONG_MONOGRAM } = await import("../server/brand/draw.js");
 const { fallbackOptions } = await import("../server/brand/repair.js");
 const { FONT_WHITELIST, BANNED_FONTS } = await import("../server/types.js");
 
@@ -131,4 +131,21 @@ test("draw prompt names the initial, clichés and what to avoid", () => {
   assert.match(p, /letter "P"/);
   assert.match(p, /coffee cups/);
   assert.match(p, /"two bars"/);
+});
+
+test("plain monograms lose their first-three slot; marks with two meanings score higher", () => {
+  const o = (id: string, family: "literal" | "monogram" | "geometric") => ({ id, family, idea: "", svg: "" });
+  assert.deepEqual(rank([o("a", "literal"), o("m", "monogram"), o("c", "geometric"), o("b", "literal")], new Set(["m"])).map((x) => x.id), ["a", "c", "b", "m"]);
+  const A = "#2F6F5E";
+  const plainS = markScore({ family: "monogram", strength: 3, two_meanings: "an S", svg: "" }, `<path d="M10 10 L50 50" fill="none" stroke="#111111" stroke-width="6"/><rect x="50" y="50" width="6" height="6" fill="${A}"/>`, A);
+  assert.ok(plainS < STRONG_MONOGRAM);
+  const tally = markScore({ family: "literal", strength: 4, two_meanings: "five bars + one cross bar = weekdays + the midday walk", svg: "" }, `<rect x="8" y="10" width="6" height="44" fill="#111111"/><rect x="20" y="10" width="6" height="44" fill="#111111"/><rect x="4" y="28" width="56" height="8" fill="${A}"/>`, A);
+  assert.ok(tally > plainS + 2);
+});
+
+test("draw prompt asks for the two meanings and an honest rating, with worked examples", () => {
+  const p = drawPrompt({ idea: "A specialty coffee kiosk", brand }, []);
+  assert.match(p, /two_meanings/);
+  assert.match(p, /strength = your honest 1 to 5/);
+  assert.match(p, /rejected as first-sketch level/);
 });

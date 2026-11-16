@@ -7,7 +7,7 @@ import { Budget, costOf, costScope, EST, endCost } from "./cost.js";
 import { leoFromV7, memoFromV7 } from "./v7-bridge.js";
 import { mockJudge, preparedSteerFor, routeSteer, runAnalyst, runJudge } from "./ai-v7.js";
 import { assembleReport, emptyResearch, fallbackReport, ownerOf, researchBlock, sampleBlocks, sampleSteerFindings, type BlockResearch } from "./blocks-v7.js";
-import { adjustConfidence, alignVerdictMd, econSummary, marketOf, writeReport, type WrittenReport } from "./report-v7.js";
+import { adjustConfidence, alignSummary, alignVerdictMd, econSummary, verdictSentence, marketOf, writeReport, type WrittenReport } from "./report-v7.js";
 import { config } from "./config.js";
 import { exec } from "./db.js";
 import {
@@ -91,8 +91,8 @@ const writerNoteFor = (projectId: string, t0: number) => (analyst: AnalystRole, 
 
 /** What runV7 keeps from the writer next to the blocks (the full Markdown and the computed unit economics). */
 const reportExtras = (w: WrittenReport, report: IdeaReport | null): Pick<ResultsV7, "reportMd" | "econ" | "econErr"> => ({
-  ...(w.md ? { reportMd: report ? alignVerdictMd(w.md, report.verdict, report.score) : w.md } : {}),
-  econ: econSummary(w, w.sources ?? [], w.accessed),
+  ...(w.md ? { reportMd: report ? alignVerdictMd(w.md, report.verdict, report.score, { lead: report.reasons?.[0] }) : w.md } : {}),
+  econ: econSummary(w, w.sources ?? [], w.accessed, w.notesText),
   ...(w.econErr ? { econErr: w.econErr } : {}),
 });
 /** The report's confidence, lowered when its money inputs are missing or gaps are a large part of the evidence. */
@@ -163,12 +163,15 @@ export async function runV7(projectId: string, idea: string, _research?: Researc
     if (w.fromNotes) console.warn(`[jobs7] ${projectId} report built from the research notes (no model write-up)`);
     const a = assembleReport(w.out, research, { t0 });
     const work: AnalystWork[] = roster.map((x) => finishWork({ analyst: x.role, status: "done", findings: a.findings[x.role] ?? [], score: null, headline: a.blocks.find((b) => b.role === x.role)?.takeaway ?? "" }));
-    const report = honestReport(buildReport(roster, work, a.judge), w, work);
+    // a negative margin counts against the idea only when it comes from sourced cost lines (evidenceAgainst)
+    const report = honestReport(buildReport(roster, work, { ...a.judge, econ: econSummary(w, w.sources ?? [], w.accessed, w.notesText) }), w, work);
     const cost = costOf(projectId, "validate");
     const ms = Date.now() - t0;
     console.log(`[jobs7] ${projectId} report ready after ${ms}ms (${report.evidence.sourced}/${report.evidence.total} items sourced, report spend $${budget.spent.toFixed(4)}${w.invalidCites ? `, ${w.invalidCites} invalid cites removed` : ""})`);
     noteFor(projectId, t0, "viability")("status", `Report ready in ${Math.round(ms / 1000)} s`);
-    await update(projectId, (v) => ({ ...v, roster, work, blocks: a.blocks, brief: a.brief, report, status: "done", ...reportExtras(w, report), ...(cost.calls ? { cost } : {}), ms }));
+    // the summary never states its own verdict: the computed one is written in code
+    const brief = a.brief ? { ...a.brief, summary: alignSummary(a.brief.summary, verdictSentence(report.verdict, report.score, report.reasons?.[0])) } : a.brief;
+    await update(projectId, (v) => ({ ...v, roster, work, blocks: a.blocks, brief, report, status: "done", ...reportExtras(w, report), ...(cost.calls ? { cost } : {}), ms }));
   } catch (e) {
     noteFor(projectId, t0, "viability")("status", "The report could not be finished.");
     await update(projectId, (v) => ({ ...v, status: "error", error: (e as Error).message || "Something went wrong" }));
@@ -326,8 +329,8 @@ async function runBlockSteer(projectId: string, idea: string, note: string, id: 
     freshByRole[role] = { findings: fs.map((f, i) => (old[i] ? { ...f, replaces: old[i]!.id } : f)), headline: a.blocks.find((b) => b.role === role)?.takeaway };
   }
   const rerun = Object.keys(freshByRole) as AnalystRole[];
-  const { results, steer } = applySteer(base, { id, note, plan: { ...plan, rerun }, fresh: freshByRole, judge: a.judge, at: at(), replace: rerun });
-  await update(projectId, () => ({ ...results, blocks: refreshBlocks(a.blocks, results.work), brief: { ...a.brief, researchedAt: prev.brief?.researchedAt ?? a.brief.researchedAt }, steers: [...base.steers, steer], ...reportExtras(w, results.report) }));
+  const { results, steer } = applySteer(base, { id, note, plan: { ...plan, rerun }, fresh: freshByRole, judge: { ...a.judge, econ: econSummary(w, w.sources ?? [], w.accessed, w.notesText) }, at: at(), replace: rerun });
+  await update(projectId, () => ({ ...results, blocks: refreshBlocks(a.blocks, results.work), brief: { ...a.brief, ...(results.report ? { summary: alignSummary(a.brief.summary, verdictSentence(results.report.verdict, results.report.score, results.report.reasons?.[0])) } : {}), researchedAt: prev.brief?.researchedAt ?? a.brief.researchedAt }, steers: [...base.steers, steer], ...reportExtras(w, results.report) }));
   await syncV4(projectId, idea);
 }
 

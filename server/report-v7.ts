@@ -11,8 +11,8 @@ import Anthropic from "@anthropic-ai/sdk";
 import { config } from "./config.js";
 import { Budget, BudgetError, EST, recordUsage, type CostLine } from "./cost.js";
 import { emptyResearch, fallbackReport, sampleBlocks, type BlockResearch, type BlockOut, type EvidenceOut, type JudgeOut, type ReportOut } from "./blocks-v7.js";
-import { VERDICT_WORD, type EconSummary, type IdeaReport } from "./v7.js";
-import { BLOCK_IDS, BLOCK_LIBRARY, BLOCK_LIMITS, capWords, factorScore, fallbackBlockPlans, hostOf, STEP_ESTIMATE, STEP_SOURCED, type AgentNote, type AnalystRole, type BlockId, type FindingKind, type Impact, type SourceRef } from "./v7.js";
+import { VERDICT_BANDS_V7, VERDICT_WORD, type EconSummary, type IdeaReport } from "./v7.js";
+import { BLOCK_IDS, BLOCK_LIBRARY, BLOCK_LIMITS, capWords, factorScore, fallbackBlockPlans, hostOf, isGapText, STEP_ESTIMATE, STEP_SOURCED, type AgentNote, type AnalystRole, type BlockId, type FindingKind, type Impact, type SourceRef } from "./v7.js";
 import { ACCESSED, REPORT_SAMPLES, v7SampleFor, type V7Sample } from "./v7-samples.js";
 
 const envModel = (name: string, dflt: string) => (process.env[name] && /^claude-[a-z0-9-]+$/.test(process.env[name]!) ? process.env[name]! : dflt);
@@ -68,7 +68,7 @@ export function labelResearch(research: readonly BlockResearch[]): { sections: A
 
 // ───────────────────────────────────────────────────────────── unit economics (computed in code)
 
-export interface EconItem { item: string; eur: number; source?: string }
+export interface EconItem { item: string; eur: number; source?: string; quote?: string }
 export interface EconInputs {
   unit: string;
   price_per_unit_gross_eur: number;
@@ -162,7 +162,7 @@ export function fillPlaceholders(md: string, vals: Partial<Record<string, string
 // ───────────────────────────────────────────────────────────── finalize (econ, placeholders, cites, sources)
 
 export interface WriterScale { reach: number; repeatable: number; margins: number; founder_free: number; digital: number; reach_label: string; why: string; would_scale: string[] }
-export interface WriterMeta { scores?: Partial<Record<BlockId, number>>; scalability?: Partial<WriterScale> }
+export interface WriterMeta { scores?: Partial<Record<BlockId, number>>; scalability?: Partial<WriterScale>; pivot?: { idea: string; why: string } | null }
 export interface Finalized {
   md: string;
   econ: { inputs: EconInputs; computed: EconComputed } | null;
@@ -185,10 +185,11 @@ export function finalizeReport(raw: string, sources: readonly ReportSource[]): F
   else {
     try {
       const j = JSON.parse(fence[1]!.trim()) as EconInputs & WriterMeta;
-      meta = { ...(j.scores && typeof j.scores === "object" ? { scores: j.scores } : {}), ...(j.scalability && typeof j.scalability === "object" ? { scalability: j.scalability } : {}) };
+      const pv = j.pivot && typeof j.pivot === "object" ? { idea: String(j.pivot.idea ?? "").trim(), why: String(j.pivot.why ?? "").trim() } : null;
+      meta = { ...(j.scores && typeof j.scores === "object" ? { scores: j.scores } : {}), ...(j.scalability && typeof j.scalability === "object" ? { scalability: j.scalability } : {}), ...(pv?.idea ? { pivot: pv } : {}) };
       if (!Number.isFinite(Number(j.price_per_unit_gross_eur)) || Number(j.price_per_unit_gross_eur) <= 0) econErr = "econ block has no price";
       else {
-        const { scores: _s, scalability: _c, ...inputs } = j;
+        const { scores: _s, scalability: _c, pivot: _p, ...inputs } = j;
         const c = computeEcon(inputs);
         econ = { inputs, computed: c.raw };
         vals = c.vals;
@@ -279,21 +280,44 @@ function tableOf(lines: readonly string[] = []): string[][] {
 }
 const prose = (lines: readonly string[] = []) => strip(lines.filter((l) => !/^\s*\|/.test(l)).join(" "));
 
-const SIGN = /^\s*(?:\[([+\-−–=])\]|\(([+\-−–=])\)|([+−=]))\s+/;
-const signOf = (s: string): -1 | 0 | 1 | null => {
+const SIGN = /^\s*(?:\[([+\-−–=?])\]|\(([+\-−–=?])\)|([+−=]))\s+/;
+/** (+) 1 · (−) −1 · (=) 0 · (?) "unknown" (the research did not find it) · untagged null. */
+const signOf = (s: string): -1 | 0 | 1 | "?" | null => {
   const m = SIGN.exec(s);
   const c = m ? (m[1] ?? m[2] ?? m[3])! : null;
-  return c == null ? null : c === "+" ? 1 : c === "=" ? 0 : -1;
+  return c == null ? null : c === "?" ? "?" : c === "+" ? 1 : c === "=" ? 0 : -1;
 };
 
-/** Gap bullets ("… was not found") count against the case, as the writer brief says, but only as an estimate. */
-export const isGapText = (t: string) => /\bnot found\b|\bno [^.]{0,80}\b(?:was|were) found\b|\bthe research found no\b|\bno source gives\b/i.test(t);
-/** Conservative sign for a bullet the writer left untagged: only a clear gap or a clear hedge reads as −; anything
- *  else stays context (null), so the score is never pushed by an arbitrary neutral fact. */
+/** Gap bullets ("… was not found") are unknowns: they lower confidence and become things to test, never a point
+ *  against the idea. (Re-exported from v7.ts, where the verdict rule uses the same test.) */
+export { isGapText };
+/** Conservative sign for a bullet the writer left untagged: only a clear hedge reads as −; a gap is an unknown
+ *  (null) and anything else stays context (null), so the score is never pushed by missing data or a neutral fact. */
 export function inferSign(t: string): -1 | null {
-  if (isGapText(t)) return -1;
-  if (/\b(unproven|unverified|unmeasured|uncertain|stricter|largest unknown)\b/i.test(t)) return -1;
+  if (isGapText(t)) return null;
+  if (/\b(unproven|unmeasured|stricter)\b/i.test(t)) return -1;
   return null;
+}
+
+/** Pure: a full sentence for display: [S#] labels and a trailing "…" removed, whole sentences up to `max` words; a
+ *  text cut mid-sentence ends at its last complete clause instead of a dangling fragment. */
+export function sentenceCap(text: string, max = 40): string {
+  const cut = /(?:…|\.{3})\s*$/.test(String(text ?? "").trim());
+  const s = noCites(strip(String(text ?? ""))).replace(/(?:…|\.{3})\s*$/, "").trim();
+  if (!s) return "";
+  const ss = sentencesOf(s);
+  const full = cut ? ss.slice(0, -1) : ss;
+  let out = "";
+  for (const x of full) {
+    const next = out ? `${out} ${x}` : x;
+    if (next.split(" ").length > max) break;
+    out = next;
+  }
+  if (out) return /[.!?]$/.test(out) ? out : `${out}.`;
+  const words = (cut ? ss[ss.length - 1]! : ss[0]!).split(" ").slice(0, max).join(" ");
+  const clause = Math.max(words.lastIndexOf(", "), words.lastIndexOf("; "), words.lastIndexOf(" – "), words.lastIndexOf(" — "));
+  const head = (clause > words.length * 0.35 ? words.slice(0, clause) : words).replace(/[,;:–—\s]+$/, "");
+  return /[.!?]$/.test(head) ? head : `${head}.`;
 }
 
 /** Impacts −2…+2: the writer's (+)/(−)/(=) signs (or a clear inferred one), then nudged so factorScore lands near the
@@ -356,20 +380,23 @@ export function parseReport(md: string, opts: { idea?: string; meta?: WriterMeta
     // an inferred sign (a gap, a hedge) only counts when the writer's own section score leans the same way
     const ws = opts.meta?.scores?.[id];
     const lean = ws == null || !Number.isFinite(Number(ws)) ? -1 : Number(ws) < 5 ? -1 : 0;
-    const raw = itemsOf(p.evidence).map((t) => ({ t, sign: signOf(t) ?? (inferSign(t) === lean ? lean : null) }));
-    const ev0 = raw.map(({ t, sign }) => {
+    const raw = itemsOf(p.evidence).map((t) => ({ t, tag: signOf(t) }));
+    const ev0 = raw.map(({ t, tag }) => {
       const body = t.replace(SIGN, "");
       const sid = citesIn(body).find((c) => known.has(c));
       const source = localOf(sid);
       const text = noCites(strip(body));
-      return { text, sign, source };
+      // missing data is an unknown, not evidence against: a (?) tag or an unsourced gap never moves the score
+      const unknown = tag === "?" || (!source && isGapText(text));
+      const sign: -1 | 0 | 1 | null = unknown ? 0 : typeof tag === "number" ? tag : inferSign(text) === lean ? lean : null;
+      return { text, sign, source, unknown };
     }).filter((x) => x.text.length > 3);
     const imps = impactsFor(ev0.map((e) => ({ sign: e.sign, sourced: !!e.source })), opts.meta?.scores?.[id]);
     const evidence: EvidenceOut[] = ev0.map((e, i) => {
       const imp = imps[i]!;
       const kind: FindingKind = e.source ? (/\d/.test(e.text) ? "number" : "fact") : imp < 0 ? "risk" : imp > 0 ? "strength" : "estimate";
       const display = e.source ? (/€\s?\d[\d.,]*(?:\s?[–-]\s?\d[\d.,]*)?|\d[\d.,]*\s?%/.exec(e.text)?.[0] ?? null) : null;
-      return { text: e.text, kind, impact: imp, source: e.source, basis: e.source ? null : isGapText(e.text) ? "Not found in the research" : "No source cited in the report", display, competitor: null };
+      return { text: e.text, kind: e.unknown && !e.source ? "estimate" : kind, impact: imp, source: e.source, basis: e.source ? null : e.unknown ? "Not found in the research" : "No source cited in the report", display, competitor: null };
     });
     const key_numbers = tableOf(p["key numbers"])
       .filter((r) => r.length >= 2 && r[1] && !/^(not found|—|-|n\/a)$/i.test(r[1]!.trim()))
@@ -419,7 +446,7 @@ export function parseReport(md: string, opts: { idea?: string; meta?: WriterMeta
     why: String(sc.why ?? ""), would_scale: Array.isArray(sc.would_scale) ? sc.would_scale.map(String).filter(Boolean).slice(0, 3) : [],
   };
   const next_steps = validate_first.length ? validate_first.map((v) => v.how) : BLOCK_IDS.flatMap((id) => blocks[id]?.actions.slice(0, 1) ?? []).slice(0, 3);
-  const judge: JudgeOut = { working_title: title, market: null, summary, verdict_line, validate_first, scalability, strengths: pick(1), weaknesses: pick(-1), next_steps, pivot: null, ...(reasons.length ? { reasons } : {}) };
+  const judge: JudgeOut = { working_title: title, market: null, summary, verdict_line, validate_first, scalability, strengths: pick(1), weaknesses: pick(-1), next_steps, pivot: opts.meta?.pivot?.idea ? { idea: noCites(capWords(opts.meta.pivot.idea.replace(/[.]+$/, ""), 14)).replace(/…$/, ""), why: sentenceCap(opts.meta.pivot.why, 40) } : null, ...(reasons.length ? { reasons } : {}) };
   return { ...judge, blocks, cites };
 }
 
@@ -435,7 +462,7 @@ Quality bar (applies to everything you write):
 
 const SECTION_SPEC = `Each of the four topic sections uses exactly this structure:
 **Takeaway:** one or two sentences.
-**Evidence:** 4-7 bullets, each a specific fact with its [S#]. Start each bullet with (+) if it helps the case, (−) if it hurts it, or (=) if it is context.
+**Evidence:** 4-7 bullets, each a specific fact with its [S#]. Start each bullet with (+) if it helps the case, (−) if sourced evidence hurts it, (=) if it is context, or (?) if it is something the research did not find (an unknown, not a point against). A requirement the founder can meet (a licence, insurance, a registration) is (=) context or a cost line, not (−).
 **Key numbers:** a small markdown table (figure | value | source or "estimate").
 **What it means for you:** 2-4 sentences.
 **Next actions:** 3 numbered concrete actions for the next two weeks.`;
@@ -444,15 +471,17 @@ const ECON_SPEC = `UNIT ECONOMICS (computed by code, do not do this arithmetic y
 In the Money section, after Key numbers, write a **Unit economics** subsection that explains the inputs and uses these placeholders exactly where the computed figures go: {{NET_REVENUE_PER_UNIT}}, {{VARIABLE_COST_PER_UNIT}}, {{CONTRIBUTION_PER_UNIT}}, {{CONTRIBUTION_MARGIN_PCT}}, {{FIXED_MONTHLY}}, {{BREAK_EVEN_UNITS}} (a bare number: write the unit word after it yourself, e.g. "{{BREAK_EVEN_UNITS}} subscribers"), {{STARTUP_CAPITAL}}. Use the same placeholders anywhere else you mention these figures (executive summary, verdict, validation). Never write those numbers yourself.
 At the very end of your answer, after everything else, output the inputs and your scores as one fenced block:
 \`\`\`econ
-{"unit": "one unit of sale, e.g. one subscriber-month or one booked hour", "price_per_unit_gross_eur": 0, "vat_rate": 0.0, "share_kept": 1.0, "variable_costs_per_unit": [{"item": "", "eur": 0, "source": "S# or estimate"}], "fixed_monthly_costs": [{"item": "", "eur": 0, "source": ""}], "startup_costs": [{"item": "", "eur": 0, "source": ""}], "scores": {"customers": 0, "competition": 0, "money": 0, "risks": 0}, "scalability": {"reach": 0, "repeatable": 0, "margins": 0, "founder_free": 0, "digital": 0, "reach_label": "Neighbourhood", "why": "", "would_scale": [""]}}
+{"unit": "one unit of sale, e.g. one subscriber-month or one booked hour", "price_per_unit_gross_eur": 0, "vat_rate": 0.0, "share_kept": 1.0, "variable_costs_per_unit": [{"item": "", "eur": 0, "source": "S# or estimate", "quote": ""}], "fixed_monthly_costs": [{"item": "", "eur": 0, "source": "", "quote": ""}], "startup_costs": [{"item": "", "eur": 0, "source": "", "quote": ""}], "scores": {"customers": 0, "competition": 0, "money": 0, "risks": 0}, "scalability": {"reach": 0, "repeatable": 0, "margins": 0, "founder_free": 0, "digital": 0, "reach_label": "Neighbourhood", "why": "", "would_scale": [""]}, "pivot": {"idea": "", "why": ""}}
 \`\`\`
 price_per_unit_gross_eur is what the customer pays per unit incl. VAT; vat_rate is the VAT rate included in it; share_kept is the fraction of the net price the business keeps (1.0 if it sells directly, the commission rate if it is a marketplace). Variable costs are per unit and borne by the business.
+Cost line sources: put an S# only when that research note literally states this figure as this cost; then copy the note's exact words that contain the figure into "quote". A price customers pay is not a cost (a walk price is not a walker's pay). Otherwise write "source": "estimate" and "quote": "".
 Never write 0 for a cost the research did not find: put your best realistic figure for this city and trade with "source": "estimate" (a €0 cost line makes the break-even meaningless and is shown as missing). Include rent, wages or owner pay, utilities, insurance and accounting in the fixed costs, and the main inputs, packaging and delivery or payment fees in the variable costs.
-scores: 1-10 per topic section, how strongly its evidence supports putting savings into the idea (5 = neutral). Missing evidence lowers a score only a little (to about 4); reserve scores of 3 or below for evidence that actually counts against the idea.
-scalability: each part 0-10 (a neighbourhood shop ~2-3, a single kiosk ~4, a city service ~5, software sold nationally 8+); reach_label is one of Neighbourhood, City, Country, Global; why is one sentence on why it stops where it stops; would_scale lists 1-3 concrete changes that raise it.`;
+scores: 1-10 per topic section, how strongly its sourced evidence supports putting savings into the idea (5 = neutral). Score the evidence, not the gaps: data the research did not find is uncertainty, so it keeps the score near 5 and goes into "3 things to validate first" instead. Scores of 3 or below need sourced evidence against the idea, such as a saturated market shown by named competitors, sourced costs above the price, or a legal ban.
+scalability: each part 0-10 (a neighbourhood shop ~2-3, a single kiosk ~4, a city service ~5, software sold nationally 8+); reach_label is one of Neighbourhood, City, Country, Global; why is one sentence on why it stops where it stops; would_scale lists 1-3 concrete changes that raise it.
+pivot: when any section score is 4 or below, the single best concrete change of this idea that the research supports (idea: at most 14 words; why: one complete sentence of at most 30 words naming the evidence, no [S#] labels); otherwise null.`;
 
 const FIXES = `Rules:
-- The executive summary's verdict line must match the Verdict exactly.
+- Do not state a verdict (GO, NO-GO, GO WITH CONDITIONS) in the executive summary: code adds the verdict sentence there.
 - Monthly = weekly × 4.33.
 - Each validation threshold must be in the same unit as the figure it tests.
 - Write € or % once, never "€17 euros" or "%%".
@@ -494,9 +523,9 @@ ${notes}
 Structure, in this order:
 # Founder report: <what and where, 4-8 words>
 ## Executive summary
-5-7 sentences: the opportunity, the strongest evidence for and against, the money picture with the break-even figure, and the verdict in one line.
+5-7 sentences: the opportunity, the strongest evidence for and against, and the money picture with the break-even figure. No verdict here.
 ## Verdict
-One of GO / GO WITH CONDITIONS / NO-GO in bold, then 3-5 bullets of reasons with [S#] where factual.
+One of GO / TEST FIRST / NO-GO in bold, then 3-5 bullets of reasons with [S#] where factual. NO-GO only when sourced evidence counts against the idea; when the case is open because data is missing, write TEST FIRST.
 ## 3 things to validate first
 Three numbered items. Each: the assumption in bold on the numbered line, then three sub-bullets: "*Why it matters:*" (what breaks if wrong), "*Test this month:*" (the cheapest test), "*Pass:*" (the pass/fail threshold).
 ${BLOCK_IDS.map((b) => `## ${BLOCK_LIBRARY[b].label}`).join("\n")}
@@ -510,17 +539,52 @@ ${FIXES}`;
 
 // ───────────────────────────────────────────────────────────── the call
 
-/** Pure: the shipped Markdown's Verdict head replaced by the computed verdict (the writer's own call is kept in
- *  brackets), so the Markdown, the badge and the verdict line agree. */
-export function alignVerdictMd(md: string, verdict: IdeaReport["verdict"], score: number): string {
+const VERDICT_TALK = /\bverdict\b|\bno[- ]go\b|\bgo with conditions\b|\bconditional go\b|\bGO\b|\bPIVOT\b/;
+const sentencesOf = (t: string) => t.split(/(?<=[.!?])\s+(?=[A-Z0-9(“"€*])/).map((x) => x.trim()).filter(Boolean);
+const flatText = (t: string) => noCites(strip(t)).toLowerCase().replace(/[^a-z0-9€]+/g, " ").trim();
+
+/** Pure: the one verdict sentence the executive summary carries, written in code from the computed verdict. */
+export function verdictSentence(verdict: IdeaReport["verdict"], score: number, lead?: string): string {
+  const ss = lead ? sentencesOf(noCites(strip(lead))) : [];
+  // a short first sentence ("Demand is unproven.") takes the next one with it, so the reason says why
+  const why = ss.length ? ss.slice(0, ss[0]!.split(" ").length < 7 ? 2 : 1).join(" ").replace(/[.!?]*$/, ".") : "";
+  // under the No-go band with nothing sourced against it: say why it is not a No-go
+  const open = verdict === "pivot" && score < VERDICT_BANDS_V7.pivot ? " No sourced evidence rules it out, so test the open points before you commit savings." : "";
+  return `Verdict: ${VERDICT_WORD[verdict]} (score ${score.toFixed(1)}/10).${why ? ` Main reason: ${why}` : ""}${open}`;
+}
+
+/** Pure: a summary with every sentence that states a verdict removed and the computed verdict sentence appended,
+ *  so it can never contradict the badge. Idempotent. */
+export function alignSummary(text: string, sentence: string): string {
+  const kept = sentencesOf(text.split(sentence).join(" ").trim()).filter((x) => !VERDICT_TALK.test(x.replace(/\[S\d+\]/g, "")) && !/^Main reason:/.test(x));
+  return [...kept, sentence].join(" ");
+}
+
+/** Pure: the shipped Markdown made to agree with the computed verdict: the Verdict head is the computed word and
+ *  score, the deciding reason (`lead`, matched by text) is the first bullet, and the executive summary's own verdict
+ *  sentences are replaced by the computed one. */
+export function alignVerdictMd(md: string, verdict: IdeaReport["verdict"], score: number, opts: { lead?: string } = {}): string {
   const word = VERDICT_WORD[verdict].toUpperCase();
-  return md.replace(/(^## Verdict[^\n]*\n+)([^\n]*)/m, (all, head: string, line: string) => {
+  let out = md.replace(/(^## Verdict[^\n]*\n+)([^\n]*)/m, (all, head: string, line: string) => {
     if (/^\s*[-*]\s/.test(line)) return `${head}**${word}** (score ${score.toFixed(1)}/10)\n\n${line}`;
-    const said = /\*\*([^*]+)\*\*/.exec(line)?.[1]?.trim();
-    const rest = line.replace(/\*\*[^*]+\*\*\s*[.:—–-]*\s*/, "").trim();
-    const same = said && said.toUpperCase().replace(/[.:]$/, "") === word;
-    return `${head}**${word}** (score ${score.toFixed(1)}/10${said && !same ? `; the writer's own call was ${said.replace(/[.:]$/, "")}` : ""})${rest ? ` ${rest}` : ""}`;
+    const rest = line.replace(/\*\*[^*]+\*\*\s*[.:—–-]*\s*/, "").replace(/^\(score[^)]*\)\s*/, "").trim();
+    return `${head}**${word}** (score ${score.toFixed(1)}/10)${rest ? ` ${rest}` : ""}`;
   });
+  if (opts.lead) {
+    const key = flatText(opts.lead).slice(0, 40);
+    out = out.replace(/(^## Verdict[^\n]*\n[\s\S]*?)(?=^## |(?![\s\S]))/m, (sec: string) => {
+      const lines = sec.split("\n");
+      const bullets = lines.map((l, i) => (/^\s*[-*]\s/.test(l) ? i : -1)).filter((i) => i >= 0);
+      const hit = bullets.find((i) => key && flatText(lines[i]!.replace(/^\s*[-*]\s*/, "")).startsWith(key));
+      if (hit == null || hit === bullets[0]) return sec;
+      const [b] = lines.splice(hit, 1);
+      lines.splice(bullets[0]!, 0, b!);
+      return lines.join("\n");
+    });
+  }
+  const sentence = verdictSentence(verdict, score, opts.lead);
+  return out.replace(/(^## Executive summary[^\n]*\n+)([\s\S]*?)(\n*)(?=^## |(?![\s\S]))/m, (all, head: string, body: string, gap: string) =>
+    `${head}${alignSummary(body.replace(/\s*\n\s*/g, " "), sentence)}${gap || "\n"}`);
 }
 
 /** Pure: confidence drops one level when the money inputs are missing and one more when gaps ("not found") are a
@@ -534,7 +598,19 @@ export function adjustConfidence(c: IdeaReport["confidence"], o: { econMissing: 
 }
 
 /** Pure: the computed unit economics for results.v7.econ, each cost line with its real source page (or null). */
-export function econSummary(f: Pick<Finalized, "econ">, sources: readonly ReportSource[], accessed = today()): EconSummary | null {
+/** Pure: true when the research notes contain the writer's quote, the quote states the line's figure, and the note
+ *  that holds it cites the same source. Anything else is shown as "check" next to the source. */
+export function quoteBacks(x: Pick<EconItem, "eur" | "quote">, sid: string, notes: string): boolean {
+  const norm = (t: string) => t.toLowerCase().replace(/\s*\[s\d+\]/g, "").replace(/\s+/g, " ").trim();
+  const q = norm(String(x.quote ?? ""));
+  const eur = Number(x.eur);
+  if (q.length < 6 || !Number.isFinite(eur) || eur <= 0) return false;
+  const nums = [...q.matchAll(/\d+(?:[.,]\d+)*/g)].map((m) => Number(m[0].replace(/[.,](?=\d{3}\b)/g, "").replace(",", ".")));
+  if (!nums.some((n) => Math.abs(n - eur) < 0.005)) return false;
+  return notes.split("\n").some((line) => norm(line).includes(q) && new RegExp(`\\[${sid}\\]`).test(line));
+}
+
+export function econSummary(f: Pick<Finalized, "econ">, sources: readonly ReportSource[], accessed = today(), notes?: string): EconSummary | null {
   if (!f.econ) return null;
   const { inputs: e, computed: c } = f.econ;
   const known = new Map(sources.map((s) => [s.id, s]));
@@ -546,7 +622,8 @@ export function econSummary(f: Pick<Finalized, "econ">, sources: readonly Report
   const line = (group: "variable" | "fixed" | "startup") => (x: EconItem) => {
     const sid = /\bS\d+\b/.exec(String(x.source ?? ""))?.[0];
     const s = sid ? known.get(sid) : undefined;
-    return { group, item: capWords(String(x.item ?? ""), 12), eur: r2(Number(x.eur) || 0), source: s ? { url: s.url, title: capWords(s.title || hostOf(s.url), 24), domain: hostOf(s.url), accessed } : null };
+    const check = s && notes != null && !quoteBacks(x, sid!, notes);
+    return { group, item: capWords(String(x.item ?? ""), 12), eur: r2(Number(x.eur) || 0), source: s ? { url: s.url, title: capWords(s.title || hostOf(s.url), 24), domain: hostOf(s.url), accessed } : null, ...(check ? { check: true } : {}) };
   };
   return {
     unit: e.unit,
@@ -573,6 +650,8 @@ export interface WrittenReport extends Finalized {
   sources?: ReportSource[];
   /** Date the sources were read (a replayed demo keeps the run's own date). */
   accessed?: string;
+  /** Live runs only: the research notes the writer saw, to check each cost line's quote against. */
+  notesText?: string;
 }
 
 /** "one subscriber-month" → "subscribers", "booked walk-hour" → "booked walk-hours" (the bubble already says "a month"). */
@@ -757,6 +836,7 @@ export async function writeReport(
   let sources: ReportSource[];
   let fromNotes = false;
   let accessed: string | undefined;
+  let notesText: string | undefined;
   if (config.mockAi) {
     const classic = v7SampleFor(idea);
     const sample = classic ? REPORT_SAMPLES[classic.key] : undefined;
@@ -774,6 +854,7 @@ export async function writeReport(
   } else {
     const labelled = labelResearch(research);
     sources = labelled.sources;
+    notesText = labelled.sections.map((x) => x.notes).join("\n");
     const prompt = writerPrompt(idea, labelled.sections, opts);
     try {
       raw = await callWriter(prompt, opts.budget, say).catch((e) => {
@@ -803,5 +884,5 @@ export async function writeReport(
     if (fin.econ.computed.missing.length) say("pricing", "found", "Break-even: n/a, some cost inputs are missing");
     else say("pricing", "found", be == null ? "Break-even: never at this price" : `Break-even: ${be.toLocaleString("en-US")} ${unitPlural(fin.econ.inputs.unit)} a month`);
   }
-  return { ...fin, out, sources, ...(accessed ? { accessed } : {}) };
+  return { ...fin, out, sources, ...(accessed ? { accessed } : {}), ...(notesText != null ? { notesText } : {}) };
 }
