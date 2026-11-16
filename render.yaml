@@ -1,32 +1,55 @@
 # Render Blueprint: one Node web service (API + built web app) backed by Turso (libSQL).
 # Secrets have sync: false, so Render asks for their values when the Blueprint is created; none live in git.
+# All env vars are visible to the build too, so VITE_* values are baked into the web app at build time:
+# change one of them, then "Save, rebuild, and deploy".
 services:
   - type: web
-    name: launchdesk
+    name: launchdesk-bch # "launchdesk" is taken on onrender.com
     runtime: node
-    plan: starter
+    plan: starter # Free sleeps after ~15 min idle; the escrow watcher runs inside this process and must keep running
     region: frankfurt
     buildCommand: npm ci --include=dev && npm run build
     startCommand: npm start
     healthCheckPath: /healthz
-    autoDeploy: true
+    autoDeploy: true # turn off in the Render dashboard before judging starts
     envVars:
       - key: NODE_ENV
         value: production
       - key: NODE_VERSION
         value: "22"
+      # Secrets and per-deploy values (Render asks for them)
       - key: ANTHROPIC_API_KEY
         sync: false
       - key: MERCHANT_ADDRESS
         sync: false
-      - key: DATABASE_URL
+      - key: DATABASE_URL # the Turso libsql:// URL. Never leave empty: Render's disk is wiped on every deploy
         sync: false
       - key: DATABASE_TOKEN
         sync: false
-      - key: PUBLIC_URL
+      - key: ESCROW_WIF # the escrow key; the server refuses to start with ESCROW=1 and no key
+        sync: false
+      - key: PUBLIC_URL # https://<service>.onrender.com, no trailing slash
         sync: false
       # Hackathon banner links (read at build time; a missing one is hidden)
       - key: VITE_SLIDES_URL
         sync: false
       - key: VITE_REPO_URL
         sync: false
+      # "Pay only if it delivers": the server flag and the build-time browser flag always go together
+      - key: ESCROW
+        value: "1"
+      - key: VITE_ESCROW
+        value: "1"
+      # Prices (US cents) and AI spend caps
+      - key: PRICE_VALIDATE_CENTS
+        value: "10"
+      - key: PRICE_BUILD_CENTS
+        value: "50"
+      - key: REPORT_CAP_USD
+        value: "0.08"
+      - key: KIT_SPEND_CAP_CENTS
+        value: "45"
+      # Spend brake: live payments pause for the rest of the UTC day once AI spend would pass this.
+      # Emergency switch: add PAUSE=1 (samples and examples keep working). MOCK_AI=1 switches to sample data.
+      - key: DAILY_CAP_USD
+        value: "3"

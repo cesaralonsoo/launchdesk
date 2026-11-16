@@ -10,7 +10,7 @@ import { Budget, recordUsage, type CostLine } from "../cost.js";
 import type { KitInput, MarketingResult } from "../kit-contract.js";
 import { templatePlan } from "../kit-templates.js";
 import { emptyMarketingResearch, researchMarketing, type MarketingResearch } from "./research.js";
-import { assumeWord, BANNED, cleanPlan, datedEvents, COPY_LIMITS, PLAN_SCHEMA_A, PLAN_SCHEMA_B, saneDays, type PlanSource, type PlanV2, type ReportGate } from "./schema.js";
+import { assumeWord, BANNED, cleanPlan, datedEvents, COPY_LIMITS, gateReason, PLAN_SCHEMA_A, PLAN_SCHEMA_B, saneDays, type PlanSource, type PlanV2, type ReportGate } from "./schema.js";
 
 const envModel = (name: string, dflt: string) => (process.env[name] && /^claude-[a-z0-9-]+$/.test(process.env[name]!) ? process.env[name]! : dflt);
 /** Writer model (both steps). MODEL_MARKETING=claude-opus-5-5 if the copy feels flat (about 2x the writer cost). */
@@ -30,8 +30,8 @@ const SYSTEM = "You are the launch lead for small, one-person businesses. You pl
 /** The report's decision: verdict, deciding reason and the checks to run before opening or spending money. */
 export function gateBlock(g: ReportGate): string {
   if (!g.verdict) return "";
-  const checks = (g.validateFirst ?? []).slice(0, 3).map((v, i) => `${i + 1}. ${v.what}. How: ${v.how} Pass if: ${v.passIf}`);
-  return `<report_verdict verdict="${g.verdict}">${g.mainReason ?? ""}</report_verdict>
+  const checks = (g.validateFirst ?? []).slice(0, 3).map((v, i) => `${i + 1}. ${v.what}. How: ${v.how}${v.passIf ? ` Pass if: ${v.passIf}` : ""}`);
+  return `<report_verdict verdict="${g.verdict === "pivot" ? "test first" : g.verdict}">${gateReason(g.mainReason)}</report_verdict>
 <validate_first>
 ${checks.join("\n") || "- none"}
 </validate_first>`;
@@ -41,8 +41,8 @@ const gateRule = (input: KitInput) => {
   const g = input.report as ReportGate;
   if (!g.verdict) return "";
   return g.verdict === "go"
-    ? `\n- The report says Go. Still run its validate_first checks in week 1, alongside the first sales actions.`
-    : `\n- The report says ${g.verdict === "no-go" ? "No-go" : "Pivot"}, and the founder chose to build anyway. The plan starts by checking the deciding reason and the validate_first items (for example: confirm the permit before opening day). Week 1 is checks and pre-orders only: no opening, no printing, no spending until each check passes. Put each check as an early day with its pass mark, and make the decision say: stop if a check fails.`;
+    ? `\n- The report says Go. Still run its validate_first checks in week 1, alongside the first sales actions, each day's task starting "Check 1:", "Check 2:"… (in Spanish "Comprobación 1:"…).`
+    : `\n- The report says ${g.verdict === "no-go" ? "No-go" : "Test first"}, and the founder chose to build anyway. The plan starts by checking the deciding reason and the validate_first items (for example: confirm the permit before opening day). Week 1 is checks and pre-orders only: no opening, no printing, no spending until each check passes. Put each check as an early day with its pass mark, and start that day's task with "Check 1:", "Check 2:" or "Check 3:" (in Spanish "Comprobación 1:"…), so the founder can match it to the report. Make the decision say: stop if a check fails.`;
 };
 
 export function contextBlock(input: KitInput, research: MarketingResearch, sources: readonly PlanSource[]): string {

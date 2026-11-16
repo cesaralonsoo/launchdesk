@@ -1,6 +1,6 @@
 // WP3 · "Your 30-day plan" view. Mounted by kit-screen.ts into [data-kit-slot="plan"]:
 //   mountPlanView(el, { plan, sources, brand, siteUrl, qrSvg })
-// Four tabs (The plan · Week by week · Texts to copy · Budget and numbers); printing shows everything.
+// Four tabs (The plan · Weeks · Texts · Budget); printing shows everything.
 // Every local fact shows its source as a small numbered link; unsourced claims only appear under "Check first".
 // Labels follow the plan's language (English or Spanish); the plan's own text is already in that language.
 import type { PlanSource, PlanV2 } from "../../../server/marketing/schema";
@@ -18,7 +18,7 @@ export interface PlanViewProps {
 const L = {
   en: {
     title: "Your 30-day plan", goal: "Goal for day 30", counted: "How you count it", why: "Why this number",
-    tabs: ["The plan", "Week by week", "Texts to copy", "Budget and numbers"],
+    tabs: ["The plan", "Weeks", "Texts", "Budget"],
     where: "Where your customers already are", channels: "What you'll do", notDoing: "What you won't do, and why",
     role: { awareness: "Get noticed", "first sales": "First sales", proof: "Build trust", repeat: "Bring them back" } as Record<string, string>,
     hWeek: "h a week", free: "Free", month: "a month", first: "First step",
@@ -30,10 +30,13 @@ const L = {
     countFrom: { "bch payments": "From your payments", website: "From your website", "by hand": "Count by hand" } as Record<string, string>,
     day30: "On day 30, decide", scale: "Go bigger if", adjust: "Adjust if", stop: "Stop if",
     sources: "Sources", print: "Print the plan", scan: "Scan to open the website", noBudget: "No money needed",
+    gate: { go: "The report said Go", pivot: "The report said Test first", "no-go": "The report said No-go" } as Record<string, string>,
+    gateSub: { go: "Run the report's checks in week 1, next to your first sales.", pivot: "So the plan starts with the report's checks. Do not open or spend money until they pass.", "no-go": "You chose to build anyway, so the plan starts with the report's checks. Stop if one fails." } as Record<string, string>,
+    gateWhy: "Main reason", gateCheck: "Check", gatePass: "Pass if", gateDay: "Day", gateSee: "See the week",
   },
   es: {
     title: "Tu plan de 30 días", goal: "Objetivo para el día 30", counted: "Cómo lo cuentas", why: "Por qué este número",
-    tabs: ["El plan", "Semana a semana", "Textos para copiar", "Presupuesto y números"],
+    tabs: ["El plan", "Semanas", "Textos", "Presupuesto"],
     where: "Dónde están ya tus clientes", channels: "Qué vas a hacer", notDoing: "Qué no vas a hacer, y por qué",
     role: { awareness: "Darte a conocer", "first sales": "Primeras ventas", proof: "Ganar confianza", repeat: "Que repitan" } as Record<string, string>,
     hWeek: "h a la semana", free: "Gratis", month: "al mes", first: "Primer paso",
@@ -45,6 +48,9 @@ const L = {
     countFrom: { "bch payments": "Con tus pagos", website: "En tu web", "by hand": "A mano" } as Record<string, string>,
     day30: "El día 30, decide", scale: "Crece si", adjust: "Ajusta si", stop: "Para si",
     sources: "Fuentes", print: "Imprimir el plan", scan: "Escanea para abrir la web", noBudget: "Sin gastar dinero",
+    gate: { go: "El informe dijo: adelante", pivot: "El informe dijo: probar primero", "no-go": "El informe dijo: no seguir así" } as Record<string, string>,
+    gateSub: { go: "Haz las comprobaciones del informe en la semana 1, junto a tus primeras ventas.", pivot: "Por eso el plan empieza por las comprobaciones del informe. No abras ni gastes dinero hasta que pasen.", "no-go": "Decidiste seguir igualmente, así que el plan empieza por las comprobaciones del informe. Para si una falla." } as Record<string, string>,
+    gateWhy: "Motivo principal", gateCheck: "Comprobación", gatePass: "Pasa si", gateDay: "Día", gateSee: "Ver la semana",
   },
 };
 type Labels = (typeof L)["en"];
@@ -86,7 +92,16 @@ export function planViewHtml(props: PlanViewProps): string {
   const names = COPY_NAMES(t);
   const copyBtn = (id: string) => `<button type="button" class="pv-copy" data-pv-copy="${id}"><span>${t.copy}</span></button>`;
 
-  // ── tab 1: the plan
+  // ── tab 1: the plan, starting from the report's decision (verdict, deciding reason, the checks and their days)
+  const g = p.gate && typeof p.gate === "object" && t.gate[p.gate.verdict] ? p.gate : null;
+  const gate = g
+    ? `<div class="pv-gate" data-v="${esc(g.verdict)}">
+      <p class="pv-gate-t">${esc(t.gate[g.verdict]!)}</p>
+      <p class="pv-gate-s">${esc(t.gateSub[g.verdict]!)}</p>
+      ${g.reason ? `<p class="pv-gate-r"><b>${t.gateWhy}:</b> ${esc(g.reason)}</p>` : ""}
+      ${(g.checks ?? []).length ? `<ol class="pv-gate-l">${(g.checks ?? []).map((c, i) => `<li><span class="pv-n">${i + 1}</span><span class="pv-gate-c"><b>${esc(c.what)}</b>${c.passIf ? `<span>${t.gatePass}: ${esc(c.passIf.replace(/^./, (x) => x.toLowerCase()))}</span>` : ""}</span>${c.day ? `<button type="button" class="pv-gate-d" data-pv-tab="1" aria-label="${t.gateSee}">${t.gateDay} ${c.day}</button>` : ""}</li>`).join("")}</ol>` : ""}
+    </div>`
+    : "";
   const goal = `<div class="pv-goal">
       <p class="pv-k">${t.goal}</p>
       <p class="pv-goal-n"><b>${p.goal.target}</b> <span>${esc(p.goal.unit)}</span></p>
@@ -111,7 +126,7 @@ export function planViewHtml(props: PlanViewProps): string {
   const local = p.local.length ? `<h3>${t.local}</h3><ul class="pv-facts">${p.local.map((f) => `<li>${esc(f.fact)}${cite(f.source)}</li>`).join("")}</ul>` : "";
   const events = p.events.length ? `<h3>${t.events}</h3><ul class="pv-events">${p.events.map((e) => `<li><span class="pv-date">${esc(e.date)}</span><span class="pv-nm"><b>${esc(e.name)}</b>${cite(e.source)}</span><span>${esc(e.where)}</span></li>`).join("")}</ul>` : "";
   const assumptions = p.assumptions.length ? `<div class="pv-check"><h3>${t.check}</h3><p>${t.checkSub}</p><ul>${p.assumptions.map((a) => `<li>${esc(a)}</li>`).join("")}</ul></div>` : "";
-  const tab1 = `${goal}${places}${channels}${rejected}${events}${local}${assumptions}`;
+  const tab1 = `${gate}${goal}${places}${channels}${rejected}${events}${local}${assumptions}`;
 
   // ── tab 2: week by week
   const tab2 = `<ol class="pv-weeks">${p.weeks
@@ -196,13 +211,17 @@ export function mountPlanView(root: HTMLElement, props: PlanViewProps): void {
   const pv = root.querySelector<HTMLElement>(".pv")!;
   const t = p.lang === "es" ? L.es : L.en;
   const showTab = (i: number) => {
-    pv.querySelectorAll<HTMLElement>("[data-pv-tab]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.pvTab === String(i))));
+    pv.querySelectorAll<HTMLElement>(".pv-tabs [data-pv-tab]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.pvTab === String(i))));
     pv.querySelectorAll<HTMLElement>("[data-pv-panel]").forEach((x) => (x.hidden = x.dataset.pvPanel !== String(i)));
   };
   pv.addEventListener("click", async (e) => {
     const target = e.target as HTMLElement;
     const tab = target.closest<HTMLElement>("[data-pv-tab]");
-    if (tab) return showTab(Number(tab.dataset.pvTab));
+    if (tab) {
+      showTab(Number(tab.dataset.pvTab));
+      if (!tab.closest(".pv-tabs")) pv.querySelector(".pv-tabs")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      return;
+    }
     const tier = target.closest<HTMLElement>("[data-pv-tier]");
     if (tier) {
       pv.querySelectorAll<HTMLElement>("[data-pv-tier]").forEach((b) => b.setAttribute("aria-selected", String(b === tier)));

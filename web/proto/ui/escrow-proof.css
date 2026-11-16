@@ -1,4 +1,4 @@
-/* "Proof on Bitcoin Cash" panel at the end of the live report (VITE_ESCROW=1). Same tokens as ui/v7.css. */
+/* "Proof on Bitcoin Cash" panel at the end of the live report (VITE_ESCROW=1) and of the finished example. Same tokens as ui/v7.css. */
 .ep-panel { margin: 32px 0 0; padding: 18px 20px; border: 1px solid var(--c-line); border-radius: 14px; background: var(--c-surface); display: grid; gap: 10px; font-size: 13.5px; color: var(--c-ink); min-width: 0; }
 .ep-panel h3 { margin: 0; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
 .ep-panel h3::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--c-positive); }
@@ -16,6 +16,15 @@
 .ep-how summary { cursor: pointer; font-weight: 600; color: var(--c-ink); }
 .ep-how ol { margin: 8px 0; padding-left: 20px; display: grid; gap: 6px; color: var(--c-muted); }
 .ep-how a { color: var(--c-ink); }
+.ep-panel p b { color: var(--c-ink); font-weight: 600; }
+.ep-steps { list-style: none; margin: 2px 0; padding: 0; display: grid; gap: 8px; }
+.ep-steps li { display: flex; gap: 10px; align-items: flex-start; min-width: 0; }
+.ep-steps li > span { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; background: color-mix(in srgb, var(--c-positive) 14%, transparent); color: var(--c-positive); }
+.ep-steps li > div { display: grid; gap: 2px; min-width: 0; }
+.ep-steps b { font-weight: 600; }
+.ep-steps a { color: var(--c-ink); text-decoration: none; }
+.ep-steps a code { padding: 2px 6px; border-radius: 6px; background: var(--c-fill); }
+.ep-out[data-ok="yes"] { font-weight: 600; }
 @media print {
   .ep-panel { break-inside: avoid; }
   .ep-check, .ep-out, .ep-how { display: none; }

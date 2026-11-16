@@ -783,7 +783,8 @@ export type FlowActionV7 =
   | { type: "steer"; note: string }
   | { type: "decide"; choice: "grow" | "pivot" | "stop" }
   | { type: "continue" }
-  | { type: "switch-project"; id: string }
+  /** `at`: where to open a finished real project (the read-only examples open on their report, not the kit). */
+  | { type: "switch-project"; id: string; at?: "report" | "live" }
   | { type: "new-project" };
 export interface FlowV7 {
   readonly state: FlowStateV7;

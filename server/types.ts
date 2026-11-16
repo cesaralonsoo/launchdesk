@@ -235,6 +235,9 @@ export type AppConfig = {
   bchUsd: number;
   hackathon: boolean; // L3 footer strip
   sampleIdeas: string[]; // F1: the 3 chip sentences (the only valid ideas in mock mode)
+  /** B1 spend brake (server/brake.ts): new paid runs are refused while true. */
+  paused?: boolean;
+  pausedReason?: string;
 };
 
 export type Stats = {

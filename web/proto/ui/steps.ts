@@ -14,6 +14,8 @@ import { badge, levelGlyph } from "./pixel";
 import { usd } from "./view";
 import { statusLine } from "../live/adapter";
 import { kitOfferHtml } from "./kit-screen";
+import { exampleButtonHtml, knownExamples, pausedHtml } from "./example";
+import { fullSentences, leadLine, plainText } from "../../../server/v7";
 
 /** WP4: the Launch kit price, in cents (server config.priceCents.build). */
 export const KIT_CENTS = 50;
@@ -21,7 +23,8 @@ export const KIT_CENTS = 50;
 export const KIND_LABEL: Record<FindingKind, string> = { fact: "Fact", number: "Number", competitor: "Competitor", risk: "Risk", strength: "Strength", estimate: "Estimate" };
 // display words; the enum stays "pivot": an uncertain idea is something to test, not a failure
 const VERDICT = { go: "Go", pivot: "Test first", "no-go": "No-go" } as const;
-const plain = (t: string) => t.replace(/\s*\[S\d+\]/g, "").replace(/\s+([.,;:])/g, "$1").trim();
+// Same clean-up as the report page (report-doc.ts): no [S9] labels, whole sentences only.
+const plain = (t: string) => fullSentences(plainText(t), 40);
 export const BUILD_DOING: Record<BuildDept, string> = { nova: "Choosing your name and colours", dex: "Drawing your logo", rae: "Writing your 30-day plan", pip: "Putting your website online" };
 const BUILD_ROLE: Record<BuildDept, string> = { nova: "Brand", dex: "Logo", rae: "30-day plan", pip: "Website" };
 
@@ -41,19 +44,20 @@ export function kindTag(f: Finding): string {
 }
 
 // ───────────────────────────── idea / end
-export function ideaHtml(placeholder: string, value: string, end = false): string {
+/** `paused`: the server takes no payments right now (GET /api/config paused:true): a calm notice instead of the price. */
+export function ideaHtml(placeholder: string, value: string, end = false, paused = false): string {
   return `
   <form class="v-idea" autocomplete="off">
     ${end ? `<div class="v-mark" data-st>${ldMark(40, undefined, true)}</div>` : ""}
     <h1 class="t-display" data-st>${end ? "Your turn." : "Turn your idea into a company."}</h1>
     ${end ? "" : `<p class="v-sub" data-st>An AI team researches it with real sources, scores it and builds it. Pay in BCH.</p>`}
-    <div class="idea-field" data-st>
+    ${paused ? `<div data-st>${pausedHtml()}</div>` : `<div class="idea-field" data-st>
       <textarea name="idea" rows="2" maxlength="280" placeholder="${esc(placeholder)}" aria-label="Your idea">${esc(value)}</textarea>
       <button class="btn btn-primary btn-go" type="submit"><span>Validate</span><span class="btn-price">${usd(10)}</span></button>
-    </div>
+    </div>`}
+    ${paused ? "" : `<div class="ex-slot" data-st>${exampleButtonHtml()}</div>`}
     <div class="v-alt" data-st>
       <button type="button" class="v-link" data-act="tour">${I.replay(14)}<span>Watch the tour · 2 min</span></button>
-      <button type="button" class="v-link" data-act="example"><span>See a finished example</span>${I.arrow(13)}</button>
     </div>
   </form>`;
 }
@@ -240,7 +244,7 @@ function scorePage(f: ProtoFlowV7, r: IdeaReport): string {
     </div>
     <div class="sc-v">
       <span class="vpill" data-v="${r.verdict}">${VERDICT[r.verdict]}${hero ? "" : " · provisional"}</span>
-      <p class="sc-line">${esc(r.verdictLine)}</p>
+      <p class="sc-line">${esc(r.reasons?.length ? leadLine(r.verdictLine) : r.verdictLine)}</p>
       <p class="sc-ev"><b class="num">${r.evidence.total}</b> findings · <b class="num">${r.evidence.sourced}</b> sourced · <span data-c="${r.confidence}">${r.confidence} confidence</span></p>
     </div>
   </div>
@@ -292,7 +296,7 @@ function nextPage(f: ProtoFlowV7, r: IdeaReport, read: boolean): string {
   const canGrow = r.scalability.cap >= 1 && r.verdict !== "no-go";
   return `
   <ol class="steps7" data-st>${r.nextSteps.map((s, i) => `<li><span class="n7">${i + 1}</span><span>${esc(s)}</span></li>`).join("")}</ol>
-  ${r.pivot ? `<div class="pivot" data-st><span class="eyebrow">${r.verdict === "pivot" ? "A change worth testing" : "Pivot to consider"}</span><p><b>${esc(plain(r.pivot.idea))}.</b> ${esc(plain(r.pivot.why))}</p></div>` : ""}
+  ${r.pivot ? `<div class="pivot" data-st><span class="eyebrow">${r.verdict === "pivot" ? "A change worth testing" : "Pivot to consider"}</span><p><b>${esc(plainText(r.pivot.idea).replace(/[.…]+$/, ""))}.</b> ${esc(plain(r.pivot.why))}</p></div>` : ""}
   ${read ? "" : `<div class="rp-acts" data-st>
     ${canGrow ? `<button class="btn btn-primary btn-grow" data-act="grow" type="button">${levelGlyph(1, 16)}<span>Grow into an office</span></button>` : `${r.verdict === "no-go" ? `<button class="btn btn-ghost" data-act="grow" type="button"><span>Build the launch kit anyway</span></button>` : ""}<button class="btn btn-primary" data-act="pivot" type="button"><span>Try another idea</span>${I.arrow(16)}</button>`}
     <button class="btn btn-ghost" data-act="steer" type="button"><span>Tell your team</span></button>
@@ -440,19 +444,26 @@ export function officesHtml(f: ProtoFlowV7): string {
     const cur = p.id === f.project.id;
     return `<li><button type="button" data-act="switch" data-id="${esc(p.id)}" aria-current="${cur}">
         <span class="of-g">${levelGlyph(l, 22)}</span>
-        <span class="of-t"><b>${esc(p.title)}${example ? `<span class="of-tag">Example</span>` : ""}</b><span>${esc(p.idea)}</span></span>
+        <span class="of-t"><b>${esc(p.title)}${example ? `<span class="of-tag">Sample data</span>` : ""}</b><span>${esc(p.idea)}</span></span>
         <span class="of-r"><b class="num">${r ? one(r.score) : "–"}</b><em>${r ? "score" : ""}${r && scoreDisplay(r) !== "hero" ? " · provisional" : ""}</em></span>
       </button></li>`;
   };
-  const mine = f.projects.filter((p) => !f.isSample(p.id));
+  const finished = knownExamples();
+  const mine = f.projects.filter((p) => !f.isSample(p.id) && !finished.some((x) => x.id === p.id));
   const samples = f.projects.filter((p) => f.isSample(p.id));
   return `
   <section class="offices">
     <header class="of-head"><h2 class="t-display">Your offices</h2><button class="btn btn-ghost btn-icon ov-x" data-act="close" type="button" aria-label="Close">${I.close(16)}</button></header>
     <p class="of-sub">One office per idea.</p>
     ${mine.length ? `<ul class="of-list">${mine.map((p) => row(p, false)).join("")}</ul>` : `<p class="of-sub">Your ideas will live here. Nothing yet.</p>`}
-    <p class="of-sec">Examples</p>
-    <ul class="of-list">${samples.map((p) => row(p, true)).join("")}</ul>
+    ${finished.length ? `<p class="of-sec">Finished examples (real runs)</p>
+    <ul class="of-list">${finished.map((x) => `<li><button type="button" data-act="switch" data-id="${esc(x.id)}" data-at="report">
+        <span class="of-g">${levelGlyph(3, 22)}</span>
+        <span class="of-t"><b>${esc(x.title)}<span class="of-tag">Example</span></b><span>${esc(x.run)} · ${esc(x.paid)}</span></span>
+        <span class="of-r"><b class="num">${x.verdict ? one(x.verdict.score) : "–"}</b><em>${x.verdict ? "score" : ""}</em></span>
+      </button></li>`).join("")}</ul>` : ""}
+    ${samples.length ? `<p class="of-sec">Practice runs (sample data, not real research)</p>
+    <ul class="of-list">${samples.map((p) => row(p, true)).join("")}</ul>` : ""}
     <button class="btn btn-primary of-new" data-act="new" type="button"><span>New idea</span>${I.arrow(16)}</button>
   </section>`;
 }

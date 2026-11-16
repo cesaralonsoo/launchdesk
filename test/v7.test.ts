@@ -458,5 +458,41 @@ assert.equal(data.brandSignOf(data.SAMPLE_V7)?.name, "Pausa");
   assert.ok(b.fits(0.05) && !b.fits(0.09));
 }
 
+{
+  // "3 things to validate first" with bold numbered headings ("**1. Title**") and un-indented "- Why / - Cheapest test /
+  // - Pass / - Fail" bullets (the dog-walking writer run): the bullets belong to their heading, not to new items.
+  const { REPORT_SAMPLES } = await import("../server/v7-samples.js");
+  const rv7 = await import("../server/report-v7.js");
+  const writer = (REPORT_SAMPLES.dog as { writer: string }).writer;
+  const sec = writer.split(/^## /m).find((x) => /^3 things to validate/i.test(x))!;
+  const checks = rv7.checksOf(sec.split("\n").slice(1));
+  assert.equal(checks.length, 3, "three checks, not the sub-bullets of the first one");
+  assert.match(checks[0]!.what, /^Madrid owners will pay about €18 per walk-hour and rebook$/);
+  assert.match(checks[0]!.how, /^interview 40 Madrid dog owners/);
+  assert.match(checks[0]!.pass_if, /^at least 12 of 40/);
+  assert.doesNotMatch(checks[0]!.pass_if, /fewer than 12/, "the Fail line is not part of the pass mark");
+  assert.match(checks[1]!.what, /walkers employees/);
+  assert.match(checks[2]!.what, /25% platform share/);
+  for (const c of checks) {
+    assert.doesNotMatch(`${c.what} ${c.how} ${c.pass_if}`, /\[S\d|Why it matters|Plan the cheapest test/);
+    assert.ok(c.pass_if, "each check has its own pass mark");
+  }
+  // the whole report goes through the same path
+  const parsed = rv7.parseReport(writer, { idea: REPORT_SAMPLES.dog!.idea });
+  assert.deepEqual(parsed.validate_first.map((v) => v.what), checks.map((c) => c.what));
+  // the classic layout (numbered items, indented sub-bullets) still parses the same way
+  const bakery = (REPORT_SAMPLES.bakery as { writer: string }).writer;
+  const bsec = bakery.split(/^## /m).find((x) => /^3 things to validate/i.test(x))!;
+  const bchecks = rv7.checksOf(bsec.split("\n").slice(1));
+  assert.equal(bchecks.length, 3);
+  assert.match(bchecks[0]!.what, /^Households will pay €25 a month/);
+  assert.match(bchecks[0]!.pass_if, /^at least 15 paid pre-subscriptions/);
+  assert.doesNotMatch(bchecks[1]!.how + bchecks[1]!.what, /\[S18/);
+  // research ids with qualifiers never reach a reader
+  assert.equal(v7.plainText("Price is €18 [S2, estimate] and €10 [S1; S3] here [S12; estimate]."), "Price is €18 and €10 here.");
+  assert.equal(v7.isPlaceholderPass("Set a numeric pass mark before you start"), true);
+  assert.equal(v7.isPlaceholderPass("at least 12 of 40 pay"), false);
+}
+
 void (null as unknown as IdeaReport);
 console.log("v7 invariants: all passed");

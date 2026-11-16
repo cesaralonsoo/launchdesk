@@ -7,6 +7,9 @@ import { normalizeFounderAddress } from "./address.js";
 import { broadcast, checkPaymentTx, findQrPayment, paymentTag, RpcError } from "./chain.js";
 import { config, merchantOnMainnet, STAGES } from "./config.js";
 import { allow, clientIp } from "./ratelimit.js";
+import { brakeGuard, brakeView, watchAiFetch } from "./brake.js";
+import { REPORT_CAP_USD } from "./cost.js";
+import { getTask } from "./offices/store.js";
 import { exec, getProject, getProjectRow, stageDone, type ProjectRow } from "./db.js";
 import * as jobs from "./jobs.js";
 import { isRunning, prepareStage, startStage } from "./jobs.js";
@@ -14,6 +17,7 @@ import { SteerError, startSteer } from "./jobs-v7.js";
 import { ANALYST_ROLES, type AnalystRole } from "./v7.js";
 import { bchUsdCached, bchUsdOrZero, centsToSats } from "./price.js";
 import { kitRoutes } from "./kit-routes.js";
+import { exampleRoutes } from "./examples.js";
 import { officeRoutes } from "./offices/routes.js";
 import { siteRowFor } from "./kit.js";
 import { siteRoutes } from "./site/routes.js";
@@ -21,6 +25,39 @@ import { getSite } from "./site/db.js";
 import { STAGE_DEPTS, type AppConfig, type CreatedProject, type Project, type Quote, type ShareLink, type SiteData, type Stage, type Stats, type WorkDept } from "./types.js";
 
 export const app = new Hono();
+// B1 spend brake: every AI error answer feeds it, and these guards run before escrow and before the routes, so a
+// paused server refuses new money before any wallet or chain step. Samples, test pays and paid orders pass.
+watchAiFetch();
+const stageHeadroom = (stage: unknown) => (stage === "build" ? config.kitSpendCapCents / 100 : REPORT_CAP_USD);
+app.post("/api/projects/:id/quote", brakeGuard({ headroom: (b) => stageHeadroom(b.stage) }));
+app.post(
+  "/api/projects/:id/pay",
+  brakeGuard({
+    headroom: (b) => stageHeadroom(b.stage),
+    // A sample run takes no money; a plain-QR check looks for money that was already sent, so it is recorded.
+    skip: async (c, b) => {
+      if (b.dev || (b as { watch?: boolean }).watch) return true;
+      const paid = await exec("SELECT 1 FROM payments WHERE project_id = ? AND stage = ?", [c.req.param("id") ?? "", String(b.stage ?? "")]);
+      return paid.rows.length > 0;
+    },
+  }),
+);
+// Free AI calls (no payment): CEO notes, 3 more logos, the offices' follow-up questions. In mock mode they cost nothing.
+const FREE_HEADROOM_USD = 0.05;
+for (const path of ["/api/projects/:id/steer", "/api/projects/:id/kit/logo/more", "/api/offices/bring"])
+  app.post(path, brakeGuard({ skip: () => config.mockAi, headroom: () => FREE_HEADROOM_USD }));
+const officeTestOk = (c: Context) => config.mockAi || localDev(c);
+app.post("/api/offices/:sid/tasks", brakeGuard({ skip: (c) => officeTestOk(c) }));
+app.post(
+  "/api/offices/:sid/tasks/:tid/pay",
+  brakeGuard({
+    skip: async (c, b) => {
+      if (b.test === true) return true;
+      const t = await getTask(c.req.param("sid") ?? "", c.req.param("tid") ?? "").catch(() => null);
+      return !!t && t.status !== "quoted"; // already paid: the route answers as usual
+    },
+  }),
+);
 installEscrow(app);
 const QUOTE_MS = 15 * 60_000;
 
@@ -102,6 +139,7 @@ app.get("/healthz", async (c) => {
 
 app.get("/api/config", async (c) =>
   c.json({
+    ...(await brakeView()),
     prices: config.priceCents,
     merchantAddress: config.merchantAddress,
     mockAi: config.mockAi,
@@ -115,10 +153,12 @@ app.get("/api/config", async (c) =>
 
 /** Real counts. Local dev payments (txid "dev-…") never count. */
 app.get("/api/stats", async (c) => {
-  const real = (stage: Stage) => `SELECT project_id FROM payments WHERE stage = '${stage}' AND txid NOT LIKE 'dev-%'`;
+  // Seeded examples (projects.example = 1) never count, whatever txid they carry.
+  const notExample = "project_id NOT IN (SELECT id FROM projects WHERE example = 1)";
+  const real = (stage: Stage) => `SELECT project_id FROM payments WHERE stage = '${stage}' AND txid NOT LIKE 'dev-%' AND ${notExample}`;
   const [ideas, payments, launched] = await Promise.all([
     exec(`SELECT COUNT(*) AS n FROM jobs WHERE dept = 'leo' AND status = 'done' AND project_id IN (${real("validate")})`),
-    exec("SELECT COUNT(*) AS n FROM payments WHERE txid NOT LIKE 'dev-%'"),
+    exec(`SELECT COUNT(*) AS n FROM payments WHERE txid NOT LIKE 'dev-%' AND ${notExample}`),
     exec(`SELECT COUNT(*) AS n FROM jobs WHERE dept = 'pip' AND status = 'done' AND project_id IN (${real("build")})`),
   ]);
   const n = (r: typeof ideas) => Number(r.rows[0]?.n ?? 0);
@@ -126,7 +166,7 @@ app.get("/api/stats", async (c) => {
   const median = async (stage: Stage): Promise<number | null> => {
     const r = await exec(
       `SELECT MAX(j.finished_at) - p.created_at AS ms FROM payments p JOIN jobs j ON j.project_id = p.project_id AND j.stage = p.stage
-       WHERE p.stage = ? AND p.txid NOT LIKE 'dev-%' GROUP BY p.project_id
+       WHERE p.stage = ? AND p.txid NOT LIKE 'dev-%' AND p.${notExample} GROUP BY p.project_id
        HAVING COUNT(*) = SUM(CASE WHEN j.status = 'done' THEN 1 ELSE 0 END)`,
       [stage],
     );
@@ -181,8 +221,13 @@ const bip21 = (sats: number) =>
   `${config.merchantAddress.startsWith("bitcoincash:") ? "" : "bitcoincash:"}${config.merchantAddress}?amount=${(sats / 1e8).toFixed(8).replace(/0+$/, "").replace(/\.$/, "")}`;
 
 app.post("/api/projects/:id/quote", async (c) => {
-  const { p, stage } = await loadForStage(c.req.param("id"), (await body<{ stage: Stage }>(c)).stage);
-  assertWritable(await getProjectRow(p.id));
+  const qb = await body<{ stage: Stage; refundAddress: string }>(c);
+  const { p, stage } = await loadForStage(c.req.param("id"), qb.stage);
+  const qrow = await getProjectRow(p.id);
+  assertWritable(qrow);
+  // An escrow quote binds a refund address to the order: only the owner may set or replace it (else anyone who knows
+  // the project id could swap the contract address under a payment the owner already signed).
+  assertOwner(c, qrow, !!qb.refundAddress);
   assertPayable();
   const now = Date.now();
   const q = await exec("SELECT sats, expires_at, bch_usd, qr_sats FROM quotes WHERE project_id = ? AND stage = ?", [p.id, stage]);
@@ -487,6 +532,7 @@ app.get("/api/r/:shareId", async (c) => {
 // Launch kit API and the new websites answer before the /api/* catch-all and before the old /s/:slug page.
 // A kit's website is read straight from the kit (brand, chosen logo, chosen design), so a choice shows at once;
 // the sites table is the second source. Unknown slugs fall through to the old page.
+app.route("/", exampleRoutes()); // finished examples: /api/examples, proof (server/examples.ts)
 app.route("/", kitRoutes());
 app.route("/", officeRoutes()); // "Your offices" (server/offices/routes.ts)
 app.route("/", siteRoutes({ load: async (slug) => (await siteRowFor(slug)) ?? (await getSite(slug)) }));

@@ -269,14 +269,17 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
       await live.next();
       if (!alive(tok)) return;
     }
+    // A real run after paying: the analysts are already at work on the server, so they arrive quickly and the work
+    // screen (their real progress lines) is up within ~3 s of paying. The guided tour keeps its slower pace.
+    const quick = !!live && !demo;
     for (let i = hired; i < roster.length; i++) {
-      await wait(i === 0 ? 500 : T.hireEvery);
+      await wait(i === 0 ? (quick ? 250 : 500) : quick ? 380 : T.hireEvery);
       if (!alive(tok)) return;
       hired = i + 1;
       world.setActorState(roster[i]!.id, "arriving");
       ping();
     }
-    await wait(T.hireTail);
+    await wait(quick ? 500 : T.hireTail);
     if (!alive(tok) || demo) return;
     enter({ step: "evidence" }, true);
   }
@@ -602,10 +605,10 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
       const s = state.step;
       if (a?.type === "switch-project") {
         const lp = mine.find((x) => x.id === a.id);
-        if (lp && !demo) return attachLive(lp, "open");
+        if (lp && !demo) return attachLive(lp, "open", a.at);
         const p = PROJECTS_V7.find((x) => x.id === a.id);
         // a real project this browser has not saved (a /p/:id link): open it from the server
-        if (!p) return demo || !/^[A-Za-z0-9_-]{4,40}$/.test(a.id) ? undefined : attachLive(shellProject(a.id, "", "Your idea"), "open");
+        if (!p) return demo || !/^[A-Za-z0-9_-]{4,40}$/.test(a.id) ? undefined : attachLive(shellProject(a.id, "", "Your idea"), "open", a.at);
         detachLive();
         cancel();
         useProject(p);
@@ -635,7 +638,8 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
           ping();
           if (!demo) {
             const tok = run;
-            void wait(900).then(() => alive(tok) && enter({ step: "hire" }, true));
+            // a real run: the team (and its first progress lines) shows up at once, the pay card already said "paid"
+            void wait(live ? 400 : 900).then(() => alive(tok) && enter({ step: "hire" }, true));
           }
           return;
         case "hire":
@@ -737,7 +741,7 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
     if (!paid.build) return pay2Open(r.id) ? { step: "pay2" } : (levels[r.id] ?? 0) >= 1 ? { step: "floor" } : { step: "report", page: "score" };
     return { step: "live" }; // the kit screen shows each part as it lands
   }
-  function attachLive(seed: ProjectV7, mode: "new" | "open") {
+  function attachLive(seed: ProjectV7, mode: "new" | "open", at?: "report" | "live") {
     detachLive();
     cancel();
     const r = createLiveRun(seed.id, seed);
@@ -767,7 +771,8 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
         return enter({ step: "idea" }, false);
       }
       useProject(r.project);
-      const home = liveHome(r);
+      // a finished project asked to open on its report (the examples): the report first, the kit one tap away
+      const home: Partial<FlowStateV7> & { step: FlowStepV7 } = at === "report" && r.phase1Done ? { step: "report", page: "score" } : liveHome(r);
       paintProject(worldLevelFor(home.step));
       enter(home, home.step === "evidence" || home.step === "hire" || home.step === "build");
     })();

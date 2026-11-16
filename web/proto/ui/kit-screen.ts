@@ -19,6 +19,8 @@ export type KitScreenOpts = {
   pollMs?: number;
   /** Show this payload instead of calling the server (mock / example / tests). */
   mock?: KitPayload;
+  /** A read-only finished example: nothing can be chosen or drawn, and nothing is posted (the server would answer 403). */
+  readOnly?: boolean;
   /** Opens "Your offices"; gets the brand name once it is known. */
   onOffices?: (name?: string) => void;
 };
@@ -151,17 +153,17 @@ function planBody(k: Kit | null): string {
     return st?.marketing === "error" ? oops("Your plan hit a snag. Please reload in a minute.") : waiting("Writing your 30-day plan");
   return `<div data-kit-slot="plan"></div>`;
 }
-const headHtml = (k: Kit | null, ready: boolean, url = "") => {
+const headHtml = (k: Kit | null, ready: boolean, url = "", ro = false) => {
   const L = chosenLogo(k);
   const live = !!k && k.status.site === "done" && !!k.site && !!url;
   return `
       ${L && k ? `<span class="kh-mark" style="background:${esc(k.brand.palette.bg)}"><svg viewBox="0 0 64 64" width="44" height="44" aria-hidden="true">${L.svg}</svg></span>` : ""}
       <div class="kh-t">
-        <span class="eyebrow">${ready ? "Ready" : "Making your launch kit"}</span>
+        <span class="eyebrow">${ro ? "Finished example · launch kit" : ready ? "Ready" : "Making your launch kit"}</span>
         <h2 class="t-display kh-name"${k ? ` style="font-family:'${esc(k.brand.fonts.display)}',var(--f-display, serif)"` : ""}>${k ? esc(k.brand.name) : "Your launch kit"}</h2>
-        ${live ? `<p class="kh-live"><span class="ks-dot" aria-hidden="true"></span>Your business is online</p>` : k?.brand.tagline ? `<p class="kit-tag">${esc(k.brand.tagline)}</p>` : ""}
+        ${live ? `<p class="kh-live"><span class="ks-dot" aria-hidden="true"></span>${ro ? "This example's site is online" : "Your business is online"}</p>` : k?.brand.tagline ? `<p class="kit-tag">${esc(k.brand.tagline)}</p>` : ""}
       </div>
-      ${live ? `<a class="btn btn-primary kh-open" href="${esc(url)}" target="_blank" rel="noopener noreferrer"><span>Open your website</span>${I.ext(14)}</a>` : ""}`;
+      ${live ? `<a class="btn btn-primary kh-open" href="${esc(url)}" target="_blank" rel="noopener noreferrer"><span>${ro ? "Open the website" : "Open your website"}</span>${I.ext(14)}</a>` : ""}`;
 };
 
 export function kitScreenHtml(data: KitPayload): string {
@@ -220,6 +222,19 @@ export function mountKitScreen(root: HTMLElement, o: KitScreenOpts): { stop(): v
 
   // The skeleton is built once; a poll only replaces a panel whose content changed (choices and tabs survive).
   const node = el(kitScreenHtml(data));
+  if (o.readOnly) {
+    node.classList.add("kit-ro");
+    const hint = node.querySelector<HTMLElement>(".kp-logo .kp-hint");
+    if (hint) hint.textContent = "The logo this founder chose.";
+  }
+  // design thumbnails: the 375 px preview is scaled to the card's real width (no empty strip beside it)
+  const fitThumbs = () =>
+    node.querySelectorAll<HTMLElement>(".ks-thumb").forEach((t) => {
+      const w = t.clientWidth;
+      if (w > 0) t.querySelector<HTMLElement>("iframe")?.style.setProperty("--ks-scale", String(Math.round((w / 375) * 1000) / 1000));
+    });
+  const thumbRo = typeof ResizeObserver === "function" ? new ResizeObserver(() => fitThumbs()) : null;
+  thumbRo?.observe(node);
   root.replaceChildren(node);
   const body = (n: "logo" | "site" | "plan") => node.querySelector<HTMLElement>(`[data-kit-body="${n}"]`)!;
   const sig = { head: "", logo: "", site: "", plan: "" };
@@ -233,7 +248,7 @@ export function mountKitScreen(root: HTMLElement, o: KitScreenOpts): { stop(): v
     const head = `${ready}|${k?.brand.name ?? ""}|${k?.brand.tagline ?? ""}|${chosenLogo(k)?.id ?? ""}|${k?.status.site}|${url}`;
     if (head !== sig.head) {
       sig.head = head;
-      node.querySelector<HTMLElement>("[data-kit-head]")!.innerHTML = headHtml(k, ready, url);
+      node.querySelector<HTMLElement>("[data-kit-head]")!.innerHTML = headHtml(k, ready, url, !!o.readOnly);
     }
   };
   // One panel failing to draw must never stop the others or the polling.
@@ -268,7 +283,7 @@ export function mountKitScreen(root: HTMLElement, o: KitScreenOpts): { stop(): v
         const mountPicker = mod?.mountLogoPicker as PickerMount | undefined;
         if (slot && k?.logo && mountPicker && !stopped) {
           slot.innerHTML = "";
-          picker = mountPicker(slot, { brand: k.brand, result: k.logo, onChoose: (id) => choose(id), onMore: o.mock ? undefined : more });
+          picker = mountPicker(slot, { brand: k.brand, result: k.logo, onChoose: o.readOnly ? undefined : (id) => choose(id), onMore: o.mock || o.readOnly ? undefined : more });
         }
       }
     }
@@ -281,6 +296,7 @@ export function mountKitScreen(root: HTMLElement, o: KitScreenOpts): { stop(): v
     if (site !== sig.site) {
       sig.site = site;
       body("site").innerHTML = siteBody(k, url);
+      fitThumbs();
       node.querySelector("[data-kit-site-title]")!.textContent = k?.status.site === "done" && k.site ? "Your website is live" : "Your website";
     }
   };
@@ -351,6 +367,7 @@ export function mountKitScreen(root: HTMLElement, o: KitScreenOpts): { stop(): v
   root.addEventListener("click", (e) => {
     const t = e.target as HTMLElement;
     const lg = t.closest<HTMLElement>("[data-kit-logo]");
+    if (lg && o.readOnly) return;
     if (lg) {
       node.querySelectorAll<HTMLElement>("[data-kit-logo]").forEach((b) => {
         b.classList.toggle("on", b === lg);
@@ -359,6 +376,7 @@ export function mountKitScreen(root: HTMLElement, o: KitScreenOpts): { stop(): v
       return void choose(lg.dataset.kitLogo!).catch(() => undefined);
     }
     const tp = t.closest<HTMLElement>("[data-kit-tpl]");
+    if (tp && o.readOnly) return;
     if (tp) {
       const id = tp.dataset.kitTpl as SiteTemplate;
       if (data.kit?.site) data.kit.site.template = id;
@@ -385,6 +403,7 @@ export function mountKitScreen(root: HTMLElement, o: KitScreenOpts): { stop(): v
   return {
     stop() {
       stopped = true;
+      thumbRo?.disconnect();
       if (timer) clearTimeout(timer);
       picker?.destroy();
     },

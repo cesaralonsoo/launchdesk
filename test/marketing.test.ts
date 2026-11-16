@@ -200,12 +200,54 @@ await test("a No-go plan starts with the report's validate-first checks; Go is u
   assert.match(first.action, /^Before you open or spend money: Ask the city hall/);
   assert.match(first.action, /Go ahead only if: a written procedure exists\./);
   assert.ok(out.weeks[0]!.days.slice(1).every((d) => d.day > 1 && d.day <= 7));
-  assert.deepEqual(withValidateFirst(plan, { ...gate, verdict: "go" }), plan);
+  const go = withValidateFirst(plan, { ...gate, verdict: "go" });
+  assert.deepEqual(go.weeks, plan.weeks, "Go: the writer's days are unchanged");
+  assert.equal(go.gate?.verdict, "go", "Go: the checks are still shown first");
+  assert.equal(out.gate?.verdict, "no-go");
+  assert.equal(out.gate?.reason, "The permit route is unknown.");
+  assert.deepEqual(out.gate?.checks, [{ what: "A kiosk permit can be granted at the metro exit", passIf: "A written procedure exists.", day: 1 }]);
   assert.deepEqual(withValidateFirst(out, gate).weeks[0]!.days.length, out.weeks[0]!.days.length, "not added twice");
   const f = loadFixture("bakery-es")!;
   const a = promptA({ ...f.input, report: { ...f.input.report, ...gate } } as never, { notes: [], sources: [], queries: [], ok: false }, []);
   assert.match(a, /<report_verdict verdict="no-go">The permit route is unknown\.<\/report_verdict>/);
   assert.match(a, /confirm the permit before opening day/);
+  assert.match(a, /"Check 1:"/, "the writer is asked to number the checks so they can be matched");
+  // the verdict word and in-words sources never reach the writer as part of the reason
+  const b = promptA({ ...f.input, report: { ...f.input.report, ...gate, verdict: "pivot", mainReason: "Test first: €3 sits below Syra Coffee's €3.90 flat white (barcelonatourism.org, August 2026; no source id)." } } as never, { notes: [], sources: [], queries: [], ok: false }, []);
+  assert.match(b, /<report_verdict verdict="test first">€3 sits below Syra Coffee's €3\.90 flat white\.<\/report_verdict>/);
+});
+
+// Real run, 16 Nov (e2e project xkUVNypbKZ, yoga for seniors in Ruzafa, Test first): the writer's Spanish plan already
+// ran the report's checks ("Comprobación 2" on day 2, "3" on day 3, "1" on day 14), but the old key-word match only
+// compared English check text with Spanish days, so it added three days mixing English into the Spanish plan.
+await test("real yoga plan: numbered checks count as covered; a check in another language is referred to by number", () => {
+  const E2E_DAYS = [
+    { day: 1, time: "", channel: "Boca a boca entre asistentes", action: "Llama al 963 812 337 y pide hablar con la dirección. Propón una clase de prueba en una sala del centro o de una asociación cercana, y pregunta si hace falta permiso por escrito para dar yoga allí.", copy: null, hours: 1 },
+    { day: 2, time: "", channel: "Boca a boca entre asistentes", action: "Comprobación 2: pide precio a dos profesoras certificadas para una clase suave de 60 minutos. Se pasa si alguna cobra 45 € o menos por clase.", copy: null, hours: 1 },
+    { day: 3, time: "", channel: "Visita al centro de mayores de Ruzafa", action: "Comprobación 3: consigue por escrito que se puede dar yoga en la sala prestada, ya sea la del centro o la de una asociación. Sin ese papel no se abre nada.", copy: null, hours: 1 },
+  ];
+  const W2 = [{ day: 14, time: "", channel: "Clases de prueba en sala prestada", action: "Mira cuántas plazas hay pagadas. Comprobación 1: se pasa con 15 plazas pagadas en 14 días desde la apertura. Si no se llega, para y no gastes más.", copy: null, hours: 1 }];
+  const VALIDATE_FIRST = [
+    { what: "Adults aged 65+ in Ruzafa and nearby will pay 12 € for a small-group gentle yoga seat, at least once a week", how: "Run a free or 12 € trial class in a borrowed room, such as a community centre or senior association space near Ruzafa, and sell pre-paid seats for four weekly classes.", passIf: "At least 15 pre-paid seats sold within 14 days of the offer." },
+    { what: "Instructor cost per class stays low enough for each seat to contribute", how: "Get quotes from at least two certified yoga teachers for a 60-minute gentle class, and record attendance at each pilot class.", passIf: "Instructor pay of 45 € or less per 60-minute class, and an average of at least 5 paid seats per class across four pilot classes." },
+    { what: "A studio of the size needed can be rented near Ruzafa at a cost that the seat volume can carry", how: "Request quotes for three to five premises of about 60 m² in and around Ruzafa, and confirm the licence status and the acoustic zone rules with the city.", passIf: "A monthly rent of 1,300 € or less for a space that holds at least 6 mats, and written confirmation that a yoga use is permitted there." },
+  ];
+  const base = structuredClone(loadFixture("bakery-es")!.result.plan as PlanV2);
+  const plan: PlanV2 = { ...base, lang: "es", weeks: [{ ...base.weeks[0]!, days: E2E_DAYS }, { ...base.weeks[1]!, days: W2 }, ...base.weeks.slice(2)] };
+  const gate = { verdict: "pivot" as const, mainReason: "Test first: The citywide senior population is large, but no neighbourhood-level 65+ count for Ruzafa was found, so the core customer is unproven in the target area.", validateFirst: VALIDATE_FIRST };
+  const out = withValidateFirst(plan, gate);
+  assert.deepEqual(out.weeks, plan.weeks, "nothing added: every check is already in the plan");
+  assert.deepEqual(out.gate?.checks.map((c) => c.day), [14, 2, 3]);
+  assert.equal(out.gate?.reason, "The citywide senior population is large, but no neighbourhood-level 65+ count for Ruzafa was found, so the core customer is unproven in the target area.");
+  // without the numbers, the checks are added in Spanish only (no English sentence inside the Spanish plan)
+  const bare: PlanV2 = { ...plan, weeks: plan.weeks.map((w) => ({ ...w, days: w.days.map((d) => ({ ...d, action: d.action.replace(/Comprobación \d: /, "") })) })) };
+  const o2 = withValidateFirst(bare, gate);
+  const added = o2.weeks[0]!.days.filter((d) => d.channel === "Comprobar primero");
+  assert.equal(added.length, 3);
+  assert.match(added[0]!.action, /^Antes de abrir o gastar dinero: haz la comprobación 1 del informe/);
+  for (const d of added) assert.doesNotMatch(d.action, /\b(the|and|with|Run|Get|Request)\b/, d.action);
+  assert.deepEqual(o2.gate?.checks.map((c) => c.day), [1, 2, 3]);
+  assert.ok(o2.weeks[0]!.days.filter((d) => d.channel !== "Comprobar primero").every((d) => d.day > 3), "the writer's days move after the checks");
 });
 
 console.log(`marketing: ${n} tests passed`);

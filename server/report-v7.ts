@@ -12,7 +12,7 @@ import { config } from "./config.js";
 import { Budget, BudgetError, EST, recordUsage, type CostLine } from "./cost.js";
 import { emptyResearch, fallbackReport, sampleBlocks, type BlockResearch, type BlockOut, type EvidenceOut, type JudgeOut, type ReportOut } from "./blocks-v7.js";
 import { VERDICT_BANDS_V7, VERDICT_WORD, type EconSummary, type IdeaReport } from "./v7.js";
-import { BLOCK_IDS, BLOCK_LIBRARY, BLOCK_LIMITS, capWords, factorScore, fallbackBlockPlans, hostOf, isGapText, STEP_ESTIMATE, STEP_SOURCED, type AgentNote, type AnalystRole, type BlockId, type FindingKind, type Impact, type SourceRef } from "./v7.js";
+import { BLOCK_IDS, BLOCK_LIBRARY, BLOCK_LIMITS, capWords, fullSentences, noInlineCites, unitPlural as unitPluralV7, factorScore, fallbackBlockPlans, hostOf, isGapText, STEP_ESTIMATE, STEP_SOURCED, type AgentNote, type AnalystRole, type BlockId, type FindingKind, type Impact, type SourceRef } from "./v7.js";
 import { ACCESSED, REPORT_SAMPLES, v7SampleFor, type V7Sample } from "./v7-samples.js";
 
 const envModel = (name: string, dflt: string) => (process.env[name] && /^claude-[a-z0-9-]+$/.test(process.env[name]!) ? process.env[name]! : dflt);
@@ -151,10 +151,12 @@ ${(e.startup_costs ?? []).map(row).join("\n")}`;
 /** Pure: puts the computed figures where the writer left placeholders; unknown or uncomputable ones become "n/a". */
 export function fillPlaceholders(md: string, vals: Partial<Record<string, string>> | null): { md: string; missing: number } {
   let missing = 0;
-  const out = md.replace(/\{\{\s*([A-Z_]+)\s*\}\}/g, (_all, k: string) => {
+  // "€{{NET_REVENUE_PER_UNIT}}" → "€2.73", never "€€2.73": the computed value already carries its € sign
+  const out = md.replace(/(€\s?)?\{\{\s*([A-Z_]+)\s*\}\}/g, (_all, sign: string | undefined, k: string) => {
     const v = vals?.[k];
     if (v == null) missing++;
-    return v ?? "n/a";
+    const val = v ?? "n/a";
+    return sign && !/^€/.test(val) && /^\d/.test(val) ? `${sign}${val}` : val;
   });
   return { md: out, missing };
 }
@@ -223,7 +225,9 @@ export function finalizeReport(raw: string, sources: readonly ReportSource[]): F
 // ───────────────────────────────────────────────────────────── Markdown → blocks (pure)
 
 const strip = (s: string) => s.replace(/\*\*|__/g, "").replace(/(^|\s)\*([^*\n]+)\*/g, "$1$2").replace(/\s+/g, " ").trim();
-const noCites = (s: string) => s.replace(/\s*\[S\d+\]/g, "").replace(/\s+([.,;:])/g, "$1").replace(/\s+/g, " ").trim();
+/** Bracketed research ids, also with qualifiers: [S2], [S2, estimate], [S2, S3], [S12; estimate], [S18 covers …]. */
+export const CITE_RE = /\s*\[S\d+(?:\s*[,;]\s*(?:S\d+|estimate))*(?:\s+[^\]\n]{0,160})?\]/gi;
+const noCites = (s: string) => s.replace(CITE_RE, "").replace(/\s+([.,;:])/g, "$1").replace(/\s+/g, " ").trim();
 const citesIn = (s: string) => [...s.matchAll(/\[(S\d+)\]/g)].map((m) => m[1]!);
 
 /** Splits a document into `## ` sections: heading → body. */
@@ -265,6 +269,49 @@ function itemsOf(lines: readonly string[] = []): string[] {
   }
   return items;
 }
+/** A heading-style check: "**1. Title**", "1. **Title**" at column 0, or "### 1. Title". */
+const CHECK_HEAD = /^(?:#{3,4}\s*)?(?:\*\*|__)?\s*\d{1,2}[.)]\s+(.*)$/;
+const PASS_FALLBACK = "";
+/** "3 things to validate first" → what / how / pass_if. Handles both layouts the writer uses:
+ *  a numbered list with indented "- Test… / - Pass…" bullets, and bold numbered headings ("**1. Title**") followed
+ *  by un-indented bullets. In the second layout the bullets belong to the heading above them, not to new items. */
+export function checksOf(lines: readonly string[]): Array<{ what: string; how: string; pass_if: string }> {
+  const groups: Array<{ head: string; subs: string[] }> = [];
+  const headed = lines.some((l) => /^(?:#{3,4}\s*\d|\*\*\s*\d{1,2}[.)]\s)/.test(l));
+  if (headed) {
+    for (const l of lines) {
+      const h = /^\S/.test(l) && !/^[-*•]\s/.test(l) ? CHECK_HEAD.exec(l) : null;
+      if (h) groups.push({ head: h[1]!, subs: [] });
+      else if (groups.length && l.trim()) {
+        const b = /^\s*(?:[-*•]|\d{1,2}[.)])\s+(.*)$/.exec(l);
+        if (b) groups[groups.length - 1]!.subs.push(b[1]!);
+        else if (groups[groups.length - 1]!.subs.length) groups[groups.length - 1]!.subs[groups[groups.length - 1]!.subs.length - 1] += ` ${l.trim()}`;
+      }
+    }
+  } else {
+    for (const it of itemsOf(lines)) { const [head, ...subs] = it.split("\n"); groups.push({ head: head!, subs }); }
+  }
+  return groups.map(({ head, subs }) => {
+    let how = "", pass = "";
+    for (const sub of subs) {
+      const m = /^\s*(?:\*\*|\*|_)?([^:*_]{1,60}?)(?:\*\*|\*|_)?\s*:\s*(?:\*\*|\*|_)?\s*(.*)$/.exec(sub);
+      if (!m) continue;
+      const label = m[1]!.toLowerCase();
+      const body = m[2]!.split(/\s*(?:\*\*|\*|_)?\bfail(?:s|ed)?\b(?:\*\*|\*|_)?\s*:/i)[0]!;
+      if (!how && /\btest\b|how to|cheapest/.test(label)) how = body;
+      else if (!pass && /^pass/.test(label)) pass = body;
+    }
+    const flat = [head, ...subs].join(" ");
+    if (!how) how = /test[^:*]*:\**\s*(.*?)(?=(?:\s[-*]\s)?\s*\*?\s*pass\b[^:*]*:|$)/i.exec(flat)?.[1] ?? "";
+    if (!pass) pass = (/pass(?:\s*if)?[^:*]*:\**\s*(.*)$/i.exec(flat)?.[1] ?? "").split(/\s*\*?\bfail\b\*?\s*:/i)[0]!;
+    const what = strip(head).replace(/[.:]$/, "");
+    return {
+      what: noCites(what),
+      how: noCites(strip(how)).replace(/^[-*]\s*/, "") || "Plan the cheapest test with a real number.",
+      pass_if: noCites(strip(pass)).replace(/[-*]\s*$/, "").trim() || PASS_FALLBACK,
+    };
+  });
+}
 /** Markdown table rows (header and separator dropped), only the first table in the lines. */
 function tableOf(lines: readonly string[] = []): string[][] {
   const rows: string[][] = [];
@@ -302,22 +349,9 @@ export function inferSign(t: string): -1 | null {
 /** Pure: a full sentence for display: [S#] labels and a trailing "…" removed, whole sentences up to `max` words; a
  *  text cut mid-sentence ends at its last complete clause instead of a dangling fragment. */
 export function sentenceCap(text: string, max = 40): string {
-  const cut = /(?:…|\.{3})\s*$/.test(String(text ?? "").trim());
-  const s = noCites(strip(String(text ?? ""))).replace(/(?:…|\.{3})\s*$/, "").trim();
-  if (!s) return "";
-  const ss = sentencesOf(s);
-  const full = cut ? ss.slice(0, -1) : ss;
-  let out = "";
-  for (const x of full) {
-    const next = out ? `${out} ${x}` : x;
-    if (next.split(" ").length > max) break;
-    out = next;
-  }
-  if (out) return /[.!?]$/.test(out) ? out : `${out}.`;
-  const words = (cut ? ss[ss.length - 1]! : ss[0]!).split(" ").slice(0, max).join(" ");
-  const clause = Math.max(words.lastIndexOf(", "), words.lastIndexOf("; "), words.lastIndexOf(" – "), words.lastIndexOf(" — "));
-  const head = (clause > words.length * 0.35 ? words.slice(0, clause) : words).replace(/[,;:–—\s]+$/, "");
-  return /[.!?]$/.test(head) ? head : `${head}.`;
+  const t = String(text ?? "").trim();
+  const cut = /(?:…|\.{3})\s*$/.test(t);
+  return fullSentences(`${noCites(strip(t)).replace(/(?:…|\.{3})\s*$/, "").trim()}${cut ? "…" : ""}`, max);
 }
 
 /** Impacts −2…+2: the writer's (+)/(−)/(=) signs (or a clear inferred one), then nudged so factorScore lands near the
@@ -429,15 +463,7 @@ export function parseReport(md: string, opts: { idea?: string; meta?: WriterMeta
   const vHead = noCites(strip(vLines.find((l) => !/^\s*[-*]\s/.test(l)) ?? ""));
   const reasons = itemsOf(vLines).map((r) => noCites(strip(r)));
   const verdict_line = vHead && vHead.split(" ").length <= 4 && reasons[0] ? `${vHead.replace(/[.:]$/, "")}: ${reasons[0]}` : vHead || reasons[0] || "";
-  const validate_first = itemsOf((secs.find((s) => /validate/i.test(s.head))?.body ?? "").split("\n"))
-    .slice(0, 3)
-    .map((it) => {
-      const flat = it.replace(/\n/g, " ");
-      const what = strip(it.split("\n")[0]!).replace(/[.:]$/, "");
-      const how = /test[^:*]*:\**\s*(.*?)(?=(?:\s[-*]\s)?\s*\*?\s*pass\b[^:*]*:|$)/i.exec(flat)?.[1];
-      const pass = /pass(?:\s*if)?[^:*]*:\**\s*(.*)$/i.exec(flat)?.[1];
-      return { what: noCites(what), how: noCites(strip(how ?? "")).replace(/^[-*]\s*/, "") || "Plan the cheapest test with a real number.", pass_if: noCites(strip(pass ?? "")).replace(/[-*]\s*$/, "").trim() || "Set a numeric pass mark before you start" };
-    });
+  const validate_first = checksOf((secs.find((s) => /validate/i.test(s.head))?.body ?? "").split("\n")).slice(0, 3);
   // strengths / weaknesses: the strongest + and − evidence across the blocks (sourced first)
   const all = BLOCK_IDS.flatMap((id) => (blocks[id]?.evidence ?? []).map((e, i) => ({ id, i, e })));
   const pick = (sign: 1 | -1) => all.filter((x) => Math.sign(x.e.impact) === sign).sort((a, b) => Math.abs(b.e.impact) - Math.abs(a.e.impact) || Number(!!b.e.source) - Number(!!a.e.source)).slice(0, 3).map((x) => ({ text: x.e.text, block: x.id, item: x.i + 1 }));
@@ -460,7 +486,8 @@ Quality bar (applies to everything you write):
 - Real numbers with their source: every factual figure carries the [S#] id of the research note it came from. Use only [S#] ids that appear in the research notes; never invent a source or a number for it. A figure with no [S#] gets no marker in words (never write "no source id"); the page labels it as an estimate.
 - When you assume something, label it "(estimate)" and show the inputs.
 - If the research does not cover something, say so plainly instead of filling the gap.
-- Plain, short sentences. Markdown. No preamble, no closing remarks.`;
+- Plain, short sentences. Markdown. No preamble, no closing remarks.
+- The reader may not know local terms. The first time you use a local acronym or a word in another language (for example a tax, a wage floor, an official gazette, a permit or a trade such as "gestor"), add its meaning in 4-6 plain words in parentheses.`;
 
 const SECTION_SPEC = `Each of the four topic sections uses exactly this structure:
 **Takeaway:** one or two sentences.
@@ -547,7 +574,7 @@ const flatText = (t: string) => noCites(strip(t)).toLowerCase().replace(/[^a-z0-
 
 /** Pure: the one verdict sentence the executive summary carries, written in code from the computed verdict. */
 export function verdictSentence(verdict: IdeaReport["verdict"], score: number, lead?: string): string {
-  const ss = lead ? sentencesOf(noCites(strip(lead))) : [];
+  const ss = lead ? sentencesOf(noInlineCites(noCites(strip(lead)))) : [];
   // a short first sentence ("Demand is unproven.") takes the next one with it, so the reason says why
   const why = ss.length ? ss.slice(0, ss[0]!.split(" ").length < 7 ? 2 : 1).join(" ").replace(/[.!?]*$/, ".") : "";
   // under the No-go band with nothing sourced against it: say why it is not a No-go
@@ -658,9 +685,7 @@ export interface WrittenReport extends Finalized {
 
 /** "one subscriber-month" → "subscribers", "booked walk-hour" → "booked walk-hours" (the bubble already says "a month"). */
 export function unitPlural(unit: string): string {
-  let u = String(unit ?? "").replace(/\([^)]*\)/g, "").replace(/^(?:one|a|an|1)\s+/i, "").replace(/[-\s](?:month|monthly)\b/gi, "").replace(/\s+per\s+month\b/gi, "").trim();
-  u = capWords(u, 4).replace(/[.…]+$/, "").trim() || "unit";
-  return /s$/i.test(u) ? u : /(?:ch|sh|x)$/i.test(u) ? `${u}es` : `${u}s`;
+  return unitPluralV7(unit);
 }
 const EDITOR: AnalystRole = "viability";
 const ownerOfHead = (head: string): { role: AnalystRole; text: string } => {
@@ -754,7 +779,7 @@ ${s.judge.strengths.map((x) => `- ${x.text}`).join("\n")}
 
 ## 3 things to validate first
 
-${s.judge.nextSteps.slice(0, 3).map((x, i) => `${i + 1}. **${x}.**\n   - *Test this month:* ${x}.\n   - *Pass:* set the pass mark before you start.`).join("\n")}
+${s.judge.nextSteps.slice(0, 3).map((x, i) => `${i + 1}. **${x}.**\n   - *Test this month:* ${x}.`).join("\n")}
 
 ${sec.join("\n")}
 \`\`\`econ

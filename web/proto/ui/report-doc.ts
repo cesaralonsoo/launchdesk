@@ -10,7 +10,9 @@ import {
 } from "../contracts";
 import type { ProtoFlowV7 } from "../flow";
 import { statusLine } from "../live/adapter";
+import { fullSentences, leadLine, plainText, reasonsAfterLead, unitPlural } from "../../../server/v7";
 import { esc } from "./dom";
+import { exampleOf } from "./example";
 import { I } from "./icons";
 import { ldMark } from "./logo";
 import { badge } from "./pixel";
@@ -18,8 +20,13 @@ import { badge } from "./pixel";
 const one = (n: number) => (Math.round(n * 10) / 10).toFixed(1);
 // display words; the enum stays "pivot": an uncertain idea is something to test, not a failure
 const VERDICT = { go: "Go", pivot: "Test first", "no-go": "No-go" } as const;
-/** Pivot text as a full sentence: [S#] labels are research-note ids, not this page's source numbers. */
-const plain = (t: string) => t.replace(/\s*\[S\d+\]/g, "").replace(/\s+([.,;:])/g, "$1").trim();
+/** Pivot text as full sentences: [S#] labels are research-note ids, not this page's source numbers, and a text the
+ *  server cut mid-sentence ("…though both come from undated travel…") ends at its last whole sentence. */
+const plain = (t: string) => fullSentences(plainText(t), 40);
+/** Text as a reader sees it, escaped: no research ids ([S2], [S2, estimate]) and no "no source id" notes. */
+const tx = (t: string | null | undefined) => esc(plainText(t ?? ""));
+/** "Neighbourhood" → "One neighbourhood": how far it can grow, said as words (the /10 sits in its own section). */
+const REACH: Record<string, string> = { Neighbourhood: "One neighbourhood", City: "One city", Country: "The whole country", Global: "Worldwide" };
 const CHIP: Record<BlockVerdict, string> = { strong: "Strong", mixed: "Mixed", weak: "Weak" };
 /** Only http(s) links leave the app. */
 const safeUrl = (u: string) => (/^https?:\/\//i.test(u) ? u : "");
@@ -142,26 +149,23 @@ function srcLink(s: SourceRef, n: number): string {
     ? `<a class="rd-src" href="${esc(u)}" target="_blank" rel="noopener noreferrer" title="${esc(s.title)}">${label}${I.ext(11)}</a>`
     : `<span class="rd-src">${label}</span>`;
 }
-const estimate = (basis?: string) => `<span class="rd-est" title="Not from a web source"><b>Estimate</b>${basis ? ` · ${esc(basis)}` : ""}</span>`;
+const estimate = (basis?: string) => { const b = plainText(basis ?? ""); return `<span class="rd-est" title="Not from a web source"><b>Estimate</b>${b ? ` · ${esc(b)}` : ""}</span>`; };
 
 function evidenceItem(b: ReportBlock, fd: Finding): string {
   const n = sourceNumber(b, fd);
   const v = fd.impact ?? 0;
   const mark = v ? `<span class="rd-imp" data-v="${v > 0 ? "up" : "down"}" title="${v > 0 ? "Counts for the idea" : "Counts against the idea"}">${v > 0 ? "+" : "−"}</span>` : `<span class="rd-imp" data-v="0" title="Context">·</span>`;
   const proof = fd.source ? srcLink(fd.source, n) : estimate(fd.basis);
-  return `<li class="rd-item">${mark}<p>${esc(fd.text)} ${proof}</p></li>`;
+  return `<li class="rd-item">${mark}<p>${tx(fd.text)} ${proof}</p></li>`;
 }
 function keyNumber(b: ReportBlock, k: KeyNumber): string {
   const n = k.source ? b.sources.findIndex((s) => s.url === k.source!.url) + 1 : 0;
-  return `<li><b class="num">${esc(k.value)}</b><span>${esc(k.label)}</span>${k.source ? srcLink(k.source, n) : estimate(k.basis)}</li>`;
+  return `<li><b class="num">${tx(k.value)}</b><span>${tx(k.label)}</span>${k.source ? srcLink(k.source, n) : estimate(k.basis)}</li>`;
 }
 const money = (x: number) => `€${x.toLocaleString("en-GB", { minimumFractionDigits: Math.abs(x) < 100 ? 2 : 0, maximumFractionDigits: Math.abs(x) < 100 ? 2 : 0 })}`;
 const NA = `<span class="rd-na">n/a</span>`;
-/** "one subscriber-month" → "subscribers" (break-even is already "a month"). */
-const unitWord = (u: string) => {
-  const w = u.replace(/\([^)]*\)/g, "").replace(/^(?:one|a|an|1)\s+/i, "").replace(/[-\s](?:month|monthly)\b/gi, "").trim() || "unit";
-  return /s$/i.test(w) ? w : `${w}s`;
-};
+/** "one cup of flat white sold at the kiosk" → "cups of flat white" (break-even is already "a month"). */
+const unitWord = (u: string) => unitPlural(u);
 /** The unit economics the server computed in code (results.v7.econ), with each cost line's source. */
 export function econHtml(b: ReportBlock, e: EconSummary | null | undefined, err?: string): string {
   if (!e) return err ? `<h3>Unit economics</h3><p class="rd-miss">The unit economics could not be computed (${esc(err)}).</p>` : "";
@@ -212,12 +216,12 @@ function section(f: ProtoFlowV7, b: ReportBlock, i: number, byId: Map<string, Fi
       ${chip(verdict, b.score)}
     </header>
     ${b.focus.length ? `<p class="rd-focus"><span>Questions asked:</span> ${b.focus.map(esc).join(" · ")}</p>` : ""}
-    ${b.takeaway ? `<p class="rd-take">${esc(b.takeaway)}</p>` : ""}
+    ${b.takeaway ? `<p class="rd-take">${tx(b.takeaway)}</p>` : ""}
     ${b.keyNumbers?.length ? `<ul class="rd-kn">${b.keyNumbers.map((k) => keyNumber(b, k)).join("")}</ul>` : ""}
     ${items.length ? `<h3>Evidence</h3><ol class="rd-ev">${items.map((fd) => evidenceItem(b, fd)).join("")}</ol>` : ""}
     ${econ}
-    ${b.meaning ? `<h3>What it means for you</h3><p class="rd-mean">${esc(b.meaning)}</p>` : ""}
-    ${b.actions.length ? `<h3>Next actions</h3><ol class="rd-act">${b.actions.map((x) => `<li>${esc(x)}</li>`).join("")}</ol>` : ""}
+    ${b.meaning ? `<h3>What it means for you</h3><p class="rd-mean">${tx(b.meaning)}</p>` : ""}
+    ${b.actions.length ? `<h3>Next actions</h3><ol class="rd-act">${b.actions.map((x) => `<li>${tx(x)}</li>`).join("")}</ol>` : ""}
   </section>`;
 }
 
@@ -232,7 +236,7 @@ export function reportDocHtml(f: ProtoFlowV7): string {
   const date = fmtDate(p.createdAt);
   const summary = blocks
     .filter((b) => b.status === "done" && b.takeaway)
-    .map((b) => `<li><a href="#rd-${b.id}" data-act="doc-jump" data-to="rd-${b.id}"><b>${esc(BLOCK_LIBRARY[b.id].label)}</b></a>${chip(b.verdict ?? (b.score != null ? blockVerdictFor(b.score) : null), b.score)}<p>${esc(b.takeaway)}</p></li>`)
+    .map((b) => `<li><a href="#rd-${b.id}" data-act="doc-jump" data-to="rd-${b.id}"><b>${esc(BLOCK_LIBRARY[b.id].label)}</b></a>${chip(b.verdict ?? (b.score != null ? blockVerdictFor(b.score) : null), b.score)}<p>${tx(b.takeaway)}</p></li>`)
     .join("");
   const srcList = blocks
     .filter((b) => b.sources.length)
@@ -242,14 +246,19 @@ export function reportDocHtml(f: ProtoFlowV7): string {
     }).join("")}</ol></div>`)
     .join("");
   const paths = (S.paths ?? []).slice(0, 3);
-  const flat = (x: string) => x.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-  const reasons = (r.reasons ?? []).filter((x) => x.trim() && !flat(r.verdictLine).includes(flat(x)));
+  // one count everywhere: distinct web pages behind the sourced evidence (the ribbon and the Sources list use the same)
+  const pages = new Set(blocks.flatMap((b) => b.sources.map((s) => s.url))).size;
+  const ex = exampleOf(p.id);
+  const isExample = !!ex || /^ex-/.test(p.id);
+  // a short, clean lead (also for reports saved before the lead was shortened), and the reasons without repeating it
+  const lead = r.reasons?.length ? leadLine(r.verdictLine) : r.verdictLine;
+  const reasons = reasonsAfterLead(lead, r.reasons ?? []);
   const unknowns = ((r as IdeaReport & { unknowns?: string[] }).unknowns ?? []).slice(0, 4);
-  const pv = r.pivot ? { idea: plain(r.pivot.idea), why: plain(r.pivot.why) } : null;
+  const pv = r.pivot ? { idea: plainText(r.pivot.idea).replace(/[.…]+$/, ""), why: plain(r.pivot.why) } : null;
   return `
   <div class="rdoc">
     <div class="rd-bar no-print">
-      <span class="rd-bar-t">Your report is ready. Read it, then decide at the end.</span>
+      <span class="rd-bar-t">${isExample ? "Finished example: a real paid report" : "Your report is ready. Read it, then decide at the end."}</span>
       <button class="btn btn-primary rd-pdf" data-act="pdf" type="button">${I.pack(15)}<span>Download PDF</span></button>
     </div>
     <article class="rd-paper">
@@ -260,12 +269,13 @@ export function reportDocHtml(f: ProtoFlowV7): string {
         <div class="rd-score">
           <div><span class="eyebrow">Verdict</span><b class="rd-v" data-v="${r.verdict}">${VERDICT[r.verdict]}</b></div>
           <div><span class="eyebrow">Score${hero ? "" : " · provisional"}</span><b class="num">${one(r.score)}<small>/10</small></b></div>
-          <div><span class="eyebrow">Scalability · ${esc(S.reach)}</span><b class="num">${one(S.score)}<small>/10</small></b></div>
+          <div><span class="eyebrow">How far it can grow</span><b class="rd-reach">${esc(REACH[S.reach] ?? S.reach)}</b></div>
         </div>
-        <p class="rd-line">${esc(r.verdictLine)}</p>
-        ${reasons.length ? `<ul class="rd-why">${reasons.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
-        ${r.verdict === "pivot" && unknowns.length ? `<p class="rd-line">Not known yet, so test these before you commit savings (they lower the confidence, not the score):</p><ul class="rd-why">${unknowns.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
-        <p class="rd-meta"><span class="num">${r.evidence.total}</span> pieces of evidence · <span class="num">${r.evidence.sourced}</span> with a web source · ${esc(r.confidence)} confidence${hero ? "" : " · the score is provisional until at least 6 findings, 3 of them sourced"}</p>
+        ${ex?.proof ? `<button type="button" class="rd-proof-link no-print" data-act="see-proof">${I.lock(14)}<span>Paid on Bitcoin Cash · check the proof</span></button>` : ""}
+        <p class="rd-line">${tx(lead)}</p>
+        ${reasons.length ? `<ul class="rd-why">${reasons.map((x) => `<li>${tx(x)}</li>`).join("")}</ul>` : ""}
+        ${r.verdict === "pivot" && unknowns.length ? `<p class="rd-line">Not known yet, so test these before you commit savings (they lower the confidence, not the score):</p><ul class="rd-why">${unknowns.map((x) => `<li>${tx(x)}</li>`).join("")}</ul>` : ""}
+        <p class="rd-meta"><span class="num">${r.evidence.total}</span> pieces of evidence · <span class="num">${r.evidence.sourced}</span> backed by ${pages ? `<span class="num">${pages}</span> web page${pages === 1 ? "" : "s"}` : "a web source"} · ${esc(r.confidence)} confidence${hero ? "" : " · the score is provisional until at least 6 findings, 3 of them sourced"}</p>
       </header>
 
       <section class="rd-exec">
@@ -276,31 +286,31 @@ export function reportDocHtml(f: ProtoFlowV7): string {
 
       <section class="rd-first">
         <h2>Validate these 3 things first</h2>
-        <ol>${r.nextSteps.slice(0, 3).map((s, i) => `<li><span class="num">${i + 1}</span><p>${esc(s)}</p></li>`).join("")}</ol>
+        <ol>${r.nextSteps.slice(0, 3).map((s, i) => `<li><span class="num">${i + 1}</span><p>${tx(s)}</p></li>`).join("")}</ol>
       </section>
 
       ${blocks.map((b, i) => section(f, b, i, byId, b.id === "money" && b.status === "done" ? econHtml(b, p.v7.econ, p.v7.econErr) : "")).join("")}
 
       <section class="rd-sec rd-scale">
         <header class="rd-sh"><span class="rd-n num">${blocks.length + 1}</span><div><span class="eyebrow">Scalability</span><h2>How far it can grow</h2></div><span class="rd-chip" data-v="${S.score >= 6.5 ? "strong" : S.score >= 4.5 ? "mixed" : "weak"}"><span class="num">${one(S.score)}</span>/10</span></header>
-        <p class="rd-take">Reach today: ${esc(S.reach)}. ${esc(S.why)}</p>
+        <p class="rd-take">Reach today: ${esc(REACH[S.reach] ?? S.reach)}. ${tx(S.why)}</p>
         ${paths.length ? `<h3>Ways it could scale</h3><ol class="rd-act">${paths.map((x) => `<li><b>${esc(x.label)}.</b> ${esc(x.how)}</li>`).join("")}</ol>` : S.wouldScale.length ? `<h3>What would raise the ceiling</h3><ol class="rd-act">${S.wouldScale.map((x) => `<li>${esc(x)}</li>`).join("")}</ol>` : ""}
         ${pv ? `<h3>${r.verdict === "pivot" ? "A change worth testing" : "A pivot to consider"}</h3><p class="rd-mean"><b>${esc(pv.idea)}.</b> ${esc(pv.why)}</p>` : ""}
       </section>
 
       <section class="rd-sources">
-        <h2>Sources</h2>
+        <h2>Sources${pages ? ` <small class="num">· ${pages} web page${pages === 1 ? "" : "s"}</small>` : ""}</h2>
         ${srcList || `<p class="rd-miss">No web sources were found for this idea. Every item above is an estimate.</p>`}
         <p class="rd-note">Each section was researched by one analyst who searched the web and read the pages listed. Numbers in brackets point to this list. Anything marked “Estimate” has no web source and says what it is based on. The score is arithmetic over the evidence, not an opinion.</p>
       </section>
     </article>
 
     <footer class="rd-decide no-print">
-      <div><b>What next?</b><span>${canGrow ? `Happy with what you read? Your next step is a plan: brand, site and a launch month.${pv ? ` A change worth testing first: ${esc(pv.idea)}.` : ""}` : `This idea should not grow as it stands. ${pv ? `A better version to try: <b>${esc(pv.idea)}.</b> ${esc(pv.why)}` : "Try another idea, or tell your team what to re-check."} You can still build the launch kit to see it.`}</span></div>
+      <div><b>What next?</b><span>${isExample ? "This founder's launch kit is already made: logo, website and a 30-day plan." : canGrow ? `Happy with what you read? Your next step is a plan: brand, site and a launch month.${pv ? ` A change worth testing first: ${esc(pv.idea)}.` : ""}` : `This idea should not grow as it stands. ${pv ? `A better version to try: <b>${esc(pv.idea)}.</b> ${esc(pv.why)}` : "Try another idea, or tell your team what to re-check."} You can still build the launch kit to see it.`}</span></div>
       <div class="rd-btns">
         <button class="btn btn-ghost" data-act="back" type="button">${I.back(15)}<span>Back</span></button>
         <button class="btn btn-ghost" data-act="steer" type="button"><span>Tell your team</span></button>
-        ${canGrow ? `<button class="btn btn-primary" data-act="grow" type="button"><span>Continue: make the plan</span>${I.arrow(16)}</button>` : `<button class="btn btn-ghost" data-act="grow" type="button"><span>Build the launch kit anyway</span></button><button class="btn btn-primary" data-act="pivot" type="button"><span>Try another idea</span>${I.arrow(16)}</button>`}
+        ${isExample ? `<button class="btn btn-primary" data-act="grow" type="button"><span>See the launch kit</span>${I.arrow(16)}</button>` : canGrow ? `<button class="btn btn-primary" data-act="grow" type="button"><span>Continue: make the plan</span>${I.arrow(16)}</button>` : `<button class="btn btn-ghost" data-act="grow" type="button"><span>Build the launch kit anyway</span></button><button class="btn btn-primary" data-act="pivot" type="button"><span>Try another idea</span>${I.arrow(16)}</button>`}
       </div>
     </footer>
   </div>`;

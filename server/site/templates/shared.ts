@@ -144,8 +144,9 @@ export const reserveLabel = (c: RenderCtx) => (c.price ? fill(c.ui.reserveFor, {
 export const BCH_COIN = `<svg width="18" height="18" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="44" fill="none" stroke="currentColor" stroke-width="8"/><g transform="rotate(-14 50 50)" fill="currentColor"><path fill-rule="evenodd" d="M38 26h17.5c8.6 0 13.5 4.3 13.5 10.6 0 4.6-2.6 7.6-6.4 8.8 4.9 1 8.2 4.5 8.2 9.7 0 7.2-5.5 12-14.7 12H38zm10 8.4v10.3h6.3c3.7 0 5.6-1.9 5.6-5.2s-1.9-5.1-5.6-5.1zm0 18v11.2h7.4c4.1 0 6.3-2 6.3-5.6s-2.2-5.6-6.3-5.6z"/><rect x="44" y="18" width="5" height="10" rx="1.5"/><rect x="53" y="18" width="5" height="10" rx="1.5"/><rect x="44" y="65" width="5" height="10" rx="1.5"/><rect x="53" y="65" width="5" height="10" rx="1.5"/></g></svg>`;
 
 /** The primary "Reserve with BCH" button (a link to the sheet; JS opens it without a jump). */
+/** No reserve address (no founder wallet, or a read-only example): no button, since there is no sheet to open. */
 export const reserveBtn = (c: RenderCtx, label = reserveLabel(c), cls = "btn btn-p") =>
-  `<a class="${cls}" href="#reserve" data-reserve>${BCH_COIN}<span>${esc(label)}</span></a>`;
+  c.spec.reserve.address ? `<a class="${cls}" href="#reserve" data-reserve>${BCH_COIN}<span>${esc(label)}</span></a>` : "";
 
 /** Price block: "€29  normally €39" + "Only 100 available". */
 export function priceLine(c: RenderCtx): string {

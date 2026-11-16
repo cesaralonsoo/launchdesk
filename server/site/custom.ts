@@ -10,7 +10,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { config } from "../config.js";
 import { recordUsage, usdOf } from "../cost.js";
 import type { KitInput } from "../kit-contract.js";
-import type { SiteSpec } from "./spec.js";
+import { uiFor, type SiteSpec } from "./spec.js";
 import { validateModelSite } from "./validate.js";
 import { templateSite } from "../kit-templates.js";
 import { money } from "./validate.js";
@@ -135,7 +135,7 @@ Review the plan against the subject: if any part would look the same for any oth
 - The business has not opened yet. Never write anything that implies existing customers, history, awards, years of experience, opening hours, an address, a phone number, delivery areas, guarantees, or ratings unless the input states it.
 - Never invent numbers. The only numbers allowed are: the offer price, the normal price, quantities that are part of the offer text ("3 easy plants + 2 care visits"), the statistics given in \`report.stats\` exactly as written, and general facts about the subject that are common knowledge and not statistics (for example "water every 2 to 3 weeks" for a snake plant). Never show the offer \`limit\` as scarcity. Any other number you write (care tips, steps, ranges) must be a single digit from 1 to 9, or a word.
 - Never write testimonials, reviews, quotes from customers, customer names, star ratings, logos of press or partners, or follower counts.
-- Each statistic or market price you show appears with its exact value and label and a link to its source: \`<a href="SOURCE_URL" rel="noopener nofollow" target="_blank">Source: HOSTNAME</a>\`. A number with no \`sourceUrl\` is not shown.
+- Each statistic or market price you show appears with its exact value and label and a link to its source: \`<a href="SOURCE_URL" rel="noopener nofollow" target="_blank">SOURCE: HOSTNAME</a>\`, where SOURCE is \`business.sourceWord\` exactly ("Source" in English). A number with no \`sourceUrl\` is not shown.
 - Only a statistic in \`stats\` (about the customer or their problem) may be a big numeral. If \`stats\` is empty, do not make a giant statistic: use a statement band instead (like "A plant is easy to buy. Keeping it is the hard part."), or set the offer price big. Never make a competitor's price or price range the hero numeral or the main statistic; \`marketPrices\` only appear in small type inside the comparison, if at all. Never write meta phrases about the research ("prices vary a lot, so here are two more ranges", "studies show").
 - Competitors: describe them by the name given and the gap given, fairly and without mocking. Present the difference as what this business does instead.
 - Price: show it with the currency symbol in the input (\`£45\`). If \`normal\` exists, show it struck through next to it ("normally <s>£60</s>").
@@ -194,7 +194,7 @@ export function customBrief(input: KitInput, photos: CustomPhoto[]) {
   const price = report.offer.price > 0 ? money(report.offer.price, brand.currency, lang) : "";
   const sourced = report.stats.filter((s) => httpsOnly(s.sourceUrl)).map((s) => ({ ...s, kind: s.kind ?? statKind(s) }));
   return {
-    business: { name: brand.name, idea: input.idea, city: brand.city ?? "", area: areaOf(input.idea, brand.city), currency: brand.currency, lang },
+    business: { name: brand.name, idea: input.idea, city: brand.city ?? "", area: areaOf(input.idea, brand.city), currency: brand.currency, lang, sourceWord: uiFor(lang).source },
     brand: { tagline: brand.tagline, voice: brand.voice, palette: brand.palette, fonts: brand.fonts },
     report: {
       customer: report.customer,

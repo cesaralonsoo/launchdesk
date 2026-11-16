@@ -210,6 +210,29 @@ export function decorateBody(body: string): { body: string; chars: number[] } {
   return { body: out, chars };
 }
 
+// ───────────────────────────────────────────────────────────── fixed labels in the page's language
+
+/** The small fixed words the designer writes in English whatever the page language ("Source: example.com"). */
+const LABELS: Record<string, { source: string; sources: string; photo: string }> = {
+  en: { source: "Source", sources: "Sources", photo: "Photo" },
+  es: { source: "Fuente", sources: "Fuentes", photo: "Foto" },
+  ca: { source: "Font", sources: "Fonts", photo: "Foto" },
+  fr: { source: "Source", sources: "Sources", photo: "Photo" },
+  pt: { source: "Fonte", sources: "Fontes", photo: "Foto" },
+  it: { source: "Fonte", sources: "Fonti", photo: "Foto" },
+  de: { source: "Quelle", sources: "Quellen", photo: "Foto" },
+};
+const ANY_SOURCE = "Sources?|Fuentes?|Fonts?|Fontes?|Fonti|Quellen?";
+/** Pure: the label at the start of a link or small text ("Source:", "Fuente:", "Photo:") in the page language
+ *  (brand/spec lang; English when the language is not listed). Only labels followed by a colon are touched. */
+export function localizeLabels(body: string, lang: string): string {
+  const L = LABELS[String(lang ?? "").toLowerCase().slice(0, 2)] ?? LABELS.en!;
+  return body
+    .replace(new RegExp(`(<(?:a|small|span|cite|figcaption|p)\\b[^>]*>\\s*)(${ANY_SOURCE})(\\s*:)`, "gi"), (_m, open: string, word: string, colon: string) =>
+      `${open}${/(?:s|ti|en)$/i.test(word) ? L.sources : L.source}${colon}`)
+    .replace(/(<(?:small|span|figcaption)\b[^>]*>\s*)(Photo|Foto)(\s*:)/gi, (_m, open: string, _w: string, colon: string) => `${open}${L.photo}${colon}`);
+}
+
 // ───────────────────────────────────────────────────────────── assembly
 
 const LICENSE: Record<string, string> = { cc0: "CC0", pdm: "Public domain", by: "CC BY", "by-sa": "CC BY-SA" };
@@ -263,7 +286,7 @@ export function customRender(row: CustomRow, live: LiveData, opts: CustomRenderO
     return null;
   }
   const { spec, kit } = row;
-  const deco = decorateBody(s.body);
+  const deco = decorateBody(localizeLabels(s.body, row.spec.lang || row.kit.brand.lang));
   s = { ...s, body: deco.body };
   const brand = kit.brand;
   const t = c.t;

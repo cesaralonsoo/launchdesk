@@ -34,10 +34,25 @@
 
 /* tabs */
 /* Tabs wrap onto a second row in a narrow column instead of scrolling (a scrolled strip clipped "The plan"). */
+/* Each row of tabs fills the width, and a label wraps inside its own tab rather than being cut or scrolled away. */
 .pv-tabs { display: flex; flex-wrap: wrap; gap: 0 2px; border-bottom: 1px solid var(--pv-line); margin: 0 -2px; padding: 0 2px; }
 .pv-tabs::-webkit-scrollbar { display: none; }
-.pv-tabs button { flex: none; border: 0; background: none; padding: 9px 8px 10px; font-size: 13.5px !important; font-weight: 550; color: var(--pv-muted); border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; }
+.pv-tabs button { flex: 1 1 auto; min-width: 0; border: 0; background: none; padding: 9px 8px 10px; font-size: 13.5px !important; font-weight: 550; line-height: 1.25; color: var(--pv-muted); border-bottom: 2px solid transparent; margin-bottom: -1px; text-align: center; overflow-wrap: anywhere; }
 .pv-tabs button[aria-selected="true"] { color: var(--pv-ink); border-bottom-color: var(--pv-brand); }
+
+/* the report's decision, shown first */
+.pv-gate { border-radius: 16px; padding: 14px 16px; margin-bottom: 14px; display: grid; gap: 6px; background: color-mix(in srgb, var(--pv-warn) 7%, transparent); border: 1px solid color-mix(in srgb, var(--pv-warn) 24%, transparent); }
+.pv-gate[data-v="go"] { background: color-mix(in srgb, var(--pv-good) 7%, transparent); border-color: color-mix(in srgb, var(--pv-good) 24%, transparent); }
+.pv-gate[data-v="no-go"] { background: color-mix(in srgb, var(--pv-bad) 6%, transparent); border-color: color-mix(in srgb, var(--pv-bad) 22%, transparent); }
+.pv-gate-t { font-weight: 700; font-size: 15px; }
+.pv-gate-s, .pv-gate-r { font-size: 13.5px; }
+.pv-gate-s { color: var(--pv-muted); }
+.pv-gate-l { display: grid; gap: 8px; margin-top: 4px !important; }
+.pv-gate-l li { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 10px; align-items: start; font-size: 13.5px; }
+.pv-gate-c { display: grid; gap: 1px; min-width: 0; }
+.pv-gate-c span { font-size: 12.5px; color: var(--pv-muted); }
+.pv-gate-d { border: 1px solid var(--pv-line); background: var(--pv-surface); border-radius: 999px; padding: 2px 9px; font-size: 12px !important; font-weight: 600; white-space: nowrap; }
+.pv-gate-d:hover { background: var(--pv-fill); }
 .pv-panel { min-width: 0; }
 .pv-panel > :first-child { margin-top: 2px; }
 
@@ -161,6 +176,8 @@
   .pv-days li { grid-template-columns: 62px 1fr; }
   .pv-hrs { grid-column: 2; }
   .pv-tier li { grid-template-columns: minmax(0, 1fr) auto; }
+  .pv-gate-l li { grid-template-columns: 22px minmax(0, 1fr); }
+  .pv-gate-d { grid-column: 2; justify-self: start; }
   .pv-bar { display: none; }
 }
 

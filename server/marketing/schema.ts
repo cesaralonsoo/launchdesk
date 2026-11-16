@@ -36,6 +36,14 @@ export interface PlanV2 {
   /** Things the plan assumes and the founder should check (unsourced claims end up here). */
   assumptions: string[];
   decision: { scale_if: string; adjust_if: string; stop_if: string };
+  /** Set in code from the report (withValidateFirst): its verdict, deciding reason and "validate first" checks, with
+   *  the plan day that runs each one. The plan view shows it first. Absent on plans made without a report. */
+  gate?: PlanGate;
+}
+export interface PlanGate {
+  verdict: "go" | "pivot" | "no-go";
+  reason?: string;
+  checks: Array<{ what: string; passIf: string; day: number | null }>;
 }
 
 // ───────────────────────────────────────────────────────────── JSON schema (structured output)
@@ -330,35 +338,83 @@ export function saneDays(plan: PlanV2, fallback: readonly Day[], warnings: strin
   return { ...plan, weeks: plan.weeks.map((w) => ({ ...w, days: w.days.map(fix) })) };
 }
 
+/** Rough language of a short text: "es" or "en" by common function words (null when it cannot tell). */
+export function textLang(s: string): "es" | "en" | null {
+  const t = ` ${s.toLowerCase()} `;
+  const n = (re: RegExp) => (t.match(re) ?? []).length;
+  const en = n(/\s(?:the|and|of|to|at|for|with|is|are|if|or|from|your|least|before)(?=[\s,.;:])/g);
+  const es = n(/\s(?:el|la|los|las|de|del|que|y|en|con|para|por|si|una|un|al|tu|antes)(?=[\s,.;:])/g);
+  return en === es ? null : en > es ? "en" : "es";
+}
+/** The deciding reason as a plain sentence: no verdict word in front, no [S#] ids, no in-words source notes. */
+export function gateReason(r: string | undefined): string {
+  return String(r ?? "")
+    .replace(/^\s*(?:test first|no-go|go|pivot)\s*[:.—–-]\s*/i, "")
+    .replace(/\s*\[S\d+\]/g, "")
+    .replace(/\s*[;,]\s*no source (?:id|cited)\b/gi, "")
+    .replace(/\s*\((?=[^()]*(?:\.(?:com|org|net|es|cat|eu|io|guide|info)\b|\bundated\b|\b(?:19|20)\d{2}\s*(?:;\s*estimate)?\)))[^()]{1,90}\)/gi, "")
+    .replace(/\s+([.,;:])/g, "$1")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+/** "Check 2", "check #2", "Comprobación 2", "comprobación nº 2": a day the writer marked as running report check n. */
+const checkMark = (n: number) => new RegExp(`\\b(?:check|comprobaci[oó]n)\\s*(?:n[ºo.°]?\\s*|#\\s*)?${n}\\b`, "i");
+
 /**
  * On a No-go or Pivot, week 1 starts with the report's "validate first" checks (before opening or spending money).
  * A check the writer already put in week 1 (shared key words) is not repeated. Go: the plan is unchanged.
  */
 export function withValidateFirst(plan: PlanV2, gate: ReportGate | undefined): PlanV2 {
   const checks = (gate?.validateFirst ?? []).filter((v) => v?.what && v?.how).slice(0, 3);
-  if (!gate?.verdict || gate.verdict === "go" || !checks.length || !plan.weeks.length) return plan;
+  if (!gate?.verdict || !plan.weeks.length) return plan;
   const es = plan.lang === "es";
-  const w1 = plan.weeks[0]!;
-  const text = w1.days.map((d) => d.action).join(" ");
-  // Covered only when most of the check's own key words are in week 1 (sharing "kiosk" or "exit" is not enough).
-  const have = new Set(keyWords(text));
-  const share = (s: string) => { const k = keyWords(s); return k.length ? k.filter((w) => have.has(w)).length / k.length : 0; };
-  const missing = checks.filter((c) => share(c.what) < 0.6 && share(c.how) < 0.6);
+  const reason = gateReason(gate.mainReason);
   const first = (s: string) => (s.trim().match(/^.*?[.!?](?=\s|$)/)?.[0] ?? s.trim()).replace(/\s*\((?:estimate|estimación)\)/gi, "").replace(/\.?\s*$/, ".");
-  if (!missing.length) return plan;
+  const allDays = plan.weeks.flatMap((w) => w.days);
+  const w1 = plan.weeks[0]!;
+  // Covered when a day names the check ("Check 2", "Comprobación 2"), or most of its own key words are in week 1
+  // (sharing "kiosk" or "exit" is not enough). Key words only compare within one language.
+  const have = new Set(keyWords(w1.days.map((d) => d.action).join(" ")));
+  const share = (s: string) => { const k = keyWords(s); return k.length ? k.filter((w) => have.has(w)).length / k.length : 0; };
+  const bestW1 = (c: { what: string; how: string }) => {
+    const ranked = w1.days.map((d) => ({ d, s: overlap(`${c.what} ${c.how}`, d.action) })).sort((a, b) => b.s - a.s);
+    return ranked[0]?.d.day ?? null;
+  };
+  const found = checks.map((c, i) => {
+    const marked = allDays.find((d) => checkMark(i + 1).test(d.action));
+    if (marked) return marked.day;
+    if (share(c.what) >= 0.6 || share(c.how) >= 0.6) return bestW1(c);
+    return null;
+  });
+  const out = (p: PlanV2, days: Array<number | null>): PlanV2 => ({
+    ...p,
+    gate: { verdict: gate.verdict!, ...(reason ? { reason } : {}), checks: checks.map((c, i) => ({ what: first(c.what).replace(/\.$/, ""), passIf: c.passIf?.trim() ? first(c.passIf) : "", day: days[i] ?? null })) },
+  });
+  const missing = checks.map((c, i) => ({ c, i })).filter(({ i }) => found[i] == null);
+  // Go: the plan is the writer's; the checks are shown first, with the day that runs each one when there is one.
+  if (gate.verdict === "go" || !missing.length) return checks.length ? out(plan, found) : out(plan, []);
   const free = (n: number, taken: Set<number>) => { while (taken.has(n) && n < 7) n++; taken.add(n); return n; };
   const taken = new Set<number>();
   const label = es ? "Comprobar primero" : "Check first";
-  const added: Day[] = missing.map((c, i) => ({
-    day: free(i + 1, taken),
-    time: "",
-    channel: label,
-    action: clean(`${i === 0 ? (es ? "Antes de abrir o gastar dinero: " : "Before you open or spend money: ") : ""}${first(c.how)} ${es ? "Sigue solo si" : "Go ahead only if"}: ${first(c.passIf).replace(/^./, (x) => x.toLowerCase())}`, 420),
-    copy: null,
-    hours: 2,
-  }));
+  const days = [...found];
+  const added: Day[] = missing.map(({ c, i }, k) => {
+    const day = free(k + 1, taken);
+    days[i] = day;
+    const lead = k === 0 ? (es ? "Antes de abrir o gastar dinero: " : "Before you open or spend money: ") : "";
+    // A check written in another language than the plan is referred to by number, never mixed into the plan's text.
+    const sameLang = (textLang(`${c.how} ${c.passIf}`) ?? (es ? "es" : "en")) === (es ? "es" : "en");
+    const action = sameLang
+      ? c.passIf?.trim()
+        ? `${lead}${first(c.how)} ${es ? "Sigue solo si" : "Go ahead only if"}: ${first(c.passIf).replace(/^./, (x) => x.toLowerCase())}`
+        : `${lead}${first(c.how)} ${es ? "Apunta el resultado antes de seguir." : "Write down the result before you go on."}`
+      : es
+        ? `${lead}haz la comprobación ${i + 1} del informe y apunta el resultado. Sigue solo si pasa la marca que pone el informe.`
+        : `${lead}run check ${i + 1} from the report and write down the result. Go ahead only if it meets the report's pass mark.`;
+    return { day, time: "", channel: label, action: clean(action.replace(/^./, (x) => x.toUpperCase()), 420), copy: null, hours: 2 };
+  });
   const shift = Math.max(...added.map((d) => d.day));
   // The writer's own week-1 days move after the checks so nothing opens before they pass.
   const rest = w1.days.map((d) => ({ ...d, day: Math.min(7, d.day + shift) }));
-  return { ...plan, weeks: [{ ...w1, days: [...added, ...rest].sort((a, b) => a.day - b.day) }, ...plan.weeks.slice(1)] };
+  for (const [i, d] of found.entries()) if (d != null && w1.days.some((x) => x.day === d)) days[i] = Math.min(7, d + shift);
+  return out({ ...plan, weeks: [{ ...w1, days: [...added, ...rest].sort((a, b) => a.day - b.day) }, ...plan.weeks.slice(1)] }, days);
 }

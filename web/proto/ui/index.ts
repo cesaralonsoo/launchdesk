@@ -30,6 +30,9 @@ import { kitOfferHtml, mountKitScreen, officesTeaserHtml } from "./kit-screen";
 import { projects as savedProjects } from "../../src/app/projects";
 import { BUILD_TEAM } from "../contracts";
 import type { AppConfig as AppConfigLike } from "../../src/types";
+import { exampleButtonHtml, exampleOf, examples, knownExamples, lockedHtml, mainExample, ribbonHtml } from "./example";
+import { startEscrowProof } from "./escrow-proof";
+import { ESCROW } from "../live/pay";
 
 export interface Ui {
   openOffices(): void;
@@ -55,9 +58,23 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
   let cfg: AppConfigLike | null = null;
   void liveConfig().then((c) => {
     cfg = c;
+    document.documentElement.dataset.ldPaused = paused() ? "1" : "0"; // example.css hides every pay button (offices too)
     paintMode();
-    if (curKey === "idea" || curKey === "end") render(true);
+    if (curKey === "idea" || curKey === "end" || (paused() && (curKey === "pay1" || curKey === "pay2" || curKey === "floor"))) render(true);
   });
+  /** GET /api/config paused:true (the server takes no payments right now): no pay buttons, the example instead. */
+  const paused = () => !!(cfg as (AppConfigLike & { paused?: boolean }) | null)?.paused;
+  // The finished examples (real runs seeded by the server): the home button names the main one once it is known.
+  void examples().then(() => {
+    const slot = curPanel?.querySelector<HTMLElement>(".ex-slot");
+    if (slot) slot.innerHTML = exampleButtonHtml();
+    paintMode();
+    paintExample();
+    // opened straight on /p/ex-… (or reloaded there): the kit mounted before the list arrived, so it was not read-only
+    if (curKey === "live" && flow.live && exampleOf(flow.live.id)) render(true);
+  });
+  // "Proof on Bitcoin Cash" under a report: the examples' real proof always, a live run's when escrow is on.
+  startEscrowProof();
   const getView = () => {
     if (viewFor !== flow.project.id || viewOf !== flow.project.legacy) {
       viewFor = flow.project.id;
@@ -96,7 +113,8 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     let k = "", t = "";
     if (demo) k = "";
     else if (flow.live) {
-      if (cfg?.mockAi) (k = "demo"), (t = "Sample data");
+      if (exampleOf(flow.live.id)) (k = "example"), (t = "Example · real run");
+      else if (cfg?.mockAi) (k = "demo"), (t = "Sample data");
     } else if (st === "idea" || st === "end" || st === "bedroom") {
       if (cfg?.mockAi) (k = "demo"), (t = "Sample data");
     } else if (flow.isSample(flow.project.id)) (k = "example"), (t = "Example");
@@ -106,7 +124,7 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
       modeTag.dataset.t = t;
       modeTag.title = t;
       // Phones get the short word so the tag never pushes "Your offices" off-screen.
-      modeTag.innerHTML = `<i></i><span class="lt-l">${t}</span><span class="lt-s">${k === "demo" ? "Sample" : t}</span>`;
+      modeTag.innerHTML = `<i></i><span class="lt-l">${t}</span><span class="lt-s">${k === "demo" ? "Sample" : k === "example" ? "Example" : t}</span>`;
     }
   }
 
@@ -197,8 +215,8 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
   }
   function build(key: string, s: FlowStateV7): string {
     const v = getView();
-    if (key === "idea") return ideaHtml(flow.project.idea, typedIdea);
-    if (key === "end") return ideaHtml(flow.project.idea, "", true);
+    if (key === "idea") return ideaHtml(flow.project.idea, typedIdea, false, paused() && !demo);
+    if (key === "end") return ideaHtml(flow.project.idea, "", true, paused() && !demo);
     if ((key === "pay1" || key === "pay2") && flow.live && !demo) {
       const st = key === "pay1" ? 1 : 2;
       const avs = st === 1 ? (flow.roster.length ? flow.roster.map((a) => badge(a.name, a.color, 26)).join("") : "") : BUILD_TEAM.filter((b) => b !== "pip").map((b) => builderBadge(b, 26)).join("");
@@ -312,6 +330,7 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
         const k = mountKitScreen(host, {
           projectId: id,
           ownerKey: savedProjects.ownerKey(id),
+          readOnly: !demo && !!exampleOf(id),
           onOffices: (name) => openOverlay(officesTeaserHtml(name || "your business"), "offices"),
         });
         // the panels fill in over time: keep the world framed above the sheet
@@ -347,7 +366,7 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
           },
         });
     }
-    if (key === "idea" || key === "end") {
+    if ((key === "idea" || key === "end") && p.querySelector("textarea")) {
       const form = p.querySelector<HTMLFormElement>("form")!;
       const ta = form.querySelector<HTMLTextAreaElement>("textarea")!;
       const go = form.querySelector<HTMLButtonElement>("button[type=submit]")!;
@@ -361,7 +380,7 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
         go.disabled = false;
         form.querySelector(".idea-err")?.remove();
         form.querySelector(".idea-chips")?.remove();
-        form.querySelector(".idea-field")!.insertAdjacentHTML("afterend", `<p class="idea-err" role="alert">${esc(msg)}</p>${cfg?.mockAi ? chipsHtml() : ""}`);
+        (form.querySelector(".ex-slot") ?? form.querySelector(".idea-field"))!.insertAdjacentHTML("afterend", `<p class="idea-err" role="alert">${esc(msg)}</p>${cfg?.mockAi ? chipsHtml() : ""}`);
         wireChips();
         measure();
       };
@@ -390,7 +409,8 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
         }
       });
       if (!demo && cfg?.sampleIdeas.length) {
-        form.querySelector(".idea-field")!.insertAdjacentHTML("afterend", chipsHtml());
+        // the finished example stays right under the idea box; the sample sentences follow it
+        (form.querySelector(".ex-slot") ?? form.querySelector(".idea-field"))!.insertAdjacentHTML("afterend", chipsHtml());
         wireChips();
       }
       if (demo && key === "idea") typeInto(ta, flow.project.idea || DEMO_IDEA_FALLBACK, 3600);
@@ -757,6 +777,8 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     if (act === "switch") {
       closeOverlay();
       demo?.exit();
+      // a finished example opens on its report (like the ribbon's "Another example")
+      if (t.dataset.at === "report") return flow.next({ type: "switch-project", id: t.dataset.id!, at: "report" });
       return flow.next({ type: "switch-project", id: t.dataset.id! });
     }
     if (act === "new") {
@@ -767,15 +789,20 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     }
     if (act === "replay" || act === "tour") return void (location.href = "?demo=1");
     if (act === "example") {
-      // Replay the finished sample fast: findings stream in (~10 s), then the report opens. The world levels follow
-      // from the report's own buttons.
-      const done = flow.projects.find((p) => flow.isSample(p.id) && p.v7.report?.scalability.cap === 3) ?? flow.projects[flow.projects.length - 1];
-      if (!done) return;
-      flow.next({ type: "switch-project", id: done.id });
-      flow.setTiming({ findingEvery: 520, analystGap: 320, reportTail: 600 });
-      fastExample = true;
-      return flow.goto({ step: "evidence" }, { animate: true });
+      closeOverlay();
+      // The real finished example (server seed): open it on its report. No payment, no wallet.
+      const go = (x: ReturnType<typeof mainExample>) => {
+        demo?.exit();
+        if (x) return flow.next({ type: "switch-project", id: x.id, at: "report" });
+        replaySample();
+      };
+      if (knownExamples().length) return go(mainExample());
+      void examples().then(() => go(mainExample()));
+      return;
     }
+    if (act === "see-proof") return jumpToProof();
+    if (act === "grow" && flow.live && exampleOf(flow.live.id)) return flow.goto({ step: "live" }); // the example's kit is already made
+    if (act === "steer" && flow.live && exampleOf(flow.live.id)) return; // read-only: the ribbon offers "Try your own idea"
     if (act === "path") return flow.commitPath(Number(t.dataset.i));
     if (act === "site") {
       const slug = flow.live?.siteSlug;
@@ -815,8 +842,88 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     paintBack();
     pushHistory();
     paintTags();
+    paintExample();
   }
   let fastExample = false;
+  /** An older server without /api/examples: replay the bundled sample fast instead (findings stream in, then the report). */
+  function replaySample() {
+    const done = flow.projects.find((p) => flow.isSample(p.id) && p.v7.report?.scalability.cap === 3) ?? flow.projects[flow.projects.length - 1];
+    if (!done) return;
+    flow.next({ type: "switch-project", id: done.id });
+    flow.setTiming({ findingEvery: 520, analystGap: 320, reportTail: 600 });
+    fastExample = true;
+    flow.goto({ step: "evidence" }, { animate: true });
+  }
+
+  // ────────────────────────────── the finished example's ribbon · "locked, not paid yet" after paying
+  const ribbon = el(`<div class="ex-ribbon-host"></div>`);
+  root.appendChild(ribbon);
+  let ribbonKey = "";
+  /** The proof panel is on screen (the ribbon marks "Proof on Bitcoin Cash" as pressed instead of "Report"). */
+  let proofShown = false;
+  const proofIo = typeof IntersectionObserver === "function"
+    ? new IntersectionObserver((es) => {
+        const v = es.some((x) => x.isIntersecting);
+        if (v !== proofShown) (proofShown = v), paintExample();
+      }, { threshold: 0.25 })
+    : null;
+  let proofWatched: Element | null = null;
+  setInterval(() => {
+    const ep = flow.state.step === "report" ? document.querySelector(".ep-panel") : null;
+    if (ep === proofWatched) return;
+    if (proofWatched) proofIo?.unobserve(proofWatched);
+    proofWatched = ep;
+    if (ep) proofIo?.observe(ep);
+    else if (proofShown) (proofShown = false), paintExample();
+  }, 500);
+  function paintExample() {
+    const s = flow.state;
+    const x = flow.live && !demo ? exampleOf(flow.live.id) : null;
+    const at = s.step === "live" ? "kit" : proofShown ? "proof" : "report";
+    const on = !!x && (s.step === "report" || s.step === "live" || s.step === "steer" || s.step === "floor");
+    root.dataset.example = on ? "1" : "0";
+    const k = on && x ? `${x.id}:${at}` : "";
+    if (k !== ribbonKey) {
+      ribbonKey = k;
+      ribbon.innerHTML = on && x ? ribbonHtml(x, at, knownExamples()) : "";
+    }
+    paintLock();
+  }
+  const lockEl = el(`<div class="ex-lock-host"></div>`);
+  root.appendChild(lockEl);
+  /** Escrow on and a real payment just made: say plainly that the money is held by the contract until delivery. */
+  function paintLock() {
+    const s = flow.state;
+    const pay = flow.live?.paid.validate;
+    const real = !!pay && !pay.txid.startsWith("dev-") && pay.sats > 0;
+    const on = ESCROW && !demo && !!flow.live && !exampleOf(flow.live.id) && real && !flow.live.phase1Done && (s.step === "hire" || s.step === "evidence");
+    const html = on ? lockedHtml(pay!.cents || cfg?.prices.validate || 10) : "";
+    if (lockEl.dataset.on !== (on ? "1" : "0")) {
+      lockEl.dataset.on = on ? "1" : "0";
+      lockEl.innerHTML = html;
+    }
+  }
+  ribbon.addEventListener("click", (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLElement>("[data-ex]");
+    if (!b) return;
+    const what = b.dataset.ex;
+    if (what === "report") return flow.goto({ step: "report", page: "score" });
+    if (what === "kit") return flow.goto({ step: "live" });
+    if (what === "other" && b.dataset.id) return flow.next({ type: "switch-project", id: b.dataset.id, at: "report" });
+    if (what === "own") {
+      typedIdea = "";
+      return flow.next({ type: "new-project" });
+    }
+    if (what === "proof") jumpToProof();
+  });
+  function jumpToProof() {
+    const jump = () => document.querySelector(".ep-panel")?.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "center" });
+    if (flow.state.step !== "report") flow.goto({ step: "report", page: "score" });
+    // the proof panel mounts itself under the report once it is on screen
+    let n = 0;
+    const tryJump = () => (document.querySelector(".ep-panel") ? jump() : ++n < 30 && setTimeout(tryJump, 120));
+    tryJump();
+  }
   flow.onChange((st) => {
     if (fastExample && st.step !== "evidence") {
       fastExample = false;

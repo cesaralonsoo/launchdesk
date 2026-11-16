@@ -346,7 +346,7 @@ export function fallbackJudge(idea: string, blocks: Partial<Record<BlockId, Bloc
     market: null,
     summary: capWords(BLOCK_IDS.flatMap((id) => (blocks[id] ? [`${BLOCK_LIBRARY[id].label}: ${blocks[id]!.takeaway}`] : [])).join(" "), 110),
     verdict_line: "Read the four sections: the editor's summary could not be written.",
-    validate_first: BLOCK_IDS.filter((id) => blocks[id]?.actions[0]).slice(0, 3).map((id) => ({ what: BLOCK_LIBRARY[id].covers, how: blocks[id]!.actions[0]!, pass_if: "Set a numeric pass mark before you start" })),
+    validate_first: BLOCK_IDS.filter((id) => blocks[id]?.actions[0]).slice(0, 3).map((id) => ({ what: BLOCK_LIBRARY[id].covers, how: blocks[id]!.actions[0]!, pass_if: "" })),
     scalability: j,
     strengths: pick(1),
     weaknesses: pick(-1),

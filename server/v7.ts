@@ -296,6 +296,114 @@ export function capWords(s: string, n: number): string {
   return w.length <= n ? w.join(" ") : w.slice(0, n).join(" ").replace(/[,;:.]+$/, "") + "…";
 }
 
+// ───────────────────────────────────────────────────────────── display text (pure; also used by the web report)
+
+const DOMAIN = /\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|org|net|es|cat|eu|io|co|guide|info|gov|edu|uk|de|fr|it|pt|nl|ie|news|blog)\b/i;
+/** "(barcelonatourism.org, August 2026)", "(guidavera menu, undated)", "(mycoffee.guide, 2025; estimate)": the writer's
+ *  in-words source for a fact it had no [S#] for. Not a parenthesis with a figure or a plain aside. */
+const isInlineCite = (inner: string) =>
+  DOMAIN.test(inner) || /\bundated\b|\bno source\b/i.test(inner) || /^[^,;()]{0,40}[,;]\s*(?:(?:[A-Z][a-z]+|\d{1,2} [A-Z][a-z]+)\s+)?(?:19|20)\d{2}(?:\s*;\s*estimate)?\s*$/.test(inner.trim()) || /^\s*(?:[A-Z][a-z]+\s+)?(?:19|20)\d{2}\s*$/.test(inner);
+/** Pure: text as a reader sees it: no [S#] research ids, no "no source id" notes, spacing before punctuation fixed. */
+export function plainText(s: string): string {
+  return String(s ?? "")
+    .replace(/\s*\[S\d+(?:\s*[,;]\s*(?:S\d+|estimate))*(?:\s+[^\]\n]{0,160})?\]/gi, "")
+    .replace(/\s*[;,]\s*no source (?:id|cited)\b/gi, "")
+    .replace(/\s*\(\s*no source (?:id|cited)\s*\)/gi, "")
+    .replace(/\s+/g, " ")
+    .replace(/\s+([.,;:!?])/g, "$1")
+    .trim();
+}
+/** The old "Set a numeric pass mark before you start" filler for a check the writer gave no pass mark: shown as nothing. */
+export const isPlaceholderPass = (s: string | null | undefined) => !s?.trim() || /^set (?:a |the )?(?:numeric )?pass mark before you start\.?$/i.test(s.trim());
+/** Pure: plainText without the in-words source notes, for a short lead line. */
+export function noInlineCites(s: string): string {
+  return plainText(plainText(s).replace(/\s*\(([^()]{1,90})\)/g, (all, inner: string) => (isInlineCite(inner) ? "" : all)));
+}
+/** Sentences of a plain text (a sentence ends at . ! ? before a capital, digit, quote or €). */
+export const sentencesOf = (t: string): string[] => t.split(/(?<=[.!?])\s+(?=[A-Z0-9(“"€*¿¡])/).map((x) => x.trim()).filter(Boolean);
+
+/** Pure: whole sentences up to `max` words; a text that was cut ("…") drops its unfinished sentence, and a first
+ *  sentence longer than `max` ends at its last full clause instead of a dangling fragment. */
+export function fullSentences(text: string, max = 40): string {
+  const raw = String(text ?? "").trim();
+  const cut = /(?:…|\.{3})\s*$/.test(raw);
+  const s = raw.replace(/(?:…|\.{3})\s*$/, "").trim();
+  if (!s) return "";
+  const ss = sentencesOf(s);
+  const full = cut ? ss.slice(0, -1) : ss;
+  let out = "";
+  for (const x of full) {
+    const next = out ? `${out} ${x}` : x;
+    if (next.split(" ").length > max) break;
+    out = next;
+  }
+  if (out) return /[.!?]$/.test(out) ? out : `${out}.`;
+  const words = (cut ? ss[ss.length - 1]! : ss[0]!).split(" ").slice(0, max).join(" ");
+  const clause = Math.max(words.lastIndexOf(", "), words.lastIndexOf("; "), words.lastIndexOf(" – "), words.lastIndexOf(" — "));
+  const head = (clause > words.length * 0.35 ? words.slice(0, clause) : words).replace(/[,;:–—\s]+$/, "");
+  return /[.!?]$/.test(head) ? head : `${head}.`;
+}
+
+const LEAD_WORD = /^\s*(test first|no-go|go|pivot)\s*:\s*/i;
+/** Pure: the short, clean lead under the verdict badge: "Test first: <first sentence of the deciding reason>", with no
+ *  research ids and no in-words source notes, at most `max` words. A short first sentence takes the next with it. */
+export function leadLine(text: string, max = 28): string {
+  const m = LEAD_WORD.exec(text);
+  const word = m ? m[0].replace(/\s*:\s*$/, "") : "";
+  const body = noInlineCites(m ? text.slice(m[0].length) : text);
+  const cut = /(?:…|\.{3})\s*$/.test(body);
+  const ss = sentencesOf(body.replace(/(?:…|\.{3})\s*$/, ""));
+  const n = ss.length > 1 && ss[0]!.split(" ").length < 7 ? 2 : 1;
+  const lead = ss.length ? fullSentences(`${ss.slice(0, n).join(" ")}${cut && ss.length <= n ? "…" : ""}`, max) : "";
+  const out = lead ? `${lead.charAt(0).toUpperCase()}${lead.slice(1)}` : "";
+  return word ? (out ? `${word}: ${out}` : word) : out;
+}
+const flatWords = (s: string) => noInlineCites(s).toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+/** Pure: the reasons to list under a lead line, without repeating it: the reason the lead was taken from keeps only
+ *  its sentences the lead does not already say (or is dropped), and "no source id" notes are removed. */
+export function reasonsAfterLead(line: string, reasons: readonly string[]): string[] {
+  const lead = flatWords(line.replace(LEAD_WORD, "").replace(/(?:…|\.{3})\s*$/, ""));
+  return reasons
+    .map((r) => plainText(r))
+    .filter(Boolean)
+    .map((r) => {
+      const fr = flatWords(r);
+      if (!lead || !(fr.startsWith(lead) || lead.startsWith(fr) || lead.includes(fr))) return r;
+      const rest = sentencesOf(r).filter((x) => !lead.includes(flatWords(x)));
+      return rest.join(" ");
+    })
+    .filter((r) => r.trim().length > 0);
+}
+
+const IRREGULAR: Record<string, string> = { person: "people", child: "children", man: "men", woman: "women", foot: "feet", tooth: "teeth", mouse: "mice", kg: "kg", g: "g", ml: "ml", l: "l", km: "km" };
+const pluralWord = (w: string): string => {
+  const low = w.toLowerCase();
+  if (IRREGULAR[low]) return IRREGULAR[low]!;
+  if (/(?:ss|ch|sh|x|z)$/i.test(w)) return `${w}es`;
+  if (/[^aeiou]y$/i.test(w)) return `${w.slice(0, -1)}ies`;
+  if (/s$/i.test(w)) return w;
+  return `${w}s`;
+};
+/** Where a unit's head noun phrase ends: "cup of flat white | sold at the kiosk", "booked seat | in one class". */
+const UNIT_TAIL = /\s+(?:sold|served|booked|bought|delivered|made|paid|taken|ordered|rented|at|in|on|per|for|from|with|to|during|via|through|by|that|which|who|including|incl\.?)\b.*$/i;
+/** Pure: a unit in the plural for "1,411 ___ a month": "one cup of flat white sold at the kiosk" → "cups of flat
+ *  white", "one booked seat in one gentle yoga class" → "booked seats", "one subscriber-month" → "subscribers". */
+export function unitPlural(unit: string): string {
+  let u = String(unit ?? "").replace(/\([^)]*\)/g, " ").replace(/\s+/g, " ").trim();
+  u = u.replace(/^(?:one|a|an|1|each|per)\s+/i, "").replace(/[-\s](?:month|monthly)\b/gi, "").replace(/\s+per\s+month\b/gi, "").trim();
+  u = u.replace(UNIT_TAIL, "").replace(/[.,;:…]+$/, "").trim();
+  if (!u) return "units";
+  const of = /^(.+?)(\s+of\s+.+)$/i.exec(u);
+  let head = of ? of[1]! : u;
+  let tail = of ? of[2]! : "";
+  if (tail.split(" ").length > 4) tail = "";
+  const ws = head.split(" ");
+  if (ws.length > 3) head = ws.slice(-3).join(" ");
+  const parts = head.split(" ");
+  parts[parts.length - 1] = pluralWord(parts[parts.length - 1]!);
+  return `${parts.join(" ")}${tail}`;
+}
+
 /** Roster picker without AI (demo mode, and the fallback when the planning call fails): 3–5 roles by idea keywords.
  *  viability + competition always; market almost always; the rest by what the idea needs. */
 export function pickRosterByKeywords(idea: string): AnalystRole[] {
@@ -442,7 +550,8 @@ export function buildReport(roster: readonly Analyst[], work: readonly AnalystWo
   // a written report leads with the reason that decides the computed verdict, not the writer's first bullet
   const li = judge.fullText && judge.reasons?.length ? leadReason(judge.reasons, verdict, factors) : -1;
   const reasons = li >= 0 ? [judge.reasons![li]!, ...judge.reasons!.filter((_, i) => i !== li)] : judge.reasons;
-  const line = li >= 0 ? `${VERDICT_WORD[verdict]}: ${reasons![0]}` : judge.fullText ? alignVerdictLine(judge.verdictLine, verdict) : judge.verdictLine;
+  // the lead under the badge is short and clean: the first sentence of the deciding reason, no in-words sources
+  const line = li >= 0 ? leadLine(`${VERDICT_WORD[verdict]}: ${reasons![0]}`) : judge.fullText ? leadLine(alignVerdictLine(judge.verdictLine, verdict)) : judge.verdictLine;
   return {
     score,
     verdict,
@@ -462,8 +571,8 @@ export function buildReport(roster: readonly Analyst[], work: readonly AnalystWo
     strengths,
     weaknesses,
     nextSteps: judge.nextSteps.slice(0, 3).map((x) => capWords(x, cap.step)),
-    pivot: verdict === "go" ? null : (judge.pivot ?? null),
-    ...(reasons?.length ? { reasons: reasons.slice(0, 5).map((x) => capWords(x, 60)) } : {}),
+    pivot: verdict === "go" || !judge.pivot ? null : judge.fullText ? { idea: plainText(judge.pivot.idea).replace(/[.…]+$/, ""), why: fullSentences(plainText(judge.pivot.why), 40) } : judge.pivot,
+    ...(reasons?.length ? { reasons: reasons.slice(0, 5).map((x) => capWords(plainText(x), 60)) } : {}),
     ...(judge.fullText && against.length ? { against } : {}),
     ...(judge.fullText && unknowns.length ? { unknowns } : {}),
   };

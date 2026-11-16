@@ -245,11 +245,25 @@ export type EscrowStatus = {
   /** Block explorer pages for the release / refund transactions (null until they exist). */
   releaseUrl: string | null;
   refundUrl: string | null;
+  /** Everything contracts/refund-offline.ts needs to rebuild this order's contract and refund it with no LaunchDesk
+   *  server. Public values only (no key can be derived from them). The refund address is filled only for the owner. */
+  refundDetails: {
+    project: string;
+    ref: string;
+    network: EscrowNet;
+    contractAddress: string;
+    merchantAddress: string;
+    refundAddress: string | null;
+    releasePk: string;
+    oraclePk: string;
+    timeoutBlocks: number;
+    funding: string | null;
+  };
 };
 /** Block explorer page for one transaction on the order's network. */
 export const explorerTxUrl = (n: EscrowNet, txid: string) =>
   n === "chipnet" ? `https://chipnet.imaginary.cash/tx/${txid}` : `https://blockchair.com/bitcoin-cash/transaction/${txid}`;
-export async function escrowStatus(projectId: string, stage: string): Promise<EscrowStatus | null> {
+export async function escrowStatus(projectId: string, stage: string, opts: { owner?: boolean } = {}): Promise<EscrowStatus | null> {
   const r = await getRow(projectId, stage);
   if (!r) return null;
   const s = (k: string) => (r[k] == null ? null : String(r[k]));
@@ -265,6 +279,18 @@ export async function escrowStatus(projectId: string, stage: string): Promise<Es
     network: String(r.network) as EscrowNet,
     releaseUrl: r.release_txid ? explorerTxUrl(String(r.network) as EscrowNet, String(r.release_txid)) : null,
     refundUrl: r.refund_txid ? explorerTxUrl(String(r.network) as EscrowNet, String(r.refund_txid)) : null,
+    refundDetails: {
+      project: projectId,
+      ref: String(r.ref),
+      network: String(r.network) as EscrowNet,
+      contractAddress: String(r.address),
+      merchantAddress: String(r.merchant_address),
+      refundAddress: opts.owner ? s("refund_address") : null,
+      releasePk: String(r.release_pk),
+      oraclePk: String(r.oracle_pk),
+      timeoutBlocks: Number(r.timeout_blocks),
+      funding: r.funding_txid ? `${String(r.funding_txid)}:${Number(r.funding_vout)}:${Number(r.sats)}` : null,
+    },
   };
 }
 /** The exact bytes that were hashed on chain, so anyone can re-hash them in the browser. */

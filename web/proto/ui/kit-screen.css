@@ -63,7 +63,7 @@
 .ks-btns { display: flex; flex-direction: column; gap: 8px; min-width: 0; flex: 1; }
 .ks-btns .btn { justify-content: center; }
 .ks-note { margin: 0; font-size: 12px; color: var(--c-muted); }
-.ks-pick { margin-top: 4px; }
+.ks-pick { margin-top: 14px; }
 .ks-tpl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .ks-t { display: flex; flex-direction: column; gap: 4px; padding: 6px; border-radius: 12px; border: 2px solid var(--c-line); background: transparent; cursor: pointer; text-align: left; font: inherit; color: var(--c-ink); min-width: 0; }
 .ks-t.on { border-color: var(--c-positive); }

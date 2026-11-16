@@ -50,6 +50,14 @@ export const config = {
   ownerKeyStrict: env.OWNER_KEY_STRICT === "1",
   /** Per IP: new projects and CEO notes allowed per 10 minutes (0 = no limit). */
   rateLimit: { create: int(env.RATE_LIMIT_CREATE, 12), steer: int(env.RATE_LIMIT_STEER, 8), windowMs: 10 * 60_000 },
+  /**
+   * R1: how many proxies append to X-Forwarded-For in front of us. The visitor is that many entries from the right.
+   * Default: 2 in production (Render's edge, plus room for its CDN hop; a shorter header clamps to its first entry),
+   * 1 elsewhere. 0 ignores the header (socket address only).
+   */
+  trustProxyHops: int(env.TRUST_PROXY_HOPS, env.NODE_ENV === "production" ? 2 : 1),
+  /** R1: drop trailing private addresses (internal load balancers) first. Default on in production. TRUST_PROXY_SKIP_PRIVATE=0/1. */
+  proxySkipPrivate: env.TRUST_PROXY_SKIP_PRIVATE ? env.TRUST_PROXY_SKIP_PRIVATE === "1" : env.NODE_ENV === "production",
   electrumServers: (env.ELECTRUM_SERVERS || "wss://bch.imaginary.cash:50004,wss://fulcrum.pat.mn:50004,wss://electroncash.dk:50004")
     .split(",")
     .map((s) => s.trim())
@@ -61,4 +69,13 @@ if (!config.merchantAddress) console.warn("[config] MERCHANT_ADDRESS is not set:
 export const merchantOnMainnet = (a = config.merchantAddress) => /^(bitcoincash:)?[qp][0-9a-z]{41,}$/.test(a.toLowerCase()) && !/^(bchtest|bchreg):/.test(a.toLowerCase());
 if (config.production && config.merchantAddress && !merchantOnMainnet())
   console.error("[config] MERCHANT_ADDRESS is not a mainnet bitcoincash: address: payments are disabled in production");
+// B2: the escrow switches. ESCROW=1 without its key would accept money it can never release or refund.
+if (env.ESCROW === "1" && !env.ESCROW_WIF) {
+  console.error("[config] ESCROW=1 but ESCROW_WIF is not set. Escrow needs its key to release and refund orders. Set ESCROW_WIF, or remove ESCROW. Not starting.");
+  process.exit(1);
+}
+// VITE_ESCROW is read when the web app is built; on Render the same env is visible here, so a mismatch is detectable.
+if (env.VITE_ESCROW !== undefined && (env.VITE_ESCROW === "1") !== (env.ESCROW === "1"))
+  console.warn(`[config] ESCROW=${env.ESCROW ?? "(unset)"} but VITE_ESCROW=${env.VITE_ESCROW}: set both to 1 or both off, then rebuild. Otherwise validate payments fail.`);
+if (env.PAUSE === "1") console.warn("[config] PAUSE=1: live payments are refused; samples and examples still work");
 if (config.mockAi) console.warn("[config] AI is in MOCK mode (no ANTHROPIC_API_KEY or MOCK_AI=1)");

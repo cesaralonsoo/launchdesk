@@ -15,9 +15,11 @@ import { ownerKey } from "../../src/app/projects";
  * contract) instead of LaunchDesk; the quote is asked with the wallet's own address so a refund can go back there.
  * Needs ESCROW=1 on the server (see .notes/next/escrow.md). With the flag off nothing below changes.
  */
-const ESCROW = (import.meta as unknown as { env?: Record<string, string | undefined> }).env?.VITE_ESCROW === "1";
-// The "Proof on Bitcoin Cash" panel on the live report: loaded only with the flag on (own chunk, nothing otherwise).
-if (ESCROW && typeof document !== "undefined") void import("../ui/escrow-proof").then((m) => m.startEscrowProof()).catch(() => {});
+export const ESCROW = (import.meta as unknown as { env?: Record<string, string | undefined> }).env?.VITE_ESCROW === "1";
+/** Only the report (validate) is held in the contract (server/escrow/watch.ts ESCROW_STAGES); the launch kit is a
+ *  plain payment to LaunchDesk, so its card must never claim otherwise. */
+export const heldInContract = (stage: Stage) => ESCROW && stage === "validate";
+// The "Proof on Bitcoin Cash" panel is started by ui/index.ts (it also shows the finished example's real proof).
 async function escrowQuote(projectId: string, stage: Stage): Promise<Quote> {
   let refundAddress: string | undefined;
   try {
@@ -80,7 +82,7 @@ export function livePayHtml(stage: Stage, cents: number, avatars: string, title:
     <div class="pay-amount" data-st><b class="huge">${usd(cents)}</b><span class="pl-sats">in Bitcoin Cash</span></div>
     <div class="pay-line" data-st><div class="pay-avs">${avatars}</div><div><b>${esc(title)}</b><span>${esc(line)}</span></div></div>
     <div class="pl-slot" data-st aria-live="polite"></div>
-    <p class="pay-foot pl-foot" data-st>${mock ? "This server runs sample AI data. Nothing is charged." : ESCROW ? "Your payment waits in a Bitcoin Cash contract. If the team doesn't deliver within an hour, it comes back to you automatically." : stage === "validate" ? "You get a report. Building is a second step." : "Paid from your wallet. LaunchDesk never holds your keys."}</p>
+    <p class="pay-foot pl-foot" data-st>${mock ? "This server runs sample AI data. Nothing is charged." : heldInContract(stage) ? "Your payment waits in a Bitcoin Cash contract. If the report isn't delivered, it comes back to you about an hour after your payment confirms (6 blocks)." : stage === "validate" ? "You get a report. Building is a second step." : ESCROW ? "Paid from your wallet straight to LaunchDesk (not held in a contract). LaunchDesk never holds your keys." : "Paid from your wallet. LaunchDesk never holds your keys."}</p>
   </section>`;
 }
 
@@ -115,6 +117,9 @@ export function mountPay(root: HTMLElement, d: PayDeps): () => void {
 
   function render() {
     if (disposed || busy) return;
+    // GET /api/config paused:true: the server takes no payments right now. Never show a way to pay.
+    if ((d.config as (AppConfig & { paused?: boolean }) | null)?.paused)
+      return set(`<div class="pl-err pl-paused" role="status"><b>New runs are paused for a little while.</b><span>Nothing can be paid right now, so nothing will be charged.</span></div><button class="btn btn-primary btn-pay" type="button" data-act="example"><span class="b-lbl">See a finished example</span></button>`);
     if (mock) return set(`${btn("dev", d.stage === "validate" ? "Start the sample run" : "Start the sample build")}`);
     const s = walletState();
     if (s === "ready")
@@ -145,7 +150,7 @@ export function mountPay(root: HTMLElement, d: PayDeps): () => void {
         <button type="button" class="v-link" data-pl="newcode">New code</button></div></div>${dev()}`);
   }
   function track(i: number) {
-    const steps = [`Approve in ${walletName()}`, ESCROW ? "Waiting in the Bitcoin Cash contract" : "Confirming on Bitcoin Cash", "Your team starts"];
+    const steps = [`Approve in ${walletName()}`, heldInContract(d.stage) ? "Waiting in the Bitcoin Cash contract" : "Confirming on Bitcoin Cash", "Your team starts"];
     set(`<ol class="pl-track">${steps.map((s, j) => `<li data-s="${j < i ? "done" : j === i ? "now" : ""}"><i></i><span>${esc(s)}</span></li>`).join("")}</ol>`);
   }
   function fail(title: string, text: string, again: string, act = "pay") {
@@ -165,7 +170,7 @@ export function mountPay(root: HTMLElement, d: PayDeps): () => void {
     busy = true;
     const real = !!txid && !txid.startsWith("dev-") && sats > 0;
     set(`<div class="pl-ok"><span class="pl-tick"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
-      <div><b>${real ? (ESCROW ? "Paid · waiting in the contract" : "Paid") : mock ? "Sample run started" : "Local test started"}</b><span>${real ? (ESCROW ? `${fmtSats(sats)} sats · released only when your report is delivered` : `${fmtSats(sats)} sats · confirmed by LaunchDesk`) : "No payment was sent."}</span></div>
+      <div><b>${real ? (heldInContract(d.stage) ? `Your ${usd(cents)} is locked in a Bitcoin Cash contract, not paid yet.` : "Paid") : mock ? "Sample run started" : "Local test started"}</b><span>${real ? (heldInContract(d.stage) ? `It is released only when your report is delivered. ${fmtSats(sats)} sats.` : `${fmtSats(sats)} sats · confirmed by LaunchDesk`) : "No payment was sent."}</span></div>
       ${real && txid ? `<a class="pl-tx" href="${esc(explorerTx(txid))}" target="_blank" rel="noopener noreferrer">View on explorer ↗</a>` : ""}</div>`);
     void api.run(d.projectId, d.stage).catch(() => {});
     later(() => !disposed && d.onPaid({ txid, sats }), real ? 1600 : 900);
@@ -195,7 +200,7 @@ export function mountPay(root: HTMLElement, d: PayDeps): () => void {
   async function payNow(fresh = false) {
     busy = true;
     try {
-      if (fresh || !quote || quote.expiresAt - Date.now() < 60_000) quote = ESCROW ? await escrowQuote(d.projectId, d.stage) : await api.quote(d.projectId, d.stage);
+      if (fresh || !quote || quote.expiresAt - Date.now() < 60_000) quote = heldInContract(d.stage) ? await escrowQuote(d.projectId, d.stage) : await api.quote(d.projectId, d.stage);
     } catch (e) {
       busy = false;
       return fail("Couldn't get the live BCH price.", (e as Error).message || "Nothing was charged.", "Try again", "fresh");

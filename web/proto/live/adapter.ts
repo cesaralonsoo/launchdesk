@@ -119,7 +119,8 @@ export function createLiveRun(id: string, seed?: ProjectV7): LiveRun {
       legacy: built || p.payments.build ? p : null,
     };
     error = v7?.status === "error" ? v7.error || "The team hit a snag." : null;
-    saved.upsert(p);
+    // the read-only examples are not "your" projects: they stay out of this browser's list
+    if (!p.example) saved.upsert(p);
   }
 
   async function tick() {

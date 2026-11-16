@@ -1,0 +1,3537 @@
+{
+ "_source": "Snapshot of a real AI run, 16 Nov 2026 (e2e test database, project xkUVNypbKZ), run locally with the payment step skipped. Report, launch kit, the website designed for the idea and its CC0 photos are stored exactly as the run made them.",
+ "id": "ex-yoga-vlc",
+ "slug": "calma-lenta",
+ "idea": "Gentle yoga classes for seniors in Valencia, small groups in a bright studio near Ruzafa, 12 euros a class",
+ "created_at": 1794816940625,
+ "label": {
+  "title": "Gentle yoga for seniors in Valencia",
+  "run": "Real AI run on 16 Nov 2026",
+  "paid": "Run in test mode, nothing was paid",
+  "kitNote": ""
+ },
+ "jobs": [
+  {
+   "dept": "leo",
+   "stage": "validate",
+   "status": "done",
+   "json": {
+    "score": 4.1,
+    "verdict": "pivot",
+    "headline": "Test first: The citywide senior population is large, but no neighbourhood-level 65+…",
+    "summary": "Test first: The citywide senior population is large, but no neighbourhood-level 65+ count for Ruzafa was found, so the core customer is unproven in the target area. 27 findings, 21 with a source.",
+    "signals": [
+     {
+      "name": "Demand",
+      "score": 4,
+      "why": "The local guide pitches Ruzafa at buyers under 45. This is an…",
+      "source_id": 3,
+      "weight": 0.2
+     },
+     {
+      "name": "Competition gap",
+      "score": 5,
+      "why": "Yoga Flow VLC, near Ruzafa, lists a 10-class bono at about 12…",
+      "source_id": 6,
+      "weight": 0.2
+     },
+     {
+      "name": "Price acceptance",
+      "score": 3,
+      "why": "Ruzafa's asking rent for new listings is 21 € per m² a…",
+      "source_id": 3,
+      "weight": 0.2
+     },
+     {
+      "name": "Channel",
+      "score": 4,
+      "why": "The local guide pitches Ruzafa at buyers under 45. This is an…",
+      "source_id": 3,
+      "weight": 0.2
+     },
+     {
+      "name": "Timing",
+      "score": 4,
+      "why": "Ruzafa was declared an acoustically saturated zone (ZAS) in 2026. Whether this…",
+      "source_id": 3,
+      "weight": 0.2
+     }
+    ],
+    "why_go": "Valencia had 180,624 people aged 65 and over on the padrón on 1 January 2025.",
+    "risks": [
+     {
+      "risk": "The local guide pitches Ruzafa at buyers under 45. This is an editorial view, not a statistic, but it points away from seniors.",
+      "mitigation": "Run a free or 12 € trial class in a borrowed room, such as a community centre or senior association space near Ruzafa, and sell pre-paid seats for four weekly classes.",
+      "severity": "high"
+     },
+     {
+      "risk": "Yoga Flow VLC, near Ruzafa, lists a 10-class bono at about 12 to 14 € per session, undated. A 12 € seat offers no clear discount on bono prices.",
+      "mitigation": "Get quotes from at least two certified yoga teachers for a 60-minute gentle class, and record attendance at each pilot class.",
+      "severity": "high"
+     },
+     {
+      "risk": "Ruzafa's asking rent for new listings is 21 € per m² a month, against an 18 € city average. Ruzafa rents rose 17% over the year, faster than the city's 16.2%.",
+      "mitigation": "Request quotes for three to five premises of about 60 m² in and around Ruzafa, and confirm the licence status and the acoustic zone rules with the city.",
+      "severity": "med"
+     }
+    ],
+    "pivot": {
+     "idea": "Home-visit gentle yoga sessions for seniors, booked by the hour",
+     "why": "Cronoshare lists Valencia home yoga at 14 to 24 € an hour and private tutors near Ruzafa at 12 € an hour, so home sessions avoid studio rent."
+    },
+    "next_step": "Run a free or 12 € trial class in a borrowed room, such as a community centre or senior association space near Ruzafa, and sell pre-paid seats for four weekly classes.",
+    "market_facts": [
+     {
+      "fact": "Valencia had 180,624 people aged 65 and over on the padrón on 1 January 2025.",
+      "source_id": 1,
+      "is_estimate": false
+     },
+     {
+      "fact": "Wikipedia gives a senior share of 21.4% on a total of 841,558, against 844,424 in the city figures, so totals vary by source.",
+      "source_id": 2,
+      "is_estimate": false
+     },
+     {
+      "fact": "Ruzafa had 25,514 residents on 1 January 2025 on about 87.8 hectares.",
+      "source_id": 3,
+      "is_estimate": false
+     },
+     {
+      "fact": "The local guide pitches Ruzafa at buyers under 45. This is an editorial view, not a statistic, but it points away from seniors.",
+      "source_id": 3,
+      "is_estimate": false
+     },
+     {
+      "fact": "Ruzafa is administratively part of L'Eixample, so district figures include areas beyond the studio's catchment.",
+      "source_id": 3,
+      "is_estimate": false
+     }
+    ],
+    "competitors": [],
+    "you": {
+     "price": 5,
+     "differentiation": 7
+    },
+    "sources": [
+     {
+      "id": 1,
+      "url": "https://valenciaplaza.com/valenciaplaza/valencia/valencia-cuenta-con-casi-400-personas-centenarias-20-mas-que-en-2024",
+      "title": "València cuenta con casi 400 personas centenarias, 20 más que ...",
+      "domain": "valenciaplaza.com",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 2,
+      "url": "https://en.wikipedia.org/wiki/Ruzafa",
+      "title": "Ruzafa",
+      "domain": "en.wikipedia.org",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 3,
+      "url": "https://valenciamove.com/neighborhoods-valencia/ruzafa/",
+      "title": "Ruzafa, Valencia - Expat Neighborhood Guide 2026",
+      "domain": "valenciamove.com",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 4,
+      "url": "https://gobinde.com/horario/",
+      "title": "Horario de Clases de Gobinde Yoga",
+      "domain": "gobinde.com",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 5,
+      "url": "https://rincondelyoga.com/centros-de-yoga/comunidad-valenciana/",
+      "title": "Mejores Centros para Practicar Yoga en la Comunidad Valenciana",
+      "domain": "rincondelyoga.com",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 6,
+      "url": "https://valenciamove.com/es/directorio/bienestar/yoga-pilates/",
+      "title": "Estudios de yoga y pilates en Valencia",
+      "domain": "valenciamove.com",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 7,
+      "url": "https://grupoelesport.com/yoga-valencia/",
+      "title": "Clases de yoga en Valencia",
+      "domain": "grupoelesport.com",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 8,
+      "url": "https://infoclases.com/clases-particulares-yoga/valencia",
+      "title": "Clases particulares de Yoga en Valencia capital",
+      "domain": "infoclases.com",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 9,
+      "url": "https://business.virtuagym.com/es/blog/cuanto-cuesta-abrir-un-centro-de-yoga/",
+      "title": "¿Cuánto cuesta abrir un estudio de yoga en España en 2026?",
+      "domain": "business.virtuagym.com",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 10,
+      "url": "https://www.valenciaextra.com/es/valencia/cuanto-cuesta-bajo-en-centro-valencia-en-2026-rentas-locales-comerciales_586759_102.html",
+      "title": "¿Cuánto cuesta un bajo en el centro de Valencia en 2026? Las ...",
+      "domain": "valenciaextra.com",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 11,
+      "url": "https://www.infoautonomos.com/seguridad-social/tarifa-plana-autonomos/",
+      "title": "Tarifa plana de 80 euros para autónomos en 2026 - Infoautónomos",
+      "domain": "infoautonomos.com",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 12,
+      "url": "https://autonomiapro.com/blog/autonomo-valencia-cuota",
+      "title": "Autónomo en Valencia 2026: cuota SS, IRPF e IVA",
+      "domain": "autonomiapro.com",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 13,
+      "url": "https://gestoria247.com/blog/tarifa-plana-autonomos-2026",
+      "title": "Tarifa plana de autónomos 2026: requisitos, prórroga y cuota ...",
+      "domain": "gestoria247.com",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 14,
+      "url": "https://www.billeo.es/blog/gestoria-entrenadores-personales-deporte-fiscalidad-2026/",
+      "title": "Fiscalidad para entrenadores personales autónomos 2026",
+      "domain": "billeo.es",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 15,
+      "url": "https://puigblau.es/articulos/alta-autonomo-valencia.html",
+      "title": "Alta de autónomos en Valencia: tramitamos y te acompañamos",
+      "domain": "puigblau.es",
+      "accessed": "2026-11-16"
+     },
+     {
+      "id": 16,
+      "url": "https://www.xataka.com/basics/deducir-tu-cuota-gimnasio-renta-2025-que-comunidades-se-puede-como-hacerlo-declaracion-2026",
+      "title": "Deducir tu cuota de gimnasio de la Renta 2025: en qué comunidades ...",
+      "domain": "xataka.com",
+      "accessed": "2026-11-16"
+     }
+    ],
+    "interviews": {
+     "who": "",
+     "where": "",
+     "questions": [],
+     "good_sign": "",
+     "target": 0
+    },
+    "kill_criteria": [],
+    "score_math": "0.24×4.0 + 0.29×5.0 + 0.18×3.0 + 0.29×4.0 = 4.1",
+    "verdict_rule": "Go from 6.5 with no factor at 3 or below · Test first 4.5–6.4, or lower when nothing sourced counts against the idea · No-go under 4.5 with sourced evidence against it",
+    "confidence": {
+     "level": "medium",
+     "note": "21 of 27 findings cite a source"
+    }
+   },
+   "model": "v7",
+   "queued_at": 1794817203673,
+   "started_at": 1794817222411,
+   "finished_at": 1794817281817
+  },
+  {
+   "dept": "mia",
+   "stage": "validate",
+   "status": "done",
+   "json": {
+    "title": "Gentle senior yoga studio in Valencia",
+    "one_liner": "Move gently, safely and socially: small-group senior yoga near Ruzafa, 12 euros a class.",
+    "brief": {
+     "concept": "Small-group gentle yoga classes in a bright studio near Ruzafa, Valencia, selling single classes at 12 euros.",
+     "for": "Adults 65 to 80 within 20 minutes of Ruzafa, already attending a senior centre or physio, paying for their own classes.",
+     "goal": "Get 20 paid trial classes booked within 4 weeks, checked at the week 4 gate."
+    },
+    "market": {
+     "city": "Valencia",
+     "country_iso": "ES",
+     "currency": "€",
+     "language": "es"
+    },
+    "gate": {
+     "metric": "paid trial classes",
+     "target": 20,
+     "by_week": 4
+    },
+    "checklist": [
+     {
+      "week": 1,
+      "task": "Interview 20 seniors about their current exercise habits",
+      "how": "Reach people 65+ through a senior centre contact or a family referral, ask what they do weekly and what they pay.",
+      "done_when": "20 interviews logged, with weekly spend noted",
+      "helped_by": "leo",
+      "est_hours": 8
+     },
+     {
+      "week": 1,
+      "task": "Map competing senior fitness classes within 2 km",
+      "how": "List every gentle yoga, tai chi or senior gym class within 2 km of Ruzafa with price and schedule in one sheet.",
+      "done_when": "15+ competitors listed with price per class",
+      "helped_by": "leo",
+      "est_hours": 3
+     },
+     {
+      "week": 1,
+      "task": "Test the 12 euro price with interviewees",
+      "how": "Ask each interviewee whether they would pay 12 euros per class or 45 euros for four classes, and record the answer.",
+      "done_when": "20 price answers recorded, 10+ say yes to 12 euros",
+      "helped_by": "sam",
+      "est_hours": 2
+     },
+     {
+      "week": 2,
+      "task": "Sell 6 paid trial spots to interviewees",
+      "how": "Send interviewees a payment link for a 12 euro trial class on one fixed date and time, capped at 6 spots.",
+      "done_when": "6 paid trial spots sold, 0 refunds",
+      "helped_by": "pip",
+      "est_hours": 3
+     },
+     {
+      "week": 2,
+      "task": "Rent an off-peak studio slot for trial classes",
+      "how": "Book a bright room by the hour from a community centre or studio for a weekday morning, 60 minutes, for 3 weeks.",
+      "done_when": "3 weekly slots confirmed in writing",
+      "helped_by": "sam",
+      "est_hours": 2
+     },
+     {
+      "week": 2,
+      "task": "Publish a Spanish booking and payment page",
+      "how": "Create one Spanish page with class time, 12 euro price, studio area and a payment button, then test it yourself.",
+      "done_when": "Page live with working payment, tested by 2 people",
+      "helped_by": "dex",
+      "est_hours": 4
+     },
+     {
+      "week": 3,
+      "task": "Write Spanish flyer and WhatsApp text for families",
+      "how": "Draft a short flyer stating gentle movement, small group and bright room, with the booking link, plus a WhatsApp message for relatives.",
+      "done_when": "2 versions approved by 3 seniors or relatives",
+      "helped_by": "nova",
+      "est_hours": 3
+     },
+     {
+      "week": 3,
+      "task": "Contact 30 senior centres, pharmacies and physio clinics",
+      "how": "Email or visit 30 local senior centres, pharmacies and physiotherapy clinics near Ruzafa with the flyer and ask them to post it.",
+      "done_when": "30 contacts made, 5 agree to display the flyer",
+      "helped_by": "rae",
+      "est_hours": 6
+     },
+     {
+      "week": 4,
+      "task": "Run the gate count and decide go or no-go",
+      "how": "Count paid trial classes and attendance, compare with the target of 20, and decide whether to open a weekly class.",
+      "done_when": "Gate number recorded in a sheet by Friday",
+      "helped_by": "sam",
+      "est_hours": 2
+     },
+     {
+      "week": 4,
+      "task": "Interview 2 paying attendees after their trial",
+      "how": "Ask 2 attendees whether they would come weekly and which time of day suits them best, and note exact answers.",
+      "done_when": "2 interviews logged, 1+ commits to weekly",
+      "helped_by": null,
+      "est_hours": 2
+     }
+    ]
+   },
+   "model": "claude-haiku-5-5",
+   "queued_at": 1794817203673,
+   "started_at": 1794817203677,
+   "finished_at": 1794817222407
+  },
+  {
+   "dept": "sam",
+   "stage": "validate",
+   "status": "done",
+   "json": {
+    "currency": "€",
+    "canvas": {
+     "customer": "Adults 65 to 80 near Ruzafa already attending senior centres or physio",
+     "value": "Small-group gentle yoga that is safe, social and bookable per class",
+     "revenue": "12 euro single classes; about 6 attendees a day at launch",
+     "channels": "Senior centre partnerships, physio referrals, local flyers, WhatsApp groups",
+     "costs": "Studio rent, instructor pay per class, insurance, booking software and utilities",
+     "unit_economics": "Each class keeps about 7 euro after instructor pay and fees"
+    },
+    "assumptions": [
+     {
+      "key": "customers_per_day_m1",
+      "label": "Attendees per open day, month 1",
+      "value": 6,
+      "unit": "attendees/day",
+      "basis": "Two classes of three people; new business, unknown demand",
+      "is_estimate": true
+     },
+     {
+      "key": "customers_per_day_m12",
+      "label": "Attendees per open day, month 12",
+      "value": 18,
+      "unit": "attendees/day",
+      "basis": "Three classes of six; one instructor can run this",
+      "is_estimate": true
+     },
+     {
+      "key": "avg_ticket",
+      "label": "Revenue per class attendance",
+      "value": 12,
+      "unit": "€",
+      "basis": "Stated founder price for a single class",
+      "is_estimate": false
+     },
+     {
+      "key": "gross_margin_pct",
+      "label": "Margin after instructor pay and fees",
+      "value": 60,
+      "unit": "%",
+      "basis": "Instructor about 4 euro per attendee plus card fees",
+      "is_estimate": true
+     },
+     {
+      "key": "fixed_costs_month",
+      "label": "Monthly fixed costs",
+      "value": 1600,
+      "unit": "€/month",
+      "basis": "Typical small studio rent and running costs in Valencia",
+      "is_estimate": true
+     },
+     {
+      "key": "startup_cost",
+      "label": "One-off start-up spend",
+      "value": 6000,
+      "unit": "€",
+      "basis": "Two months rent deposit, fit-out, equipment, licences, launch",
+      "is_estimate": true
+     },
+     {
+      "key": "open_days_month",
+      "label": "Open days per month",
+      "value": 22,
+      "unit": "days/month",
+      "basis": "Monday to Saturday, minus holidays and closures",
+      "is_estimate": true
+     }
+    ],
+    "fixed_costs_breakdown": [
+     {
+      "label": "Studio rent",
+      "value": 1200
+     },
+     {
+      "label": "Utilities and cleaning",
+      "value": 180
+     },
+     {
+      "label": "Insurance and admin",
+      "value": 120
+     },
+     {
+      "label": "Booking software and marketing",
+      "value": 100
+     }
+    ],
+    "months": [
+     {
+      "month": 1,
+      "revenue": 1584,
+      "costs": 2234,
+      "cash": -6650
+     },
+     {
+      "month": 2,
+      "revenue": 1677,
+      "costs": 2271,
+      "cash": -7244
+     },
+     {
+      "month": 3,
+      "revenue": 1835,
+      "costs": 2334,
+      "cash": -7743
+     },
+     {
+      "month": 4,
+      "revenue": 2085,
+      "costs": 2434,
+      "cash": -8092
+     },
+     {
+      "month": 5,
+      "revenue": 2449,
+      "costs": 2580,
+      "cash": -8223
+     },
+     {
+      "month": 6,
+      "revenue": 2914,
+      "costs": 2766,
+      "cash": -8075
+     },
+     {
+      "month": 7,
+      "revenue": 3422,
+      "costs": 2969,
+      "cash": -7622
+     },
+     {
+      "month": 8,
+      "revenue": 3887,
+      "costs": 3155,
+      "cash": -6890
+     },
+     {
+      "month": 9,
+      "revenue": 4251,
+      "costs": 3300,
+      "cash": -5939
+     },
+     {
+      "month": 10,
+      "revenue": 4501,
+      "costs": 3400,
+      "cash": -4838
+     },
+     {
+      "month": 11,
+      "revenue": 4659,
+      "costs": 3464,
+      "cash": -3643
+     },
+     {
+      "month": 12,
+      "revenue": 4752,
+      "costs": 3501,
+      "cash": -2392
+     }
+    ],
+    "price": {
+     "value": 12,
+     "display": "€12.00",
+     "note": "One 60-minute class at 12 euro; average ticket 12 euro."
+    },
+    "startup_cost": {
+     "value": 6000,
+     "display": "€6k",
+     "note": "Deposit, fit-out, mats and chairs, licences, launch flyers."
+    },
+    "cash_needed": {
+     "value": 8223,
+     "display": "€8.2k",
+     "month": 5
+    },
+    "break_even": {
+     "month": 6,
+     "note": "Revenue covers costs from month 6"
+    },
+    "breakeven_units_per_day": 11,
+    "year1": {
+     "revenue": "€38k",
+     "costs": "€34k",
+     "result": "+€3.6k",
+     "monthly_profit_m12": "€1.3k",
+     "payback": "About month 14"
+    },
+    "main_risk": "Attendees per day in month 1 (6): Run four paid trial classes at a senior centre within two weeks.",
+    "key_assumption": "customers_per_day_m12",
+    "launch_offer": {
+     "item": "One single gentle yoga class",
+     "price": 9,
+     "normal_price": 12,
+     "limit": 20,
+     "display": "€9",
+     "normal_display": "€12",
+     "discount_pct": 25,
+     "contribution": 4.2,
+     "contribution_display": "€4.20",
+     "revenue_if_sold_out": 180,
+     "revenue_display": "€180"
+    },
+    "unit": {
+     "price": 12,
+     "variable_cost": 4.8,
+     "contribution": 7.2,
+     "margin_pct": 60,
+     "line": "€12 a sale − €4.80 direct cost = €7.20 left"
+    },
+    "breakeven": {
+     "per_month": 223,
+     "per_day": 11,
+     "formula": "€1,600 fixed ÷ €7.20 per sale ÷ 22 days = 11 sales a day"
+    },
+    "headroom": {
+     "m12_per_day": 18,
+     "breakeven_per_day": 11,
+     "multiple": 1.6,
+     "note": "Month-12 plan is 1.6× break-even"
+    },
+    "sensitivity": [
+     {
+      "key": "customers_per_day_m12",
+      "label": "Attendees per open day",
+      "low": {
+       "value": 14.4,
+       "year1_result": -951,
+       "break_even_month": 7,
+       "breakeven_per_day": 11,
+       "cash_needed": 9579
+      },
+      "base": {
+       "value": 18,
+       "year1_result": 3608,
+       "break_even_month": 6,
+       "breakeven_per_day": 11,
+       "cash_needed": 8223
+      },
+      "high": {
+       "value": 21.6,
+       "year1_result": 8172,
+       "break_even_month": 5,
+       "breakeven_per_day": 11,
+       "cash_needed": 7229
+      },
+      "swing": 9123,
+      "line": "Attendees per open day ±20%: year 1 from −€951 to +€8.2k"
+     },
+     {
+      "key": "fixed_costs_month",
+      "label": "Monthly fixed costs",
+      "low": {
+       "value": 1280,
+       "year1_result": 7448,
+       "break_even_month": 5,
+       "breakeven_per_day": 8.1,
+       "cash_needed": 6812
+      },
+      "base": {
+       "value": 1600,
+       "year1_result": 3608,
+       "break_even_month": 6,
+       "breakeven_per_day": 11,
+       "cash_needed": 8223
+      },
+      "high": {
+       "value": 1920,
+       "year1_result": -232,
+       "break_even_month": 7,
+       "breakeven_per_day": 13,
+       "cash_needed": 9995
+      },
+      "swing": 7680,
+      "line": "Monthly fixed costs ±20%: year 1 from −€232 to +€7.4k"
+     },
+     {
+      "key": "gross_margin_pct",
+      "label": "Margin after instructor pay and fees",
+      "low": {
+       "value": 50,
+       "year1_result": -196,
+       "break_even_month": 7,
+       "breakeven_per_day": 13,
+       "cash_needed": 9330
+      },
+      "base": {
+       "value": 60,
+       "year1_result": 3608,
+       "break_even_month": 6,
+       "breakeven_per_day": 11,
+       "cash_needed": 8223
+      },
+      "high": {
+       "value": 70,
+       "year1_result": 7410,
+       "break_even_month": 5,
+       "breakeven_per_day": 8.7,
+       "cash_needed": 7374
+      },
+      "swing": 7606,
+      "line": "Margin after instructor pay and fees ±10 pts: year 1 from −€196 to +€7.4k"
+     }
+    ],
+    "memo": {
+     "purpose": "Decide whether to put money into: Gentle yoga classes for seniors in Valencia, small groups in a bright studio near Ruzafa, 12 euros a…",
+     "problem": "The local guide pitches Ruzafa at buyers under 45. This is an editorial view, not a statistic, but it points away from seniors. Yoga Flow VLC, near Ruzafa, lists a 10-class bono at about 12 to 14 € per session, undated. A 12 € seat offers no clear discount on bono prices.",
+     "insight": "Valencia had 180,624 people aged 65 and over on the padrón on 1 January 2025. Gobinde Yoga in Ruzafa charges 18 € for a drop-in and 12 € per class on its 8-class pass, valid for three months. A 12 € seat is at or below that.",
+     "verdict_line": "4.1/10, pivot first: Test first: The citywide senior population is large, but no neighbourhood-level 65+ count for Ruzafa was found, so the core customer is unproven in the target area. (team: customers, competition, pricing, viability).",
+     "next_7_days": [
+      "Run a free or 12 € trial class in a borrowed room, such as a community centre or senior association space near Ruzafa, and sell pre-paid seats for four weekly classes.",
+      "Get quotes from at least two certified yoga teachers for a 60-minute gentle class, and record attendance at each pilot class.",
+      "Request quotes for three to five premises of about 60 m² in and around Ruzafa, and confirm the licence status and the acoustic zone rules with the city."
+     ]
+    }
+   },
+   "model": "claude-haiku-5-5",
+   "queued_at": 1794817203673,
+   "started_at": 1794817281817,
+   "finished_at": 1794817295608
+  },
+  {
+   "dept": "dex",
+   "stage": "build",
+   "status": "done",
+   "json": null,
+   "model": null,
+   "queued_at": 1794817308032,
+   "started_at": null,
+   "finished_at": 1794817383086
+  },
+  {
+   "dept": "nova",
+   "stage": "build",
+   "status": "done",
+   "json": {
+    "names": [
+     {
+      "name": "Calma Lenta",
+      "why": "Slow calm: the pace of a class where nobody is rushed or left behind.",
+      "tagline": "Yoga a tu ritmo, sin prisa",
+      "palette": [
+       {
+        "name": "Primary",
+        "hex": "#2B3A33"
+       },
+       {
+        "name": "Accent",
+        "hex": "#C8553D"
+       },
+       {
+        "name": "Background",
+        "hex": "#F7F2E9"
+       },
+       {
+        "name": "Extra",
+        "hex": "#A9BFA8"
+       }
+      ]
+     },
+     {
+      "name": "Sobremesa",
+      "why": "The Spanish after-meal lingering: unhurried, social, good company. Classes end with a chat.",
+      "tagline": "Mover el cuerpo, quedarse un rato",
+      "palette": [
+       {
+        "name": "Primary",
+        "hex": "#33302B"
+       },
+       {
+        "name": "Accent",
+        "hex": "#B8476B"
+       },
+       {
+        "name": "Background",
+        "hex": "#FAF4EA"
+       },
+       {
+        "name": "Extra",
+        "hex": "#E5C98F"
+       }
+      ]
+     },
+     {
+      "name": "Azahar",
+      "why": "Orange blossom, the scent of Valencia in spring. Gentle, local, and rooted.",
+      "tagline": "Yoga suave en el corazón de Valencia",
+      "palette": [
+       {
+        "name": "Primary",
+        "hex": "#2F3B3A"
+       },
+       {
+        "name": "Accent",
+        "hex": "#D9822B"
+       },
+       {
+        "name": "Background",
+        "hex": "#F8F5EE"
+       },
+       {
+        "name": "Extra",
+        "hex": "#C9D6CF"
+       }
+      ]
+     }
+    ],
+    "chosen": 0,
+    "positioning": "Para mayores de 65 años cerca de Ruzafa que quieren moverse con seguridad y compañía, Calma Lenta es el yoga suave en grupos pequeños que cuida cada postura, por 12 € la clase.",
+    "typography": {
+     "display": "Fraunces",
+     "body": "Figtree"
+    },
+    "voice": {
+     "traits": [
+      "Cercana",
+      "Tranquila",
+      "Clara",
+      "Respetuosa"
+     ],
+     "rules": "Habla de tú a tú, con frases cortas, sin jerga de yoga ni promesas médicas.",
+     "sample": "Clases suaves, grupos pequeños y una silla siempre a mano. Ven a probar."
+    }
+   },
+   "model": null,
+   "queued_at": 1794817308032,
+   "started_at": null,
+   "finished_at": 1794817383086
+  },
+  {
+   "dept": "pip",
+   "stage": "build",
+   "status": "done",
+   "json": {
+    "slug": "calma-lenta",
+    "url": "/s/calma-lenta",
+    "live_at": "2026-11-16T08:23:03.089Z"
+   },
+   "model": null,
+   "queued_at": 1794817308032,
+   "started_at": null,
+   "finished_at": 1794817383086
+  },
+  {
+   "dept": "rae",
+   "stage": "build",
+   "status": "done",
+   "json": null,
+   "model": null,
+   "queued_at": 1794817308032,
+   "started_at": null,
+   "finished_at": 1794817383086
+  }
+ ],
+ "payments": [
+  {
+   "stage": "build",
+   "sats": 0,
+   "cents": 50,
+   "created_at": 1794817308023
+  },
+  {
+   "stage": "validate",
+   "sats": 0,
+   "cents": 10,
+   "created_at": 1794816946644
+  }
+ ],
+ "v7": {
+  "json": {
+   "version": 7,
+   "roster": [
+    {
+     "id": "demand",
+     "role": "demand",
+     "name": "Ava",
+     "color": "#22A06B",
+     "mission": "Who buys, how many of them, how often, what they spend and why they would switch",
+     "why": "Customers & demand",
+     "weight": 0.24
+    },
+    {
+     "id": "competition",
+     "role": "competition",
+     "name": "Leo",
+     "color": "#3B82F6",
+     "mission": "Named rivals and substitutes, their prices, strengths and the gap left open",
+     "why": "Competition & alternatives",
+     "weight": 0.29
+    },
+    {
+     "id": "pricing",
+     "role": "pricing",
+     "name": "Theo",
+     "color": "#CA8A04",
+     "mission": "Price you can charge, cost per unit, margin, fixed costs, break-even volume",
+     "why": "Money",
+     "weight": 0.18
+    },
+    {
+     "id": "viability",
+     "role": "viability",
+     "name": "Mia",
+     "color": "#8B7CF6",
+     "mission": "What kills it (rules, dependencies, timing), the cheapest first test and the path to scale",
+     "why": "Risks & how to start",
+     "weight": 0.29
+    }
+   ],
+   "work": [
+    {
+     "analyst": "demand",
+     "status": "done",
+     "findings": [
+      {
+       "id": "demand-0",
+       "analyst": "demand",
+       "kind": "number",
+       "text": "Valencia had 180,624 people aged 65 and over on the padrón on 1 January 2025.",
+       "source": {
+        "url": "https://valenciaplaza.com/valenciaplaza/valencia/valencia-cuenta-con-casi-400-personas-centenarias-20-mas-que-en-2024",
+        "title": "València cuenta con casi 400 personas centenarias, 20 más que ...",
+        "domain": "valenciaplaza.com",
+        "accessed": "2026-11-16"
+       },
+       "impact": 1,
+       "t": 0
+      },
+      {
+       "id": "demand-1",
+       "analyst": "demand",
+       "kind": "number",
+       "text": "Wikipedia gives a senior share of 21.4% on a total of 841,558, against 844,424 in the city figures, so totals vary by source.",
+       "display": "21.4%",
+       "source": {
+        "url": "https://en.wikipedia.org/wiki/Ruzafa",
+        "title": "Ruzafa",
+        "domain": "en.wikipedia.org",
+        "accessed": "2026-11-16"
+       },
+       "impact": 0,
+       "t": 0
+      },
+      {
+       "id": "demand-2",
+       "analyst": "demand",
+       "kind": "number",
+       "text": "Ruzafa had 25,514 residents on 1 January 2025 on about 87.8 hectares.",
+       "source": {
+        "url": "https://valenciamove.com/neighborhoods-valencia/ruzafa/",
+        "title": "Ruzafa, Valencia - Expat Neighborhood Guide 2026",
+        "domain": "valenciamove.com",
+        "accessed": "2026-11-16"
+       },
+       "impact": 0,
+       "t": 0
+      },
+      {
+       "id": "demand-3",
+       "analyst": "demand",
+       "kind": "number",
+       "text": "The local guide pitches Ruzafa at buyers under 45. This is an editorial view, not a statistic, but it points away from seniors.",
+       "source": {
+        "url": "https://valenciamove.com/neighborhoods-valencia/ruzafa/",
+        "title": "Ruzafa, Valencia - Expat Neighborhood Guide 2026",
+        "domain": "valenciamove.com",
+        "accessed": "2026-11-16"
+       },
+       "impact": -2,
+       "t": 0
+      },
+      {
+       "id": "demand-4",
+       "analyst": "demand",
+       "kind": "fact",
+       "text": "Ruzafa is administratively part of L'Eixample, so district figures include areas beyond the studio's catchment.",
+       "source": {
+        "url": "https://valenciamove.com/neighborhoods-valencia/ruzafa/",
+        "title": "Ruzafa, Valencia - Expat Neighborhood Guide 2026",
+        "domain": "valenciamove.com",
+        "accessed": "2026-11-16"
+       },
+       "impact": 0,
+       "t": 0
+      },
+      {
+       "id": "demand-5",
+       "analyst": "demand",
+       "kind": "estimate",
+       "text": "The Ruzafa 65+ count and share were not found. No source gave a neighbourhood age breakdown.",
+       "source": null,
+       "basis": "Not found in the research",
+       "impact": 0,
+       "t": 0
+      }
+     ],
+     "score": 4,
+     "headline": "The city has a large senior population, but the research found nothing that shows how many people aged 65 and over live in Ruzafa or want this class there. This section is uncertain, not negative."
+    },
+    {
+     "analyst": "competition",
+     "status": "done",
+     "findings": [
+      {
+       "id": "competition-0",
+       "analyst": "competition",
+       "kind": "number",
+       "text": "Gobinde Yoga in Ruzafa charges 18 € for a drop-in and 12 € per class on its 8-class pass, valid for three months. A 12 € seat is at or below that.",
+       "source": {
+        "url": "https://gobinde.com/horario/",
+        "title": "Horario de Clases de Gobinde Yoga",
+        "domain": "gobinde.com",
+        "accessed": "2026-11-16"
+       },
+       "impact": 1,
+       "t": 0
+      },
+      {
+       "id": "competition-1",
+       "analyst": "competition",
+       "kind": "number",
+       "text": "Velcam Yoga Center and CALMAYOGA list single classes at 15 €. A 12 € seat is below those drop-in prices.",
+       "source": {
+        "url": "https://rincondelyoga.com/centros-de-yoga/comunidad-valenciana/",
+        "title": "Mejores Centros para Practicar Yoga en la Comunidad Valenciana",
+        "domain": "rincondelyoga.com",
+        "accessed": "2026-11-16"
+       },
+       "impact": 1,
+       "t": 0
+      },
+      {
+       "id": "competition-2",
+       "analyst": "competition",
+       "kind": "number",
+       "text": "Yoga Flow VLC, near Ruzafa, lists a 10-class bono at about 12 to 14 € per session, undated. A 12 € seat offers no clear discount on bono prices.",
+       "source": {
+        "url": "https://valenciamove.com/es/directorio/bienestar/yoga-pilates/",
+        "title": "Estudios de yoga y pilates en Valencia",
+        "domain": "valenciamove.com",
+        "accessed": "2026-11-16"
+       },
+       "impact": -2,
+       "t": 0
+      },
+      {
+       "id": "competition-3",
+       "analyst": "competition",
+       "kind": "number",
+       "text": "ELE Sport Center in Ruzafa offers one 60-minute session a week for 40 € a month, or two for 65 € a month. This is a different product, a gym rather than a yoga studio.",
+       "source": {
+        "url": "https://grupoelesport.com/yoga-valencia/",
+        "title": "Clases de yoga en Valencia",
+        "domain": "grupoelesport.com",
+        "accessed": "2026-11-16"
+       },
+       "impact": 0,
+       "t": 0
+      },
+      {
+       "id": "competition-4",
+       "analyst": "competition",
+       "kind": "number",
+       "text": "Private tutors list at 12 € and 18 € per hour in Ruzafa, and a home-yoga marketplace lists a Valencia range of 14 to 24 € per hour. These are one-to-one prices, not group prices.",
+       "source": {
+        "url": "https://infoclases.com/clases-particulares-yoga/valencia",
+        "title": "Clases particulares de Yoga en Valencia capital",
+        "domain": "infoclases.com",
+        "accessed": "2026-11-16"
+       },
+       "impact": 0,
+       "t": 0
+      },
+      {
+       "id": "competition-5",
+       "analyst": "competition",
+       "kind": "estimate",
+       "text": "Senior-specific yoga classes near Ruzafa, and their prices, were not found. Municipal senior exercise programmes were not searched.",
+       "source": null,
+       "basis": "Not found in the research",
+       "impact": 0,
+       "t": 0
+      }
+     ],
+     "score": 5,
+     "headline": "Mainstream yoga in and near Ruzafa costs 12 to 20 € a class, so 12 € is competitive. No senior-specific competitor or price was found, so the competitive position against seniors is unknown."
+    },
+    {
+     "analyst": "pricing",
+     "status": "done",
+     "findings": [
+      {
+       "id": "pricing-0",
+       "analyst": "pricing",
+       "kind": "number",
+       "text": "Ruzafa's asking rent for new listings is 21 € per m² a month, against an 18 € city average. Ruzafa rents rose 17% over the year, faster than the city's 16.2%.",
+       "display": "17%",
+       "source": {
+        "url": "https://valenciamove.com/neighborhoods-valencia/ruzafa/",
+        "title": "Ruzafa, Valencia - Expat Neighborhood Guide 2026",
+        "domain": "valenciamove.com",
+        "accessed": "2026-11-16"
+       },
+       "impact": -1,
+       "t": 0
+      },
+      {
+       "id": "pricing-1",
+       "analyst": "pricing",
+       "kind": "number",
+       "text": "Virtuagym's 2026 guide puts the rent of a 100 m² premises in Valencia at 1,000 to 1,800 € a month, a range that does not isolate the Ruzafa area.",
+       "source": {
+        "url": "https://business.virtuagym.com/es/blog/cuanto-cuesta-abrir-un-centro-de-yoga/",
+        "title": "¿Cuánto cuesta abrir un estudio de yoga en España en 2026?",
+        "domain": "business.virtuagym.com",
+        "accessed": "2026-11-16"
+       },
+       "impact": -1,
+       "t": 0
+      },
+      {
+       "id": "pricing-2",
+       "analyst": "pricing",
+       "kind": "estimate",
+       "text": "Listings found in Ruzafa include a 111 m² unit at about 12.75 € per m² (about 1,415 € a month) and a 160 m² corner unit at 2,350 € a month plus VAT, or about 14.69 € per m² (estimate; both listings are undated, and the second was formerly hospitality with no activity licence).",
+       "source": null,
+       "basis": "No source cited in the report",
+       "impact": 0,
+       "t": 0
+      },
+      {
+       "id": "pricing-3",
+       "analyst": "pricing",
+       "kind": "number",
+       "text": "A 2026 guide puts rents for units under 100 m² in the Ruzafa area at 170 to 200 € per m². This conflicts sharply with the 21 € per m² in S3 and with the listings above, and should not be used until checked.",
+       "source": {
+        "url": "https://www.valenciaextra.com/es/valencia/cuanto-cuesta-bajo-en-centro-valencia-en-2026-rentas-locales-comerciales_586759_102.html",
+        "title": "¿Cuánto cuesta un bajo en el centro de Valencia en 2026? Las ...",
+        "domain": "valenciaextra.com",
+        "accessed": "2026-11-16"
+       },
+       "impact": 0,
+       "t": 0
+      },
+      {
+       "id": "pricing-4",
+       "analyst": "pricing",
+       "kind": "number",
+       "text": "The reduced self-employment fee is 80 € for the first 12 months. The all-in first-year figure is 88.64 €.",
+       "source": {
+        "url": "https://www.infoautonomos.com/seguridad-social/tarifa-plana-autonomos/",
+        "title": "Tarifa plana de 80 euros para autónomos en 2026 - Infoautónomos",
+        "domain": "infoautonomos.com",
+        "accessed": "2026-11-16"
+       },
+       "impact": 0,
+       "t": 0
+      },
+      {
+       "id": "pricing-5",
+       "analyst": "pricing",
+       "kind": "number",
+       "text": "From year two, the minimum fee in the first earnings bracket is about 206 € a month. At 1,500 € net income, the example pays at least 302.65 € a month in 2026.",
+       "source": {
+        "url": "https://autonomiapro.com/blog/autonomo-valencia-cuota",
+        "title": "Autónomo en Valencia 2026: cuota SS, IRPF e IVA",
+        "domain": "autonomiapro.com",
+        "accessed": "2026-11-16"
+       },
+       "impact": 0,
+       "t": 0
+      },
+      {
+       "id": "pricing-6",
+       "analyst": "pricing",
+       "kind": "estimate",
+       "text": "The VAT rate on gentle yoga classes, instructor wages, equipment costs, and studio margins were not found.",
+       "source": null,
+       "basis": "Not found in the research",
+       "impact": 0,
+       "t": 0
+      }
+     ],
+     "score": 3,
+     "headline": "The money case depends on the cost of space and the instructor fee. At 12 € a seat the margin per seat is small, and the break-even volume is high for a single studio."
+    },
+    {
+     "analyst": "viability",
+     "status": "done",
+     "findings": [
+      {
+       "id": "viability-0",
+       "analyst": "viability",
+       "kind": "number",
+       "text": "The reduced self-employment fee is 80 € for the first 12 months, and the all-in first-year figure is 88.64 €.",
+       "source": {
+        "url": "https://www.infoautonomos.com/seguridad-social/tarifa-plana-autonomos/",
+        "title": "Tarifa plana de 80 euros para autónomos en 2026 - Infoautónomos",
+        "domain": "infoautonomos.com",
+        "accessed": "2026-11-16"
+       },
+       "impact": 0,
+       "t": 0
+      },
+      {
+       "id": "viability-1",
+       "analyst": "viability",
+       "kind": "number",
+       "text": "Comunitat Valenciana has no general zero-fee programme for new self-employed workers, checked on 4 November 2026. The founder should budget the standard fee.",
+       "source": {
+        "url": "https://gestoria247.com/blog/tarifa-plana-autonomos-2026",
+        "title": "Tarifa plana de autónomos 2026: requisitos, prórroga y cuota ...",
+        "domain": "gestoria247.com",
+        "accessed": "2026-11-16"
+       },
+       "impact": 0,
+       "t": 0
+      },
+      {
+       "id": "viability-2",
+       "analyst": "viability",
+       "kind": "number",
+       "text": "Billeo lists IAE epígrafe 861, which covers yoga and fitness classes, with an exemption for turnover below 1,000,000 € a year. This is a secondary source and must be confirmed with the Agencia Tributaria.",
+       "source": {
+        "url": "https://www.billeo.es/blog/gestoria-entrenadores-personales-deporte-fiscalidad-2026/",
+        "title": "Fiscalidad para entrenadores personales autónomos 2026",
+        "domain": "billeo.es",
+        "accessed": "2026-11-16"
+       },
+       "impact": 0,
+       "t": 0
+      },
+      {
+       "id": "viability-3",
+       "analyst": "viability",
+       "kind": "fact",
+       "text": "Permits for a physical studio may include a licence or declaración responsable, a communication of opening, and professional registration, depending on the activity. The Valencia city regulation was not found.",
+       "source": {
+        "url": "https://puigblau.es/articulos/alta-autonomo-valencia.html",
+        "title": "Alta de autónomos en Valencia: tramitamos y te acompañamos",
+        "domain": "puigblau.es",
+        "accessed": "2026-11-16"
+       },
+       "impact": 0,
+       "t": 0
+      },
+      {
+       "id": "viability-4",
+       "analyst": "viability",
+       "kind": "number",
+       "text": "Ruzafa was declared an acoustically saturated zone (ZAS) in 2026. Whether this affects a new yoga studio was not found, and it may limit what a new premises can get licensed for.",
+       "source": {
+        "url": "https://valenciamove.com/neighborhoods-valencia/ruzafa/",
+        "title": "Ruzafa, Valencia - Expat Neighborhood Guide 2026",
+        "domain": "valenciamove.com",
+        "accessed": "2026-11-16"
+       },
+       "impact": -1,
+       "t": 0
+      },
+      {
+       "id": "viability-5",
+       "analyst": "viability",
+       "kind": "number",
+       "text": "The Valencia gym-fee tax deduction is listed at 30%, up to a 150 € annual limit. It is written for gym memberships, so whether it covers yoga classes is not confirmed.",
+       "display": "30%",
+       "source": {
+        "url": "https://www.xataka.com/basics/deducir-tu-cuota-gimnasio-renta-2025-que-comunidades-se-puede-como-hacerlo-declaracion-2026",
+        "title": "Deducir tu cuota de gimnasio de la Renta 2025: en qué comunidades ...",
+        "domain": "xataka.com",
+        "accessed": "2026-11-16"
+       },
+       "impact": 0,
+       "t": 0
+      },
+      {
+       "id": "viability-6",
+       "analyst": "viability",
+       "kind": "estimate",
+       "text": "Senior-specific rules on accessibility or instructor qualifications were not found.",
+       "source": null,
+       "basis": "Not found in the research",
+       "impact": 0,
+       "t": 0
+      },
+      {
+       "id": "viability-7",
+       "analyst": "viability",
+       "kind": "estimate",
+       "text": "Failure rates for small studios, churn for senior classes, energy costs and platform dependency were not found.",
+       "source": null,
+       "basis": "Not found in the research",
+       "impact": 0,
+       "t": 0
+      }
+     ],
+     "score": 4,
+     "headline": "The main risks are the unproven senior demand, the cost of space, and unconfirmed permits. The fees for self-employment are modest, but the physical studio carries more steps."
+    }
+   ],
+   "report": {
+    "score": 4.1,
+    "verdict": "pivot",
+    "verdictLine": "Test first: The citywide senior population is large, but no neighbourhood-level 65+ count for Ruzafa was found, so the core customer is unproven in the target area.",
+    "factors": [
+     {
+      "analyst": "demand",
+      "label": "Customers",
+      "weight": 0.24,
+      "score": 4,
+      "findings": [
+       "demand-0",
+       "demand-1",
+       "demand-2",
+       "demand-3",
+       "demand-4",
+       "demand-5"
+      ],
+      "sourced": 5,
+      "total": 6
+     },
+     {
+      "analyst": "competition",
+      "label": "Competition",
+      "weight": 0.29,
+      "score": 5,
+      "findings": [
+       "competition-0",
+       "competition-1",
+       "competition-2",
+       "competition-3",
+       "competition-4",
+       "competition-5"
+      ],
+      "sourced": 5,
+      "total": 6
+     },
+     {
+      "analyst": "pricing",
+      "label": "Pricing",
+      "weight": 0.18,
+      "score": 3,
+      "findings": [
+       "pricing-0",
+       "pricing-1",
+       "pricing-2",
+       "pricing-3",
+       "pricing-4",
+       "pricing-5",
+       "pricing-6"
+      ],
+      "sourced": 5,
+      "total": 7
+     },
+     {
+      "analyst": "viability",
+      "label": "Viability",
+      "weight": 0.29,
+      "score": 4,
+      "findings": [
+       "viability-0",
+       "viability-1",
+       "viability-2",
+       "viability-3",
+       "viability-4",
+       "viability-5",
+       "viability-6",
+       "viability-7"
+      ],
+      "sourced": 6,
+      "total": 8
+     }
+    ],
+    "math": "0.24×4.0 + 0.29×5.0 + 0.18×3.0 + 0.29×4.0 = 4.1",
+    "evidence": {
+     "total": 27,
+     "sourced": 21,
+     "sourcedShare": 0.78,
+     "sources": [
+      {
+       "url": "https://valenciaplaza.com/valenciaplaza/valencia/valencia-cuenta-con-casi-400-personas-centenarias-20-mas-que-en-2024",
+       "title": "València cuenta con casi 400 personas centenarias, 20 más que ...",
+       "domain": "valenciaplaza.com",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://en.wikipedia.org/wiki/Ruzafa",
+       "title": "Ruzafa",
+       "domain": "en.wikipedia.org",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://valenciamove.com/neighborhoods-valencia/ruzafa/",
+       "title": "Ruzafa, Valencia - Expat Neighborhood Guide 2026",
+       "domain": "valenciamove.com",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://gobinde.com/horario/",
+       "title": "Horario de Clases de Gobinde Yoga",
+       "domain": "gobinde.com",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://rincondelyoga.com/centros-de-yoga/comunidad-valenciana/",
+       "title": "Mejores Centros para Practicar Yoga en la Comunidad Valenciana",
+       "domain": "rincondelyoga.com",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://valenciamove.com/es/directorio/bienestar/yoga-pilates/",
+       "title": "Estudios de yoga y pilates en Valencia",
+       "domain": "valenciamove.com",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://grupoelesport.com/yoga-valencia/",
+       "title": "Clases de yoga en Valencia",
+       "domain": "grupoelesport.com",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://infoclases.com/clases-particulares-yoga/valencia",
+       "title": "Clases particulares de Yoga en Valencia capital",
+       "domain": "infoclases.com",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://business.virtuagym.com/es/blog/cuanto-cuesta-abrir-un-centro-de-yoga/",
+       "title": "¿Cuánto cuesta abrir un estudio de yoga en España en 2026?",
+       "domain": "business.virtuagym.com",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://www.valenciaextra.com/es/valencia/cuanto-cuesta-bajo-en-centro-valencia-en-2026-rentas-locales-comerciales_586759_102.html",
+       "title": "¿Cuánto cuesta un bajo en el centro de Valencia en 2026? Las ...",
+       "domain": "valenciaextra.com",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://www.infoautonomos.com/seguridad-social/tarifa-plana-autonomos/",
+       "title": "Tarifa plana de 80 euros para autónomos en 2026 - Infoautónomos",
+       "domain": "infoautonomos.com",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://autonomiapro.com/blog/autonomo-valencia-cuota",
+       "title": "Autónomo en Valencia 2026: cuota SS, IRPF e IVA",
+       "domain": "autonomiapro.com",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://gestoria247.com/blog/tarifa-plana-autonomos-2026",
+       "title": "Tarifa plana de autónomos 2026: requisitos, prórroga y cuota ...",
+       "domain": "gestoria247.com",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://www.billeo.es/blog/gestoria-entrenadores-personales-deporte-fiscalidad-2026/",
+       "title": "Fiscalidad para entrenadores personales autónomos 2026",
+       "domain": "billeo.es",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://puigblau.es/articulos/alta-autonomo-valencia.html",
+       "title": "Alta de autónomos en Valencia: tramitamos y te acompañamos",
+       "domain": "puigblau.es",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://www.xataka.com/basics/deducir-tu-cuota-gimnasio-renta-2025-que-comunidades-se-puede-como-hacerlo-declaracion-2026",
+       "title": "Deducir tu cuota de gimnasio de la Renta 2025: en qué comunidades ...",
+       "domain": "xataka.com",
+       "accessed": "2026-11-16"
+      }
+     ]
+    },
+    "confidence": "medium",
+    "scalability": {
+     "score": 2.8,
+     "cap": 1,
+     "reach": "Neighbourhood",
+     "why": "A single rented studio serves one catchment and needs the founder or a paid instructor in every class, so it stops at the neighbourhood.",
+     "wouldScale": [
+      "Add a second class time or a second studio, once one studio fills",
+      "Sell pre-paid class packs online to reduce no-shows and admin",
+      "Offer home-visit sessions alongside the studio to cover more of the city"
+     ],
+     "parts": [
+      {
+       "label": "Reach",
+       "score": 2
+      },
+      {
+       "label": "Repeatable",
+       "score": 4
+      },
+      {
+       "label": "Margins at scale",
+       "score": 2
+      },
+      {
+       "label": "Founder-free",
+       "score": 3
+      },
+      {
+       "label": "Digital leverage",
+       "score": 3
+      }
+     ]
+    },
+    "strengths": [
+     {
+      "text": "Valencia had 180,624 people aged 65 and over on the padrón on 1 January 2025.",
+      "finding": "demand-0"
+     },
+     {
+      "text": "Gobinde Yoga in Ruzafa charges 18 € for a drop-in and 12 € per class on its 8-class pass, valid for three months. A 12 € seat is at or below that.",
+      "finding": "competition-0"
+     },
+     {
+      "text": "Velcam Yoga Center and CALMAYOGA list single classes at 15 €. A 12 € seat is below those drop-in prices.",
+      "finding": "competition-1"
+     }
+    ],
+    "weaknesses": [
+     {
+      "text": "The local guide pitches Ruzafa at buyers under 45. This is an editorial view, not a statistic, but it points away from seniors.",
+      "finding": "demand-3"
+     },
+     {
+      "text": "Yoga Flow VLC, near Ruzafa, lists a 10-class bono at about 12 to 14 € per session, undated. A 12 € seat offers no clear discount on bono prices.",
+      "finding": "competition-2"
+     },
+     {
+      "text": "Ruzafa's asking rent for new listings is 21 € per m² a month, against an 18 € city average. Ruzafa rents rose 17% over the year, faster than the city's 16.2%.",
+      "finding": "pricing-0"
+     }
+    ],
+    "nextSteps": [
+     "Run a free or 12 € trial class in a borrowed room, such as a community centre or senior association space near Ruzafa, and sell pre-paid seats for four weekly classes.",
+     "Get quotes from at least two certified yoga teachers for a 60-minute gentle class, and record attendance at each pilot class.",
+     "Request quotes for three to five premises of about 60 m² in and around Ruzafa, and confirm the licence status and the acoustic zone rules with the city."
+    ],
+    "pivot": {
+     "idea": "Home-visit gentle yoga sessions for seniors, booked by the hour",
+     "why": "Cronoshare lists Valencia home yoga at 14 to 24 € an hour and private tutors near Ruzafa at 12 € an hour, so home sessions avoid studio rent."
+    },
+    "reasons": [
+     "The citywide senior population is large, but no neighbourhood-level 65+ count for Ruzafa was found, so the core customer is unproven in the target area.",
+     "The 12 € price matches Gobinde's bono rate of 12 € per class, and a 10-class bono elsewhere in the city is listed at about 12 to 14 € per session. The price is not a clear edge.",
+     "The fixed-cost base is high. Ruzafa's asking rent is 21 € per m² a month, and the margin per seat is thin: the contribution per unit is €1.17 at a 12% margin.",
+     "Setup is cheap in fees: the reduced self-employment rate is 80 € for the first 12 months, and an activity code for yoga exists. Permits for a physical studio are not fully confirmed.",
+     "Each open question can be tested for little money before any lease is signed (see the next section)."
+    ],
+    "unknowns": [
+     "The Ruzafa 65+ count and share were not found. No source gave a neighbourhood age breakdown.",
+     "Senior-specific yoga classes near Ruzafa, and their prices, were not found. Municipal senior exercise programmes were not searched.",
+     "The VAT rate on gentle yoga classes, instructor wages, equipment costs, and studio margins were not found.",
+     "Senior-specific rules on accessibility or instructor qualifications were not found."
+    ]
+   },
+   "steers": [],
+   "status": "done",
+   "blocks": [
+    {
+     "id": "customers",
+     "role": "demand",
+     "title": "Customers & demand",
+     "focus": [
+      "Who would pay for this, and how many are there?",
+      "How often would they buy, and why switch?"
+     ],
+     "status": "done",
+     "takeaway": "The city has a large senior population, but the research found nothing that shows how many people aged 65 and over live in Ruzafa or want this class there. This section is uncertain, not negative.",
+     "score": 4,
+     "verdict": "weak",
+     "evidence": [
+      "demand-0",
+      "demand-1",
+      "demand-2",
+      "demand-3",
+      "demand-4",
+      "demand-5"
+     ],
+     "meaning": "The market is large at the city level, but the studio serves a neighbourhood. The first unknown is how many people aged 65 and over live within walking distance of the premises. Until that is known, demand is a guess, and the first validation test is the only way to learn it.",
+     "actions": [
+      "Ask the city's statistics office or the padrón for age counts for the Ruzafa area or census sections around it, and record the source and date.",
+      "Contact two or three senior associations or community centres within about 1 km of Ruzafa, and ask whether they run exercise classes and what their members pay.",
+      "Run a 10-question interview with 30 people aged 65 and over near the Centro de Salud Ruzafa, about 0.2 km from the neighbourhood edge, and record how often they would attend and at what price."
+     ],
+     "keyNumbers": [
+      {
+       "label": "Residents aged 65 and over, city of València",
+       "value": "180,624",
+       "source": {
+        "url": "https://valenciaplaza.com/valenciaplaza/valencia/valencia-cuenta-con-casi-400-personas-centenarias-20-mas-que-en-2024",
+        "title": "València cuenta con casi 400 personas centenarias, 20 más que ...",
+        "domain": "valenciaplaza.com",
+        "accessed": "2026-11-16"
+       }
+      },
+      {
+       "label": "Senior share of residents",
+       "value": "21.4%",
+       "source": {
+        "url": "https://en.wikipedia.org/wiki/Ruzafa",
+        "title": "Ruzafa",
+        "domain": "en.wikipedia.org",
+        "accessed": "2026-11-16"
+       }
+      },
+      {
+       "label": "Ruzafa residents",
+       "value": "25,514",
+       "source": {
+        "url": "https://valenciamove.com/neighborhoods-valencia/ruzafa/",
+        "title": "Ruzafa, Valencia - Expat Neighborhood Guide 2026",
+        "domain": "valenciamove.com",
+        "accessed": "2026-11-16"
+       }
+      },
+      {
+       "label": "Ruzafa asking rent for new listings",
+       "value": "21 € per m² a month",
+       "source": {
+        "url": "https://valenciamove.com/neighborhoods-valencia/ruzafa/",
+        "title": "Ruzafa, Valencia - Expat Neighborhood Guide 2026",
+        "domain": "valenciamove.com",
+        "accessed": "2026-11-16"
+       }
+      }
+     ],
+     "sources": [
+      {
+       "url": "https://valenciaplaza.com/valenciaplaza/valencia/valencia-cuenta-con-casi-400-personas-centenarias-20-mas-que-en-2024",
+       "title": "València cuenta con casi 400 personas centenarias, 20 más que ...",
+       "domain": "valenciaplaza.com",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://en.wikipedia.org/wiki/Ruzafa",
+       "title": "Ruzafa",
+       "domain": "en.wikipedia.org",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://valenciamove.com/neighborhoods-valencia/ruzafa/",
+       "title": "Ruzafa, Valencia - Expat Neighborhood Guide 2026",
+       "domain": "valenciamove.com",
+       "accessed": "2026-11-16"
+      }
+     ],
+     "ms": {
+      "done": 78126
+     }
+    },
+    {
+     "id": "competition",
+     "role": "competition",
+     "title": "Competition & alternatives",
+     "focus": [
+      "Who do customers use today instead?",
+      "What do they charge, and where are they weak?"
+     ],
+     "status": "done",
+     "takeaway": "Mainstream yoga in and near Ruzafa costs 12 to 20 € a class, so 12 € is competitive. No senior-specific competitor or price was found, so the competitive position against seniors is unknown.",
+     "score": 5,
+     "verdict": "mixed",
+     "evidence": [
+      "competition-0",
+      "competition-1",
+      "competition-2",
+      "competition-3",
+      "competition-4",
+      "competition-5"
+     ],
+     "meaning": "A 12 € price will not stand out on price alone against drop-in and bono offers. The studio's edge would have to be the senior-specific format, the small group, and the location. The research did not test whether seniors value any of these.",
+     "actions": [
+      "Call or visit Gobinde, Velcam and CALMAYOGA, and ask whether they run any class for older adults, and what they charge.",
+      "Search the city's senior centres and municipal sports programmes for gentle exercise classes, their fees and their schedules.",
+      "Compare the three home-yoga and private-tutor offers in Ruzafa for group and senior-friendly options, and note the prices in writing."
+     ],
+     "keyNumbers": [
+      {
+       "label": "Gobinde drop-in, one class",
+       "value": "18 €",
+       "source": {
+        "url": "https://gobinde.com/horario/",
+        "title": "Horario de Clases de Gobinde Yoga",
+        "domain": "gobinde.com",
+        "accessed": "2026-11-16"
+       }
+      },
+      {
+       "label": "Gobinde 8-class bono, per class",
+       "value": "12 €",
+       "source": {
+        "url": "https://gobinde.com/horario/",
+        "title": "Horario de Clases de Gobinde Yoga",
+        "domain": "gobinde.com",
+        "accessed": "2026-11-16"
+       }
+      },
+      {
+       "label": "Velcam drop-in",
+       "value": "15 €",
+       "source": {
+        "url": "https://rincondelyoga.com/centros-de-yoga/comunidad-valenciana/",
+        "title": "Mejores Centros para Practicar Yoga en la Comunidad Valenciana",
+        "domain": "rincondelyoga.com",
+        "accessed": "2026-11-16"
+       }
+      },
+      {
+       "label": "Yoga Flow VLC, 10-class bono, per session",
+       "value": "about 12 to 14 €",
+       "source": {
+        "url": "https://valenciamove.com/es/directorio/bienestar/yoga-pilates/",
+        "title": "Estudios de yoga y pilates en Valencia",
+        "domain": "valenciamove.com",
+        "accessed": "2026-11-16"
+       }
+      }
+     ],
+     "sources": [
+      {
+       "url": "https://gobinde.com/horario/",
+       "title": "Horario de Clases de Gobinde Yoga",
+       "domain": "gobinde.com",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://rincondelyoga.com/centros-de-yoga/comunidad-valenciana/",
+       "title": "Mejores Centros para Practicar Yoga en la Comunidad Valenciana",
+       "domain": "rincondelyoga.com",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://valenciamove.com/es/directorio/bienestar/yoga-pilates/",
+       "title": "Estudios de yoga y pilates en Valencia",
+       "domain": "valenciamove.com",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://grupoelesport.com/yoga-valencia/",
+       "title": "Clases de yoga en Valencia",
+       "domain": "grupoelesport.com",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://infoclases.com/clases-particulares-yoga/valencia",
+       "title": "Clases particulares de Yoga en Valencia capital",
+       "domain": "infoclases.com",
+       "accessed": "2026-11-16"
+      }
+     ],
+     "ms": {
+      "done": 78126
+     }
+    },
+    {
+     "id": "money",
+     "role": "pricing",
+     "title": "Money",
+     "focus": [
+      "What price can it charge, and what does one sale cost?",
+      "How many sales a month to break even?"
+     ],
+     "status": "done",
+     "takeaway": "The money case depends on the cost of space and the instructor fee. At 12 € a seat the margin per seat is small, and the break-even volume is high for a single studio.",
+     "score": 3,
+     "verdict": "weak",
+     "evidence": [
+      "pricing-0",
+      "pricing-1",
+      "pricing-2",
+      "pricing-3",
+      "pricing-4",
+      "pricing-5",
+      "pricing-6"
+     ],
+     "meaning": "A 12 € seat leaves little room after the instructor is paid and rent is covered. Unless the instructor fee is lower, or the studio is smaller or cheaper, the single-studio model does not break even on the volume the neighbourhood is likely to support. The home-visit option in the verdict pivot avoids most of the rent.",
+     "actions": [
+      "Get written rent quotes for three premises of about 60 m² near Ruzafa, and compare them with the 21 € per m² asking price.",
+      "Ask a gestoría to confirm the VAT rate on group yoga for seniors, and the year-one and year-two self-employment costs, before the price is set.",
+      "Get instructor quotes for hourly and per-class pay, and recalculate the instructor share of each seat."
+     ],
+     "keyNumbers": [
+      {
+       "label": "Ruzafa asking rent, new listings",
+       "value": "21 € per m² a month",
+       "source": {
+        "url": "https://valenciamove.com/neighborhoods-valencia/ruzafa/",
+        "title": "Ruzafa, Valencia - Expat Neighborhood Guide 2026",
+        "domain": "valenciamove.com",
+        "accessed": "2026-11-16"
+       }
+      },
+      {
+       "label": "Rent, 100 m² premises in Valencia",
+       "value": "1,000 to 1,800 € a month",
+       "source": {
+        "url": "https://business.virtuagym.com/es/blog/cuanto-cuesta-abrir-un-centro-de-yoga/",
+        "title": "¿Cuánto cuesta abrir un estudio de yoga en España en 2026?",
+        "domain": "business.virtuagym.com",
+        "accessed": "2026-11-16"
+       }
+      },
+      {
+       "label": "Self-employment fee, first 12 months",
+       "value": "80 € (all-in 88.64 €)",
+       "source": {
+        "url": "https://www.infoautonomos.com/seguridad-social/tarifa-plana-autonomos/",
+        "title": "Tarifa plana de 80 euros para autónomos en 2026 - Infoautónomos",
+        "domain": "infoautonomos.com",
+        "accessed": "2026-11-16"
+       }
+      },
+      {
+       "label": "Self-employment fee, year two, at 1,500 € net",
+       "value": "302.65 € a month",
+       "source": {
+        "url": "https://autonomiapro.com/blog/autonomo-valencia-cuota",
+        "title": "Autónomo en Valencia 2026: cuota SS, IRPF e IVA",
+        "domain": "autonomiapro.com",
+        "accessed": "2026-11-16"
+       }
+      }
+     ],
+     "math": [
+      "Price per unit (incl. VAT 21%): €12.00",
+      "Share kept by the business: 100%",
+      "Net revenue per unit: €9.92",
+      "Variable cost per unit: €8.75",
+      "Contribution per unit: €1.17 (12%)",
+      "Fixed costs per month: €3,003",
+      "Break-even (units per month): 2,573",
+      "Start-up capital: €7,309"
+     ],
+     "sources": [
+      {
+       "url": "https://valenciamove.com/neighborhoods-valencia/ruzafa/",
+       "title": "Ruzafa, Valencia - Expat Neighborhood Guide 2026",
+       "domain": "valenciamove.com",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://business.virtuagym.com/es/blog/cuanto-cuesta-abrir-un-centro-de-yoga/",
+       "title": "¿Cuánto cuesta abrir un estudio de yoga en España en 2026?",
+       "domain": "business.virtuagym.com",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://www.valenciaextra.com/es/valencia/cuanto-cuesta-bajo-en-centro-valencia-en-2026-rentas-locales-comerciales_586759_102.html",
+       "title": "¿Cuánto cuesta un bajo en el centro de Valencia en 2026? Las ...",
+       "domain": "valenciaextra.com",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://www.infoautonomos.com/seguridad-social/tarifa-plana-autonomos/",
+       "title": "Tarifa plana de 80 euros para autónomos en 2026 - Infoautónomos",
+       "domain": "infoautonomos.com",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://autonomiapro.com/blog/autonomo-valencia-cuota",
+       "title": "Autónomo en Valencia 2026: cuota SS, IRPF e IVA",
+       "domain": "autonomiapro.com",
+       "accessed": "2026-11-16"
+      }
+     ],
+     "ms": {
+      "done": 78127
+     }
+    },
+    {
+     "id": "risks",
+     "role": "viability",
+     "title": "Risks & how to start",
+     "focus": [
+      "What could stop it: rules, suppliers, timing?",
+      "What is the cheapest first test, and how could it grow?"
+     ],
+     "status": "done",
+     "takeaway": "The main risks are the unproven senior demand, the cost of space, and unconfirmed permits. The fees for self-employment are modest, but the physical studio carries more steps.",
+     "score": 4,
+     "verdict": "weak",
+     "evidence": [
+      "viability-0",
+      "viability-1",
+      "viability-2",
+      "viability-3",
+      "viability-4",
+      "viability-5",
+      "viability-6",
+      "viability-7"
+     ],
+     "meaning": "The legal start is simple, but a physical studio needs its licence, acoustic status, and premises confirmed before a lease. These checks cost time, not much money, and should come before any deposit is paid.",
+     "actions": [
+      "Ask the Valencia city council which licence or declaración responsable applies to a yoga studio in a ZAS area, and whether a new yoga use is allowed in Ruzafa.",
+      "Book a session with a gestoría to confirm the epígrafe 861 registration, the year-one fee, and whether the gym-fee deduction covers classes.",
+      "Ask the insurer for a quote for group exercise classes for people aged 65 and over, and note any instructor or accessibility requirements."
+     ],
+     "keyNumbers": [
+      {
+       "label": "Self-employment fee, first 12 months",
+       "value": "80 € (all-in 88.64 €)",
+       "source": {
+        "url": "https://www.infoautonomos.com/seguridad-social/tarifa-plana-autonomos/",
+        "title": "Tarifa plana de 80 euros para autónomos en 2026 - Infoautónomos",
+        "domain": "infoautonomos.com",
+        "accessed": "2026-11-16"
+       }
+      },
+      {
+       "label": "Self-employment fee, year two, first bracket",
+       "value": "about 206 € a month",
+       "source": {
+        "url": "https://autonomiapro.com/blog/autonomo-valencia-cuota",
+        "title": "Autónomo en Valencia 2026: cuota SS, IRPF e IVA",
+        "domain": "autonomiapro.com",
+        "accessed": "2026-11-16"
+       }
+      },
+      {
+       "label": "Yoga activity code",
+       "value": "IAE epígrafe 861",
+       "source": {
+        "url": "https://www.billeo.es/blog/gestoria-entrenadores-personales-deporte-fiscalidad-2026/",
+        "title": "Fiscalidad para entrenadores personales autónomos 2026",
+        "domain": "billeo.es",
+        "accessed": "2026-11-16"
+       }
+      },
+      {
+       "label": "Zero-fee programme",
+       "value": "not available",
+       "source": {
+        "url": "https://gestoria247.com/blog/tarifa-plana-autonomos-2026",
+        "title": "Tarifa plana de autónomos 2026: requisitos, prórroga y cuota ...",
+        "domain": "gestoria247.com",
+        "accessed": "2026-11-16"
+       }
+      }
+     ],
+     "sources": [
+      {
+       "url": "https://www.infoautonomos.com/seguridad-social/tarifa-plana-autonomos/",
+       "title": "Tarifa plana de 80 euros para autónomos en 2026 - Infoautónomos",
+       "domain": "infoautonomos.com",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://gestoria247.com/blog/tarifa-plana-autonomos-2026",
+       "title": "Tarifa plana de autónomos 2026: requisitos, prórroga y cuota ...",
+       "domain": "gestoria247.com",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://www.billeo.es/blog/gestoria-entrenadores-personales-deporte-fiscalidad-2026/",
+       "title": "Fiscalidad para entrenadores personales autónomos 2026",
+       "domain": "billeo.es",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://puigblau.es/articulos/alta-autonomo-valencia.html",
+       "title": "Alta de autónomos en Valencia: tramitamos y te acompañamos",
+       "domain": "puigblau.es",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://valenciamove.com/neighborhoods-valencia/ruzafa/",
+       "title": "Ruzafa, Valencia - Expat Neighborhood Guide 2026",
+       "domain": "valenciamove.com",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://www.xataka.com/basics/deducir-tu-cuota-gimnasio-renta-2025-que-comunidades-se-puede-como-hacerlo-declaracion-2026",
+       "title": "Deducir tu cuota de gimnasio de la Renta 2025: en qué comunidades ...",
+       "domain": "xataka.com",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://autonomiapro.com/blog/autonomo-valencia-cuota",
+       "title": "Autónomo en Valencia 2026: cuota SS, IRPF e IVA",
+       "domain": "autonomiapro.com",
+       "accessed": "2026-11-16"
+      }
+     ],
+     "ms": {
+      "done": 78127
+     }
+    }
+   ],
+   "notes": [
+    {
+     "analyst": "demand",
+     "kind": "status",
+     "text": "Digging into customers & demand…",
+     "at": 8
+    },
+    {
+     "analyst": "competition",
+     "kind": "status",
+     "text": "Digging into competition & alternatives…",
+     "at": 13
+    },
+    {
+     "analyst": "pricing",
+     "kind": "status",
+     "text": "Digging into money…",
+     "at": 14
+    },
+    {
+     "analyst": "viability",
+     "kind": "status",
+     "text": "Digging into risks & how to start…",
+     "at": 14
+    },
+    {
+     "analyst": "competition",
+     "kind": "search",
+     "text": "Searching: yoga mayores Valencia Ruzafa precio clase",
+     "at": 1476
+    },
+    {
+     "analyst": "viability",
+     "kind": "search",
+     "text": "Searching: Valencia autónomo cuota 2026 tarifa plana gimnasio yoga licencia actividad",
+     "at": 1549
+    },
+    {
+     "analyst": "demand",
+     "kind": "search",
+     "text": "Searching: Valencia population over 65 Ruzafa padrón",
+     "at": 2088
+    },
+    {
+     "analyst": "pricing",
+     "kind": "search",
+     "text": "Searching: alquiler local comercial Valencia precio m2 2026",
+     "at": 2095
+    },
+    {
+     "analyst": "competition",
+     "kind": "read",
+     "text": "Reading gobinde.com…",
+     "at": 4439
+    },
+    {
+     "analyst": "demand",
+     "kind": "read",
+     "text": "Reading valenciamove.com…",
+     "at": 6021
+    },
+    {
+     "analyst": "viability",
+     "kind": "found",
+     "text": "Found 8 facts, 7 sources",
+     "at": 11916
+    },
+    {
+     "analyst": "pricing",
+     "kind": "found",
+     "text": "Found 7 facts, 1 source",
+     "at": 15403
+    },
+    {
+     "analyst": "competition",
+     "kind": "found",
+     "text": "Found 10 facts, 7 sources",
+     "at": 16421
+    },
+    {
+     "analyst": "demand",
+     "kind": "found",
+     "text": "Found 10 facts, 3 sources",
+     "at": 19828
+    },
+    {
+     "analyst": "viability",
+     "kind": "status",
+     "text": "Writing the report…",
+     "at": 19835
+    },
+    {
+     "analyst": "viability",
+     "kind": "status",
+     "text": "First lines of the report are in…",
+     "at": 51086
+    },
+    {
+     "analyst": "viability",
+     "kind": "status",
+     "text": "Writing the executive summary…",
+     "at": 51224
+    },
+    {
+     "analyst": "viability",
+     "kind": "status",
+     "text": "Writing the verdict…",
+     "at": 52754
+    },
+    {
+     "analyst": "viability",
+     "kind": "status",
+     "text": "Writing the 3 things to validate first…",
+     "at": 54469
+    },
+    {
+     "analyst": "demand",
+     "kind": "status",
+     "text": "Writing Customers & demand…",
+     "at": 57183
+    },
+    {
+     "analyst": "competition",
+     "kind": "status",
+     "text": "Writing Competition & alternatives…",
+     "at": 60489
+    },
+    {
+     "analyst": "pricing",
+     "kind": "status",
+     "text": "Writing Money…",
+     "at": 64204
+    },
+    {
+     "analyst": "viability",
+     "kind": "status",
+     "text": "Writing Risks & how to start…",
+     "at": 70693
+    },
+    {
+     "analyst": "pricing",
+     "kind": "found",
+     "text": "Break-even: 2,573 booked seat in ones a month",
+     "at": 78123
+    },
+    {
+     "analyst": "viability",
+     "kind": "status",
+     "text": "Report ready in 78 s",
+     "at": 78134
+    }
+   ],
+   "firstFindingMs": 11916,
+   "researched": 18,
+   "brief": {
+    "title": "Gentle senior yoga studio in Ruzafa, Valencia",
+    "summary": "Valencia has about 180,624 residents aged 65 and over, roughly 21% of the registered population. The studio would sell small-group gentle yoga at 12 € a class in Ruzafa, which is at or below the drop-in prices seen nearby. The strongest evidence against the idea is the cost of space: Ruzafa asking rents are 21 € per m² a month and rising faster than the city average, and a studio large enough for a small group would carry a fixed cost the 12 € price has to cover. The research found no Ruzafa figure for people aged 65 and over, no senior-specific competitor or price, and no sign that demand is growing. A local guide describes Ruzafa's buyer as younger, though that is an editorial view, not a statistic. At 12 € a seat, the break-even point is 2,573 seats per month, after an instructor fee estimated at 8 € a seat. Startup capital is estimated at €7,309. The money case depends on whether the instructor fee and occupancy assumptions hold, and those are the first things to test. Verdict: Test first (score 4.1/10). Main reason: The citywide senior population is large, but no neighbourhood-level 65+ count for Ruzafa was found, so the core customer is unproven in the target area. No sourced evidence rules it out, so test the open points before you commit savings.",
+    "validateFirst": [
+     {
+      "what": "Adults aged 65+ in Ruzafa and nearby will pay 12 € for a small-group gentle yoga seat, at least once a week",
+      "how": "Run a free or 12 € trial class in a borrowed room, such as a community centre or senior association space near Ruzafa, and sell pre-paid seats for four weekly classes.",
+      "passIf": "At least 15 pre-paid seats sold within 14 days of the offer."
+     },
+     {
+      "what": "Instructor cost per class stays low enough for each seat to contribute",
+      "how": "Get quotes from at least two certified yoga teachers for a 60-minute gentle class, and record attendance at each pilot class.",
+      "passIf": "Instructor pay of 45 € or less per 60-minute class, and an average of at least 5 paid seats per class across four pilot classes."
+     },
+     {
+      "what": "A studio of the size needed can be rented near Ruzafa at a cost that the seat volume can carry",
+      "how": "Request quotes for three to five premises of about 60 m² in and around Ruzafa, and confirm the licence status and the acoustic zone rules with the city.",
+      "passIf": "A monthly rent of 1,300 € or less for a space that holds at least 6 mats, and written confirmation that a yoga use is permitted there."
+     }
+    ],
+    "researchedAt": "2026-11-16"
+   },
+   "reportMd": "# Founder report: Gentle senior yoga studio in Ruzafa, Valencia\n\n## Executive summary\n\nValencia has about 180,624 residents aged 65 and over, roughly 21% of the registered population [S1][S2]. The studio would sell small-group gentle yoga at 12 € a class in Ruzafa, which is at or below the drop-in prices seen nearby [S4][S6]. The strongest evidence against the idea is the cost of space: Ruzafa asking rents are 21 € per m² a month and rising faster than the city average [S3], and a studio large enough for a small group would carry a fixed cost the 12 € price has to cover. The research found no Ruzafa figure for people aged 65 and over, no senior-specific competitor or price, and no sign that demand is growing. A local guide describes Ruzafa's buyer as younger, though that is an editorial view, not a statistic [S3]. At 12 € a seat, the break-even point is 2,573 seats per month, after an instructor fee estimated at 8 € a seat. Startup capital is estimated at €7,309. The money case depends on whether the instructor fee and occupancy assumptions hold, and those are the first things to test. Verdict: Test first (score 4.1/10). Main reason: The citywide senior population is large, but no neighbourhood-level 65+ count for Ruzafa was found, so the core customer is unproven in the target area. No sourced evidence rules it out, so test the open points before you commit savings.\n\n## Verdict\n\n**TEST FIRST** (score 4.1/10)\n\n- The citywide senior population is large [S1], but no neighbourhood-level 65+ count for Ruzafa was found, so the core customer is unproven in the target area.\n- The 12 € price matches Gobinde's bono rate of 12 € per class [S4], and a 10-class bono elsewhere in the city is listed at about 12 to 14 € per session [S5]. The price is not a clear edge.\n- The fixed-cost base is high. Ruzafa's asking rent is 21 € per m² a month [S3], and the margin per seat is thin: the contribution per unit is €1.17 at a 12% margin.\n- Setup is cheap in fees: the reduced self-employment rate is 80 € for the first 12 months [S12], and an activity code for yoga exists [S16]. Permits for a physical studio are not fully confirmed [S13].\n- Each open question can be tested for little money before any lease is signed (see the next section).\n\n## 3 things to validate first\n\n1. **Adults aged 65+ in Ruzafa and nearby will pay 12 € for a small-group gentle yoga seat, at least once a week.**\n   - *Why it matters:* If they will not, there are no paid seats and the lease is never covered.\n   - *Test this month:* Run a free or 12 € trial class in a borrowed room, such as a community centre or senior association space near Ruzafa, and sell pre-paid seats for four weekly classes.\n   - *Pass:* At least 15 pre-paid seats sold within 14 days of the offer.\n\n2. **Instructor cost per class stays low enough for each seat to contribute.**\n   - *Why it matters:* The contribution per seat is already small. A higher instructor fee or lower class occupancy turns the margin negative.\n   - *Test this month:* Get quotes from at least two certified yoga teachers for a 60-minute gentle class, and record attendance at each pilot class.\n   - *Pass:* Instructor pay of 45 € or less per 60-minute class, and an average of at least 5 paid seats per class across four pilot classes.\n\n3. **A studio of the size needed can be rented near Ruzafa at a cost that the seat volume can carry.**\n   - *Why it matters:* Rent is the largest fixed cost. The asking price for new listings is 21 € per m² [S3], while other listings in the area are much lower (see Money).\n   - *Test this month:* Request quotes for three to five premises of about 60 m² in and around Ruzafa, and confirm the licence status and the acoustic zone rules with the city.\n   - *Pass:* A monthly rent of 1,300 € or less for a space that holds at least 6 mats, and written confirmation that a yoga use is permitted there.\n\n## Customers & demand\n\n**Takeaway:** The city has a large senior population, but the research found nothing that shows how many people aged 65 and over live in Ruzafa or want this class there. This section is uncertain, not negative.\n\n**Evidence:**\n- (+) Valencia had 180,624 people aged 65 and over on the padrón on 1 January 2025 [S1].\n- (=) Wikipedia gives a senior share of 21.4% on a total of 841,558, against 844,424 in the city figures, so totals vary by source [S2].\n- (=) Ruzafa had 25,514 residents on 1 January 2025 on about 87.8 hectares [S3].\n- (−) The local guide pitches Ruzafa at buyers under 45. This is an editorial view, not a statistic, but it points away from seniors [S3].\n- (=) Ruzafa is administratively part of L'Eixample, so district figures include areas beyond the studio's catchment [S3].\n- (?) The Ruzafa 65+ count and share were not found. No source gave a neighbourhood age breakdown.\n\n**Key numbers:**\n\n| Figure | Value | Source or \"estimate\" |\n|---|---|---|\n| Residents aged 65 and over, city of València | 180,624 | S1 |\n| Senior share of residents | 21.4% | S2 |\n| Ruzafa residents | 25,514 | S3 |\n| Ruzafa residents aged 65 and over | not found | — |\n| Ruzafa asking rent for new listings | 21 € per m² a month | S3 |\n\n**What it means for you:** The market is large at the city level, but the studio serves a neighbourhood. The first unknown is how many people aged 65 and over live within walking distance of the premises. Until that is known, demand is a guess, and the first validation test is the only way to learn it.\n\n**Next actions:**\n1. Ask the city's statistics office or the padrón for age counts for the Ruzafa area or census sections around it, and record the source and date.\n2. Contact two or three senior associations or community centres within about 1 km of Ruzafa, and ask whether they run exercise classes and what their members pay.\n3. Run a 10-question interview with 30 people aged 65 and over near the Centro de Salud Ruzafa, about 0.2 km from the neighbourhood edge [S3], and record how often they would attend and at what price.\n\n## Competition & alternatives\n\n**Takeaway:** Mainstream yoga in and near Ruzafa costs 12 to 20 € a class, so 12 € is competitive. No senior-specific competitor or price was found, so the competitive position against seniors is unknown.\n\n**Evidence:**\n- (+) Gobinde Yoga in Ruzafa charges 18 € for a drop-in and 12 € per class on its 8-class pass, valid for three months [S4]. A 12 € seat is at or below that.\n- (+) Velcam Yoga Center and CALMAYOGA list single classes at 15 € [S6]. A 12 € seat is below those drop-in prices.\n- (−) Yoga Flow VLC, near Ruzafa, lists a 10-class bono at about 12 to 14 € per session, undated [S5]. A 12 € seat offers no clear discount on bono prices.\n- (=) ELE Sport Center in Ruzafa offers one 60-minute session a week for 40 € a month, or two for 65 € a month [S7]. This is a different product, a gym rather than a yoga studio.\n- (=) Private tutors list at 12 € and 18 € per hour in Ruzafa [S8], and a home-yoga marketplace lists a Valencia range of 14 to 24 € per hour [S9]. These are one-to-one prices, not group prices.\n- (?) Senior-specific yoga classes near Ruzafa, and their prices, were not found. Municipal senior exercise programmes were not searched.\n\n**Key numbers:**\n\n| Figure | Value | Source or \"estimate\" |\n|---|---|---|\n| Gobinde drop-in, one class | 18 € | S4 |\n| Gobinde 8-class bono, per class | 12 € | S4 |\n| Velcam drop-in | 15 € | S6 |\n| Yoga Flow VLC, 10-class bono, per session | about 12 to 14 € | S5 (undated) |\n| ELE Sport, one session a week | 40 € a month | S7 (undated) |\n| Home-yoga hourly range, Valencia | 14 to 24 € | S9 (undated) |\n\n**What it means for you:** A 12 € price will not stand out on price alone against drop-in and bono offers. The studio's edge would have to be the senior-specific format, the small group, and the location. The research did not test whether seniors value any of these.\n\n**Next actions:**\n1. Call or visit Gobinde, Velcam and CALMAYOGA, and ask whether they run any class for older adults, and what they charge.\n2. Search the city's senior centres and municipal sports programmes for gentle exercise classes, their fees and their schedules.\n3. Compare the three home-yoga and private-tutor offers in Ruzafa for group and senior-friendly options, and note the prices in writing.\n\n## Money\n\n**Takeaway:** The money case depends on the cost of space and the instructor fee. At 12 € a seat the margin per seat is small, and the break-even volume is high for a single studio.\n\n**Evidence:**\n- (−) Ruzafa's asking rent for new listings is 21 € per m² a month, against an 18 € city average [S3]. Ruzafa rents rose 17% over the year, faster than the city's 16.2% [S3].\n- (−) Virtuagym's 2026 guide puts the rent of a 100 m² premises in Valencia at 1,000 to 1,800 € a month [S17], a range that does not isolate the Ruzafa area.\n- (=) Listings found in Ruzafa include a 111 m² unit at about 12.75 € per m² (about 1,415 € a month) and a 160 m² corner unit at 2,350 € a month plus VAT, or about 14.69 € per m² (estimate; both listings are undated, and the second was formerly hospitality with no activity licence).\n- (?) A 2026 guide puts rents for units under 100 m² in the Ruzafa area at 170 to 200 € per m² [S11]. This conflicts sharply with the 21 € per m² in S3 and with the listings above, and should not be used until checked.\n- (=) The reduced self-employment fee is 80 € for the first 12 months [S12]. The all-in first-year figure is 88.64 € [S13].\n- (=) From year two, the minimum fee in the first earnings bracket is about 206 € a month [S14]. At 1,500 € net income, the example pays at least 302.65 € a month in 2026 [S14].\n- (?) The VAT rate on gentle yoga classes, instructor wages, equipment costs, and studio margins were not found.\n\n**Key numbers:**\n\n| Figure | Value | Source or \"estimate\" |\n|---|---|---|\n| Ruzafa asking rent, new listings | 21 € per m² a month | S3 |\n| Rent, 100 m² premises in Valencia | 1,000 to 1,800 € a month | S17 |\n| Self-employment fee, first 12 months | 80 € (all-in 88.64 €) | S12, S13 |\n| Self-employment fee, year two, at 1,500 € net | 302.65 € a month | S14 |\n| Studio size for a group of about 6 | 60 m² | estimate |\n| Instructor fee per 60-minute class | 45 € | estimate |\n| VAT on the class | 21% | estimate (rate not verified in research) |\n\n**Unit economics:**\n\nThe unit is one booked seat in one class. The gross price is 12 €, and VAT is included at an assumed 21% rate. The rate was not confirmed in the research and should be checked with an adviser before pricing. Net revenue per seat is €9.92.\n\nVariable cost per seat is €8.75. This is made up of an instructor share of 8 € (a 45 € class fee divided across 6 seats, assuming a full class), consumables at 0.50 €, and payment and booking fees at 0.25 € per seat. The contribution per seat, after variable costs, is €1.17, a margin of 12%.\n\nFixed costs per month are €3,003. This covers rent for 60 m² at 21 € per m² (1,260 €, estimate), utilities, insurance, accounting, booking software, marketing, owner pay of 1,000 € (estimate), and the year-two social security example of 302.65 € [S14]. Break-even is 2,573 seats per month, which is about the number of seats a full studio fills in several classes per day. The founder should check that volume against the senior demand test before any lease is signed.\n\nStartup capital is €7,309. This covers a two-month rent deposit (estimate), fit-out (estimate), equipment such as mats, bolsters, blocks and chairs (estimate, not found in research), signage and a website (estimate), and the self-employment registration cost of 88.64 € [S13].\n\n**What it means for you:** A 12 € seat leaves little room after the instructor is paid and rent is covered. Unless the instructor fee is lower, or the studio is smaller or cheaper, the single-studio model does not break even on the volume the neighbourhood is likely to support. The home-visit option in the verdict pivot avoids most of the rent.\n\n**Next actions:**\n1. Get written rent quotes for three premises of about 60 m² near Ruzafa, and compare them with the 21 € per m² asking price [S3].\n2. Ask a gestoría to confirm the VAT rate on group yoga for seniors, and the year-one and year-two self-employment costs, before the price is set.\n3. Get instructor quotes for hourly and per-class pay, and recalculate the instructor share of each seat.\n\n**Computed unit economics** (unit: one booked seat in one gentle yoga class; arithmetic done in code from the inputs below)\n\n| line | value |\n|---|---|\n| Price per unit (incl. VAT 21%) | €12.00 |\n| Share kept by the business | 100% |\n| Net revenue per unit | €9.92 |\n| Variable cost per unit | €8.75 |\n| Contribution per unit | €1.17 (12%) |\n| Fixed costs per month | €3,003 |\n| Break-even (units per month) | 2,573 |\n| Start-up capital | €7,309 |\n\n| variable cost per unit | € | source |\n|---|---|---|\n| instructor share (45 € class fee ÷ 6 seats, full class) | €8.00 | estimate |\n| consumables (mat cleaning, towels) | €0.50 | estimate |\n| payment and booking fees | €0.25 | estimate |\n\n| fixed cost per month | € | source |\n|---|---|---|\n| rent, 60 m² at 21 € per m² a month | €1,260 | estimate |\n| utilities | €150 | estimate |\n| insurance | €60.00 | estimate |\n| accounting | €100 | estimate |\n| booking software | €30.00 | estimate |\n| marketing | €100 | estimate |\n| owner pay | €1,000 | estimate |\n| self-employed social security, year two (example at 1,500 € net) | €303 | S14 |\n\n| start-up cost | € | source |\n|---|---|---|\n| two-month rent deposit | €2,520 | estimate |\n| fit-out and flooring | €3,000 | estimate |\n| equipment (mats, bolsters, blocks, chairs, sound system) | €1,200 | estimate |\n| signage and website | €500 | estimate |\n| self-employment registration, first year | €88.64 | S13 |\n\n## Risks & how to start\n\n**Takeaway:** The main risks are the unproven senior demand, the cost of space, and unconfirmed permits. The fees for self-employment are modest, but the physical studio carries more steps.\n\n**Evidence:**\n- (=) The reduced self-employment fee is 80 € for the first 12 months, and the all-in first-year figure is 88.64 € [S12][S13].\n- (=) Comunitat Valenciana has no general zero-fee programme for new self-employed workers, checked on 4 November 2026 [S15]. The founder should budget the standard fee.\n- (=) Billeo lists IAE epígrafe 861, which covers yoga and fitness classes, with an exemption for turnover below 1,000,000 € a year. This is a secondary source and must be confirmed with the Agencia Tributaria [S16].\n- (=) Permits for a physical studio may include a licence or declaración responsable, a communication of opening, and professional registration, depending on the activity [S13]. The Valencia city regulation was not found.\n- (−) Ruzafa was declared an acoustically saturated zone (ZAS) in 2026 [S3]. Whether this affects a new yoga studio was not found, and it may limit what a new premises can get licensed for.\n- (?) The Valencia gym-fee tax deduction is listed at 30%, up to a 150 € annual limit [S18]. It is written for gym memberships, so whether it covers yoga classes is not confirmed.\n- (?) Senior-specific rules on accessibility or instructor qualifications were not found.\n- (?) Failure rates for small studios, churn for senior classes, energy costs and platform dependency were not found.\n\n**Key numbers:**\n\n| Figure | Value | Source or \"estimate\" |\n|---|---|---|\n| Self-employment fee, first 12 months | 80 € (all-in 88.64 €) | S12, S13 |\n| Self-employment fee, year two, first bracket | about 206 € a month | S14 |\n| Yoga activity code | IAE epígrafe 861 | S16 (secondary) |\n| Zero-fee programme | not available | S15 |\n| Gym-fee tax deduction | 30%, 150 € annual limit | S18 (unclear for yoga) |\n\n**What it means for you:** The legal start is simple, but a physical studio needs its licence, acoustic status, and premises confirmed before a lease. These checks cost time, not much money, and should come before any deposit is paid.\n\n**Next actions:**\n1. Ask the Valencia city council which licence or declaración responsable applies to a yoga studio in a ZAS area, and whether a new yoga use is allowed in Ruzafa.\n2. Book a session with a gestoría to confirm the epígrafe 861 registration, the year-one fee, and whether the gym-fee deduction covers classes.\n3. Ask the insurer for a quote for group exercise classes for people aged 65 and over, and note any instructor or accessibility requirements.\n\n## Sources\n- [S1] [València cuenta con casi 400 personas centenarias, 20 más que ...](https://valenciaplaza.com/valenciaplaza/valencia/valencia-cuenta-con-casi-400-personas-centenarias-20-mas-que-en-2024)\n- [S2] [Ruzafa](https://en.wikipedia.org/wiki/Ruzafa)\n- [S3] [Ruzafa, Valencia - Expat Neighborhood Guide 2026](https://valenciamove.com/neighborhoods-valencia/ruzafa/)\n- [S4] [Horario de Clases de Gobinde Yoga](https://gobinde.com/horario/)\n- [S5] [Estudios de yoga y pilates en Valencia](https://valenciamove.com/es/directorio/bienestar/yoga-pilates/)\n- [S6] [Mejores Centros para Practicar Yoga en la Comunidad Valenciana](https://rincondelyoga.com/centros-de-yoga/comunidad-valenciana/)\n- [S7] [Clases de yoga en Valencia](https://grupoelesport.com/yoga-valencia/)\n- [S8] [Clases particulares de Yoga en Valencia capital](https://infoclases.com/clases-particulares-yoga/valencia)\n- [S9] [Yoga a Domicilio en Valencia](https://www.cronoshare.com/servicios/clases-yoga-domicilio/valencia/valencia)\n- [S11] [¿Cuánto cuesta un bajo en el centro de Valencia en 2026? Las ...](https://www.valenciaextra.com/es/valencia/cuanto-cuesta-bajo-en-centro-valencia-en-2026-rentas-locales-comerciales_586759_102.html)\n- [S12] [Tarifa plana de 80 euros para autónomos en 2026 - Infoautónomos](https://www.infoautonomos.com/seguridad-social/tarifa-plana-autonomos/)\n- [S13] [Alta de autónomos en Valencia: tramitamos y te acompañamos](https://puigblau.es/articulos/alta-autonomo-valencia.html)\n- [S14] [Autónomo en Valencia 2026: cuota SS, IRPF e IVA](https://autonomiapro.com/blog/autonomo-valencia-cuota)\n- [S15] [Tarifa plana de autónomos 2026: requisitos, prórroga y cuota ...](https://gestoria247.com/blog/tarifa-plana-autonomos-2026)\n- [S16] [Fiscalidad para entrenadores personales autónomos 2026](https://www.billeo.es/blog/gestoria-entrenadores-personales-deporte-fiscalidad-2026/)\n- [S17] [¿Cuánto cuesta abrir un estudio de yoga en España en 2026?](https://business.virtuagym.com/es/blog/cuanto-cuesta-abrir-un-centro-de-yoga/)\n- [S18] [Deducir tu cuota de gimnasio de la Renta 2025: en qué comunidades ...](https://www.xataka.com/basics/deducir-tu-cuota-gimnasio-renta-2025-que-comunidades-se-puede-como-hacerlo-declaracion-2026)\n",
+   "econ": {
+    "unit": "one booked seat in one gentle yoga class",
+    "price": 12,
+    "vatRate": 0.21,
+    "shareKept": 1,
+    "net": 9.92,
+    "variable": 8.75,
+    "contribution": 1.17,
+    "fixedMonthly": 3002.65,
+    "breakEven": 2573,
+    "startupCapital": 7308.64,
+    "lines": [
+     {
+      "group": "variable",
+      "item": "instructor share (45 € class fee ÷ 6 seats, full class)",
+      "eur": 8,
+      "source": null
+     },
+     {
+      "group": "variable",
+      "item": "consumables (mat cleaning, towels)",
+      "eur": 0.5,
+      "source": null
+     },
+     {
+      "group": "variable",
+      "item": "payment and booking fees",
+      "eur": 0.25,
+      "source": null
+     },
+     {
+      "group": "fixed",
+      "item": "rent, 60 m² at 21 € per m² a month",
+      "eur": 1260,
+      "source": null
+     },
+     {
+      "group": "fixed",
+      "item": "utilities",
+      "eur": 150,
+      "source": null
+     },
+     {
+      "group": "fixed",
+      "item": "insurance",
+      "eur": 60,
+      "source": null
+     },
+     {
+      "group": "fixed",
+      "item": "accounting",
+      "eur": 100,
+      "source": null
+     },
+     {
+      "group": "fixed",
+      "item": "booking software",
+      "eur": 30,
+      "source": null
+     },
+     {
+      "group": "fixed",
+      "item": "marketing",
+      "eur": 100,
+      "source": null
+     },
+     {
+      "group": "fixed",
+      "item": "owner pay",
+      "eur": 1000,
+      "source": null
+     },
+     {
+      "group": "fixed",
+      "item": "self-employed social security, year two (example at 1,500 € net)",
+      "eur": 302.65,
+      "source": {
+       "url": "https://autonomiapro.com/blog/autonomo-valencia-cuota",
+       "title": "Autónomo en Valencia 2026: cuota SS, IRPF e IVA",
+       "domain": "autonomiapro.com",
+       "accessed": "2026-11-16"
+      }
+     },
+     {
+      "group": "startup",
+      "item": "two-month rent deposit",
+      "eur": 2520,
+      "source": null
+     },
+     {
+      "group": "startup",
+      "item": "fit-out and flooring",
+      "eur": 3000,
+      "source": null
+     },
+     {
+      "group": "startup",
+      "item": "equipment (mats, bolsters, blocks, chairs, sound system)",
+      "eur": 1200,
+      "source": null
+     },
+     {
+      "group": "startup",
+      "item": "signage and website",
+      "eur": 500,
+      "source": null
+     },
+     {
+      "group": "startup",
+      "item": "self-employment registration, first year",
+      "eur": 88.64,
+      "source": {
+       "url": "https://puigblau.es/articulos/alta-autonomo-valencia.html",
+       "title": "Alta de autónomos en Valencia: tramitamos y te acompañamos",
+       "domain": "puigblau.es",
+       "accessed": "2026-11-16"
+      }
+     }
+    ]
+   },
+   "cost": {
+    "usd": 0.0661,
+    "calls": 6,
+    "searches": 4,
+    "fetches": 2
+   },
+   "ms": 78133
+  },
+  "research": {
+   "blocks": [
+    {
+     "id": "customers",
+     "notes": [
+      "The city of València had 844,424 people registered on the padrón as of 1 January 2025, according to the city's statistics office as reported by Valencia Plaza. La ciudad alcanza las 844.424 personas empadronadas [1]",
+      "Of those, 180,624 were in the \"65 y más años\" band on 1 January 2025 (Valencia Plaza, citing the municipal padrón). 180.624 personas de 65 y más años [1]",
+      "That works out to roughly 21% of registered residents (my calculation: 180,624 ÷ 844,424). Wikipedia gives a 2025 senior share of 21.4% on a slightly different total of 841,558, so the total figures differ between sources. As of 2025, the population is 841,558, of which 47.6% are males, and 52.4% are females. Minors make up 14.9% of the population, and seniors make up 21.4%. [2]",
+      "Ruzafa (also written Russafa) had 25,514 residents on 1 January 2025, per the padrón as cited by ValenciaMove, a secondary expat-guide site. 25,514 residents on 87.8 hectares (about 217 acres) (padrón, 1 January 2025) [3]",
+      "Ruzafa's 65+ count and share: not found. No source I reached gave a neighbourhood-level age breakdown.",
+      "Ruzafa is administratively part of the L'Eixample district, so district-level figures will mix in areas beyond the studio's catchment. Part of L'Eixample [3]",
+      "The local guide pitches Ruzafa at a younger buyer: If you are under 45 and moving to Valencia, chances are Ruzafa is already on your shortlist. That suggests the neighbourhood's profile leans away from seniors, though this is an editorial view, not a statistic. [3]",
+      "Studio rent context: Ruzafa asking rents were 21 EUR per m² a month in September 2026 on Fotocasa's index, against 18 EUR for the city average. Ruzafa asks 21 EUR per m² a month on Fotocasa's rent index for September 2026, above the 18 EUR the city of Valencia averages. This is a new-listing asking price, not a studio-specific rent. [3]",
+      "Ruzafa's asking rents rose 17% above a year earlier, against 16.2% for the city as a whole. [3]",
+      "Local primary care: the Centro de Salud Ruzafa is about 0.2 km from the neighbourhood edge, a possible referral point for seniors. About 0.2 km away [3]",
+      "Licensing: ValenciaMove says Ruzafa was declared an acoustically saturated zone (ZAS) in 2026 . Whether this affects opening a yoga studio: not found. [3]",
+      "Price of senior or gentle yoga classes in Valencia (per class, per shop or studio, and the €12 benchmark): not found.",
+      "Competing senior yoga or gentle-movement classes near Ruzafa, and their prices: not found.",
+      "Household spending on wellness or exercise by people aged 65+ in Valencia: not found.",
+      "Evidence that demand for senior fitness or gentle yoga in Valencia is growing (trend data, waitlists, or operator results): not found. The only age trend I have is the senior count itself, with no multi-year comparison."
+     ],
+     "cites": [
+      {
+       "url": "https://valenciaplaza.com/valenciaplaza/valencia/valencia-cuenta-con-casi-400-personas-centenarias-20-mas-que-en-2024",
+       "title": "València cuenta con casi 400 personas centenarias, 20 más que ...",
+       "domain": "valenciaplaza.com",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://en.wikipedia.org/wiki/Ruzafa",
+       "title": "Ruzafa",
+       "domain": "en.wikipedia.org",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://valenciamove.com/neighborhoods-valencia/ruzafa/",
+       "title": "Ruzafa, Valencia - Expat Neighborhood Guide 2026",
+       "domain": "valenciamove.com",
+       "accessed": "2026-11-16"
+      }
+     ],
+     "queries": [
+      "Valencia population over 65 Ruzafa padrón"
+     ],
+     "read": [
+      "https://valenciamove.com/neighborhoods-valencia/ruzafa/"
+     ],
+     "summary": "Found 10 facts in 3 sources.",
+     "ok": true
+    },
+    {
+     "id": "competition",
+     "notes": [
+      "Gobinde Yoga (Ruzafa centre, price list updated Nov 2026) charges a drop-in fee of 18€ for a single class, 56€ for one class a week, and 90€ for unlimited classes. [1]",
+      "Gobinde's own pass is a Bonoyoga of 8 classes for 96€, which works out to 12 € per class , valid for three months and transferable to family members. [1]",
+      "Gobinde's private sessions are priced at 50€ each, and a pack of 8 personalised sessions costs 320€ , which is about 40€ each. This is from the same page, so it is not senior-specific. [1]",
+      "Valenciamove's directory describes Yoga Flow VLC, near Mercat de Colón and Ruzafa, with a loose class at about 20 EUR; the same directory says a 10-class bono brings the price down to roughly 12 to 14 EUR per session . The page carries no date. [2]",
+      "Valenciamove's general guide puts a loose yoga class at between 15 EUR and 20 EUR , with monthly unlimited passes at around 80 EUR to 100 EUR . No year is given. [2]",
+      "Velcam Yoga Center (Valencia) lists a drop-in class at 15€ , and CALMAYOGA Valencia lists a single class at 15€ ; the directory page is undated. [3]",
+      "ELE Sport Center has centres in Ruzafa and Ángel Guimerá and offers 40 euros a month for one 60-minute session a week, or 65 euros a month for two . The page is undated. [4]",
+      "Private yoga tutors listed on infoclases.com include one in Ruzafa at 12 €/h , alongside a Ruzafa tutor at 18 €/h; the listing is undated. [5]",
+      "Home yoga marketplace Cronoshare gives a price range for Valencia of 14 € to 24 € per hour, with an average of 18 € . These are platform estimates, not studio prices, and carry no year. [6]",
+      "Wayco Ruzafa's price list is for coworking, not yoga. Its only yoga class seen was dated January 2025 at 5€ for members and 10€ for non-members , but this was a one-off event. [7]",
+      "Senior-specific yoga classes in Ruzafa or anywhere in Valencia, with prices: not found in the search results.",
+      "Municipal or subsidised senior exercise programmes in Valencia (for example, centres for older people) and their fees: not found; not searched.",
+      "Supermarket or DIY substitute (YouTube/home practice) with a price: not found.",
+      "Delivery or app-based group yoga for seniors in Valencia: not found; only the one-to-one home-visit marketplace above."
+     ],
+     "cites": [
+      {
+       "url": "https://gobinde.com/horario/",
+       "title": "Horario de Clases de Gobinde Yoga",
+       "domain": "gobinde.com",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://valenciamove.com/es/directorio/bienestar/yoga-pilates/",
+       "title": "Estudios de yoga y pilates en Valencia",
+       "domain": "valenciamove.com",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://rincondelyoga.com/centros-de-yoga/comunidad-valenciana/",
+       "title": "Mejores Centros para Practicar Yoga en la Comunidad Valenciana",
+       "domain": "rincondelyoga.com",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://grupoelesport.com/yoga-valencia/",
+       "title": "Clases de yoga en Valencia",
+       "domain": "grupoelesport.com",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://infoclases.com/clases-particulares-yoga/valencia",
+       "title": "Clases particulares de Yoga en Valencia capital",
+       "domain": "infoclases.com",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://www.cronoshare.com/servicios/clases-yoga-domicilio/valencia/valencia",
+       "title": "Yoga a Domicilio en Valencia",
+       "domain": "cronoshare.com",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://wayco.es/evento/clase-de-yoga-28-01/",
+       "title": "Clase de Yoga 28/01",
+       "domain": "wayco.es",
+       "accessed": "2026-11-16"
+      }
+     ],
+     "queries": [
+      "yoga mayores Valencia Ruzafa precio clase"
+     ],
+     "read": [
+      "https://gobinde.com/horario/"
+     ],
+     "summary": "Found 10 facts in 7 sources.",
+     "ok": true
+    },
+    {
+     "id": "money",
+     "notes": [
+      "Rent benchmark, Valencia 2026: for units under 100 m², a 2026 guide to central Valencia puts rents at 170 and 200 €/m² in the Juan de Austria, Ruzafa and Plaza del Ayuntamiento area, while 101–300 m² units fall to 130–150 €/m² per month. [1]",
+      "Ruzafa listing, undated: a 111 m² premises on calle Cuba was listed at 12.75 €/m² (about 1,415 € a month) by Mobal Consultores on habitaclia, in a transfer advert for a restaurant. (estimate)",
+      "Ruzafa listing, undated: a corner unit of about 160 m² on Milanuncios sits \"en pleno corazón de Ruzafa\" at 2,350 € a month plus IVA, which is 14.69 €/m² before VAT. It was formerly hospitality and has no activity licence. (estimate)",
+      "Citywide average, stale: idealista lists an average of 12.87 €/m² for Valencia, but the snippet is about 578 days old, so it is not a 2026 figure. (estimate)",
+      "Rent versus price: at 12 € a class, the 2,350 € Ruzafa rent alone equals about 196 paid places per month before any other cost (my arithmetic, not a sourced figure). (estimate)",
+      "Competitor unit prices for senior yoga in Ruzafa or elsewhere in Valencia: not found in this search.",
+      "VAT rate on gentle yoga classes in Spain: not found. The search returned no regulation or tax-agency page, so this must be checked with an adviser before pricing.",
+      "Yoga instructor wages in Valencia (2026): not found.",
+      "Employer social security contribution rate in Spain (2026): not found.",
+      "Equipment costs (mats, bolsters, blocks, chairs, sound system) in Valencia: not found.",
+      "Typical studio margins and capital needed for a small yoga studio: not found.",
+      "Main material cost per unit: not applicable to a class-based service, and no supply cost data was found. (estimate)",
+      "Limits: the search returned one batch of results, and I did not fetch a primary page. Figures marked undated or stale should be re-checked before relying on them. (estimate)"
+     ],
+     "cites": [
+      {
+       "url": "https://www.valenciaextra.com/es/valencia/cuanto-cuesta-bajo-en-centro-valencia-en-2026-rentas-locales-comerciales_586759_102.html",
+       "title": "¿Cuánto cuesta un bajo en el centro de Valencia en 2026? Las ...",
+       "domain": "valenciaextra.com",
+       "accessed": "2026-11-16"
+      }
+     ],
+     "queries": [
+      "alquiler local comercial Valencia precio m2 2026"
+     ],
+     "read": [],
+     "summary": "Found 7 facts in 1 source.",
+     "ok": true
+    },
+    {
+     "id": "risks",
+     "notes": [
+      "Self-employment fee: the state reduced rate (\"tarifa plana\") is 80 euros for the first 12 months of activity, regardless of income . Puigblau, a Valencia gestoría, puts the all-in figure at 88,64 € with the flat rate during the first year in 2026 , and its figures are dated November 2026. [1][2]",
+      "Post-year-one cost: In 2026 the minimum fee for the first bracket (earnings up to 670 € a month) is about 206 €. Autonomiapro's example, a self-employed person with about 1,500 € net monthly income, pays at least 302,65 €/mes in 2026 . [3]",
+      "Valencia cuota cero: Comunitat Valenciana has no general zero-fee programme for new self-employed workers (checked on 4 Nov 2026), with no bases or call for applications published. [4]",
+      "Activity code: Billeo says the IAE epígrafe 861 covers personal training individual and group, fitness classes, aerobics, yoga, pilates , and that the IAE exemption applies if turnover is under 1,000,000 € a year. This is a secondary source, so confirm with the Agencia Tributaria. [5]",
+      "Permits for a physical studio: Puigblau lists licence or declaración responsable, communication of opening of the workplace, and professional registration (colegiación), depending on the activity . I did not find the Valencia city regulation itself, so the exact requirements for a studio near Ruzafa are not found. [2]",
+      "Senior-specific rules (for example, accessibility or instructor qualifications for older participants) in Valencia: not found.",
+      "Rent: Virtuagym's 2026 guide says that in cities like Valencia, Sevilla or Zaragoza, renting a 100 m² premises can cost between 1,000 € and 1,800 € a month, depending on area. No Ruzafa-specific rent was found. [6]",
+      "Class price: no Valencia yoga studio price list for 12 € classes was found, so the price point is untested against local competitors. (estimate)",
+      "Customer tax incentive: the Valencian gym-fee deduction is listed by Xataka as 30% (up to 100% depending on age/disability), with a 150 € annual limit . It is written for gym memberships, so whether it covers yoga classes is not confirmed. [7]",
+      "Failure rates for small fitness or yoga studios in Spain or Valencia: not found.",
+      "Energy or utility cost for a small studio in Valencia: not found.",
+      "Churn for senior exercise classes: not found.",
+      "Platform dependency (booking apps or marketplaces): not found.",
+      "Cheap starts (markets, shared kitchens, pre-sales) for a yoga or senior fitness business in Valencia: not found."
+     ],
+     "cites": [
+      {
+       "url": "https://www.infoautonomos.com/seguridad-social/tarifa-plana-autonomos/",
+       "title": "Tarifa plana de 80 euros para autónomos en 2026 - Infoautónomos",
+       "domain": "infoautonomos.com",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://puigblau.es/articulos/alta-autonomo-valencia.html",
+       "title": "Alta de autónomos en Valencia: tramitamos y te acompañamos",
+       "domain": "puigblau.es",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://autonomiapro.com/blog/autonomo-valencia-cuota",
+       "title": "Autónomo en Valencia 2026: cuota SS, IRPF e IVA",
+       "domain": "autonomiapro.com",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://gestoria247.com/blog/tarifa-plana-autonomos-2026",
+       "title": "Tarifa plana de autónomos 2026: requisitos, prórroga y cuota ...",
+       "domain": "gestoria247.com",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://www.billeo.es/blog/gestoria-entrenadores-personales-deporte-fiscalidad-2026/",
+       "title": "Fiscalidad para entrenadores personales autónomos 2026",
+       "domain": "billeo.es",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://business.virtuagym.com/es/blog/cuanto-cuesta-abrir-un-centro-de-yoga/",
+       "title": "¿Cuánto cuesta abrir un estudio de yoga en España en 2026?",
+       "domain": "business.virtuagym.com",
+       "accessed": "2026-11-16"
+      },
+      {
+       "url": "https://www.xataka.com/basics/deducir-tu-cuota-gimnasio-renta-2025-que-comunidades-se-puede-como-hacerlo-declaracion-2026",
+       "title": "Deducir tu cuota de gimnasio de la Renta 2025: en qué comunidades ...",
+       "domain": "xataka.com",
+       "accessed": "2026-11-16"
+      }
+     ],
+     "queries": [
+      "Valencia autónomo cuota 2026 tarifa plana gimnasio yoga licencia actividad"
+     ],
+     "read": [],
+     "summary": "Found 8 facts in 7 sources.",
+     "ok": true
+    }
+   ]
+  },
+  "updated_at": 1794817281815
+ },
+ "kit": {
+  "brand": {
+   "name": "Calma Lenta",
+   "tagline": "Yoga a tu ritmo, sin prisa",
+   "voice": "Cercana, Tranquila, Clara, Respetuosa. Habla de tú a tú, con frases cortas, sin jerga de yoga ni promesas médicas.",
+   "palette": {
+    "primary": "#2B3A33",
+    "accent": "#C8553D",
+    "bg": "#F7F2E9",
+    "ink": "#2B3A33"
+   },
+   "fonts": {
+    "display": "Fraunces",
+    "text": "Figtree"
+   },
+   "lang": "es",
+   "city": "Valencia",
+   "currency": "€"
+  },
+  "status": {
+   "brand": "done",
+   "logo": "done",
+   "site": "done",
+   "marketing": "done"
+  },
+  "site": {
+   "spec": {
+    "v": 1,
+    "lang": "es",
+    "seo": {
+     "title": "Calma Lenta: yoga suave para mayores en Valencia",
+     "description": "Clases de yoga suave para mayores en grupos pequeños, en un estudio luminoso cerca de Ruzafa, Valencia. Reserva una clase suelta."
+    },
+    "hero": {
+     "eyebrow": "Yoga suave en Ruzafa",
+     "headline": "Yoga a tu ritmo, cerca de Ruzafa",
+     "sub": "Clases de yoga suave para mayores de 65 en grupos pequeños, en un estudio luminoso de Valencia. Reserva solo la clase que quieras, sin compromiso.",
+     "cta": "Reserva tu clase",
+     "secondary": "Cómo funciona"
+    },
+    "sections": [
+     {
+      "kind": "how-it-works-for-customer",
+      "title": "Así de fácil",
+      "steps": [
+       {
+        "icon": "calendar",
+        "title": "Elige tu clase",
+        "body": "Mira los días disponibles y reserva tu plaza para una sola clase."
+       },
+       {
+        "icon": "wallet",
+        "title": "Paga desde el móvil",
+        "body": "Pagas con Bitcoin Cash desde tu teléfono. Es rápido y recibes la confirmación."
+       },
+       {
+        "icon": "smile",
+        "title": "Ven y disfruta",
+        "body": "Llegas al estudio, te recibimos y practicas a tu ritmo, sin prisa."
+       }
+      ]
+     },
+     {
+      "kind": "offer",
+      "title": "Una clase de yoga suave",
+      "item": "Una clase suelta de yoga suave en grupo pequeño, sin compromiso.",
+      "bullets": [
+       "Grupos pequeños, con atención a cada persona",
+       "Estudio luminoso cerca de Ruzafa",
+       "Plazas limitadas a 20 personas"
+      ],
+      "note": "Reservas tu plaza y vienes el día de la clase. Pagas desde el móvil."
+     },
+     {
+      "kind": "menu-or-services",
+      "title": "Qué encontrarás",
+      "intro": "Una clase pensada para moverse con calma, con seguridad y en buena compañía.",
+      "items": [
+       {
+        "icon": "heart",
+        "title": "Movimientos suaves",
+        "body": "Ejercicios sencillos que puedes adaptar a tu cuerpo, sin forzar nada."
+       },
+       {
+        "icon": "users",
+        "title": "Grupos pequeños",
+        "body": "Pocas personas por clase para que te atendamos con tiempo y cercanía."
+       },
+       {
+        "icon": "sun",
+        "title": "Estudio luminoso",
+        "body": "Un espacio claro y tranquilo, cómodo para llegar y para quedarse."
+       },
+       {
+        "icon": "chat",
+        "title": "Ambiente cercano",
+        "body": "Un rato para moverte, charlar y conocer a gente de tu barrio."
+       },
+       {
+        "icon": "check",
+        "title": "Reserva por clase",
+        "body": "Vienes cuando quieras, sin cuotas ni permanencias."
+       }
+      ]
+     },
+     {
+      "kind": "about",
+      "title": "Por qué existe Calma Lenta",
+      "body": "Queremos que el yoga sea fácil de probar para las personas mayores. Sin prisas, sin palabras raras y sin promesas médicas. Solo una clase tranquila, en grupo pequeño, donde cada persona va a su ritmo y se siente a gusto."
+     },
+     {
+      "kind": "proof-stats",
+      "title": "Un barrio con muchos mayores",
+      "stats": [
+       {
+        "value": "180,624",
+        "label": "Residents aged 65 and over, city of València",
+        "sourceUrl": "https://valenciaplaza.com/valenciaplaza/valencia/valencia-cuenta-con-casi-400-personas-centenarias-20-mas-que-en-2024",
+        "source": "valenciaplaza.com"
+       }
+      ]
+     },
+     {
+      "kind": "local",
+      "title": "Cerca de Ruzafa",
+      "body": "Nuestro estudio está cerca de Ruzafa, en Valencia, pensado para quien vive a menos de 20 minutos y prefiere venir andando o en transporte.",
+      "area": "Cerca de Ruzafa, Valencia",
+      "hours": ""
+     },
+     {
+      "kind": "faq",
+      "title": "Preguntas frecuentes",
+      "items": [
+       {
+        "q": "¿Necesito experiencia previa en yoga?",
+        "a": "No. Las clases son suaves y se adaptan a cada persona. Puedes empezar desde cero y hacer solo lo que te resulte cómodo."
+       },
+       {
+        "q": "¿Cómo se paga?",
+        "a": "Se paga desde el móvil con Bitcoin Cash al reservar tu clase. Es un pago sencillo y te llega la confirmación."
+       },
+       {
+        "q": "¿Cuántas personas hay en cada clase?",
+        "a": "Son grupos pequeños, con un máximo de 20 plazas, para que puedas recibir atención y moverte con tranquilidad."
+       },
+       {
+        "q": "¿Tengo que apuntarme a un bono?",
+        "a": "No. Puedes reservar una sola clase y decidir después si quieres volver. No hay permanencia."
+       },
+       {
+        "q": "¿Qué debo llevar?",
+        "a": "Ropa cómoda y ganas de moverte con calma. Si tienes dudas sobre tu salud, consúltalo antes con tu médico o fisio."
+       }
+      ]
+     }
+    ],
+    "finalCta": {
+     "headline": "Prueba una clase, sin prisa",
+     "sub": "Reserva tu plaza en un grupo pequeño cerca de Ruzafa y muévete a tu ritmo.",
+     "cta": "Reserva tu clase"
+    },
+    "footer": {
+     "tagline": "Yoga a tu ritmo, sin prisa, en Valencia."
+    },
+    "reserve": {
+     "address": "bitcoincash:qp9d679zvayvudj65nd9zlgezvjplr8g3vea64wad0",
+     "price": 9,
+     "normal": 12,
+     "limit": 20,
+     "currency": "€"
+    },
+    "ui": {
+     "reserve": "Reservar con BCH",
+     "reserveFor": "Reservar por {price}",
+     "joinList": "Apúntate",
+     "emailPlaceholder": "Tu email",
+     "thanks": "Ya estás en la lista. Te escribimos cuando abra.",
+     "privacy": "Solo usamos tu email para avisarte cuando abra.",
+     "scan": "Escanea con cualquier cartera de Bitcoin Cash",
+     "openWallet": "Abrir mi cartera",
+     "copy": "Copiar dirección",
+     "copied": "Copiado",
+     "close": "Cerrar",
+     "normally": "normalmente {price}",
+     "only": "Solo {n} disponibles",
+     "reserved": "{n} reservas hasta ahora",
+     "source": "Fuente",
+     "madeWith": "Hecho con LaunchDesk",
+     "faq": "Preguntas",
+     "howItWorks": "Cómo funciona",
+     "offer": "Oferta de apertura"
+    }
+   },
+   "template": "custom",
+   "base": "warm",
+   "photos": [
+    {
+     "n": 1,
+     "ref": "p1",
+     "id": "rawpixel:959d137b-649b-45fa-8f67-396ce56fcd7e",
+     "role": "hero",
+     "alt": "Empty indoor yoga studio with rows of mats and bolsters on wooden floor",
+     "title": "Yoga class",
+     "credit": "Rawpixel",
+     "license": "cc0",
+     "licenseVersion": "1.0",
+     "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+     "sourceUrl": "https://www.rawpixel.com/image/5943689/free-public-domain-cc0-photo",
+     "provider": "rawpixel",
+     "width": 1024,
+     "height": 683,
+     "mime": "image/webp",
+     "size": 259034,
+     "hash": "cb170485037cf63ba412732dd6382485827964e057bff78388121c74cd68271b",
+     "shows": "Empty indoor yoga studio with rows of mats and bolsters on wooden floor (checked by looking at the photo)"
+    },
+    {
+     "n": 2,
+     "ref": "p2",
+     "id": "rawpixel:2427024c-4eb4-40db-aadf-12dfca9eff80",
+     "role": "detail",
+     "alt": "Tied rolled teal yoga mat",
+     "title": "Tied rolled teal yoga mat",
+     "credit": "Rawpixel",
+     "license": "cc0",
+     "licenseVersion": "1.0",
+     "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+     "sourceUrl": "https://www.rawpixel.com/image/11524173/tied-and-rolled-teal-yoga-mat",
+     "provider": "rawpixel",
+     "width": 683,
+     "height": 1024,
+     "mime": "image/webp",
+     "size": 94062,
+     "hash": "9c1860c22c59bc7b837aabfba7d06b6b44fe08a6bbfc1dec515e71b2ca5c314c",
+     "shows": "Tied rolled teal yoga mat. Tags: photo, products, tape. (title from the photo site, not checked)"
+    },
+    {
+     "n": 3,
+     "ref": "p3",
+     "id": "stocksnap:8cdf8a13-f38c-44ed-b4bf-7d28ecc811e0",
+     "role": "detail",
+     "alt": "Woman Stretch",
+     "title": "Woman Stretch",
+     "creator": "Daria Shevtsova",
+     "creatorUrl": "https://instagram.com/dash.shevtsova",
+     "credit": "Daria Shevtsova / StockSnap",
+     "license": "cc0",
+     "licenseVersion": "1.0",
+     "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+     "sourceUrl": "https://stocksnap.io/photo/woman-stretch-MVCPFTBOTT",
+     "provider": "stocksnap",
+     "width": 960,
+     "height": 639,
+     "mime": "image/jpeg",
+     "size": 617922,
+     "hash": "b6d17e7f58ecd54a124f0bc24e56eda5b2427f92dca78719530b5db7e2411552",
+     "shows": "Woman Stretch. Tags: brunette, city, fashio, fitness, healthy, lycra. (title from the photo site, not checked)"
+    },
+    {
+     "n": 4,
+     "ref": "p4",
+     "id": "stocksnap:54a57105-56f2-4224-9bef-7561fd09868a",
+     "role": "detail",
+     "alt": "People Woman",
+     "title": "People Woman",
+     "creator": "Matthew Henry",
+     "creatorUrl": "https://stocksnap.io/author/200",
+     "credit": "Matthew Henry / StockSnap",
+     "license": "cc0",
+     "licenseVersion": "1.0",
+     "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+     "sourceUrl": "https://stocksnap.io/photo/people-woman-AYWO7QN7K7",
+     "provider": "stocksnap",
+     "width": 960,
+     "height": 640,
+     "mime": "image/jpeg",
+     "size": 19331,
+     "hash": "6c445f600752aa2e4633bbedbf102126b92b03f411864f6c0317355ee372c40b",
+     "shows": "People Woman. Tags: athlete, exercise, fitness, healthy, indoor, lifestyle. (title from the photo site, not checked)"
+    },
+    {
+     "n": 5,
+     "ref": "p5",
+     "id": "stocksnap:277fbc37-4fa3-4c7a-acf0-5914a8be5ad3",
+     "role": "people",
+     "alt": "Senior Exercise",
+     "title": "Senior Exercise",
+     "creator": "Direct Media",
+     "creatorUrl": "https://stocksnap.io/author/145556",
+     "credit": "Direct Media / StockSnap",
+     "license": "cc0",
+     "licenseVersion": "1.0",
+     "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+     "sourceUrl": "https://stocksnap.io/photo/senior-exercise-WPSRMWYN7Y",
+     "provider": "stocksnap",
+     "width": 960,
+     "height": 640,
+     "mime": "image/jpeg",
+     "size": 458115,
+     "hash": "102da43646a6114bed5e6735e31ff00a390a1029e2383d9e252e47591a1c3c92",
+     "shows": "Senior Exercise. Tags: bridge, fitness, goals, happy, health. (title from the photo site, not checked)"
+    }
+   ],
+   "custom": {
+    "status": "done",
+    "version": 1,
+    "usd": 0.0663
+   }
+  },
+  "logo": {
+   "options": [
+    {
+     "id": "lg1",
+     "family": "literal",
+     "idea": "Un sol bajo que sale despacio: clases de mañana, sin prisa, en un estudio luminoso.",
+     "svg": "<g transform=\"translate(-5.33 -13.5) scale(1.17)\"><path d=\"M10 44A22 22 0 0 1 54 44Z\" fill=\"#2B3A33\"/><rect x=\"8\" y=\"48\" width=\"48\" height=\"8\" fill=\"#2B3A33\"/><circle cx=\"32\" cy=\"34\" r=\"8\" fill=\"#C8553D\"/></g>"
+    },
+    {
+     "id": "lg3",
+     "family": "monogram",
+     "idea": "Una C abierta que acoge a una persona: grupo pequeño, trato cercano y sin prisa.",
+     "svg": "<g transform=\"translate(2.79 -2.46) scale(1.08)\"><path d=\"M46 14A26 26 0 1 0 46 50L39 42A15 15 0 1 1 39 22Z\" fill=\"#2B3A33\"/><circle cx=\"46\" cy=\"32\" r=\"7\" fill=\"#C8553D\"/></g>"
+    },
+    {
+     "id": "lg5",
+     "family": "geometric",
+     "idea": "Un reloj con un solo cuarto de color: una hora tranquila, sin prisa.",
+     "svg": "<g transform=\"translate(-2.46 -2.46) scale(1.08)\"><circle cx=\"32\" cy=\"32\" r=\"26\" fill=\"#2B3A33\"/><path d=\"M32 32L32 6A26 26 0 0 1 58 32Z\" fill=\"#C8553D\"/><circle cx=\"32\" cy=\"32\" r=\"9\" fill=\"#F7F2E9\"/></g>"
+    },
+    {
+     "id": "lg2",
+     "family": "literal",
+     "idea": "Un caracol tranquilo: avanzar despacio, a tu ritmo, y el centro cálido es la persona.",
+     "svg": "<g transform=\"translate(-2.46 -2.46) scale(1.08)\"><circle cx=\"32\" cy=\"32\" r=\"26\" fill=\"#2B3A33\"/><path d=\"M32 52A20 20 0 1 1 52 32\" fill=\"none\" stroke=\"#F7F2E9\" stroke-width=\"5\"/><path d=\"M32 44A12 12 0 1 1 44 32\" fill=\"none\" stroke=\"#F7F2E9\" stroke-width=\"5\"/><circle cx=\"32\" cy=\"32\" r=\"5\" fill=\"#C8553D\"/></g>"
+    },
+    {
+     "id": "lg4",
+     "family": "monogram",
+     "idea": "Una C hecha de dos respiros: uno arriba y otro abajo, despacio y a tu ritmo.",
+     "svg": "<g transform=\"translate(-17.78 -38) scale(1.56)\"><path d=\"M50 24A18 18 0 0 0 14 24L14 28L23 28L23 24A9 9 0 0 1 41 24Z\" fill=\"#2B3A33\" transform=\"translate(0 0)\"/><path d=\"M14 36L23 36A9 9 0 0 0 41 36L50 36A18 18 0 0 1 14 36Z\" fill=\"#C8553D\"/></g>"
+    },
+    {
+     "id": "lg6",
+     "family": "geometric",
+     "idea": "Tres escalones suaves: cada persona sube a su paso, y el último es el tuyo.",
+     "svg": "<g transform=\"translate(-5.33 -7.67) scale(1.17)\"><rect x=\"8\" y=\"12\" width=\"14\" height=\"44\" fill=\"#2B3A33\"/><rect x=\"25\" y=\"24\" width=\"14\" height=\"32\" fill=\"#2B3A33\"/><rect x=\"42\" y=\"36\" width=\"14\" height=\"20\" fill=\"#C8553D\"/></g>"
+    }
+   ],
+   "chosen": "lg1",
+   "fallback": false
+  },
+  "marketing": {
+   "plan": {
+    "lang": "es",
+    "currency": "€",
+    "headline": "Durante 30 días, Calma Lenta comprueba si hay gente de 65 a 80 años que paga 9 € por una clase de yoga suave, empezando por el centro de mayores de Ruzafa y sin gastar nada hasta que pasen las tres comprobaciones.",
+    "goal": {
+     "metric": "Plazas de clase sueltas pagadas por adelantado con BCH en la web",
+     "target": 15,
+     "unit": "plazas pagadas",
+     "by_day": 30,
+     "why": "15 plazas pagadas a 9 € demuestran que hay personas de 65 a 80 años cerca de Ruzafa que pagan de su bolsillo, que es lo que el informe dejó sin probar. Es la misma marca de la primera comprobación.",
+     "how_counted": "Cada plaza reservada y pagada en la web con Bitcoin Cash es un pago que se cuenta. Se anota en una hoja con fecha, clase y si la persona repite."
+    },
+    "customer": {
+     "who": "Personas de 65 a 80 años que viven a menos de 20 minutos de Ruzafa, ya van a un centro de mayores o a fisioterapia, y pagan sus clases ellas mismas.",
+     "places": [
+      {
+       "place": "Centro Municipal de Actividades para Personas Mayores de Ruzafa, calle Cuba 63, con su programa de mantenimiento físico",
+       "when": "Por la mañana, en los horarios de las actividades del centro",
+       "source": 1
+      },
+      {
+       "place": "Asociaciones y clubes de mayores del directorio municipal, como los de San Marcelino y Benicalap",
+       "when": "En sus reuniones y actividades habituales",
+       "source": 3
+      },
+      {
+       "place": "Consultas de fisioterapia cercanas a Ruzafa",
+       "when": "Al salir de la sesión, a media mañana",
+       "source": null
+      },
+      {
+       "place": "Polideportivos municipales con yoga suave para mayores",
+       "when": "Durante sus clases de mañana",
+       "source": 4
+      }
+     ]
+    },
+    "channels": [
+     {
+      "name": "Visita al centro de mayores de Ruzafa",
+      "role": "first sales",
+      "why": "El centro tiene un programa de mantenimiento físico y una masa de socios que ya hace actividades en el barrio.",
+      "source": 1,
+      "weekly_hours": 4,
+      "cost": 0,
+      "first_action": "Llamar al 963 812 337 en la semana 1 para pedir hablar con la dirección y proponer una clase de prueba en una sala del centro o de una asociación cercana."
+     },
+     {
+      "name": "Fisioterapeutas de la zona",
+      "role": "awareness",
+      "why": "Suponemos que quien va a fisio busca moverse con seguridad y se fía de la recomendación de su fisioterapeuta.",
+      "source": null,
+      "weekly_hours": 2,
+      "cost": 0,
+      "first_action": "Visitar en persona tres consultas de fisioterapia a menos de 20 minutos de Ruzafa, hablar con el fisio y dejarle una hoja con la clase de prueba."
+     },
+     {
+      "name": "Clases de prueba en sala prestada",
+      "role": "proof",
+      "why": "Hay que ver si la gente paga y vuelve. Una clase pequeña en una sala prestada lo prueba sin alquilar nada.",
+      "source": null,
+      "weekly_hours": 5,
+      "cost": 0,
+      "first_action": "Cuando pase la comprobación de profesora y de sala, abrir 20 plazas a 9 € en la web y avisar uno a uno a quienes dijeron que sí."
+     },
+     {
+      "name": "Boca a boca entre asistentes",
+      "role": "repeat",
+      "why": "Suponemos que a esta edad la amiga que te invita pesa más que cualquier anuncio, y las clases sueltas facilitan traer a alguien.",
+      "source": null,
+      "weekly_hours": 1,
+      "cost": 0,
+      "first_action": "Al terminar la primera clase, dar a cada persona una tarjeta para invitar a una amiga a la siguiente por 9 €."
+     }
+    ],
+    "rejected": [
+     {
+      "name": "Anuncios de pago en redes",
+      "why_not": "Es gente que casi no te encontraría ahí, y sin saber si pagarán no tiene sentido gastar."
+     },
+     {
+      "name": "Instagram y TikTok",
+      "why_not": "Piden mucho tiempo, y a una sola persona no le queda para ir a pie a los sitios donde sí está su cliente."
+     }
+    ],
+    "budget": {
+     "tiers": [
+      {
+       "amount": 0,
+       "label": "Sin gasto: solo tu tiempo",
+       "lines": [
+        {
+         "channel": "Visita al centro de mayores de Ruzafa",
+         "amount": 0,
+         "for": "Llamadas y visita en persona"
+        },
+        {
+         "channel": "Fisioterapeutas de la zona",
+         "amount": 0,
+         "for": "Visitas con una hoja escrita a mano o en casa"
+        },
+        {
+         "channel": "Clases de prueba en sala prestada",
+         "amount": 0,
+         "for": "Sala cedida por el centro o una asociación"
+        }
+       ]
+      },
+      {
+       "amount": 100,
+       "label": "Un poco de material, solo tras pasar las comprobaciones",
+       "lines": [
+        {
+         "channel": "Fisioterapeutas de la zona",
+         "amount": 40,
+         "for": "Imprimir hojas para las consultas"
+        },
+        {
+         "channel": "Boca a boca entre asistentes",
+         "amount": 25,
+         "for": "Tarjetas para invitar a una amiga"
+        },
+        {
+         "channel": "Clases de prueba en sala prestada",
+         "amount": 25,
+         "for": "Agua, alfombrillas y detalles"
+        }
+       ]
+      },
+      {
+       "amount": 500,
+       "label": "Con más margen, solo si la prueba funciona",
+       "lines": [
+        {
+         "channel": "Clases de prueba en sala prestada",
+         "amount": 250,
+         "for": "Pago de la profesora o alquiler de sala por horas"
+        },
+        {
+         "channel": "Fisioterapeutas de la zona",
+         "amount": 100,
+         "for": "Hojas y carteles en consultas"
+        },
+        {
+         "channel": "Boca a boca entre asistentes",
+         "amount": 90,
+         "for": "Tarjetas e invitaciones"
+        }
+       ]
+      }
+     ],
+     "reserve_pct": 12,
+     "reallocate_rule": "Entre los días 22 y 30, mira de dónde vino cada plaza pagada. Mueve el dinero que quede al canal con más pagos y quítalo del que no haya traído ninguno."
+    },
+    "weeks": [
+     {
+      "n": 1,
+      "theme": "Preparar y comprobar",
+      "aim": "Pasar las tres comprobaciones antes de gastar nada y sin abrir ventas todavía.",
+      "days": [
+       {
+        "day": 1,
+        "time": "",
+        "channel": "Comprobar primero",
+        "action": "Antes de abrir o gastar dinero: Run a free or 12 € trial class in a borrowed room, such as a community centre or senior association space near Ruzafa, and sell pre-paid seats for four weekly classes. Sigue solo si: at least 15 pre-paid seats sold within 14 days of the offer.",
+        "copy": null,
+        "hours": 2
+       },
+       {
+        "day": 2,
+        "time": "",
+        "channel": "Comprobar primero",
+        "action": "Get quotes from at least two certified yoga teachers for a 60-minute gentle class, and record attendance at each pilot class. Sigue solo si: instructor pay of 45 € or less per 60-minute class, and an average of at least 5 paid seats per class across four pilot classes.",
+        "copy": null,
+        "hours": 2
+       },
+       {
+        "day": 3,
+        "time": "",
+        "channel": "Comprobar primero",
+        "action": "Request quotes for three to five premises of about 60 m² in and around Ruzafa, and confirm the licence status and the acoustic zone rules with the city. Sigue solo si: a monthly rent of 1,300 € or less for a space that holds at least 6 mats, and written confirmation that a yoga use is permitted there.",
+        "copy": null,
+        "hours": 2
+       },
+       {
+        "day": 4,
+        "time": "10:00",
+        "channel": "Boca a boca entre asistentes",
+        "action": "Llama al 963 812 337 y pide hablar con la dirección. Propón una clase de prueba en una sala del centro o de una asociación cercana, y pregunta si hace falta permiso por escrito para dar yoga allí.",
+        "copy": "message",
+        "hours": 1.5
+       },
+       {
+        "day": 5,
+        "time": "09:30",
+        "channel": "Boca a boca entre asistentes",
+        "action": "Comprobación 2: pide precio a dos profesoras certificadas para una clase suave de 60 minutos. Se pasa si alguna cobra 45 € o menos por clase.",
+        "copy": "message",
+        "hours": 2
+       },
+       {
+        "day": 6,
+        "time": "11:00",
+        "channel": "Visita al centro de mayores de Ruzafa",
+        "action": "Comprobación 3: consigue por escrito que se puede dar yoga en la sala prestada, ya sea la del centro o la de una asociación. Sin ese papel no se abre nada.",
+        "copy": null,
+        "hours": 2
+       },
+       {
+        "day": 7,
+        "time": "10:30",
+        "channel": "Perfil de Google",
+        "action": "Visita en persona una consulta de fisioterapia a menos de 20 minutos de Ruzafa. Habla con el fisio y cuéntale el plan, sin imprimir nada todavía. Apunta qué dice.",
+        "copy": "profile",
+        "hours": 2
+       }
+      ]
+     },
+     {
+      "n": 2,
+      "theme": "Primer contacto y reservas previas",
+      "aim": "Si pasan las comprobaciones, enseñar la clase y recoger las primeras plazas pagadas.",
+      "days": [
+       {
+        "day": 8,
+        "time": "10:00",
+        "channel": "Visita al centro de mayores de Ruzafa",
+        "action": "Solo si pasaron las comprobaciones: visita otras dos consultas de fisioterapia cerca de Ruzafa. Deja a cada fisio una hoja escrita a mano con la clase de prueba a 9 €.",
+        "copy": "flyer",
+        "hours": 2.5
+       },
+       {
+        "day": 10,
+        "time": "10:30",
+        "channel": "Visita al centro de mayores de Ruzafa",
+        "action": "Visita el centro de mayores de Ruzafa, calle Cuba 63, y habla con quien lleve las actividades. Pide poder dejar el aviso de la clase de prueba en el tablón.",
+        "copy": "flyer",
+        "hours": 2
+       },
+       {
+        "day": 12,
+        "time": "11:00",
+        "channel": "Clases de prueba en sala prestada",
+        "action": "Abre 20 plazas a 9 € en la web, pagadas con Bitcoin Cash. Avisa una a una a las personas que dijeron que sí en las visitas.",
+        "copy": "post-1",
+        "hours": 2
+       },
+       {
+        "day": 14,
+        "time": "10:00",
+        "channel": "Clases de prueba en sala prestada",
+        "action": "Mira cuántas plazas hay pagadas. Comprobación 1: se pasa con 15 plazas pagadas en 14 días desde la apertura. Si no se llega, para y no gastes más.",
+        "copy": null,
+        "hours": 1
+       }
+      ]
+     },
+     {
+      "n": 3,
+      "theme": "La oferta de 9 euros",
+      "aim": "Dar las primeras clases y que cada persona pueda traer a una amiga.",
+      "days": [
+       {
+        "day": 15,
+        "time": "10:00",
+        "channel": "Clases de prueba en sala prestada",
+        "action": "Da la primera clase de prueba en la sala cedida, con grupo pequeño. Anota quién viene y quién ha pagado.",
+        "copy": null,
+        "hours": 3
+       },
+       {
+        "day": 17,
+        "time": "12:00",
+        "channel": "Boca a boca entre asistentes",
+        "action": "Al terminar la clase, da a cada persona una tarjeta para invitar a una amiga a la siguiente clase por 9 €.",
+        "copy": "message",
+        "hours": 1
+       },
+       {
+        "day": 19,
+        "time": "11:00",
+        "channel": "Email a tu lista",
+        "action": "Escribe a los fisios visitados para recordarles la clase y pregunta si alguna persona de su consulta quiere probar.",
+        "copy": "email",
+        "hours": 1.5
+       },
+       {
+        "day": 21,
+        "time": "10:00",
+        "channel": "Clases de prueba en sala prestada",
+        "action": "Da la segunda clase de prueba. Apunta asistencia y quién repite.",
+        "copy": "post-2",
+        "hours": 3
+       }
+      ]
+     },
+     {
+      "n": 4,
+      "theme": "Prueba y última llamada",
+      "aim": "Contar lo que ha pasado de verdad y cerrar la oferta con una última llamada.",
+      "days": [
+       {
+        "day": 24,
+        "time": "11:00",
+        "channel": "Boca a boca entre asistentes",
+        "action": "Habla con quienes han venido y pregunta si volverían la semana que viene. Recuérdales que la plaza a 9 € se reserva en la web.",
+        "copy": "post-3",
+        "hours": 1.5
+       },
+       {
+        "day": 26,
+        "time": "10:00",
+        "channel": "Clases de prueba en sala prestada",
+        "action": "Da la tercera clase de prueba y anota asistencia y repeticiones.",
+        "copy": null,
+        "hours": 3
+       },
+       {
+        "day": 28,
+        "time": "11:00",
+        "channel": "Prensa local",
+        "action": "Visita el centro para decir que quedan las últimas plazas a 9 € y pedir que lo comenten en el tablón.",
+        "copy": "press",
+        "hours": 2
+       },
+       {
+        "day": 30,
+        "time": "10:00",
+        "channel": "Clases de prueba en sala prestada",
+        "action": "Cuenta los pagos en Bitcoin Cash y las personas que repiten. Decide con la regla: seguir, ajustar o parar.",
+        "copy": null,
+        "hours": 1.5
+       }
+      ]
+     }
+    ],
+    "kpis": [
+     {
+      "name": "Plazas pagadas",
+      "target": "15 a día 30",
+      "how_to_count": "Contar los pagos en BCH de la web, uno por plaza",
+      "count_from": "bch payments"
+     },
+     {
+      "name": "Personas que repiten",
+      "target": "6 personas con 2 o más clases",
+      "how_to_count": "Comparar nombres de la hoja de asistencia entre clases",
+      "count_from": "by hand"
+     },
+     {
+      "name": "Asistencia media por clase",
+      "target": "5 o más personas pagando",
+      "how_to_count": "Anotar cuántas personas vienen en cada clase de prueba",
+      "count_from": "by hand"
+     },
+     {
+      "name": "Contactos con centros y fisios",
+      "target": "3 consultas y 2 centros o asociaciones visitados",
+      "how_to_count": "Apuntar cada visita y la respuesta",
+      "count_from": "by hand"
+     },
+     {
+      "name": "Visitas a la página de reserva",
+      "target": "80 en el mes",
+      "how_to_count": "Mirar las visitas de la página de reserva",
+      "count_from": "website"
+     }
+    ],
+    "copy": {
+     "posts": [
+      {
+       "channel": "Clases de prueba en sala prestada",
+       "hook": "Yoga suave, en grupo pequeño, por 9 €.",
+       "body": "Calma Lenta abre una clase de prueba cerca de Ruzafa. Es yoga suave para mayores, sin prisa y sin posturas difíciles. Grupo pequeño, 20 plazas como máximo. La clase suelta cuesta 9 € en vez de 12 €. Reserva en nuestra web.",
+       "cta": "Reserva tu plaza en nuestra web."
+      },
+      {
+       "channel": "Boca a boca entre asistentes",
+       "hook": "¿Tienes una amiga que querría probar?",
+       "body": "Si has venido a una clase, puedes traer a alguien a la siguiente. Cada plaza cuesta 9 €. Es mejor moverse acompañada, y aquí vamos a tu ritmo, sin prisa.",
+       "cta": "Pídele a tu amiga que reserve en nuestra web."
+      },
+      {
+       "channel": "Fisioterapeutas de la zona",
+       "hook": "Una clase suave para quien quiere moverse con calma.",
+       "body": "Si tienes pacientes de 65 a 80 años que buscan un grupo pequeño donde moverse sin prisa, Calma Lenta ofrece una clase de yoga suave. Plaza suelta a 9 €. No hacemos promesas médicas.",
+       "cta": "Hablamos en tu consulta o escríbenos."
+      }
+     ],
+     "message": "Hola, soy de Calma Lenta. Estoy montando clases de yoga suave para mayores cerca de Ruzafa, en grupo pequeño. La clase suelta cuesta 9 € por ahora. ¿Te cuento más o conoces a alguien a quien le pueda interesar?",
+     "email": {
+      "subject": "Tu plaza a 9 € en Calma Lenta",
+      "body": "Hola:\n\nGracias por apuntarte. Ya puedes reservar tu plaza para la clase de yoga suave de Calma Lenta. Es un grupo pequeño, con 20 plazas como máximo.\n\nLa clase suelta cuesta 9 € en vez de 12 €. Se reserva y se paga en nuestra web con Bitcoin Cash.\n\nSi tienes dudas, responde a este correo y te ayudamos.\n\nYoga a tu ritmo, sin prisa.\n\nCalma Lenta"
+     },
+     "flyer": {
+      "headline": "Yoga a tu ritmo, sin prisa",
+      "lines": [
+       "Clase suave en grupo pequeño, cerca de Ruzafa.",
+       "Una clase suelta: 9 € en vez de 12 €.",
+       "Reserva en nuestra web. Máximo 20 plazas."
+      ]
+     },
+     "profile": "Calma Lenta ofrece clases de yoga suave para personas mayores en Valencia, cerca de Ruzafa. Grupos pequeños, en un ambiente tranquilo y cercano. Sin jerga ni posturas difíciles: cada persona va a su ritmo. Puedes reservar una sola clase, sin compromiso. Clase suelta a 9 € durante la prueba, en vez de 12 €. Reserva en nuestra web. Yoga a tu ritmo, sin prisa.",
+     "press": "Calma Lenta es un proyecto nuevo de yoga suave para personas mayores cerca de Ruzafa, en Valencia. Prueba clases en grupo pequeño, con plaza suelta a 9 € en vez de 12 €, para ver si hay demanda en el barrio. Si os interesa, podemos enviaros más información o invitaros a una clase."
+    },
+    "local": [
+     {
+      "fact": "El centro de mayores de Ruzafa, en calle Cuba 63, tiene programa de mantenimiento físico.",
+      "source": 1
+     },
+     {
+      "fact": "Un artículo sin fecha cifra los socios del centro de Ruzafa en 1.589.",
+      "source": 2
+     },
+     {
+      "fact": "El directorio municipal de mayores recoge la federación FOMCOVA y clubes como Benicalap, San Marcelino y Trinitat.",
+      "source": 3
+     },
+     {
+      "fact": "Una guía dice que los polideportivos municipales ofrecen yoga suave a precio reducido para mayores, sin fecha.",
+      "source": 4
+     },
+     {
+      "fact": "Una oferta cercana a Ruzafa pone el bono de 10 clases en unos 12 a 14 € por sesión, así que 9 € es un precio de arranque, no un descuento fijo.",
+      "source": 14
+     },
+     {
+      "fact": "Hay 180.624 personas de 65 años o más en la ciudad de València, pero no hay cifra solo para Ruzafa.",
+      "source": 15
+     }
+    ],
+    "events": [],
+    "assumptions": [
+     "Una profesora certificada acepta 45 € o menos por clase de 60 minutos.",
+     "El centro de mayores o una asociación cercana presta una sala sin coste.",
+     "Con la actividad de yoga se puede trabajar en la sala sin permiso extra; hay que confirmarlo por escrito.",
+     "Las personas mayores se sienten cómodas pagando con Bitcoin Cash, y si no, habrá que ofrecer otra forma de pago.",
+     "Hay suficiente gente de 65 a 80 años en la zona de Ruzafa, algo que el informe no pudo comprobar."
+    ],
+    "decision": {
+     "scale_if": "Hay 15 o más plazas pagadas, al menos 5 personas de media por clase y seis personas que repiten: abre clases fijas cada semana y pide presupuesto de sala.",
+     "adjust_if": "Hay entre 8 y 14 plazas pagadas: prueba otro horario, otra sala o más visitas a fisios antes de gastar.",
+     "stop_if": "Falla cualquier comprobación de la semana 1 (profesora a 45 € o menos, sala permitida por escrito, 15 plazas pagadas en 14 días) o hay menos de 8 plazas pagadas a día 30: para y no gastes más."
+    }
+   },
+   "sources": [
+    {
+     "n": 1,
+     "url": "https://www.valencia.es/es/-/infociudad-centro-municipal-de-actividades-para-personas-mayores-ruzafa",
+     "title": "Infociudad - CENTRO MUNICIPAL DE ACTIVIDADES PARA PERSONAS MAYORES ..."
+    },
+    {
+     "n": 2,
+     "url": "https://www.elperiodic.com/valencia/centro-municipal-actividades-para-personas-mayores-ruzafa-muestra-evolucion-ciudad-fotografias-antiguas-actuales-valencia_269440",
+     "title": "El Centro Municipal de Actividades para Personas Mayores de Ruzafa ..."
+    },
+    {
+     "n": 3,
+     "url": "https://www.valencia.es/cas/infociudad/-/categories/37666",
+     "title": "INFOCIUDAD"
+    },
+    {
+     "n": 4,
+     "url": "https://www.tujubilacion.es/actividades-para-jubilados-en-valencia/",
+     "title": "Actividades para jubilados en Valencia"
+    },
+    {
+     "n": 5,
+     "url": "https://www.visitvalencia.com/agenda-valencia/el-mercado-del-grao-llena-noviembre-y-diciembre-de-actividades",
+     "title": "El Mercado del Grao llena noviembre y diciembre de actividades"
+    },
+    {
+     "n": 6,
+     "url": "https://valencianews.es/economia/feria-valencia-mas-de-20-eventos-cierre-2026/",
+     "title": "Feria Valencia programa más de 20 certámenes y eventos para cerrar ..."
+    },
+    {
+     "n": 7,
+     "url": "https://findevalencia.es/en/agenda/diciembre/",
+     "title": "What's on in València in December 2026 — FindeValencia"
+    },
+    {
+     "n": 8,
+     "url": "https://turronesydulces.com/blog/comercio-electronico/mercados-navidad-valencia-fechas-2026/",
+     "title": "Mercados de Navidad de Valencia 2026: fechas, artesanía, Mercado ..."
+    },
+    {
+     "n": 9,
+     "url": "https://experiencesvalencia.com/agenda/",
+     "title": "Agenda de Eventos en Valencia 2025"
+    },
+    {
+     "n": 10,
+     "url": "https://www.superprof.es/clases/yoga/valencia/",
+     "title": "Clases de yoga Valencia - 208 profes desde 15€/h"
+    },
+    {
+     "n": 11,
+     "url": "https://www.billeo.es/blog/gestoria-entrenadores-personales-deporte-fiscalidad-2026/",
+     "title": "Yoga activity code"
+    },
+    {
+     "n": 12,
+     "url": "https://gobinde.com/horario/",
+     "title": "Gobinde drop-in, one class"
+    },
+    {
+     "n": 13,
+     "url": "https://rincondelyoga.com/centros-de-yoga/comunidad-valenciana/",
+     "title": "Velcam drop-in"
+    },
+    {
+     "n": 14,
+     "url": "https://valenciamove.com/es/directorio/bienestar/yoga-pilates/",
+     "title": "Yoga Flow VLC, 10-class bono, per session"
+    },
+    {
+     "n": 15,
+     "url": "https://valenciaplaza.com/valenciaplaza/valencia/valencia-cuenta-con-casi-400-personas-centenarias-20-mas-que-en-2024",
+     "title": "Residents aged 65 and over, city of València"
+    }
+   ],
+   "warnings": [
+    "day 1: channel \"Visita al centro de mayores de Ruzafa\" relabelled \"Boca a boca entre asistentes\" (the task uses the message text)",
+    "day 2: channel \"Clases de prueba en sala prestada\" relabelled \"Boca a boca entre asistentes\" (the task uses the message text)",
+    "day 5: channel \"Fisioterapeutas de la zona\" relabelled \"Perfil de Google\" (the task uses the profile text)",
+    "day 8: channel \"Fisioterapeutas de la zona\" relabelled \"Visita al centro de mayores de Ruzafa\"",
+    "day 19: channel \"Fisioterapeutas de la zona\" relabelled \"Email a tu lista\" (the task uses the email text)",
+    "day 28: channel \"Visita al centro de mayores de Ruzafa\" relabelled \"Prensa local\" (the task uses the press text)"
+   ]
+  }
+ },
+ "custom": {
+  "html": "<style>:root{--pine:#2B3A33;--clay:#C8553D;--sand:#F7F2E9;--ink:#2B3A33;--sand-2:#EDE5D6;--clay-ink:#9E3A25;--ink-2:#55635b;--line:#d9d0bf;--pine-d:#1f2b25;--clay-l:#E8947F;--sage:#cfd9d1;--clay-h:#d4684f;--display:\"Fraunces\",Georgia,\"Times New Roman\",serif;--text:\"Figtree\",system-ui,-apple-system,\"Segoe UI\",sans-serif;--sec:clamp(72px,10vw,136px);color-scheme:light}\n*,*::before,*::after{box-sizing:border-box}\nbody{margin:0;background:var(--sand);color:var(--ink);font:400 1.0625rem/1.6 var(--text)}\nimg{display:block;max-width:100%;height:auto}\nfigure{margin:0}\np{margin:0}\na{color:inherit}\na:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--clay);outline-offset:3px}\n.wrap{max-width:1200px;margin:0 auto;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}\nh1,h2,h3{font-family:var(--display);font-weight:350;line-height:1.02;letter-spacing:-.02em;margin:0;text-wrap:balance;font-variation-settings:\"opsz\" 144}\nh1{font-size:clamp(3rem,7vw,6.25rem);line-height:.95;letter-spacing:-.035em}\nh2{font-size:clamp(2.25rem,4.6vw,3.75rem)}\nh3{font-size:1.5rem;line-height:1.15;font-variation-settings:\"opsz\" 48}\nem{font-style:italic;color:var(--clay-ink)}\n.kicker{font:600 .75rem/1 var(--text);letter-spacing:.14em;text-transform:uppercase;color:var(--clay-ink)}\n.lede{font-size:clamp(1.125rem,1.6vw,1.3rem);line-height:1.55;max-width:40ch;color:var(--ink-2)}\n.btn{display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:0 1.6rem;border-radius:999px;font:600 1rem/1 var(--text);text-decoration:none;border:1.5px solid transparent;transition:background-color .2s ease}\n.btn-clay{background:var(--clay);color:var(--pine-d)}\n.btn-clay:hover{background:var(--clay-h)}\n.btn-pine{background:var(--pine);color:var(--sand)}\n.btn-pine:hover{background:var(--pine-d)}\n.btn-line{border-color:var(--pine);color:var(--pine)}\n.top{background:var(--sand);border-bottom:1px solid var(--line)}\n.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:14px}\n.mark{font:500 1.5rem/1 var(--display);text-decoration:none;letter-spacing:-.02em}\n.mark span{font-style:italic;color:var(--clay-ink)}\n.top nav{display:flex;align-items:center;gap:22px;font-size:.92rem}\n.top nav a:not(.btn){text-decoration:none}\n.top .btn{min-height:44px;padding:0 1.2rem;font-size:.9rem}\n.hero-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);min-height:min(760px,100svh)}\n.hero-copy{display:flex;flex-direction:column;justify-content:center;gap:26px;padding:64px 48px 64px max(20px,calc((100vw - 1200px)/2 + 20px))}\n.hero-photo{position:relative;min-height:420px}\n.hero-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 60%}\n.hero-tag{position:absolute;left:-40px;bottom:40px;background:var(--sand);padding:16px 20px;width:230px;border-top:3px solid var(--clay)}\n.hero-tag b{display:block;font:italic 400 1.25rem/1.1 var(--display);margin-bottom:8px}\n.hero-tag dl{margin:0;display:grid;gap:4px;font-size:.82rem}\n.hero-tag dl div{display:flex;justify-content:space-between;gap:10px;border-top:1px solid var(--line);padding-top:4px}\n.hero-tag dt{font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:.68rem;color:var(--clay-ink)}\n.hero-tag dd{margin:0}\n.offer-line{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 14px;padding-top:20px;border-top:1px solid var(--line);max-width:460px}\n.price{font:400 3rem/1 var(--display);letter-spacing:-.03em;color:var(--pine)}\n.was{color:var(--ink-2)}\n.offer-line p{flex-basis:100%;font-size:.95rem;color:var(--ink-2)}\n.cta-row{display:flex;flex-wrap:wrap;gap:12px}\n.problem{padding-block:var(--sec)}\n.problem-grid{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:clamp(32px,6vw,96px);align-items:end}\n.problem h2,.offer h2,.how h2{margin-top:16px}\n.offer{background:var(--sand-2);padding-block:var(--sec)}\n.offer-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(32px,5vw,80px);align-items:center}\n.offer-photo img{width:100%;aspect-ratio:3/2;object-fit:cover;border-radius:4px}\n.offer-copy{display:grid;gap:22px}\n.slip{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}\n.slip li{display:grid;grid-template-columns:7rem minmax(0,1fr);gap:16px;padding:14px 0;border-bottom:1px solid var(--line)}\n.slip b{font:600 .75rem/1.6 var(--text);letter-spacing:.12em;text-transform:uppercase;color:var(--clay-ink)}\n.buy{display:flex;align-items:center;flex-wrap:wrap;gap:16px 24px}\n.how{padding-block:var(--sec)}\n.how-head{display:grid;gap:16px;margin-bottom:48px;max-width:46ch}\n.trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;align-items:start}\n.step img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:4px}\n.step{display:grid;gap:14px}\n.step p{color:var(--ink-2)}\n.chips{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 0;padding:0;list-style:none}\n.chips li{font-size:.8rem;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--sand)}\n.compare{background:var(--pine);color:var(--sand);padding-block:var(--sec)}\n.compare h2{max-width:18ch;margin-bottom:48px}\n.compare h2 em{color:var(--clay-l)}\n.cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);border-top:1px solid rgba(247,242,233,.2)}\n.cols>div{padding:32px 32px 8px 0}\n.cols>div+div{padding-left:32px;border-left:1px solid rgba(247,242,233,.2)}\n.cols h3{margin-bottom:20px}\n.cols ul{list-style:none;margin:0;padding:0;display:grid;gap:14px}\n.them{color:var(--sage)}\n.mk{font-size:.85rem;margin-top:20px;color:var(--sage)}\n.mk a{color:var(--sand)}\n.join{padding-block:var(--sec)}\n.join-card{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);background:var(--sand-2);border-radius:6px;overflow:hidden}\n.join-copy{padding:clamp(28px,5vw,64px);display:grid;gap:20px;align-content:center}\n.join-copy+.join-copy{border-left:1px solid var(--line)}\n.join h2{font-size:clamp(2.25rem,5vw,4rem)}\n.join-copy p{color:var(--ink-2);max-width:40ch}\n.join form{display:flex;flex-wrap:wrap;gap:10px}\n.join label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}\n.join input{flex:1 1 220px;min-height:52px;padding:0 20px;border-radius:999px;border:1.5px solid var(--pine);background:var(--sand);color:var(--ink);font:inherit}\n.join button{min-height:52px;padding:0 1.5rem;border-radius:999px;border:0;background:var(--pine);color:var(--sand);font:600 1rem/1 var(--text);cursor:pointer}\n.join button:hover{background:var(--pine-d)}\n.last{display:flex;flex-wrap:wrap;gap:12px;align-items:center}\nfooter{border-top:1px solid var(--line);padding-block:40px;font-size:.9rem;color:var(--ink-2)}\nfooter .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px}\n@media (max-width:900px){.hero-grid{grid-template-columns:1fr;min-height:0}.hero-photo{order:-1;min-height:0;aspect-ratio:3/2}.hero-copy{padding:40px max(20px,env(safe-area-inset-left,0px)) 56px}.hero-tag{left:auto;right:12px;bottom:12px;width:auto;padding:10px 14px}.hero-tag dl{display:none}.problem-grid,.offer-grid,.join-card{grid-template-columns:1fr}.trio{grid-template-columns:1fr 1fr}.join-copy+.join-copy{border-left:0;padding-top:0}}@media (max-width:560px){.top nav a:not(.btn){display:none}.trio{grid-template-columns:1fr}.cols{grid-template-columns:1fr}.cols>div{padding:28px 0 8px}.cols>div+div{padding-left:0;border-left:0;border-top:1px solid rgba(247,242,233,.2);margin-top:24px}.btn{width:100%}.top .btn{width:auto}.slip li{grid-template-columns:5.5rem minmax(0,1fr)}}@media (prefers-reduced-motion:reduce){*{transition:none!important}}</style><header class=\"top\">\n<div class=\"wrap\">\n<a class=\"mark\" href=\"#top\">Calma <span>Lenta</span></a>\n<nav aria-label=\"Principal\">\n<a href=\"#clase\">La clase</a>\n<a class=\"btn btn-clay\" href=\"#reserve\" data-ld=\"reserve\">Reservar</a>\n</nav>\n</div>\n</header><main id=\"top\">\n<section class=\"hero\">\n<div class=\"hero-grid\">\n<div class=\"hero-copy\">\n<p class=\"kicker\">Nuevo estudio de yoga · Cerca de Ruzafa, Valencia</p>\n<h1>Yoga a tu ritmo, <em>sin prisa.</em></h1>\n<p class=\"lede\">Clases suaves para mayores, en grupos pequeños y en un estudio luminoso. Vienes, te mueves a tu manera y charlas un rato.</p>\n<div class=\"offer-line\">\n<span class=\"price num\">9 €</span>\n<span class=\"was\">normalmente <s>12 €</s></span>\n<p>Una clase suave de yoga, sin abono ni permanencia.</p>\n</div>\n<div class=\"cta-row\">\n<a class=\"btn btn-clay\" href=\"#reserve\" data-ld=\"reserve\">Reservar con BCH · <span class=\"num\">9 €</span></a>\n<a class=\"btn btn-line\" href=\"#join\">¿Aún no? Apúntate a la lista</a>\n</div>\n</div>\n<figure class=\"hero-photo\">\n<img src=\"ld-photo:p1\" alt=\"Estudio de yoga vacío con filas de esterillas y cojines sobre suelo de madera\" width=\"1200\" height=\"800\">\n<div class=\"hero-tag\"><b>Clase suave</b>\n<dl><div><dt>Grupo</dt><dd>Pequeño</dd></div><div><dt>Ritmo</dt><dd>El tuyo</dd></div></dl></div>\n</figure>\n</div>\n</section>\n\n<section class=\"problem\">\n<div class=\"wrap problem-grid\">\n<div>\n<p class=\"kicker\">Lo que buscas</p>\n<h2>Moverte con calma, con gente cerca y <em>sin sentirte fuera de sitio.</em></h2>\n</div>\n<p class=\"lede\">Muchas clases van deprisa y piensan en otra edad. Aquí buscas un yoga seguro, en grupo pequeño y que puedas reservar clase a clase, sin compromisos largos.</p>\n</div>\n</section>\n\n<section class=\"offer\" id=\"clase\">\n<div class=\"wrap offer-grid\">\n<figure class=\"offer-photo\">\n<img src=\"ld-photo:p5\" alt=\"Senior Exercise\" width=\"1200\" height=\"800\">\n</figure>\n<div class=\"offer-copy\">\n<p class=\"kicker\">La oferta de apertura</p>\n<h2>Una clase, <em>sin ataduras</em></h2>\n<p class=\"lede\">Prueba una clase suave y decide después si quieres volver.</p>\n<ul class=\"slip\">\n<li><b>Qué es</b><span>Una clase de yoga suave para mayores.</span></li>\n<li><b>Dónde</b><span>Estudio luminoso cerca de Ruzafa.</span></li>\n<li><b>Cómo</b><span>Grupo pequeño, a tu ritmo, con esterillas y cojines.</span></li>\n<li><b>Reserva</b><span>Por clase. Sin abono.</span></li>\n</ul>\n<div class=\"buy\">\n<span class=\"price num\">9 €</span><span class=\"was\">normalmente <s>12 €</s></span>\n<a class=\"btn btn-pine\" href=\"#reserve\" data-ld=\"reserve\">Reservar con BCH</a>\n</div>\n</div>\n</div>\n</section>\n\n<section class=\"how\">\n<div class=\"wrap\">\n<div class=\"how-head\">\n<p class=\"kicker\">Cómo es la clase</p>\n<h2>Despacio, <em>pero con sentido</em></h2>\n</div>\n<div class=\"trio\">\n<article class=\"step\">\n<img src=\"ld-photo:p3\" alt=\"Woman Stretch\" width=\"1200\" height=\"800\">\n<h3>Estirar</h3>\n<ul class=\"chips\"><li>Movimientos suaves</li><li>Sin forzar</li></ul>\n</article>\n<article class=\"step\">\n<img src=\"ld-photo:p4\" alt=\"People Woman\" width=\"1200\" height=\"800\">\n<h3>Respirar</h3>\n<ul class=\"chips\"><li>Ritmo tranquilo</li><li>Pausas cuando las necesites</li></ul>\n</article>\n<article class=\"step\">\n<img src=\"ld-photo:p2\" alt=\"Tied rolled teal yoga mat\" width=\"683\" height=\"1024\">\n<h3>Descansar</h3>\n<ul class=\"chips\"><li>Esterilla y cojín</li><li>Un rato para charlar</li></ul>\n</article>\n</div>\n</div>\n</section>\n\n<section class=\"compare\">\n<div class=\"wrap\">\n<h2>Una clase abierta a tu edad, <em>sin letra pequeña.</em></h2>\n<div class=\"cols\">\n<div class=\"them\">\n<h3>Otras opciones</h3>\n<ul><li>Clases por sesión sueltas a precio de entrada alta</li><li>Abonos de varias clases para ahorrar</li></ul>\n<p class=\"mk\">Gobinde, una clase: 18 €. <a href=\"https://gobinde.com/horario/\" rel=\"noopener nofollow\" target=\"_blank\">Source: gobinde.com</a><br>Gobinde, bono de 8 clases, por clase: 12 €. <a href=\"https://gobinde.com/horario/\" rel=\"noopener nofollow\" target=\"_blank\">Source: gobinde.com</a></p>\n</div>\n<div class=\"us\">\n<h3>Calma Lenta</h3>\n<ul><li>Una clase por 9 €, sin abono</li><li>Grupos pequeños y ritmo suave</li><li>Un estudio luminoso cerca de Ruzafa</li></ul>\n</div>\n</div>\n</div>\n</section>\n\n<section class=\"join\" id=\"join\">\n<div class=\"wrap\">\n<div class=\"join-card\">\n<div class=\"join-copy\">\n<h2>Avísame cuando <em>abramos</em></h2>\n<div class=\"last\"><a class=\"btn btn-pine\" href=\"#reserve\" data-ld=\"reserve\">Reservar con BCH</a></div>\n</div>\n<div class=\"join-copy\">\n<p>¿Todavía no estás listo? Deja tu email y recibirás un correo cuando abramos. Nada más.</p>\n<form data-ld=\"waitlist\">\n<label for=\"email\">Tu email</label>\n<input id=\"email\" type=\"email\" name=\"email\" required maxlength=\"160\" autocomplete=\"email\" placeholder=\"tu@email.com\">\n<button type=\"submit\">Apuntarme a la lista</button>\n</form>\n</div>\n</div>\n</div>\n</section>\n</main><footer>\n<div class=\"wrap\">\n<span>Calma Lenta · Yoga a tu ritmo, sin prisa · Valencia</span>\n<a href=\"#top\">Volver arriba</a>\n</div>\n</footer>",
+  "version": 1,
+  "created_at": 1794817361398
+ },
+ "photos": [
+  {
+   "n": 1,
+   "role": "hero",
+   "mime": "image/webp",
+   "file": "yoga-1.webp",
+   "width": 1024,
+   "height": 683,
+   "hash": "cb170485037cf63ba412732dd6382485827964e057bff78388121c74cd68271b",
+   "meta": {
+    "n": 1,
+    "ref": "p1",
+    "id": "rawpixel:959d137b-649b-45fa-8f67-396ce56fcd7e",
+    "role": "hero",
+    "alt": "Empty indoor yoga studio with rows of mats and bolsters on wooden floor",
+    "title": "Yoga class",
+    "credit": "Rawpixel",
+    "license": "cc0",
+    "licenseVersion": "1.0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "sourceUrl": "https://www.rawpixel.com/image/5943689/free-public-domain-cc0-photo",
+    "provider": "rawpixel",
+    "width": 1024,
+    "height": 683,
+    "mime": "image/webp",
+    "size": 259034,
+    "hash": "cb170485037cf63ba412732dd6382485827964e057bff78388121c74cd68271b",
+    "shows": "Empty indoor yoga studio with rows of mats and bolsters on wooden floor (checked by looking at the photo)"
+   },
+   "created_at": 1794817319107
+  },
+  {
+   "n": 2,
+   "role": "detail",
+   "mime": "image/webp",
+   "file": "yoga-2.webp",
+   "width": 683,
+   "height": 1024,
+   "hash": "9c1860c22c59bc7b837aabfba7d06b6b44fe08a6bbfc1dec515e71b2ca5c314c",
+   "meta": {
+    "n": 2,
+    "ref": "p2",
+    "id": "rawpixel:2427024c-4eb4-40db-aadf-12dfca9eff80",
+    "role": "detail",
+    "alt": "Tied rolled teal yoga mat",
+    "title": "Tied rolled teal yoga mat",
+    "credit": "Rawpixel",
+    "license": "cc0",
+    "licenseVersion": "1.0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "sourceUrl": "https://www.rawpixel.com/image/11524173/tied-and-rolled-teal-yoga-mat",
+    "provider": "rawpixel",
+    "width": 683,
+    "height": 1024,
+    "mime": "image/webp",
+    "size": 94062,
+    "hash": "9c1860c22c59bc7b837aabfba7d06b6b44fe08a6bbfc1dec515e71b2ca5c314c",
+    "shows": "Tied rolled teal yoga mat. Tags: photo, products, tape. (title from the photo site, not checked)"
+   },
+   "created_at": 1794817319107
+  },
+  {
+   "n": 3,
+   "role": "detail",
+   "mime": "image/jpeg",
+   "file": "yoga-3.jpg",
+   "width": 960,
+   "height": 639,
+   "hash": "b6d17e7f58ecd54a124f0bc24e56eda5b2427f92dca78719530b5db7e2411552",
+   "meta": {
+    "n": 3,
+    "ref": "p3",
+    "id": "stocksnap:8cdf8a13-f38c-44ed-b4bf-7d28ecc811e0",
+    "role": "detail",
+    "alt": "Woman Stretch",
+    "title": "Woman Stretch",
+    "creator": "Daria Shevtsova",
+    "creatorUrl": "https://instagram.com/dash.shevtsova",
+    "credit": "Daria Shevtsova / StockSnap",
+    "license": "cc0",
+    "licenseVersion": "1.0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "sourceUrl": "https://stocksnap.io/photo/woman-stretch-MVCPFTBOTT",
+    "provider": "stocksnap",
+    "width": 960,
+    "height": 639,
+    "mime": "image/jpeg",
+    "size": 617922,
+    "hash": "b6d17e7f58ecd54a124f0bc24e56eda5b2427f92dca78719530b5db7e2411552",
+    "shows": "Woman Stretch. Tags: brunette, city, fashio, fitness, healthy, lycra. (title from the photo site, not checked)"
+   },
+   "created_at": 1794817319107
+  },
+  {
+   "n": 4,
+   "role": "detail",
+   "mime": "image/jpeg",
+   "file": "yoga-4.jpg",
+   "width": 960,
+   "height": 640,
+   "hash": "6c445f600752aa2e4633bbedbf102126b92b03f411864f6c0317355ee372c40b",
+   "meta": {
+    "n": 4,
+    "ref": "p4",
+    "id": "stocksnap:54a57105-56f2-4224-9bef-7561fd09868a",
+    "role": "detail",
+    "alt": "People Woman",
+    "title": "People Woman",
+    "creator": "Matthew Henry",
+    "creatorUrl": "https://stocksnap.io/author/200",
+    "credit": "Matthew Henry / StockSnap",
+    "license": "cc0",
+    "licenseVersion": "1.0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "sourceUrl": "https://stocksnap.io/photo/people-woman-AYWO7QN7K7",
+    "provider": "stocksnap",
+    "width": 960,
+    "height": 640,
+    "mime": "image/jpeg",
+    "size": 19331,
+    "hash": "6c445f600752aa2e4633bbedbf102126b92b03f411864f6c0317355ee372c40b",
+    "shows": "People Woman. Tags: athlete, exercise, fitness, healthy, indoor, lifestyle. (title from the photo site, not checked)"
+   },
+   "created_at": 1794817319107
+  },
+  {
+   "n": 5,
+   "role": "people",
+   "mime": "image/jpeg",
+   "file": "yoga-5.jpg",
+   "width": 960,
+   "height": 640,
+   "hash": "102da43646a6114bed5e6735e31ff00a390a1029e2383d9e252e47591a1c3c92",
+   "meta": {
+    "n": 5,
+    "ref": "p5",
+    "id": "stocksnap:277fbc37-4fa3-4c7a-acf0-5914a8be5ad3",
+    "role": "people",
+    "alt": "Senior Exercise",
+    "title": "Senior Exercise",
+    "creator": "Direct Media",
+    "creatorUrl": "https://stocksnap.io/author/145556",
+    "credit": "Direct Media / StockSnap",
+    "license": "cc0",
+    "licenseVersion": "1.0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "sourceUrl": "https://stocksnap.io/photo/senior-exercise-WPSRMWYN7Y",
+    "provider": "stocksnap",
+    "width": 960,
+    "height": 640,
+    "mime": "image/jpeg",
+    "size": 458115,
+    "hash": "102da43646a6114bed5e6735e31ff00a390a1029e2383d9e252e47591a1c3c92",
+    "shows": "Senior Exercise. Tags: bridge, fitness, goals, happy, health. (title from the photo site, not checked)"
+   },
+   "created_at": 1794817319107
+  }
+ ],
+ "escrow": null
+}

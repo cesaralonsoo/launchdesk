@@ -261,3 +261,21 @@ test("watch funding: the wallet paid but the browser never came back to /pay", a
   assert.equal((await escrowTick()).released, 1);
   assert.equal((await call("GET", `/api/escrow/${id}/validate`)).json.state, "released");
 });
+
+test("re-quote by a non-owner: refused, the owner's contract address and refund address stay", async () => {
+  const { id, ownerKey } = await newProject();
+  const q = await realMoney(() => call("POST", `/api/projects/${id}/quote`, { stage: "validate", refundAddress: CUSTOMER }, ownerKey))();
+  assert.equal(q.status, 200);
+  const ATTACKER = p2pkhAddress(new Uint8Array(20).fill(0xbb), "chipnet");
+  // no key, and a wrong key: both refused before any escrow order is written
+  const noKey = await realMoney(() => call("POST", `/api/projects/${id}/quote`, { stage: "validate", refundAddress: ATTACKER }))();
+  assert.equal(noKey.status, 403);
+  const wrongKey = await realMoney(() => call("POST", `/api/projects/${id}/quote`, { stage: "validate", refundAddress: ATTACKER }, "not-the-owner"))();
+  assert.equal(wrongKey.status, 403);
+  const row = await exec("SELECT address, refund_address FROM escrow_orders WHERE project_id = ? AND stage = 'validate'", [id]);
+  assert.equal(String(row.rows[0]?.address), q.json.address);
+  assert.equal(String(row.rows[0]?.refund_address), CUSTOMER);
+  // the owner's signed payment to the first address is still accepted
+  const paid = await realMoney(() => call("POST", `/api/projects/${id}/pay`, { stage: "validate", txHex: walletPays(q.json.address, q.json.sats, chain.paymentTag(id, "validate")) }, ownerKey))();
+  assert.equal(paid.status, 200);
+});

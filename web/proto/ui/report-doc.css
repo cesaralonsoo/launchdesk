@@ -182,3 +182,24 @@ a.rd-src:hover { color: var(--c-ink) !important; border-color: currentColor; }
   .rd-sum li a { pointer-events: none; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* phones: key-number cards never push the page sideways (a long source domain wraps inside its card) */
+.rd-kn li { min-width: 0; }
+.rd-kn li > span { overflow-wrap: anywhere; }
+.rd-kn .rd-src { white-space: normal; overflow-wrap: anywhere; max-width: 100%; display: inline; }
+.rd-kn .rd-est { overflow-wrap: anywhere; }
+.rd-src { max-width: 100%; }
+.panel[data-pos="doc"] { overflow-x: clip; }
+.rd-paper { min-width: 0; overflow-wrap: break-word; }
+.rd-pdf { white-space: nowrap; flex: none; min-width: max-content; }
+.rd-bar-t { min-width: 0; }
+@media (max-width: 640px) {
+  .rd-kn { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
+  .rd-bar { padding: 0 16px 10px; }
+}
+/* the verdict row: "How far it can grow" is a word, not a second score */
+.rd-score .rd-reach { font-size: 20px; font-weight: 650; line-height: 1.2; }
+/* examples with an on-chain proof: one line near the verdict that jumps to it */
+.rd-proof-link { display: inline-flex; align-items: center; gap: 6px; margin: 12px 0 0; padding: 6px 12px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--c-money) 45%, var(--c-line)); background: color-mix(in srgb, var(--c-money) 8%, transparent); color: var(--c-ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.rd-proof-link:hover { border-color: var(--c-money); }
+@media print { .rd-proof-link { display: none; } }

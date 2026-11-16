@@ -64,7 +64,8 @@ assert.match(rp.alignSummary("Owners go to work early.", "Verdict: Go (score 7.0
     {
       assert.ok(out.verdictLine.startsWith(`${v7.VERDICT_WORD[out.verdict]}: `));
       assert.doesNotMatch(out.verdictLine, /price is in range/);
-      assert.equal(out.reasons![0], out.verdictLine.slice(out.verdictLine.indexOf(": ") + 2).slice(0, out.reasons![0]!.length));
+      // the lead is the deciding reason's opening sentence(s), not the whole reason (the page lists the rest below it)
+      assert.ok(out.reasons![0]!.startsWith(out.verdictLine.slice(out.verdictLine.indexOf(": ") + 2)), out.verdictLine);
       assert.equal(out.pivot?.idea, "Group walks for office buildings", "a No-go or Pivot keeps the writer's pivot");
     }
   }
@@ -175,6 +176,65 @@ assert.match(prompt, /"pivot": \{"idea"/);
   assert.equal(rp.sentenceCap("Group walks are €8–12 [S1], so a building contract fills a walker's day. More text here."), "Group walks are €8–12, so a building contract fills a walker's day. More text here.");
   assert.equal(rp.sentenceCap("One. Two three four five six.", 3), "One.");
   assert.equal(rp.sentenceCap("A long reason with no stop", 40), "A long reason with no stop.");
+}
+
+// ───────────────────────────────────────────── report text quality: real texts saved on 16 Nov (task C regression)
+{
+  // local.db results_v7 xFjb99Z6b4 (coffee kiosk, €3 flat white, Test first 5.5): the lead as it shipped
+  const SHIPPED_LINE = "Test first: €3 sits below Syra Coffee's €3.90 flat white and inside the €3–4.50 range that Barcelona Tourism gives for third-wave cafés (barcelonatourism.org, August 2026; no source id). Three Marks lists a flat white at €2.50 (guidavera menu, undated; no source id), so price pressure…";
+  const REASONS = [
+    "€3 sits below Syra Coffee's €3.90 flat white and inside the €3–4.50 range that Barcelona Tourism gives for third-wave cafés (barcelonatourism.org, August 2026; no source id). Three Marks lists a flat white at €2.50 (guidavera menu, undated; no source id), so price pressure is real.",
+    "The population is large, but no source counts the people who pass this exit or their buying habits. The city figures are for the whole city, not for the station.",
+    "Traditional bars charge €1.50–2.50 for a café con leche (barcelonatourism.org, 2026; no source id). Commuters can buy a cheaper drink nearby.",
+  ];
+  const LEAD = "Test first: €3 sits below Syra Coffee's €3.90 flat white and inside the €3–4.50 range that Barcelona Tourism gives for third-wave cafés.";
+  // a new report: the lead is the deciding reason's first sentence, without the in-words source notes
+  assert.equal(v7.leadLine(`Test first: ${REASONS[0]}`), LEAD);
+  // a report saved before the fix renders the same clean lead (report-doc.ts uses leadLine on the stored line)
+  assert.equal(v7.leadLine(SHIPPED_LINE), LEAD);
+  assert.ok(LEAD.split(" ").length <= 30);
+  // the reasons under the lead never repeat it: the first one keeps only what the lead does not say
+  const after = v7.reasonsAfterLead(LEAD, REASONS);
+  assert.equal(after.length, 3);
+  assert.equal(after[0], "Three Marks lists a flat white at €2.50 (guidavera menu, undated), so price pressure is real.");
+  assert.ok(!after.some((x) => x.includes("€3 sits below")), "the lead's sentence is not listed again");
+  assert.ok(!after.some((x) => /no source id/.test(x)));
+  // the old shipped (truncated) lead also hides the repeat
+  assert.ok(!v7.reasonsAfterLead(SHIPPED_LINE, REASONS).some((x) => x.includes("€3 sits below")));
+  // the executive summary's "Main reason:" carries no in-words source either
+  assert.equal(rp.verdictSentence("pivot", 5.5, REASONS[0]), "Verdict: Test first (score 5.5/10). Main reason: €3 sits below Syra Coffee's €3.90 flat white and inside the €3–4.50 range that Barcelona Tourism gives for third-wave cafés.");
+  // e2e.db xkUVNypbKZ (yoga, Test first 4.1): a clean one-sentence lead is kept as it is
+  const YOGA = "Test first: The citywide senior population is large, but no neighbourhood-level 65+ count for Ruzafa was found, so the core customer is unproven in the target area.";
+  assert.equal(v7.leadLine(YOGA), YOGA);
+  // asides that are not sources stay
+  assert.equal(v7.noInlineCites("Rent is €21 per m² (asking price) in Ruzafa (idealista.com, 2026)."), "Rent is €21 per m² (asking price) in Ruzafa.");
+
+  // pivot as shipped in the live coffee example: cut mid-sentence with raw [S9] labels → whole sentences, no labels
+  const PIVOT_WHY = "Bicioci sells a coffee and croissant combo under €3 [S9] and Pasta Madre sells one for €1.60 [S9], though both come from undated travel…";
+  assert.equal(v7.fullSentences(v7.plainText(PIVOT_WHY), 40), "Bicioci sells a coffee and croissant combo under €3 and Pasta Madre sells one for €1.60.");
+
+  // break-even units read as English plurals ("1,411 cup of flat white sold at the kiosks a month" before)
+  assert.equal(v7.unitPlural("one cup of flat white sold at the kiosk"), "cups of flat white");
+  assert.equal(v7.unitPlural("one flat white sold at the metro-exit kiosk"), "flat whites");
+  assert.equal(v7.unitPlural("one booked seat in one gentle yoga class"), "booked seats");
+  assert.equal(v7.unitPlural("one subscriber-month"), "subscribers");
+  assert.equal(v7.unitPlural("booked walk-hour"), "booked walk-hours");
+  assert.equal(v7.unitPlural("one class"), "classes");
+  assert.equal(v7.unitPlural("one sale (demo estimate)"), "sales");
+  assert.equal(rp.unitPlural("one cup of flat white sold at the kiosk"), "cups of flat white");
+
+  // the report Markdown never doubles the € sign ("Net revenue per cup is €€2.73" before)
+  const filled = rp.fillPlaceholders("Net revenue per cup is €{{NET_REVENUE_PER_UNIT}}, break-even {{BREAK_EVEN_UNITS}} cups, capital € {{STARTUP_CAPITAL}}.", { NET_REVENUE_PER_UNIT: "€2.73", BREAK_EVEN_UNITS: "1,411", STARTUP_CAPITAL: "€23,400" });
+  assert.equal(filled.md, "Net revenue per cup is €2.73, break-even 1,411 cups, capital €23,400.");
+  assert.equal(rp.fillPlaceholders("€{{FIXED_MONTHLY}}", { FIXED_MONTHLY: "n/a (cost inputs missing)" }).md, "n/a (cost inputs missing)");
+
+  // the bespoke Spanish website (e2e xkUVNypbKZ) showed "Source: gobinde.com": labels follow the page language
+  const cr = await import("../server/site/custom-render.js");
+  const SITE = `Gobinde, una clase: 18 €. <a href="https://gobinde.com/horario/" rel="noopener nofollow" target="_blank">Source: gobinde.com</a>`;
+  assert.equal(cr.localizeLabels(SITE, "es"), SITE.replace(">Source: ", ">Fuente: "));
+  assert.equal(cr.localizeLabels(SITE, "en"), SITE);
+  assert.equal(cr.localizeLabels(SITE.replace("Source", "Fuente"), "en-GB"), SITE);
+  assert.equal(cr.localizeLabels("<p>Sources: a, b</p><p>Source code is open</p>", "es"), "<p>Fuentes: a, b</p><p>Source code is open</p>");
 }
 
 console.log("verdict consistency: all passed");

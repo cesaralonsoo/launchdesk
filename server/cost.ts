@@ -29,6 +29,10 @@ export function usdOf(model: string, u: UsageLike): number {
 const scope = new AsyncLocalStorage<{ projectId: string; stage: string }>();
 const ledger = new Map<string, CostLine[]>();
 
+/** B1: listeners told about every recorded call's cost (server/brake.ts keeps the daily total). */
+const spendListeners: Array<(usd: number) => void> = [];
+export const onSpend = (fn: (usd: number) => void) => void spendListeners.push(fn);
+
 export const costScope = <T>(projectId: string, stage: string, fn: () => Promise<T>): Promise<T> => scope.run({ projectId, stage }, fn);
 
 /** Records one call (logged always; added to the current project's ledger when inside a costScope). */
@@ -39,6 +43,12 @@ export function recordUsage(label: string, model: string, u: UsageLike): CostLin
     const key = `${s.projectId}:${s.stage}`;
     ledger.set(key, [...(ledger.get(key) ?? []), line]);
   }
+  for (const fn of spendListeners)
+    try {
+      fn(line.usd);
+    } catch {
+      /* a listener never breaks a run */
+    }
   console.log(`[cost] ${s ? s.projectId + " " + s.stage + " " : ""}${label} ${model} in=${line.in} out=${line.out}${line.searches ? ` searches=${line.searches}` : ""}${line.fetches ? ` fetches=${line.fetches}` : ""} $${line.usd.toFixed(4)}`);
   return line;
 }

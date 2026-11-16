@@ -23,11 +23,12 @@ import type { CustomPhoto } from "./site/custom-render.js";
 import type { NovaBrand, Project } from "./types.js";
 import { normHex } from "./brand/lint.js";
 import { templatePlan, templateSite } from "./kit-templates.js";
-import { withValidateFirst, type PlanV2, type ReportGate } from "./marketing/schema.js";
+import { gateReason, withValidateFirst, type PlanV2, type ReportGate } from "./marketing/schema.js";
 import type { SiteRow } from "./site/db.js";
 import type { SiteSpec } from "./site/spec.js";
 import { asSiteSpec, luminance, validateModelSite } from "./site/validate.js";
 import type { ResultsV7 } from "./v7.js";
+import { isPlaceholderPass, plainText } from "./v7.js";
 
 export type KitPart = "logo" | "site" | "marketing";
 export const KIT_PARTS: readonly KitPart[] = ["logo", "site", "marketing"];
@@ -157,8 +158,8 @@ export function digestOf(p: Project, v7: ResultsV7 | null): ReportDigest & Repor
 export function gateOf(v7: ResultsV7 | null): ReportGate {
   const r = v7?.report;
   if (!r) return {};
-  const mainReason = r.verdictLine.replace(/^\s*(?:go|pivot|no-go)\s*[:.—–-]?\s*/i, "").trim();
-  const validateFirst = (v7?.brief?.validateFirst ?? []).filter((v) => v?.what).slice(0, 3).map((v) => ({ what: v.what, how: v.how, passIf: v.passIf }));
+  const mainReason = gateReason(r.verdictLine);
+  const validateFirst = (v7?.brief?.validateFirst ?? []).filter((v) => v?.what).slice(0, 3).map((v) => ({ what: plainText(v.what), how: plainText(v.how), passIf: isPlaceholderPass(v.passIf) ? "" : plainText(v.passIf) }));
   return { verdict: r.verdict, ...(mainReason ? { mainReason } : {}), ...(validateFirst.length ? { validateFirst } : {}) };
 }
 
@@ -278,12 +279,14 @@ export function templateFor(idea: string): SiteTemplate {
 
 /** The live website of a kit, for the website routes: brand, chosen logo and design are read from the kit. */
 export async function siteRowFor(slug: string): Promise<SiteRow | null> {
-  const r = await exec("SELECT id FROM projects WHERE slug = ?", [slug]);
+  const r = await exec("SELECT id, example FROM projects WHERE slug = ?", [slug]);
   const id = r.rows[0]?.id;
   if (id == null) return null;
   const kit = await loadKit(String(id));
-  const spec = kit?.site ? asSiteSpec(kit.site.spec) : null;
-  if (!kit || !spec) return null;
+  const stored = kit?.site ? asSiteSpec(kit.site.spec) : null;
+  if (!kit || !stored) return null;
+  // A finished example is a showcase, not a shop: no reserve address, so no button can send real coins to anyone.
+  const spec = Number(r.rows[0]?.example ?? 0) === 1 ? { ...stored, reserve: { ...stored.reserve, address: "" } } : stored;
   const site = kit.site!;
   const projectId = String(id);
   const customReady = site.custom?.status === "done";
