@@ -54,10 +54,40 @@ for (const [id, key] of [["APPK1", "bread"], ["APPK2", "dog"]] as const) {
   assert.equal(lead.status, 200, "POST /api/sites/:slug/lead is mounted");
   assert.deepEqual(await lead.json(), { ok: true });
 
+  // site2: real photos and the page designed for this business (mock: fixture photos + the code-built design).
+  assert.equal(v.kit.site!.custom?.status, "done", `${key}: designed page made`);
+  assert.equal(v.kit.site!.template, "custom", `${key}: the designed page is the live design`);
+  assert.ok(v.kit.site!.base && ["editorial", "bold", "warm"].includes(v.kit.site!.base), "a standard design to fall back to");
+  assert.ok(!JSON.stringify(v.kit).includes("<style"), "the page HTML is not in the polled kit JSON");
+  assert.match(html, /data-template="custom"/, "live site serves the designed page");
+  assert.equal(site.headers.get("content-security-policy"), (await import("../server/site/render.js")).SITE_CSP, "same strict CSP");
+  assert.equal((html.match(/<script>/g) ?? []).length, 1, "one inline script only");
+  const photos = v.kit.site!.photos ?? [];
+  assert.ok(photos.length >= 1, `${key}: fixture photos found`);
+  assert.ok(!JSON.stringify(photos).includes('"bytes"'), "no photo bytes in the kit");
+  const src = html.match(/<img [^>]*src="(\/s\/[^"]+\/p\/\d+[^"]*)"/)?.[1];
+  assert.ok(src, "the designed page shows a real photo from this site");
+  const img = await app.request(src!.replace(/&amp;/g, "&"));
+  assert.equal(img.status, 200, "photo route is mounted before the catch-all");
+  assert.match(img.headers.get("content-type") ?? "", /^image\/(jpeg|webp)$/);
+  assert.equal((await app.request(`/s/${v.slug}/p/9`)).status, 404, "a missing photo is a 404, not the app page");
+  assert.match(html, /Photos?:/, "photo credits shown");
+  const custom = await app.request(`/s/${v.slug}?preview=custom`);
+  assert.equal(custom.status, 200);
+  assert.match(await custom.text(), /data-template="custom"/);
+  const ed = await (await app.request(`/s/${v.slug}?preview=editorial`)).text();
+  assert.match(ed, /data-template="editorial"/);
+  assert.match(ed, /class="hph/, "standard designs show the hero photo too");
+
   // A design choice shows on the live site at once.
   const choose = await app.request(`/api/projects/${id}/kit/site`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ template: "bold" }) });
   assert.equal(choose.status, 200);
   assert.equal((await kit.siteRowFor(v.slug))!.template, "bold");
+  assert.equal((await kit.loadKit(id))!.site!.picked, true, "a hand-picked design is never switched automatically");
+  assert.match(await (await app.request(`/s/${v.slug}`)).text(), /data-template="bold"/);
+  const back = await app.request(`/api/projects/${id}/kit/site`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ template: "custom" }) });
+  assert.equal(back.status, 200, "the designed page can be chosen again");
+  assert.equal((await kit.siteRowFor(v.slug))!.template, "custom");
 
   // The 30-day plan has the real plan shape (the result screen can show it) and no sample sources.
   const plan = v.kit.marketing!.plan as { goal?: unknown; channels?: unknown[]; weeks?: unknown[] };

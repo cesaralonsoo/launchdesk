@@ -7,13 +7,19 @@
 //   WP1 server/site/plan.ts       planSite(input: KitInput): Promise<SiteSpec>
 //   WP2 server/brand/draw.ts      drawLogos(brand: KitBrand, avoid: string[]): Promise<LogoOption[]>
 //   WP3 server/marketing/plan.ts  planMarketing(input: KitInput): Promise<MarketingResult>
+//   site2 server/site/photos.ts   findPhotos(...)  real photos for the idea (free, keyless, ≤12 s, in parallel)
+//   site2 server/site/custom.ts   generateCustomSite(...)  one page designed for this business, after the copy is
+//                                 ready; it becomes the live design unless the founder already chose one by hand.
+import { statKind } from "./site/stat-kind.js";
 import { runDept } from "./ai.js";
 import { config } from "./config.js";
 import { Budget, BudgetError, costOf, costScope } from "./cost.js";
 import { exec, getProject, getProjectRow } from "./db.js";
 import { slugify } from "./jobs.js";
 import { loadV7 } from "./jobs-v7.js";
-import type { Kit, KitBrand, KitInput, LogoOption, LogoResult, MarketingResult, ReportDigest, SiteResult, SiteTemplate } from "./kit-contract.js";
+import type { Kit, KitBrand, KitInput, LogoOption, LogoResult, MarketingResult, ReportDigest, SitePhotoMeta, SiteResult, SiteTemplate, StandardTemplate } from "./kit-contract.js";
+import type { SitePhoto } from "./site/photos.js";
+import type { CustomPhoto } from "./site/custom-render.js";
 import type { NovaBrand, Project } from "./types.js";
 import { normHex } from "./brand/lint.js";
 import { templatePlan, templateSite } from "./kit-templates.js";
@@ -25,16 +31,26 @@ import type { ResultsV7 } from "./v7.js";
 
 export type KitPart = "logo" | "site" | "marketing";
 export const KIT_PARTS: readonly KitPart[] = ["logo", "site", "marketing"];
-export const SITE_TEMPLATES: readonly SiteTemplate[] = ["editorial", "bold", "warm"];
+export const SITE_TEMPLATES: readonly StandardTemplate[] = ["editorial", "bold", "warm"];
+/** Every design the founder can pick: the page made for them (once it is ready) and the 3 standard ones. */
+export const SITE_DESIGNS: readonly SiteTemplate[] = ["custom", ...SITE_TEMPLATES];
 
-/** Reservation estimates per part (PLAN.md §4, list prices). */
-export const KIT_EST = { brand: 0.04, logo: 0.09, site: 0.045, marketing: 0.115 } as const;
+/**
+ * Reservation estimates per part (PLAN.md §4, list prices). custom = the designed page (one Sonnet 5.5 call,
+ * ~4k cached system + ~1.5k brief in, 6-10k out with thinking at "medium": typically $0.08-0.12, $0.17 worst case
+ * at the 16k cap). Photos are free (keyless Openverse/Commons). The sum must stay ≤ KIT_CAP_USD (test/kit.test.ts).
+ */
+export const KIT_EST = { brand: 0.04, logo: 0.09, site: 0.045, marketing: 0.115, custom: 0.08 } as const;
 
 export interface KitDeps {
   brand(p: Project): Promise<NovaBrand>;
   logos(brand: KitBrand, avoid: string[], ctx?: { idea: string; report?: ReportDigest }): Promise<LogoOption[]>;
   site(input: KitInput): Promise<unknown>;
   marketing(input: KitInput): Promise<MarketingResult>;
+  /** Real photos for the idea (never throws; [] is fine). Default: site/photos.ts findPhotos. */
+  photos?(input: KitInput): Promise<SitePhoto[]>;
+  /** The page designed for this business; html null when it did not pass the checks. Default: site/custom.ts. */
+  custom?(input: KitInput, photos: CustomPhoto[], spec: SiteSpec): Promise<{ html: string | null; usd: number; issues: string[] }>;
 }
 
 // ───────────────────────────────────────────── storage (one row per project)
@@ -98,21 +114,37 @@ export function safeBrand(b: KitBrand): KitBrand {
   return { ...b, palette: { primary, accent, bg, ink } };
 }
 
-/** The report, reduced to what the kit needs. Stats only with a real source link. */
+/** The customer's own problem in plain words: the canvas value or the brief, never the research notes about rivals. */
+function customerPain(p: Project, v7: ResultsV7 | null): string {
+  const sam = p.results.sam as { canvas?: { value?: string } } | undefined;
+  const mia = p.results.mia as { brief?: { concept?: string } } | undefined;
+  const pick = [sam?.canvas?.value, mia?.brief?.concept].map((x) => String(x ?? "").trim()).find((x) => x.length >= 12);
+  return pick ?? p.results.memo?.problem ?? v7?.report?.verdictLine ?? "";
+}
+
+/** The report, reduced to what the kit needs. Stats only with a real source link, most customer-relevant first. */
 export function digestOf(p: Project, v7: ResultsV7 | null): ReportDigest & ReportGate {
   const sam = p.results.sam as (Project["results"]["sam"] & { launch_offer?: { item: string; price: number; normal_price: number; limit: number } }) | undefined;
   const lo = sam?.launch_offer;
-  const stats: ReportDigest["stats"] = [];
-  for (const b of v7?.blocks ?? []) for (const k of b.keyNumbers ?? []) if (k.source?.url && stats.length < 6) stats.push({ value: k.value, label: k.label, sourceUrl: k.source.url });
-  if (!stats.length)
-    for (const w of v7?.work ?? []) for (const f of w.findings) if (f.source?.url && f.display && stats.length < 6) stats.push({ value: f.display, label: f.text.slice(0, 80), sourceUrl: f.source.url });
+  const all: ReportDigest["stats"] = [];
+  for (const b of v7?.blocks ?? []) for (const k of b.keyNumbers ?? []) if (k.source?.url) all.push({ value: k.value, label: k.label, sourceUrl: k.source.url });
+  if (!all.length)
+    for (const w of v7?.work ?? []) for (const f of w.findings) if (f.source?.url && f.display) all.push({ value: f.display, label: f.text.slice(0, 80), sourceUrl: f.source.url });
+  const order = { demand: 0, price: 1, context: 2 } as const;
+  const seen = new Set<string>();
+  const stats = all
+    .map((s, i) => ({ ...s, kind: statKind(s), i }))
+    .filter((s) => (seen.has(`${s.value}|${s.label}`) ? false : (seen.add(`${s.value}|${s.label}`), true)))
+    .sort((a, b) => order[a.kind] - order[b.kind] || a.i - b.i)
+    .slice(0, 6)
+    .map(({ i: _i, ...s }) => s);
   const competitors: ReportDigest["competitors"] = [];
   for (const w of v7?.work ?? []) for (const f of w.findings) if (f.competitor?.named && competitors.length < 5) competitors.push({ name: f.competitor.name, gap: f.competitor.note });
   if (!competitors.length) for (const c of p.results.leo?.competitors ?? []) if (competitors.length < 5) competitors.push({ name: c.name, gap: (c as { gap?: string; weakness?: string }).gap ?? (c as { weakness?: string }).weakness ?? "" });
   const risks = (v7?.report?.weaknesses.map((w) => w.text) ?? p.results.leo?.risks.map((r) => r.risk) ?? []).slice(0, 4);
   return {
     customer: p.results.mia?.brief.for ?? "",
-    pain: p.results.memo?.problem ?? v7?.report?.verdictLine ?? "",
+    pain: customerPain(p, v7),
     offer: lo ? { what: lo.item, price: lo.price, normal: lo.normal_price, limit: lo.limit } : { what: p.results.mia?.title ?? p.idea, price: sam?.price.value ?? 0 },
     stats,
     competitors,
@@ -192,6 +224,14 @@ export const defaultDeps: KitDeps = {
     if (!m) throw new NotReady("marketing");
     return m.planMarketing(input);
   },
+  async photos(input) {
+    const { findPhotos } = await import("./site/photos.js");
+    return findPhotos({ idea: input.idea, city: input.brand.city });
+  },
+  async custom(input, photos, spec) {
+    const { generateCustomSite } = await import("./site/custom.js");
+    return generateCustomSite(input, photos, { spec });
+  },
 };
 /** A part whose module is not installed yet: go straight to the fallback, no retry. */
 class NotReady extends Error {
@@ -244,7 +284,22 @@ export async function siteRowFor(slug: string): Promise<SiteRow | null> {
   const kit = await loadKit(String(id));
   const spec = kit?.site ? asSiteSpec(kit.site.spec) : null;
   if (!kit || !spec) return null;
-  return { slug, projectId: String(id), template: kit.site!.template, spec, kit: { brand: kit.brand, logo: kit.logo }, version: 1, updatedAt: Date.now() };
+  const site = kit.site!;
+  const projectId = String(id);
+  const customReady = site.custom?.status === "done";
+  return {
+    slug,
+    projectId,
+    // "custom" only while the designed page is really there; otherwise the standard design it was made from.
+    template: site.template === "custom" && !customReady ? site.base ?? "editorial" : site.template,
+    base: site.base ?? (site.template !== "custom" ? site.template : "editorial"),
+    spec,
+    kit: { brand: kit.brand, logo: kit.logo },
+    version: site.custom?.version ?? 1,
+    updatedAt: Date.now(),
+    ...(site.photos?.length ? { photos: site.photos } : {}),
+    ...(customReady ? { customHtml: async () => (await (await import("./site/custom-db.js")).loadCustom(projectId))?.html ?? null } : {}),
+  };
 }
 
 /** Picks 3 options to show from the drawn ones (one per family when possible). */
@@ -281,7 +336,12 @@ async function runKitInner(projectId: string, deps: KitDeps, stage: string): Pro
   };
   // A part interrupted by a restart, or one that errored, is run again.
   for (const k of Object.keys(kit.status) as Array<keyof Kit["status"]>) if (kit.status[k] !== "done") kit.status[k] = "queued";
-  const save = () => saveKit(projectId, kit);
+  // The founder may pick a logo or a design while the kit is still running (the designed page takes minutes):
+  // their choices in the stored kit win over this run's in-memory copy.
+  const save = async () => {
+    keepFounderChoices(kit, await loadKit(projectId).catch(() => null));
+    await saveKit(projectId, kit);
+  };
   const set = async (part: keyof Kit["status"], s: Kit["status"][typeof part]) => {
     kit.status[part] = s;
     await save();
@@ -308,7 +368,10 @@ async function runKitInner(projectId: string, deps: KitDeps, stage: string): Pro
   const slug = await reserveSlug(projectId, kit.brand.name);
   const input: KitInput = { projectId, idea: p.idea, brand: kit.brand, report: digestOf(p, await loadV7(projectId)), founderAddress: row?.founder_address ?? "", slug };
 
-  // 2. Logo, website and plan in parallel.
+  // 2. Photos start now (free, ≤12 s), in parallel with logo, website copy and plan; the designed page needs them.
+  const photosP = kitPhotos(projectId, kit, input, deps);
+
+  // 3. Logo, website and plan in parallel.
   const part = async <R>(name: KitPart, est: number, make: () => Promise<R>, fallback: () => R | Promise<R>, put: (r: R) => void) => {
     if (kit.status[name] === "done") return;
     await set(name, "working");
@@ -359,12 +422,76 @@ async function runKitInner(projectId: string, deps: KitDeps, stage: string): Pro
         return { spec, template: templateFor(input.idea) };
       },
       () => ({ spec: fallbackSite(input), template: templateFor(input.idea) }),
-      (r) => (kit.site = r),
-    ),
+      (r) => (kit.site = { ...r, base: r.template as StandardTemplate }),
+    ).then(() => customStep(projectId, kit, input, deps, guard, photosP, save)),
     part<MarketingResult>("marketing", KIT_EST.marketing, () => deps.marketing(input), () => fallbackMarketing(input), (r) => (kit.marketing = { ...r, plan: r.plan && typeof r.plan === "object" && Array.isArray((r.plan as PlanV2).weeks) ? withValidateFirst(r.plan as PlanV2, input.report as ReportGate) : r.plan })),
   ]);
   await save();
   return kit;
+}
+
+/** Copies what the founder chose (stored by chooseLogo/chooseTemplate/moreLogos) into a running kit. */
+export function keepFounderChoices(kit: Kit, stored: Kit | null) {
+  if (stored?.logo && kit.logo && stored.status.logo === "done") kit.logo = stored.logo; // the run never changes a drawn logo
+  if (stored?.site?.picked && kit.site) {
+    kit.site.template = stored.site.template;
+    kit.site.picked = true;
+  }
+}
+
+/** Photos for the site: found once per kit (bytes in site_photos, metadata in kit.site.photos). Never throws. */
+async function kitPhotos(projectId: string, kit: Kit, input: KitInput, deps: KitDeps): Promise<SitePhotoMeta[]> {
+  try {
+    const { listPhotos, savePhotos } = await import("./site/photos-db.js");
+    const have = await listPhotos(projectId);
+    if (have.length) return have;
+    const found = await (deps.photos ?? defaultDeps.photos!)(input);
+    if (!found.length) return [];
+    await savePhotos(projectId, found);
+    return await listPhotos(projectId);
+  } catch (e) {
+    console.error(`[kit] ${projectId} photos skipped:`, (e as Error).message);
+    return kit.site?.photos ?? [];
+  }
+}
+
+/**
+ * The page designed for this business. Runs after the standard site is live (the founder already has a link), still
+ * inside the kit run so the result screen keeps polling. Done → it becomes the live design unless the founder picked
+ * one by hand. Any failure (checks, budget, API) → the standard design simply stays; nothing is shown as an error.
+ * A resumed kit retries only an interrupted attempt ("working"), never a rejected one (no repeated spend).
+ */
+async function customStep(projectId: string, kit: Kit, input: KitInput, deps: KitDeps, guard: ReturnType<typeof kitGuard>, photosP: Promise<SitePhotoMeta[]>, save: () => Promise<void>) {
+  const photos = await photosP;
+  const site = kit.site;
+  if (!site || kit.status.site !== "done") return;
+  if (photos.length && !site.photos?.length) {
+    site.photos = photos;
+    await save();
+  }
+  if (site.custom?.status === "done" || site.custom?.status === "error") return;
+  const spec = asSiteSpec(site.spec);
+  if (!spec) return;
+  const version = (site.custom?.version ?? 0) + 1;
+  site.custom = { status: "working", version };
+  await save();
+  let settle: (() => void) | null = null;
+  try {
+    settle = guard.reserve("site-custom", KIT_EST.custom);
+    const { customPhotos } = await import("./site/routes.js");
+    const r = await (deps.custom ?? defaultDeps.custom!)(input, customPhotos(site.photos), spec);
+    if (!r.html) throw new Error(`the designed page did not pass the checks: ${r.issues.slice(0, 3).join("; ")}`);
+    const { saveCustom } = await import("./site/custom-db.js");
+    await saveCustom(projectId, r.html, version);
+    site.custom = { status: "done", version, usd: Math.round(r.usd * 10_000) / 10_000 };
+    if (!site.picked) site.template = "custom";
+  } catch (e) {
+    console.error(`[kit] ${projectId} designed page skipped:`, (e as Error).message);
+    site.custom = { status: "error", version };
+  } finally {
+    settle?.();
+  }
+  await save();
 }
 
 /** Nova's brand is stored as the "nova" job too, so the rest of the app (old pages, getProject) sees it. */
@@ -425,10 +552,12 @@ export async function chooseLogo(projectId: string, id: string): Promise<Kit> {
 }
 
 export async function chooseTemplate(projectId: string, template: string): Promise<Kit> {
-  if (!SITE_TEMPLATES.includes(template as SiteTemplate)) throw new Error("Unknown design.");
+  if (!SITE_DESIGNS.includes(template as SiteTemplate)) throw new Error("Unknown design.");
   const kit = await loadKit(projectId);
   if (!kit?.site) throw new Error("Your website is not ready yet.");
+  if (template === "custom" && kit.site.custom?.status !== "done") throw new Error("Your own design is not ready yet.");
   kit.site.template = template as SiteTemplate;
+  kit.site.picked = true;
   await saveKit(projectId, kit);
   return kit;
 }

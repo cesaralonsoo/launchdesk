@@ -73,6 +73,34 @@ const k3 = await kit.runKit("K3", { ...kit.defaultDeps });
 assert.equal(k3.status.logo, "done");
 assert.equal(k3.status.site, "done");
 
+// ── site2: the designed page. Rejected → status error, the standard design stays; a hand pick is never overridden.
+await seed("K5");
+const rejecting: Deps = { ...good, photos: async () => [], custom: async () => ({ html: null, usd: 0.1, issues: ["invented number"] }) };
+const k5 = await kit.runKit("K5", rejecting);
+assert.equal(k5.site!.custom?.status, "error");
+assert.equal(k5.site!.template, k5.site!.base, "the standard design stays live");
+const r5 = await kit.siteRowFor((await exec("SELECT slug FROM projects WHERE id = 'K5'")).rows[0]!.slug as string);
+assert.equal(r5!.customHtml, undefined);
+calls.length = 0;
+await kit.runKit("K5", { ...rejecting, custom: async () => (calls.push("custom"), { html: "<style></style>", usd: 0, issues: [] }) });
+assert.deepEqual(calls, [], "a rejected designed page is not paid for again on a resumed kit");
+await assert.rejects(kit.chooseTemplate("K5", "custom"), /not ready/);
+
+await seed("K6");
+let release: () => void = () => {};
+const gate = new Promise<void>((r) => (release = r));
+const slow: Deps = { ...good, photos: async () => [], custom: async () => (await gate, { html: '<style>p{color:red}</style><header data-hero><h1>x</h1></header>', usd: 0.09, issues: [] }) };
+const run6 = kit.runKit("K6", slow);
+for (let i = 0; i < 100 && (await kit.loadKit("K6"))?.site?.custom?.status !== "working"; i++) await new Promise((r) => setTimeout(r, 20));
+await kit.chooseTemplate("K6", "warm"); // the founder picks while the page is still being designed
+release();
+const k6 = await run6;
+assert.equal(k6.site!.custom?.status, "done");
+assert.equal(k6.site!.template, "warm", "the hand pick wins over the auto switch");
+assert.equal((await kit.loadKit("K6"))!.site!.template, "warm");
+assert.equal((await kit.loadKit("K6"))!.site!.custom!.usd, 0.09);
+assert.ok(kit.KIT_EST.custom > 0 && kit.SITE_DESIGNS[0] === "custom");
+
 // ── spend guard: the cost.ts Budget refuses an estimate past the cap
 const { Budget, BudgetError } = await import("../server/cost.js");
 assert.throws(() => new Budget(0.05).reserve("logo", 0.09), BudgetError);

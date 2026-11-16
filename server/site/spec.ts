@@ -1,9 +1,10 @@
 // WP1 Website: the SiteSpec (what a rendered site is made of) and the JSON schema the model fills.
 // The model fills a flat ModelSite (no unions, so structured outputs stay simple); validate.ts turns it into a
 // SiteSpec whose prices, stats and payment address are copied in by code, never by the model.
-import type { SiteTemplate } from "../kit-contract.js";
+import type { StandardTemplate } from "../kit-contract.js";
 
-export const SITE_TEMPLATES: readonly SiteTemplate[] = ["editorial", "bold", "warm"] as const;
+/** The 3 standard designs (the custom page is not in this list: it has no fixed template to loop over). */
+export const SITE_TEMPLATES: readonly StandardTemplate[] = ["editorial", "bold", "warm"] as const;
 
 /** Icon names the model may pick (drawn in templates/shared.ts). Anything else becomes "spark". */
 export const ICONS = [

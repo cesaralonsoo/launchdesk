@@ -1,7 +1,7 @@
 // WP1 Website storage: the rendered site's inputs (spec + chosen template + brand/logo) and the email waitlist.
 // The HTML itself is rendered on request (cheap, and a new logo or template shows at once).
 import { exec } from "../db.js";
-import type { Kit, SiteTemplate } from "../kit-contract.js";
+import type { Kit, SitePhotoMeta, SiteTemplate, StandardTemplate } from "../kit-contract.js";
 import type { SiteSpec } from "./spec.js";
 import { asSiteSpec } from "./validate.js";
 
@@ -29,7 +29,21 @@ export function ensureSiteTables(): Promise<void> {
   }));
 }
 
-export interface SiteRow { slug: string; projectId: string; template: SiteTemplate; spec: SiteSpec; kit: Pick<Kit, "brand" | "logo">; version: number; updatedAt: number }
+export interface SiteRow {
+  slug: string;
+  projectId: string;
+  template: SiteTemplate;
+  spec: SiteSpec;
+  kit: Pick<Kit, "brand" | "logo">;
+  version: number;
+  updatedAt: number;
+  /** Standard design shown when the custom page cannot be (default: editorial). */
+  base?: StandardTemplate;
+  /** Real photos for this site (metadata; bytes are served by GET /s/:slug/p/:n). */
+  photos?: SitePhotoMeta[];
+  /** The stored custom page fragment, read only when a request needs it. */
+  customHtml?: () => Promise<string | null>;
+}
 
 /** Saves (or replaces) a site. Only brand and logo of the kit are kept. */
 export async function saveSite(row: { slug: string; projectId: string; template: SiteTemplate; spec: SiteSpec; kit: Pick<Kit, "brand" | "logo"> }): Promise<void> {

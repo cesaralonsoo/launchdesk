@@ -1,6 +1,6 @@
 // WP1 Website template "warm": soft tinted page, rounded cards, a blob hero with stickers. Food, pets, kids, wellness.
 import type { Section } from "../spec.js";
-import { chrome, credit, esc, faqList, icon, mark, priceLine, reserveBtn, scarcity, sectionOf, sourceLink, waitlist, type RenderCtx } from "./shared.js";
+import { chrome, credit, esc, faqList, icon, mark, photoBand, photoCreditLine, photoImg, priceLine, reserveBtn, scarcity, sectionOf, sourceLink, waitlist, type RenderCtx } from "./shared.js";
 
 export const fonts = { display: "Fraunces", text: "DM Sans", href: "family=Fraunces:opsz,wght,SOFT@9..144,500..700,100&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700" };
 export const mode = "soft" as const;
@@ -20,7 +20,8 @@ export const css = `
 .art{position:relative;aspect-ratio:1;max-width:560px;width:100%;margin-inline:auto}
 .art .blob{position:absolute;inset:4%;color:var(--tint)}.art .blob2{position:absolute;inset:14% 0 0 18%;color:color-mix(in srgb,var(--a) 35%,var(--bg));transform:rotate(30deg);opacity:.7}
 .art .mark{position:absolute;left:50%;top:50%;width:40%;height:auto;transform:translate(-50%,-50%) rotate(-4deg);filter:drop-shadow(0 20px 30px rgb(0 0 0/.16))}
-.stk{position:absolute;display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:999px;background:var(--sf);font-weight:600;font-size:15px;box-shadow:0 10px 24px -10px rgb(0 0 0/.25);white-space:nowrap;max-width:70%;overflow:hidden;text-overflow:ellipsis}
+.art .wph{position:absolute;inset:6% 6% 8% 4%;overflow:hidden;border-radius:46% 54% 42% 58%/52% 44% 56% 48%;box-shadow:0 30px 60px -30px rgb(0 0 0/.4)}.art .wph img{width:100%;height:100%;object-fit:cover}
+.stk{position:absolute;z-index:1;display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:999px;background:var(--sf);font-weight:600;font-size:15px;box-shadow:0 10px 24px -10px rgb(0 0 0/.25);white-space:nowrap;max-width:70%;overflow:hidden;text-overflow:ellipsis}
 .stk svg{color:var(--p)}.stk.s1{left:0;top:16%;transform:rotate(-6deg)}.stk.s2{right:0;top:44%;transform:rotate(5deg)}.stk.s3{left:8%;bottom:10%;transform:rotate(-3deg)}
 .stk.pr{right:6%;bottom:2%;background:var(--p);color:var(--op);font:600 22px/1 var(--fd);padding:14px 20px;transform:rotate(-8deg)}
 @media(max-width:520px){.stk{font-size:13px;padding:8px 12px}.stk.pr{font-size:18px}}
@@ -95,15 +96,16 @@ function section(c: RenderCtx, s: Section, banded: boolean): string {
 export function body(c: RenderCtx): string {
   const s = c.spec;
   const how = sectionOf(s, "how-it-works-for-customer");
+  const hero = c.photos?.[0];
   const stickers = (how?.steps ?? sectionOf(s, "menu-or-services")?.items ?? []).slice(0, 3);
   return `<header class="nav"><div class="wrap"><a class="brand" href="#top">${mark(c, 38)}<span>${esc(c.brand.name)}</span></a><nav>${how ? `<a href="#how">${esc(c.ui.howItWorks)}</a>` : ""}<a href="#offer">${esc(c.ui.offer)}</a><a href="#faq">${esc(c.ui.faq)}</a></nav>${reserveBtn(c, c.ui.reserve, "btn btn-p btn-sm")}</div></header>
 <main id="top">
 <section class="hero" data-hero><div class="wrap"><div><span class="tag">${icon("map-pin", 16)}${esc(s.hero.eyebrow)}</span><h1>${esc(s.hero.headline)}</h1><p class="sub">${esc(s.hero.sub)}</p>
 <div class="ctas">${reserveBtn(c, s.hero.cta)}<a class="btn btn-g" href="${how ? "#how" : "#offer"}">${esc(s.hero.secondary)}</a></div>${scarcity(c)}</div>
-<div class="art rv"><span class="blob2">${BLOB}</span><span class="blob">${BLOB}</span>${mark(c, 220)}${stickers.map((st, i) => `<span class="stk s${i + 1}">${icon(st.icon, 18)}${esc(st.title)}</span>`).join("")}${c.price ? `<span class="stk pr">${esc(c.price)}</span>` : ""}</div></div></section>
-${s.sections.map((x, i) => section(c, x, i % 2 === 0)).join("\n")}
+<div class="art rv${hero ? " has-ph" : ""}"><span class="blob2">${BLOB}</span>${hero ? `<span class="wph">${photoImg(hero, true)}</span>` : `<span class="blob">${BLOB}</span>${mark(c, 220)}`}${stickers.map((st, i) => `<span class="stk s${i + 1}">${icon(st.icon, 18)}${esc(st.title)}</span>`).join("")}${c.price ? `<span class="stk pr">${esc(c.price)}</span>` : ""}</div></div></section>
+${s.sections.map((x, i) => (i === 1 ? photoBand(c) : "") + section(c, x, i % 2 === 0)).join("\n")}${s.sections.length < 2 ? photoBand(c) : ""}
 <section class="final"><div class="wrap"><div class="box rv"><h2 class="h2">${esc(s.finalCta.headline)}</h2>${s.finalCta.sub ? `<p class="intro">${esc(s.finalCta.sub)}</p>` : ""}<div class="ctas">${reserveBtn(c, s.finalCta.cta)}</div>${waitlist(c, "wl2")}</div></div></section>
 </main>
-<footer><div class="wrap"><span class="brand">${mark(c, 28)}<span>${esc(c.brand.name)}</span></span><span>${esc(s.footer.tagline)}</span>${credit(c)}</div></footer>
+<footer><div class="wrap"><span class="brand">${mark(c, 28)}<span>${esc(c.brand.name)}</span></span><span>${esc(s.footer.tagline)}</span>${credit(c)}${photoCreditLine(c)}</div></footer>
 ${chrome(c)}`;
 }

@@ -1,0 +1,332 @@
+<style>
+/* Concept: a Leith plant room. Deep-green hero slab with a tall photo bleeding off the right edge,
+   nursery plant-tag labels as the recurring detail, terracotta only where a pot would be. */
+:root{
+  --green:#2e5a3a;--green-d:#20402a;--clay:#d98b5f;--clay-ink:#9a4c25;
+  --paper:#f5f1ea;--paper-2:#ebe4d7;--ink:#1c241e;--ink-2:#4b5a4f;--line:#d6cfc1;--cream:#f5f1ea;--clay-l:#f0b691;--clay-h:#e39a70;--sage:#d5e0d6;--sage-2:#b9c9bc;--mute:#a9b3ab;
+  --display:"Fraunces",Georgia,"Times New Roman",serif;--text:"DM Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --wrap:1200px;--gut:max(20px,env(safe-area-inset-left,0px));--sec:clamp(72px,10vw,136px);
+  color-scheme:light
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 1.0625rem/1.6 var(--text);-webkit-font-smoothing:antialiased}
+img{display:block;max-width:100%;height:auto}
+figure{margin:0}
+a{color:inherit}
+a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--clay);outline-offset:3px}
+.wrap{max-width:var(--wrap);margin:0 auto;padding-left:var(--gut);padding-right:max(20px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--display);font-weight:400;line-height:1.02;letter-spacing:-.02em;margin:0;text-wrap:balance;font-variation-settings:"opsz" 144}
+h2{font-size:clamp(2.25rem,4.6vw,3.75rem)}
+h3{font-size:1.5rem;line-height:1.15;letter-spacing:-.01em;font-variation-settings:"opsz" 48}
+p{margin:0}
+em{font-style:italic}
+.kicker{font:600 .75rem/1 var(--text);letter-spacing:.14em;text-transform:uppercase;color:var(--clay-ink)}
+.lede{font-size:clamp(1.125rem,1.6vw,1.3rem);line-height:1.55;max-width:34ch;color:var(--ink-2)}
+.btn{display:inline-flex;align-items:center;gap:.6em;min-height:52px;padding:0 1.6rem;border-radius:999px;font:600 1rem/1 var(--text);text-decoration:none;border:1.5px solid transparent;transition:transform .2s ease,background-color .2s ease}
+.btn:hover{transform:translateY(-1px)}
+.btn-clay{background:var(--clay);color:var(--ink)}
+.btn-clay:hover{background:var(--clay-h)}
+.btn-line{border-color:currentColor;color:inherit}
+.btn-green{background:var(--green);color:var(--cream)}
+.btn-green:hover{background:var(--green-d)}
+
+/* top bar */
+.top{position:absolute;inset:0 0 auto;z-index:2;color:var(--cream)}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:22px}
+.mark{font:500 1.5rem/1 var(--display);letter-spacing:-.02em;text-decoration:none;font-variation-settings:"opsz" 72}
+.mark span{font-style:italic;color:var(--clay)}
+.top nav{display:flex;align-items:center;gap:22px;font-size:.92rem;padding:5px 5px 5px 22px;border-radius:999px;background:rgba(28,36,30,.62);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.top nav a:not(.btn){text-decoration:none;opacity:.85}
+.top nav a:not(.btn):hover{opacity:1;text-decoration:underline;text-underline-offset:4px}
+.top .btn{min-height:42px;padding:0 1.15rem;font-size:.9rem}
+
+/* hero */
+.hero{background:var(--green);color:var(--cream);position:relative;overflow:hidden}
+.hero-grid{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,1fr);align-items:stretch;min-height:min(820px,100svh)}
+.hero-copy{display:flex;flex-direction:column;justify-content:center;gap:28px;padding:140px 56px 88px max(20px,calc((100vw - var(--wrap))/2 + 20px))}
+.hero .kicker{color:var(--clay-l)}
+.hero h1{font-size:clamp(3.25rem,7.4vw,6.75rem);line-height:.94;letter-spacing:-.035em;font-weight:350}
+.hero h1 em{font-weight:300;color:var(--clay-l);font-variation-settings:"opsz" 144,"SOFT" 100}
+.hero .lede{color:var(--sage)}
+.offer-line{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 14px;padding-top:22px;border-top:1px solid rgba(245,241,234,.22);max-width:460px}
+.price{font:400 3rem/1 var(--display);letter-spacing:-.03em}
+.was{font-size:1rem;color:var(--sage-2)}
+.was s{text-decoration-thickness:1.5px}
+.offer-line p{flex-basis:100%;font-size:.95rem;color:var(--sage)}
+.cta-row{display:flex;flex-wrap:wrap;gap:12px}
+.hero-photo{position:relative;min-height:420px}
+.hero-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 40%}
+.hero-tag{position:absolute;left:-28px;bottom:56px;width:220px;background:var(--paper);color:var(--ink);padding:22px 20px 18px;border-radius:110px 110px 6px 6px;box-shadow:0 18px 40px rgba(16,30,20,.28);text-align:center}
+.hero-tag b{display:block;font:italic 400 1.35rem/1.1 var(--display);margin-bottom:10px}
+.hero-tag dl{margin:0;display:grid;gap:6px;font-size:.8rem;text-align:left;border-top:1px dashed var(--line);padding-top:10px}
+.hero-tag dl div{display:flex;justify-content:space-between;gap:10px}
+.hero-tag dt{font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:.68rem;color:var(--clay-ink)}
+.hero-tag dd{margin:0}
+
+/* problem */
+.problem{padding-block:var(--sec)}
+.problem-grid{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:clamp(32px,6vw,96px);align-items:end}
+.problem h2{margin-top:16px}
+.how h2{margin-top:16px}
+.problem h2 em{color:var(--green)}
+.problem .lede{max-width:46ch}
+
+/* offer */
+.offer{padding-block:0 var(--sec)}
+.offer-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(32px,5vw,80px);align-items:center}
+.offer-photo img{width:100%;aspect-ratio:4/5;object-fit:cover;object-position:60% 50%;border-radius:4px}
+.offer-photo figcaption{margin-top:12px;font-size:.85rem;color:var(--ink-2)}
+.offer-copy{display:grid;gap:24px}
+.box{list-style:none;margin:8px 0 0;padding:0;border-top:1px solid var(--line)}
+.box li{display:grid;grid-template-columns:3.2rem minmax(0,1fr);gap:16px;padding:20px 0;border-bottom:1px solid var(--line)}
+.box .qty{font:400 2rem/1 var(--display);color:var(--clay-ink)}
+.box strong{display:block;font-weight:600;margin-bottom:2px}
+.box span{color:var(--ink-2)}
+.buy{display:flex;align-items:center;flex-wrap:wrap;gap:16px 24px}
+.buy .price{color:var(--green)}
+.buy .was{color:var(--ink-2)}
+
+/* plants band */
+.plants{background:var(--paper-2);padding-block:var(--sec)}
+.plants-head{display:flex;justify-content:space-between;align-items:end;gap:24px;flex-wrap:wrap;margin-bottom:48px}
+.plants-head p{max-width:38ch;color:var(--ink-2)}
+.trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.plant{display:grid;gap:18px}
+.plant img{width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:4px}
+.plant h3 em{color:var(--green)}
+.care{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 0;padding:0;list-style:none}
+.care li{font-size:.8rem;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--paper)}
+
+/* how */
+.how{padding-block:var(--sec)}
+.how-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(40px,6vw,96px);align-items:start}
+.how-photo{position:sticky;top:24px}
+.how-photo img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:4px}
+.how-photo p{margin-top:12px;font-size:.85rem;color:var(--ink-2)}
+.steps{list-style:none;margin:40px 0 0;padding:0;counter-reset:s}
+.steps li{counter-increment:s;display:grid;grid-template-columns:4rem minmax(0,1fr);gap:8px 20px;padding:28px 0;border-top:1px solid var(--line)}
+.steps li::before{content:counter(s);font:italic 300 2.6rem/1 var(--display);color:var(--clay-ink)}
+.steps h3{margin-bottom:6px}
+.steps p{color:var(--ink-2)}
+
+/* compare */
+.compare{background:var(--ink);color:var(--cream);padding-block:var(--sec)}
+.compare h2{max-width:16ch;margin-bottom:48px}
+.compare h2 em{color:var(--clay)}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);border-top:1px solid rgba(245,241,234,.2)}
+.cols>div{padding:32px 32px 8px 0}
+.cols>div+div{padding-left:32px;border-left:1px solid rgba(245,241,234,.2)}
+.cols h3{margin-bottom:20px}
+.cols ul{list-style:none;margin:0;padding:0;display:grid;gap:14px}
+.cols li{display:flex;gap:12px;align-items:baseline}
+.cols li::before{content:"";flex:none;width:14px;height:2px;transform:translateY(-4px)}
+.them{color:var(--mute)}
+.them li::before{background:var(--mute)}
+.us li::before{background:var(--clay)}
+
+/* waitlist */
+.join{padding-block:var(--sec)}
+.join-card{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);background:var(--green);color:var(--cream);border-radius:6px;overflow:hidden}
+.join h2{font-size:clamp(2.5rem,5.4vw,4.5rem)}
+.join h2 em{color:var(--clay-l)}
+.join-copy+.join-copy{border-left:1px solid rgba(245,241,234,.18)}
+.join-copy{padding:clamp(32px,5vw,64px);display:grid;gap:20px;align-content:center}
+.join-copy p{color:var(--sage);max-width:40ch}
+.join form{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
+.join label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.join input{flex:1 1 220px;min-height:52px;padding:0 20px;border-radius:999px;border:1.5px solid rgba(245,241,234,.4);background:transparent;color:var(--cream);font:inherit}
+.join input::placeholder{color:var(--sage-2)}
+.join button{min-height:52px;padding:0 1.5rem;border-radius:999px;border:0;background:var(--cream);color:var(--green-d);font:600 1rem/1 var(--text);cursor:pointer}
+.join button:hover{background:var(--paper)}
+.small{font-size:.82rem;color:var(--sage-2)}
+
+footer{border-top:1px solid var(--line);padding-block:40px;font-size:.9rem;color:var(--ink-2)}
+footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px}
+
+@media (max-width:900px){
+  .hero-grid{grid-template-columns:1fr;min-height:0}
+  .hero-copy{padding:120px var(--gut) 56px}
+  .hero-photo{order:-1;min-height:0;aspect-ratio:5/4;max-height:640px}
+  .hero-copy{padding-top:40px}
+  .hero-photo::after{content:"";position:absolute;inset:0 0 auto;height:110px;background:linear-gradient(rgba(20,34,24,.6),rgba(20,34,24,0))}
+  .steps li{grid-template-columns:2.75rem minmax(0,1fr)}
+  .hero-tag{left:auto;right:16px;bottom:16px;width:196px;padding:18px 16px 14px}
+  .problem-grid,.offer-grid,.how-grid,.join-card{grid-template-columns:1fr}
+  .offer-grid .offer-photo{order:2}
+  .offer-photo img{aspect-ratio:4/3}
+  .how-photo{position:static}
+  .trio{grid-template-columns:1fr 1fr}
+  .trio .plant:last-child{grid-column:1/-1}
+  .trio .plant:last-child img{aspect-ratio:16/9}
+  .join-copy+.join-copy{border-left:0;padding-top:0}
+}
+@media (max-width:560px){
+  .top nav a:not(.btn){display:none}
+  .top nav{background:none;padding:0;-webkit-backdrop-filter:none;backdrop-filter:none}
+  .trio{grid-template-columns:1fr}
+  .trio .plant:last-child img,.plant img{aspect-ratio:4/3}
+  .cols{grid-template-columns:1fr}
+  .cols>div{padding:28px 0 8px}
+  .cols>div+div{padding-left:0;border-left:0;border-top:1px solid rgba(245,241,234,.2);margin-top:24px}
+  .btn{width:100%;justify-content:center}
+  .top .btn{width:auto}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <a class="mark" href="#top">Fern <span>&amp;</span> Co</a>
+    <nav aria-label="Main">
+      <a href="#starter-jungle">Starter Jungle</a>
+      <a href="#how">Care visits</a>
+      <a class="btn btn-clay" href="#reserve" data-ld="reserve">Reserve</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <p class="kicker">New plant shop · Leith, Edinburgh</p>
+        <h1>Houseplants that <em>stay alive.</em></h1>
+        <p class="lede">Easy plants picked for the light in your flat, and someone who comes round to look after them with you.</p>
+        <div class="offer-line">
+          <span class="price num">£45</span>
+          <span class="was">normally <s>£60</s></span>
+          <p>Starter Jungle: 3 easy plants + 2 care visits at home</p>
+        </div>
+        <div class="cta-row">
+          <a class="btn btn-clay" href="#reserve" data-ld="reserve">Reserve with BCH · <span class="num">£45</span></a>
+          <a class="btn btn-line" href="#join">Not yet? Join the list</a>
+        </div>
+      </div>
+      <figure class="hero-photo">
+        <img src="ld-photo:p1" alt="A monstera in a white pot in front of a metal shelf of houseplants" width="1536" height="2048">
+        <div class="hero-tag" aria-hidden="true">
+          <b>Monstera</b>
+          <dl>
+            <div><dt>Light</dt><dd>Bright, indirect</dd></div>
+            <div><dt>Water</dt><dd>When dry on top</dd></div>
+          </dl>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="problem">
+    <div class="wrap problem-grid">
+      <div>
+        <p class="kicker">Why plants die</p>
+        <h2>It's rarely you. It's <em>light, water and roots</em> nobody explained.</h2>
+      </div>
+      <p class="lede">Most plants die within months because nobody told their owners what each one needs. A supermarket sells you the plant and you're on your own from there. We stay around after the till.</p>
+    </div>
+  </section>
+
+  <section class="offer" id="starter-jungle">
+    <div class="wrap offer-grid">
+      <figure class="offer-photo">
+        <img src="ld-photo:p6" alt="Aloe plants in clay pots on a window ledge" width="1024" height="683">
+        <figcaption>Three plants, two visits, one windowsill that finally works.</figcaption>
+      </figure>
+      <div class="offer-copy">
+        <p class="kicker">The opening offer</p>
+        <h2>The Starter <em>Jungle</em></h2>
+        <p class="lede">Everything a new plant owner needs to get through the first months.</p>
+        <ul class="box">
+          <li><span class="qty">3</span><div><strong>Easy plants</strong><span>Chosen for how much light your rooms actually get.</span></div></li>
+          <li><span class="qty">2</span><div><strong>Care visits at home</strong><span>We check watering, light and roots, and repot if a plant needs it.</span></div></li>
+        </ul>
+        <div class="buy">
+          <span class="price">£45</span><span class="was">normally <s>£60</s></span>
+          <a class="btn btn-green" href="#reserve" data-ld="reserve">Reserve your Starter Jungle</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="plants">
+    <div class="wrap">
+      <div class="plants-head">
+        <h2>Plants that <em>forgive</em> you</h2>
+        <p>We start you on plants that cope with Edinburgh's grey months and the odd missed watering.</p>
+      </div>
+      <div class="trio">
+        <article class="plant">
+          <img src="ld-photo:p2" alt="Snake plant with yellow-edged leaves" width="1536" height="2048">
+          <div><h3>Snake plant</h3><ul class="care"><li>Low to bright light</li><li>Water every 2–3 weeks</li></ul></div>
+        </article>
+        <article class="plant">
+          <img src="ld-photo:p3" alt="Glossy ZZ plant leaves" width="683" height="1024">
+          <div><h3>ZZ plant</h3><ul class="care"><li>Copes with shade</li><li>Lets soil dry out</li></ul></div>
+        </article>
+        <article class="plant">
+          <img src="ld-photo:p5" alt="Split monstera leaves against a pale wall" width="960" height="1444">
+          <div><h3>Monstera</h3><ul class="care"><li>Bright, indirect light</li><li>Water when top soil is dry</li></ul></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="how" id="how">
+    <div class="wrap how-grid">
+      <figure class="how-photo">
+        <img src="ld-photo:p4" alt="Small potted plants on a bright windowsill" width="1024" height="727">
+        <p>We look at your windows first, then pick the plants.</p>
+      </figure>
+      <div>
+        <p class="kicker">How it works</p>
+        <h2>From the shop to your <em>windowsill</em></h2>
+        <ol class="steps">
+          <li><div><h3>Reserve your Starter Jungle</h3><p>Hold your place at the opening price of £45.</p></div></li>
+          <li><div><h3>We match plants to your light</h3><p>Tell us which way your windows face and we pick three plants that will cope.</p></div></li>
+          <li><div><h3>Two visits to keep them going</h3><p>We come round, check each plant and show you what it needs next.</p></div></li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="compare">
+    <div class="wrap">
+      <h2>A plant is easy to buy. Keeping it is <em>the hard part.</em></h2>
+      <div class="cols">
+        <div class="them">
+          <h3>Supermarket plants</h3>
+          <ul><li>No advice on light or water</li><li>No aftercare once you're home</li></ul>
+        </div>
+        <div class="us">
+          <h3>Fern &amp; Co</h3>
+          <ul><li>Plants picked for your flat's light</li><li>Two care visits included</li><li>A local shop in Leith you can ask</li></ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="join" id="join">
+    <div class="wrap">
+      <div class="join-card">
+        <div class="join-copy">
+          <h2>Hear when we open in <em>Leith</em></h2>
+        </div>
+        <div class="join-copy">
+          <p>Not ready to reserve? Leave your email and we'll send one message when the doors open. Nothing else.</p>
+          <form data-ld="waitlist">
+            <label for="email">Your email</label>
+            <input id="email" type="email" name="email" placeholder="you@example.com" required>
+            <button type="submit">Join the list</button>
+          </form>
+          <p class="small">We only use your email to tell you about Fern &amp; Co.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Fern &amp; Co · Houseplants that stay alive · Leith, Edinburgh</span>
+    <a href="#top">Back to top</a>
+  </div>
+</footer>

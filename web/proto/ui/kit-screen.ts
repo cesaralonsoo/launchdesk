@@ -24,6 +24,7 @@ export type KitScreenOpts = {
 };
 
 const TEMPLATES: Array<{ id: SiteTemplate; name: string; note: string }> = [
+  { id: "custom", name: "Made for you", note: "Designed for this idea, with real photos" },
   { id: "editorial", name: "Classic", note: "Calm, lots of white space" },
   { id: "bold", name: "Bold", note: "Big type, strong colour" },
   { id: "warm", name: "Warm", note: "Soft and friendly" },
@@ -38,7 +39,7 @@ export function kitOfferHtml(cents = 50): string {
     <p class="ko-sub" data-st>Your logo, your website and your 30-day plan · ${usd(cents)}. Made for this idea in about a minute.</p>
     <ul class="ko-list" data-st>
       <li>${I.brand(18)}<span><b>Your logo</b>Three options to choose from. Download it for print and social.</span></li>
-      <li>${I.globe(18)}<span><b>Your website</b>Online straight away, with your own link. Customers can reserve and pay.</span></li>
+      <li>${I.globe(18)}<span><b>Your website</b>Online straight away, with your own link and real photos. A design made just for your idea follows a few minutes later. Customers can reserve and pay.</span></li>
       <li>${I.report(18)}<span><b>Your 30-day plan</b>What to do each week to win your first customers, with posts ready to copy.</span></li>
     </ul>
     <button class="btn btn-primary ko-go" data-act="next" type="button" data-st><span>Get my launch kit</span><span class="btn-price">${usd(cents)}</span></button>
@@ -125,11 +126,24 @@ function siteBody(k: Kit | null, url: string): string {
         </div>
       </div>
       <span class="eyebrow ks-pick">Pick a design</span>
-      <div class="ks-tpl" role="radiogroup" aria-label="Website design">${TEMPLATES.map((t) => `
-        <button type="button" role="radio" aria-checked="${k.site!.template === t.id}" class="ks-t${k.site!.template === t.id ? " on" : ""}" data-kit-tpl="${t.id}">
+      ${designPicker(k, url)}`;
+}
+/** The design tiles. "Made for you" comes first once it is ready; while it is being made, a quiet waiting tile. */
+function designPicker(k: Kit, url: string): string {
+  const custom = k.site?.custom?.status;
+  const tiles = TEMPLATES.filter((t) => t.id !== "custom" || custom === "done" || custom === "working");
+  const live = k.site!.template;
+  const tile = (t: (typeof TEMPLATES)[number]) =>
+    t.id === "custom" && custom === "working"
+      ? `<div class="ks-t ks-making" aria-live="polite">
+          <span class="ks-thumb"><span class="ks-shimmer"></span></span>
+          <b>${esc(t.name)}</b><span>Being designed now. It goes live by itself.</span>
+        </div>`
+      : `<button type="button" role="radio" aria-checked="${live === t.id}" class="ks-t${live === t.id ? " on" : ""}" data-kit-tpl="${t.id}">
           <span class="ks-thumb"><iframe src="${esc(url)}?preview=${t.id}" title="${esc(t.name)} design preview" loading="lazy" tabindex="-1" aria-hidden="true"></iframe></span>
           <b>${esc(t.name)}</b><span>${esc(t.note)}</span>
-        </button>`).join("")}</div>`;
+        </button>`;
+  return `<div class="ks-tpl n${tiles.length}" role="radiogroup" aria-label="Website design">${tiles.map(tile).join("")}</div>`;
 }
 function planBody(k: Kit | null): string {
   const st = k?.status;
@@ -262,7 +276,8 @@ export function mountKitScreen(root: HTMLElement, o: KitScreenOpts): { stop(): v
   const renderSite = () => {
     const k = data.kit;
     const url = absolute(data.siteUrl);
-    const site = `${k?.status.site}|${url}`;
+    // The designed page and the photos arrive after the site is live: redraw the panel when they do.
+    const site = `${k?.status.site}|${url}|${k?.site?.custom?.status ?? ""}|${k?.site?.photos?.length ?? 0}`;
     if (site !== sig.site) {
       sig.site = site;
       body("site").innerHTML = siteBody(k, url);

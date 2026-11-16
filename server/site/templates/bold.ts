@@ -1,6 +1,6 @@
 // WP1 Website template "bold": dark page, glowing mesh hero, oversized grotesk, bento cards. Apps, SaaS, services.
 import type { Section } from "../spec.js";
-import { chrome, credit, esc, faqList, icon, mark, priceLine, reserveBtn, scarcity, sectionOf, sourceLink, waitlist, type RenderCtx } from "./shared.js";
+import { chrome, credit, esc, faqList, icon, mark, photoBand, photoCreditLine, photoImg, priceLine, reserveBtn, scarcity, sectionOf, sourceLink, waitlist, type RenderCtx } from "./shared.js";
 
 export const fonts = { display: "Bricolage Grotesque", text: "Inter", href: "family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600;700" };
 export const mode = "dark" as const;
@@ -27,6 +27,7 @@ body{background:var(--bg)}
 .card{position:relative;border-radius:28px;padding:28px;overflow:hidden}
 .hcard{box-shadow:0 40px 80px -30px rgb(0 0 0/.7)}.hcard .top{display:flex;align-items:center;gap:14px}.hcard .top small{display:block;font-size:13px;color:var(--mu)}.hcard .top b{font:700 18px/1.2 var(--fd)}
 .hcard .big{margin:28px 0 22px;display:grid;place-items:center;aspect-ratio:16/10;border-radius:20px;background:radial-gradient(60% 80% at 50% 40%,color-mix(in srgb,var(--p) 45%,transparent),transparent),color-mix(in srgb,var(--ink) 4%,transparent)}
+.hcard .big.ph{position:relative;overflow:hidden;background:none;aspect-ratio:4/3}.hcard .big.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .hcard .big .mark{width:42%;height:auto;filter:drop-shadow(0 18px 30px rgb(0 0 0/.5))}
 .hcard .row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}.hcard .price{gap:8px;min-width:0}.hcard .price b{font-size:40px}.hcard .price .was{white-space:nowrap;font-size:14px}.hcard .row .btn{flex:none}
 .sec{padding:96px 0}@media(min-width:900px){.sec{padding:128px 0}}
@@ -103,14 +104,15 @@ export function body(c: RenderCtx): string {
   const s = c.spec;
   const offer = sectionOf(s, "offer");
   const how = sectionOf(s, "how-it-works-for-customer");
+  const hero = c.photos?.[0];
   return `<header class="nav"><div class="wrap glass"><a class="brand" href="#top">${mark(c, 32)}<span>${esc(c.brand.name)}</span></a><nav>${how ? `<a href="#how">${esc(c.ui.howItWorks)}</a>` : ""}<a href="#offer">${esc(c.ui.offer)}</a><a href="#faq">${esc(c.ui.faq)}</a></nav>${reserveBtn(c, c.ui.reserve, "btn btn-p btn-sm")}</div></header>
 <main id="top">
 <section class="hero" data-hero><div class="wrap"><div><span class="pill glass"><i>${icon("spark", 14, 2.2)}</i>${esc(s.hero.eyebrow)}</span><h1>${splitHead(s.hero.headline)}</h1><p class="sub">${esc(s.hero.sub)}</p>
 <div class="ctas">${reserveBtn(c, s.hero.cta)}<a class="btn btn-g" href="${how ? "#how" : "#offer"}">${esc(s.hero.secondary)}</a></div>${scarcity(c)}</div>
-<div class="card glass hcard rv"><div class="top">${mark(c, 44)}<div><small>${esc(c.ui.offer)}</small><b>${esc(offer?.item ?? c.brand.name)}</b></div></div><div class="big">${mark(c, 200)}</div><div class="row">${priceLine(c)}${reserveBtn(c, c.ui.reserve, "btn btn-p btn-sm")}</div></div></div></section>
-${s.sections.map((x) => section(c, x)).join("\n")}
+<div class="card glass hcard rv"><div class="top">${mark(c, 44)}<div><small>${esc(c.ui.offer)}</small><b>${esc(offer?.item ?? c.brand.name)}</b></div></div>${hero ? `<div class="big ph">${photoImg(hero, true)}</div>` : `<div class="big">${mark(c, 200)}</div>`}<div class="row">${priceLine(c)}${reserveBtn(c, c.ui.reserve, "btn btn-p btn-sm")}</div></div></div></section>
+${s.sections.map((x, i) => (i === 1 ? photoBand(c) : "") + section(c, x)).join("\n")}${s.sections.length < 2 ? photoBand(c) : ""}
 <section class="sec final"><div class="wrap"><div class="card rv"><h2 class="h2">${esc(s.finalCta.headline)}</h2>${s.finalCta.sub ? `<p class="lead">${esc(s.finalCta.sub)}</p>` : ""}<div class="ctas">${reserveBtn(c, s.finalCta.cta)}</div>${waitlist(c, "wl2")}</div></div></section>
 </main>
-<footer><div class="wrap"><span class="brand">${mark(c, 24)}<span>${esc(c.brand.name)}</span></span><span>${esc(s.footer.tagline)}</span>${credit(c)}</div></footer>
+<footer><div class="wrap"><span class="brand">${mark(c, 24)}<span>${esc(c.brand.name)}</span></span><span>${esc(s.footer.tagline)}</span>${credit(c)}${photoCreditLine(c)}</div></footer>
 ${chrome(c)}`;
 }

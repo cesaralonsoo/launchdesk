@@ -12,7 +12,7 @@
     "build": "vite build && tsc -p server/tsconfig.json",
     "start": "node dist/server/index.js",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p server/tsconfig.json --noEmit",
-    "test": "tsx test/payment.test.ts && tsx test/schema.test.ts && tsx test/flow.test.ts && tsx test/hardening.test.ts && tsx test/escrow.test.ts && tsx test/kit-app.test.ts && tsx test/verdict.test.ts && tsx test/escrow-flow.test.ts && tsx test/offices.test.ts",
+    "test": "tsx test/payment.test.ts && tsx test/schema.test.ts && tsx test/flow.test.ts && tsx test/hardening.test.ts && tsx test/escrow.test.ts && tsx test/kit-app.test.ts && tsx test/verdict.test.ts && tsx test/escrow-flow.test.ts && tsx test/offices.test.ts && tsx test/kit.test.ts && tsx --test test/site.test.ts test/site-custom.test.ts test/site-photos.test.ts",
     "contracts": "node contracts/build.mjs"
   },
   "dependencies": {
@@ -24,6 +24,7 @@
     "@wizardconnect/dapp": "0.2.7",
     "cashscript": "0.14.0",
     "hono": "4.13.18",
+    "parse5": "8.0.1",
     "qrcode-generator": "1.4.4",
     "three": "0.181.2"
   },

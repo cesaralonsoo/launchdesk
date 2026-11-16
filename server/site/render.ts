@@ -2,10 +2,10 @@
 // The chosen logo is read from the kit at render time, so picking another logo changes the site with no AI call.
 import { createHash } from "node:crypto";
 import qrcode from "qrcode-generator";
-import type { Kit, SiteTemplate } from "../kit-contract.js";
+import type { Kit, SiteTemplate, StandardTemplate } from "../kit-contract.js";
 import type { SiteSpec } from "./spec.js";
 import { SITE_TEMPLATES } from "./spec.js";
-import { baseCss, esc, reserveLabel, SITE_JS, type RenderCtx } from "./templates/shared.js";
+import { baseCss, esc, reserveLabel, SITE_JS, type CtxPhoto, type CtxPhotoCredit, type RenderCtx } from "./templates/shared.js";
 import * as editorial from "./templates/editorial.js";
 import * as bold from "./templates/bold.js";
 import * as warm from "./templates/warm.js";
@@ -30,6 +30,9 @@ export interface RenderOpts {
   origin?: string;
   /** Picker previews: noindex and no sticky bar animation. */
   preview?: boolean;
+  /** Real photos (same-origin URLs), hero first, and their footer credits. */
+  photos?: CtxPhoto[];
+  photoCredits?: CtxPhotoCredit[];
 }
 
 const FX: Record<string, number> = { "$": 1, "€": 1.08, "£": 1.27 };
@@ -49,11 +52,16 @@ export const SITE_CSP = [
   "frame-ancestors 'self'",
 ].join("; ");
 
-export function isTemplate(t: unknown): t is SiteTemplate {
+export function isTemplate(t: unknown): t is StandardTemplate {
   return typeof t === "string" && (SITE_TEMPLATES as readonly string[]).includes(t);
 }
 
-function qrSvg(text: string): string {
+/** Every design a site can show: the 3 standard ones plus the page made for this business. */
+export function isDesign(t: unknown): t is SiteTemplate {
+  return t === "custom" || isTemplate(t);
+}
+
+export function qrSvg(text: string): string {
   const qr = qrcode(0, "M");
   qr.addData(text);
   qr.make();
@@ -91,10 +99,10 @@ export function safeLogo(svg: string | undefined | null, palette?: Kit["brand"][
   return svg.replace(/<\/?svg[^>]*>/gi, "");
 }
 
-export function renderSite(spec: SiteSpec, kit: Pick<Kit, "brand" | "logo">, template: SiteTemplate, live: LiveData, opts: RenderOpts & { slug?: string } = {}): string {
-  const T = TEMPLATES[isTemplate(template) ? template : "editorial"];
+/** Everything a page needs to render (prices, BCH amount, QR, logo, tokens). Shared by the standard and custom pages. */
+export function buildCtx(spec: SiteSpec, kit: Pick<Kit, "brand" | "logo">, live: LiveData, opts: RenderOpts & { slug?: string }, mode: "light" | "dark" | "soft"): RenderCtx {
   const brand = kit.brand;
-  const t = tokens(brand.palette, T.mode);
+  const t = tokens(brand.palette, mode);
   const chosen = kit.logo?.options.find((o) => o.id === kit.logo?.chosen) ?? kit.logo?.options[0];
   const logo = safeLogo(chosen?.svg, kit.brand.palette);
   const r = spec.reserve;
@@ -107,7 +115,7 @@ export function renderSite(spec: SiteSpec, kit: Pick<Kit, "brand" | "logo">, tem
   const payUri = addr ? (bch ? `${addr}?amount=${bch}` : addr) : "";
   const slug = opts.slug ?? "";
   const origin = (opts.origin ?? "").replace(/\/$/, "");
-  const ctx: RenderCtx = {
+  return {
     spec,
     brand,
     logo,
@@ -123,7 +131,19 @@ export function renderSite(spec: SiteSpec, kit: Pick<Kit, "brand" | "logo">, tem
     leadCount: live.leads ?? 0,
     homeHref: origin ? `${origin}/` : "/",
     leadAction: `/api/sites/${encodeURIComponent(slug)}/lead`,
+    ...(opts.photos?.length ? { photos: opts.photos, photoCredits: opts.photoCredits ?? [] } : {}),
   };
+}
+
+export function renderSite(spec: SiteSpec, kit: Pick<Kit, "brand" | "logo">, template: SiteTemplate, live: LiveData, opts: RenderOpts & { slug?: string } = {}): string {
+  const T = TEMPLATES[isTemplate(template) ? template : "editorial"];
+  const brand = kit.brand;
+  const ctx = buildCtx(spec, kit, live, opts, T.mode);
+  const { t, logo, slug } = ctx;
+  const r = spec.reserve;
+  const cur = r.currency || brand.currency || "$";
+  const origin = (opts.origin ?? "").replace(/\/$/, "");
+  const heroImg = ctx.photos?.[0] && origin ? origin + ctx.photos[0].url : "";
 
   const url = origin && slug ? `${origin}/s/${encodeURIComponent(slug)}` : "";
   const favicon = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">${logo ?? `<rect width="64" height="64" rx="16" fill="${t.primary}"/>`}</svg>`)}`;
@@ -148,14 +168,15 @@ export function renderSite(spec: SiteSpec, kit: Pick<Kit, "brand" | "logo">, tem
     `<meta property="og:title" content="${esc(spec.seo.title)}">`,
     `<meta property="og:description" content="${esc(spec.seo.description)}">`,
     url ? `<meta property="og:url" content="${esc(url)}">` : "",
-    `<meta name="twitter:card" content="summary">`,
+    heroImg ? `<meta property="og:image" content="${esc(heroImg)}">` : "",
+    `<meta name="twitter:card" content="${heroImg ? "summary_large_image" : "summary"}">`,
     `<link rel="icon" href="${favicon}">`,
     `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>`,
     `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?${T.fonts.href}&display=swap">`,
     `<style>${baseCss(t)}${T.css}</style>`,
     `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\\u003c")}</script>`,
   ].filter(Boolean);
-  return `<!doctype html><html lang="${esc(spec.lang)}" data-template="${template}"><head>${head.join("\n")}</head><body>
+  return `<!doctype html><html lang="${esc(spec.lang)}" data-template="${isTemplate(template) ? template : "editorial"}"><head>${head.join("\n")}</head><body>
 ${T.body(ctx)}
 <script>${SITE_JS}</script>
 </body></html>`;

@@ -1,6 +1,6 @@
 // WP1 Website template "editorial": serif display, thin rules, big numerals, off-white. Cafés, bakeries, local services.
 import type { Section } from "../spec.js";
-import { chrome, credit, esc, faqList, icon, mark, priceLine, reserveBtn, scarcity, sectionOf, sourceLink, waitlist, type RenderCtx } from "./shared.js";
+import { chrome, credit, esc, faqList, icon, mark, photoBand, photoCreditLine, photoImg, priceLine, reserveBtn, scarcity, sectionOf, sourceLink, waitlist, type RenderCtx } from "./shared.js";
 
 export const fonts = { display: "Instrument Serif", text: "Inter", href: "family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700" };
 export const mode = "light" as const;
@@ -94,6 +94,7 @@ export function body(c: RenderCtx): string {
   const s = c.spec;
   const offer = sectionOf(s, "offer");
   const how = sectionOf(s, "how-it-works-for-customer");
+  const hero = c.photos?.[0];
   const ticket = c.price
     ? `<div class="ticket"><div><small>${esc(c.ui.offer)}</small><strong>${esc(offer?.item ?? "")}</strong></div><span class="tp">${esc(c.price)}</span></div>`
     : "";
@@ -101,11 +102,11 @@ export function body(c: RenderCtx): string {
 <main id="top">
 <section class="hero" data-hero><div class="wrap"><div><p class="eyebrow">${esc(s.hero.eyebrow)}</p><h1>${esc(s.hero.headline)}</h1><p class="sub">${esc(s.hero.sub)}</p>
 <div class="ctas">${reserveBtn(c, s.hero.cta)}<a class="btn btn-g" href="${how ? "#how" : "#offer"}">${esc(s.hero.secondary)}</a></div>${scarcity(c)}</div>
-<div class="plate rv"><span class="ring"></span>${mark(c, 240)}${ticket}</div></div></section>
-${s.sections.map((x, i) => section(c, x, i + 1)).join("\n")}
+${hero ? `<figure class="hph rv">${photoImg(hero, true)}${ticket}</figure>` : `<div class="plate rv"><span class="ring"></span>${mark(c, 240)}${ticket}</div>`}</div></section>
+${s.sections.map((x, i) => (i === 1 ? photoBand(c) : "") + section(c, x, i + 1)).join("\n")}${s.sections.length < 2 ? photoBand(c) : ""}
 <section class="final"><div class="wrap"><h2 class="h2">${esc(s.finalCta.headline)}</h2>${s.finalCta.sub ? `<p class="lead">${esc(s.finalCta.sub)}</p>` : ""}<div class="ctas">${reserveBtn(c, s.finalCta.cta)}</div>${waitlist(c, "wl2")}</div></section>
 </main>
-<footer><div class="wrap"><span class="brand">${mark(c, 26)}<span>${esc(c.brand.name)}</span></span><span>${esc(s.footer.tagline)}</span>${credit(c)}</div></footer>
+<footer><div class="wrap"><span class="brand">${mark(c, 26)}<span>${esc(c.brand.name)}</span></span><span>${esc(s.footer.tagline)}</span>${credit(c)}${photoCreditLine(c)}</div></footer>
 ${chrome(c)}`;
 }
 

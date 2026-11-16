@@ -23,6 +23,45 @@ export interface RenderCtx {
   leadCount: number;
   homeHref: string;
   leadAction: string;
+  /** Real photos for this site (same-origin URLs), hero first. Empty/undefined → the design shows the logo art. */
+  photos?: CtxPhoto[];
+  /** Footer credit for those photos (required for CC BY / BY-SA). */
+  photoCredits?: CtxPhotoCredit[];
+}
+
+export interface CtxPhoto { url: string; alt: string; width: number; height: number }
+export interface CtxPhotoCredit { label: string; href: string; license: string; licenseUrl: string }
+
+/** A photo as an <img>. The hero loads eagerly; the rest lazily. */
+export function photoImg(p: CtxPhoto, eager = false): string {
+  const w = Math.max(1, Math.round(p.width));
+  const h = Math.max(1, Math.round(p.height));
+  return `<img src="${esc(p.url)}" alt="${esc(p.alt)}" width="${w}" height="${h}"${eager ? ` fetchpriority="high"` : ` loading="lazy"`} decoding="async">`;
+}
+
+/** One image section: up to 3 more photos after the hero one (nothing when there are none). */
+export function photoBand(c: RenderCtx): string {
+  const more = (c.photos ?? []).slice(1, 4);
+  if (!more.length) return "";
+  return `<section class="pband" aria-label="${esc(c.brand.name)}"><div class="wrap"><div class="pgrid n${more.length}">${more.map((p) => `<figure class="rv">${photoImg(p)}</figure>`).join("")}</div></div></section>`;
+}
+
+/** "Photos: … (CC0) · …" with links to each source and licence. */
+export function photoCreditLine(c: RenderCtx): string {
+  const items = c.photoCredits ?? [];
+  if (!items.length) return "";
+  const safe = (u: string) => /^https:\/\/[^\s"'<>]+$/.test(u);
+  const seen = new Set<string>();
+  const parts: string[] = [];
+  for (const i of items) {
+    const key = `${i.label}|${i.license}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const label = safe(i.href) ? `<a href="${esc(i.href)}" rel="noopener nofollow" target="_blank">${esc(i.label)}</a>` : esc(i.label);
+    const lic = safe(i.licenseUrl) ? `<a href="${esc(i.licenseUrl)}" rel="noopener nofollow" target="_blank">${esc(i.license)}</a>` : esc(i.license);
+    parts.push(`${label} (${lic})`);
+  }
+  return `<p class="pcred">${c.spec.lang.toLowerCase().startsWith("es") ? "Fotos" : "Photos"}: ${parts.join(" · ")}</p>`;
 }
 
 export const sectionOf = <K extends Section["kind"]>(spec: SiteSpec, kind: K) =>
@@ -221,5 +260,14 @@ details[open] summary i{transform:rotate(45deg)}details p{padding:0 48px 24px 0;
 .js .rv{opacity:0;transform:translateY(18px);transition:opacity .8s cubic-bezier(.2,.8,.2,1),transform .8s cubic-bezier(.2,.8,.2,1)}.js .rv.in{opacity:1;transform:none}
 @media(prefers-reduced-motion:reduce){.js .rv{opacity:1;transform:none;transition:none}*{animation:none!important}}
 :focus-visible{outline:2px solid var(--p);outline-offset:3px}
+.hph{position:relative;margin:0;border-radius:28px;overflow:hidden;background:var(--tint);aspect-ratio:4/5;box-shadow:0 40px 80px -48px rgb(0 0 0/.55)}
+.hph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+@media(max-width:899px){.hph{aspect-ratio:4/3}}
+.pband{padding:24px 0 8px}.pgrid{display:grid;gap:14px}.pgrid figure{margin:0;border-radius:22px;overflow:hidden;background:var(--tint);aspect-ratio:4/3}
+.pgrid img{width:100%;height:100%;object-fit:cover}
+.pgrid.n1 figure{aspect-ratio:21/9}
+@media(min-width:760px){.pgrid.n2{grid-template-columns:1fr 1fr}.pgrid.n3{grid-template-columns:1.4fr 1fr 1fr}.pgrid.n3 figure:first-child{aspect-ratio:auto}}
+@media(max-width:759px){.pgrid.n1 figure{aspect-ratio:4/3}.pgrid.n3 figure:first-child{grid-column:1/-1}.pgrid.n3{grid-template-columns:1fr 1fr}}
+.pcred{flex-basis:100%;font-size:12px;line-height:1.5;color:var(--mu)}.pcred a{color:inherit;text-underline-offset:2px}
 @media(max-width:899px){body{padding-bottom:84px}}`;
 }

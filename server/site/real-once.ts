@@ -19,7 +19,8 @@ const input: KitInput = {
     customer: "Busy flat owners in Leith aged 25-40 who want plants but keep killing them",
     pain: "Plants die within months because owners don't know light, water or repotting needs",
     offer: { what: "Starter Jungle: 3 easy plants + 2 care visits", price: 45, normal: 60, limit: 50 },
-    stats: [{ value: "3 in 5", label: "new plant owners lose a plant in their first year", sourceUrl: "https://www.example.org/plant-survey" }],
+    // No placeholder statistic: a demo page must only show sourced numbers (real kits pass real sourced stats).
+    stats: [],
     competitors: [{ name: "Supermarket plants", gap: "No advice, no aftercare" }],
     risks: ["Seasonal demand"],
   },

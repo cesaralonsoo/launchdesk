@@ -142,3 +142,22 @@ test("routes: live page, template preview, fall-through, waitlist", async () => 
   const form = await app.request("/api/sites/miga-gracia/lead", { method: "POST", body: new URLSearchParams({ email: "luis@example.com" }) });
   assert.equal(form.status, 303);
 });
+
+test("site2: standard designs show real photos (hero + one photo section + credits), escaped; none → logo art", () => {
+  const fx = loadFixture("dogwalk-en");
+  const { spec } = validateModelSite(fx.model, fx.input);
+  const photos = [1, 2, 3].map((n) => ({ url: `/s/${fx.input.slug}/p/${n}?v=abc${n}`, alt: n === 1 ? 'Dogs "on" <leash>' : `Photo ${n}`, width: 1200, height: 800 }));
+  const photoCredits = [{ label: '"Park" by <b>Ann</b>, via Wikimedia Commons', href: "https://commons.wikimedia.org/wiki/File:X.jpg", license: "CC BY-SA 2.0", licenseUrl: "https://creativecommons.org/licenses/by-sa/2.0/" }, { label: "Rawpixel", href: "javascript:alert(1)", license: "CC0", licenseUrl: "https://creativecommons.org/publicdomain/zero/1.0/" }];
+  for (const t of SITE_TEMPLATES) {
+    const html = renderSite(spec, kitOf(fx), t, { reserved: 0, bchUsd: 480 }, { slug: fx.input.slug, origin: "https://x.test", photos, photoCredits });
+    assert.match(html, new RegExp(`<img src="/s/${fx.input.slug}/p/1\\?v=abc1" alt="Dogs &quot;on&quot; &lt;leash&gt;"[^>]*fetchpriority="high"`), `${t}: hero photo`);
+    assert.match(html, /class="pband"/, `${t}: one photo section`);
+    assert.match(html, /p\/3\?v=abc3" [^>]*loading="lazy"/, `${t}: later photos are lazy`);
+    assert.match(html, /class="pcred">Photos: <a href="https:\/\/commons\.wikimedia\.org/, `${t}: credits with links`);
+    assert.match(html, /&lt;b&gt;Ann&lt;\/b&gt;/, `${t}: credit text escaped`);
+    assert.doesNotMatch(html, /javascript:/, `${t}: unsafe credit link dropped`);
+    assert.match(html, /og:image" content="https:\/\/x\.test\/s\//, `${t}: link previews use the hero photo`);
+    const plain = renderSite(spec, kitOf(fx), t, { reserved: 0, bchUsd: 480 }, { slug: fx.input.slug });
+    assert.doesNotMatch(plain, /class="pband"|class="hph|class="pcred"|<img /, `${t}: no photos → no empty photo blocks`);
+  }
+});
