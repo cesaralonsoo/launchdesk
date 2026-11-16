@@ -410,3 +410,13 @@
   .v-idea h1 { font-size: 28px; }
   .v-sub { font-size: 14px; }
 }
+.v7 .panel[data-pos="side"] { width: min(520px, 50vw); }
+@media (max-height: 720px) {
+  .v7 .panel[data-pos="side"] .v-idea { gap: 10px; }
+  .v7 .panel[data-pos="side"] .v-idea h1 { font-size: clamp(30px, 5.6vh, 40px); }
+  .v7 .panel[data-pos="side"] .v-sub { font-size: 14px; }
+  .v7 .panel[data-pos="side"] .idea-field textarea { min-height: 40px; }
+  .v7 .panel[data-pos="side"] .btn-go { height: 42px; }
+  .v7 .panel[data-pos="side"] .ex-home { padding: 10px 12px; }
+  .v7 .panel[data-pos="side"] .v-alt { margin-top: -6px; }
+}
