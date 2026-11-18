@@ -9,7 +9,7 @@ Object.assign(process.env, { MOCK_AI: "1", ANTHROPIC_API_KEY: "" });
 
 const { sanitize, gateCustom, sanitizeCss, inventedClaims, extractFragment } = await import("../server/site/sanitize.js");
 const { generateCustomSite, customBrief, storeCtx, aspectOf, CUSTOM_SYSTEM } = await import("../server/site/custom.js");
-const { customRender, fontsHref, photoKey, headerLogo } = await import("../server/site/custom-render.js");
+const { customRender, fontsHref, photoKey, headerLogo, headerFallbackCss } = await import("../server/site/custom-render.js");
 const { SCRIPT_HASH } = await import("../server/site/render.js");
 const { SITE_JS } = await import("../server/site/templates/shared.js");
 const { loadFixture } = await import("../server/site/plan.js");
@@ -288,4 +288,13 @@ test("the chosen logo sits next to the wordmark in the header, only when the lin
   assert.equal(count(withLogo), 1);
   assert.equal(count(without), 0);
   assert.match(withLogo, /header a\[href="#top"\]>svg\.ld-logo\{/);
+});
+
+test("a page whose CSS forgot the header gets a plain one-row header; a styled header is left alone", () => {
+  assert.match(headerFallbackCss(".wrap{max-width:1200px}.mark{font-size:2rem}"), /header>div,header>\.wrap\{display:flex/);
+  assert.match(headerFallbackCss(""), /@media \(max-width:640px\)\{header nav a:not\(\[data-reserve\]\)\{display:none\}\}/);
+  assert.equal(headerFallbackCss("header{position:sticky}"), "");
+  assert.equal(headerFallbackCss(".a{x:1}\n.site-header .wrap{display:flex}"), "");
+  assert.equal(headerFallbackCss("@media (max-width:600px){header nav{display:none}}"), "");
+  assert.notEqual(headerFallbackCss("/* header */ .x{color:red}"), "", "a comment is not a rule");
 });

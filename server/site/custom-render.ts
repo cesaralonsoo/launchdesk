@@ -119,6 +119,21 @@ export function customCtx(spec: SiteSpec, kit: Pick<Kit, "brand" | "logo">, live
  * from `all: revert`, so the model's element rules (h2, p, a, button…) cannot restyle it; the model's CSS has every
  * selector that names these ids/classes removed by the sanitizer.
  */
+/**
+ * Pure: a plain one-row header (wordmark left, links and button right; links hidden on phones) when the designer's
+ * CSS has no rule for the header at all: without it the wordmark, the links and the button stack as bare inline text.
+ * Comes before the designer's CSS, so any header rule of theirs wins.
+ */
+export function headerFallbackCss(css: string): string {
+  if (/(^|[{};,]|\s)[^{};]*\bheader\b[^{};]*\{/.test(css.replace(/\/\*[\s\S]*?\*\//g, ""))) return "";
+  return "header>div,header>.wrap{display:flex;align-items:center;justify-content:space-between;gap:10px 24px;padding-top:14px;padding-bottom:14px}"
+    + "header a[href=\"#top\"]{display:inline-flex;align-items:center;gap:10px;flex:none}"
+    + "header nav{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px 22px}"
+    + "header nav a:not([data-reserve]){text-decoration:none}header nav a:not([data-reserve]):hover{text-decoration:underline}"
+    + "header [data-reserve]{min-height:44px}"
+    + "@media (max-width:640px){header nav a:not([data-reserve]){display:none}}";
+}
+
 export function hooksCss(t: Tokens, textFont: string, bar: boolean): string {
   const fb = fontStack(textFont);
   const surf = mix(t.bg, "#ffffff", 0.5);
@@ -357,7 +372,7 @@ export function customRender(row: CustomRow, live: LiveData, opts: CustomRenderO
     `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>`,
     `<link rel="stylesheet" href="${esc(fontsHref(brand.fonts))}">`,
     `<style>${hooksCss(t, brand.fonts.text, withBar)}${c.example ? EXAMPLE_CSS : ""}</style>`,
-    `<style>${s.css}</style>`,
+    `<style>${headerFallbackCss(s.css)}${s.css}</style>`,
     `<style>${guardCss(deco.chars)}</style>`,
     `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\\u003c")}</script>`,
   ].filter(Boolean);
