@@ -33,3 +33,17 @@ declare global {
     "ld:step": CustomEvent<StepDetail>;
   }
 }
+
+/** "Open your offices" (ui/kit-screen.ts) asks the game layer to open the offices floor over the 3D. The game calls
+ *  preventDefault() when it handles it; otherwise the kit screen opens the offices on its own (old layer). */
+export const OFFICES_EVENT = "ld:offices";
+export interface OfficesOpenDetail {
+  projectId: string;
+  ownerKey: string | null;
+  name?: string;
+}
+declare global {
+  interface WindowEventMap {
+    "ld:offices": CustomEvent<OfficesOpenDetail>;
+  }
+}

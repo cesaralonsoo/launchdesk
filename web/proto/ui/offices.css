@@ -123,3 +123,25 @@ html.ofx-lock, html.ofx-lock body { overflow: hidden; }
 .ofs-in > span { font-size: 13.5px; font-weight: 600; }
 .ofs-x { justify-self: center; }
 @media (max-width: 420px) { .ofs .pl-qr { grid-template-columns: 1fr; justify-items: center; text-align: center; } .ofs .pl-qr-t { justify-items: center; } }
+
+/* v8: the offices over the 3D floor (game/hud.ts opens it with overWorld). Desktop: a side card on the right, the
+   floor stays visible and pickable on the left. Phone: a sheet over the lower 62 % with the floor above it. */
+.ofx.ofx-side { inset: 16px 16px 16px auto; width: min(440px, calc(100vw - 32px)); border-radius: 14px; background: var(--c-surface, #fff); box-shadow: 0 1px 2px rgb(0 0 0 / .06), 0 8px 24px rgb(0 0 0 / .06); }
+.ofx-side .ofx-in { max-width: none; padding: 16px 16px 24px; gap: 14px; }
+.ofx-side .ofx-top { margin: -16px -16px 0; padding: 14px 16px 10px; background: rgb(255 255 255 / 0.96); border-radius: 14px 14px 0 0; }
+.ofx-side .ofx-t .t-display { font-size: 24px; letter-spacing: -0.02em; }
+.ofx-side .ofx-lead { font-size: 14px; }
+.ofx-side .ofx-rooms { grid-template-columns: 1fr; gap: 8px; }
+.ofx-side .ofr { padding: 12px; gap: 10px; border-radius: 14px; scroll-margin: 72px; }
+.ofx-side .ofr > header { cursor: pointer; }
+.ofx-side .ofr h3 { font-size: 15px; }
+.ofx-side .ofr-ic { width: 30px; height: 30px; border-radius: 9px; }
+.ofx-side .oft { padding: 10px; border-radius: 12px; }
+.ofx-side .oft-t b { font-size: 14px; }
+.ofr.is-focus { border-color: color-mix(in srgb, var(--tint) 55%, var(--c-line)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--tint) 14%, transparent); }
+@media (max-width: 767px) {
+  .ofx.ofx-side { inset: auto 0 0 0; width: 100%; height: 62vh; height: 62dvh; border-radius: 20px 20px 0 0; animation-name: ofx-up; }
+  .ofx-side .ofx-top { border-radius: 20px 20px 0 0; }
+  .ofx-side .ofx-top::before { content: ""; position: absolute; top: 6px; left: 50%; width: 36px; height: 4px; margin-left: -18px; border-radius: 999px; background: var(--c-line, #ddd); }
+}
+@keyframes ofx-up { from { transform: translateY(24px); opacity: 0; } }
