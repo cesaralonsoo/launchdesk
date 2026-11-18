@@ -311,7 +311,8 @@ export function openOffices(o: OfficesOpts = {}): { close(): void; focus(o: Offi
     if (closed || !view) return;
     const v = view;
     // a created project: the name its launch kit gave it (the brain keeps the working title)
-    setName(v.source === "report" && v.projectId === o.projectId && o.name ? o.name : v.brain.name);
+    const name = v.source === "report" && v.projectId === o.projectId && o.name ? o.name : v.brain.name;
+    setName(name);
     if (v.questions.length) {
       main.innerHTML = questionsHtml(v.questions);
       main.querySelector<HTMLInputElement>("input")?.focus({ preventScroll: true });
@@ -321,7 +322,7 @@ export function openOffices(o: OfficesOpts = {}): { close(): void; focus(o: Offi
     if (!main.querySelector("[data-ofx-rooms]")) {
       main.innerHTML = `
         ${v.sample ? `<p class="ofx-sample">${I.info(14)}<span>Sample data: results are examples, and nothing is charged.</span></p>` : ""}
-        <p class="ofx-lead">Your team keeps working for ${esc(v.brain.name.replace(/^Your /, "your "))}. Pick a task: you see the price first and pay only for what you run.</p>
+        <p class="ofx-lead">Your team keeps working for ${esc(name.replace(/^Your /, "your "))}. Pick a task: you see the price first and pay only for what you run.</p>
         <section class="ofx-rooms" data-ofx-rooms></section>
         <section class="ofx-inbox"><header><h3>Inbox</h3><span class="ofx-sum" data-ofx-sum></span></header><div data-ofx-inbox></div></section>
         <div data-ofx-brain></div>

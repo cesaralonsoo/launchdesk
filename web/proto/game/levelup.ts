@@ -161,5 +161,6 @@ function flyAway(card: HTMLElement, target: HTMLElement | null, reduced: boolean
   );
   target.classList.add("hud-shine");
   setTimeout(() => target.classList.remove("hud-shine"), 1100);
-  return anim.finished.then(() => undefined, () => undefined);
+  // a slow frame rate (software GL, a busy phone) must never leave the card on screen
+  return Promise.race([anim.finished.then(() => undefined, () => undefined), new Promise<void>((r) => setTimeout(r, 900))]);
 }

@@ -7,6 +7,7 @@
   --hud-green: #0ac18e;
   --hud-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 8px 24px rgb(0 0 0 / 0.06);
   position: fixed;
+  /* under the app header: the integrator sets these to the final header heights */
   top: var(--hud-top, 96px);
   left: var(--hud-left, 20px);
   z-index: 40;
@@ -478,7 +479,7 @@ button.hud-next:hover .hud-next-t {
 
 /* phone: one 40 px pill under the header, the full HUD in a bottom sheet */
 .hud.phone {
-  top: var(--hud-top-phone, 64px);
+  top: var(--hud-top-phone, 84px);
   left: 12px;
   width: auto;
   max-width: calc(100vw - 24px);

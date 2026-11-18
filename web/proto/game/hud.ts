@@ -90,7 +90,7 @@ export function mountHud(host: HTMLElement, deps: HudDeps): () => void {
       <section class="hud-sec">
         <h3>Rooms · ${esc(label)}</h3>
         <ul class="hud-rooms">${rooms
-          .map((r, i) => `<li data-s="${r.state}">${r.state === "done" ? I.check(14) : `<i></i>`}<span>${esc(roomName(r.id, i))}</span><em>${r.state === "done" ? "lit" : r.state === "working" ? "working" : r.state === "locked" ? "locked" : "waiting"}</em></li>`)
+          .map((r, i) => `<li data-s="${r.state}">${r.state === "done" ? I.check(14) : `<i></i>`}<span>${esc(roomName(r.id, i))}</span><em>${r.state === "done" ? "lit" : r.state === "working" ? "working" : r.id.startsWith("office:") ? "no task yet" : r.state === "locked" ? "locked" : "waiting"}</em></li>`)
           .join("")}</ul>
         <p class="hud-note">A room lights only when its work was really delivered.</p>
       </section>
@@ -141,7 +141,7 @@ export function mountHud(host: HTMLElement, deps: HudDeps): () => void {
     const back = campus ? `<button type="button" class="hud-back" data-hud="campus-back">${I.back(14)}<span>Back to ${esc(g.name)}</span></button>` : "";
     if (phone) {
       main.innerHTML = `
-        <button type="button" class="hud-pill" data-hud="drawer" aria-expanded="${open}"><b>${esc(g.stageName)}</b><span>${g.lit}/${g.total}</span>${tagText(g) ? `<em>${tagText(g)}</em>` : ""}<i aria-hidden="true">▸</i></button>
+        <button type="button" class="hud-pill" data-hud="drawer" aria-expanded="${open}"><b>${esc(g.stageName)}</b><span>${g.lit}/${g.total}</span>${tagText(g) ? `<em>${tagText(g) === "Sample data" ? "Sample" : tagText(g)}</em>` : ""}<i aria-hidden="true">▸</i></button>
         ${back}
         ${open ? `<div class="hud-scrim" data-hud="close"></div><div class="hud-sheet" role="dialog" aria-label="Your company">${head}${menu ? menuHtml(g) : ""}<div class="hud-sum hud-sum-static"><span class="hud-stage"><b>${esc(g.stageName)}</b> · ${g.lit}/${g.total} rooms lit</span>${track(g)}</div>${nextHtml(g)}${drawerHtml(g)}</div>` : ""}`;
     } else {
@@ -201,6 +201,9 @@ export function mountHud(host: HTMLElement, deps: HudDeps): () => void {
     } else world.shotFor("stack");
     const m = await import("../ui/offices");
     document.documentElement.classList.add("ld-offices");
+    // frame the floor in the space the card leaves (ui/index.ts re-measures on the resize event at close)
+    const phone = phoneMq.matches;
+    world.setInsets(phone ? { left: 0, right: 0, top: 130, bottom: Math.round(innerHeight * 0.62) } : { left: 320, right: 470, top: 80, bottom: 0 });
     officesLayer = m.openOffices({
       projectId: d.projectId,
       ownerKey: d.ownerKey,
@@ -211,6 +214,7 @@ export function mountHud(host: HTMLElement, deps: HudDeps): () => void {
       onFocus: (o) => world.shotFor(o ? { room: `office:${o}` } : "stack"),
       onClose: () => {
         document.documentElement.classList.remove("ld-offices");
+        dispatchEvent(new Event("resize"));
         officesLayer = null;
         officesFor = null;
         void world.setWorldLevel(back, { animate: !reduced });

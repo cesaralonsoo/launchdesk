@@ -286,7 +286,7 @@ export function computeGame(s: GameSnapshot): GameState {
   let next: NextStep;
   if (s.example) next = { text: "Check your own idea", price: "10¢", act: "new" };
   else if (!paid1) next = { text: "Check your idea", price: "10¢", act: "pay1" };
-  else if (!report) next = p?.status === "error" ? { text: "Your team hit a snag: open the report screen", price: "nothing charged twice", act: "wait" } : { text: "Your team is researching", price: "about 2 min", act: "wait" };
+  else if (!report) next = p?.status === "error" ? { text: "Your team hit a snag: open the report screen", price: "nothing charged twice", act: "wait" } : { text: "Your team is researching", price: s.sample ? "sample run" : "~2 min", act: "wait" };
   else if (nogo && !paid2) next = { text: "Try another idea", price: "10¢", act: "new" };
   else if (!paid2) next = { text: "Get your launch kit", price: "50¢", act: "kit" };
   else if (k && k.logo === "done" && !k.logoChosen) next = { text: "Pick your logo", price: "included", act: "logo" };
