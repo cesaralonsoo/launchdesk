@@ -1000,12 +1000,12 @@ export function createWorldX(host: HTMLElement, opts: WorldOptionsV7): WorldX {
       if (fadeIn) renderer.domElement.style.opacity = "";
       fadeIn = false;
       if (early) restoreMine();
-      else void crossfade(600, restoreMine);
+      else void crossfade(600, () => tok === showcaseTok && restoreMine());
       return;
     }
     if (example) {
       if (early) applyExample(example);
-      else void crossfade(600, () => applyExample(example));
+      else void crossfade(600, () => tok === showcaseTok && applyExample(example));
       return;
     }
     // first time: keep the canvas clear until the example's real data arrives (max 2.5 s), then fade it in
@@ -1015,7 +1015,8 @@ export function createWorldX(host: HTMLElement, opts: WorldOptionsV7): WorldX {
       if (tok !== showcaseTok || showcase !== "example") return;
       example = ex;
       fadeIn = false;
-      fade = { t0: performance.now() - 200, ms: 400, mid: () => applyExample(ex), done: () => {} };
+      // (a showcase change before this fade's midpoint wins: the guard drops this late apply)
+      fade = { t0: performance.now() - 200, ms: 400, mid: () => tok === showcaseTok && applyExample(ex), done: () => {} };
     };
     const timer = setTimeout(() => show(null), 2500);
     void loadExample().then((ex) => {

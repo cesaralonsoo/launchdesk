@@ -46,6 +46,15 @@ const TITLES = ["Night bakery", "Bike repair van", "Study planner", "Plant shop"
 const items: PortfolioItem[] = Array.from({ length: n }, (_, i) => ({ id: `p${i}`, title: TITLES[i]!, level: ([3, 2, 1, 2, 1, 1] as const)[i]!, score: null }));
 world.setPortfolio?.(items);
 // ── v8 fixtures
+// ?idea=1: the "this will be yours" state the flow paints at the idea step (founder alone, every other room locked)
+if (q.get("idea") === "1") {
+  world.setActorState("founder", "idle", { instant: true });
+  roster.forEach((a) => world.setActorState(a.id, "absent", { instant: true }));
+  for (const b of BUILD_TEAM) world.setActorState(b, "asleep", { instant: true });
+  world.setSign({ kind: "draft", name: q.get("name") ?? "Coffee kiosk", color: "#2B2B33" });
+}
+const toYours = q.get("toyours");
+if (toYours) setTimeout(() => world.setShowcase("yours"), +toYours);
 const rooms = q.get("rooms");
 if (rooms) world.setRooms(rooms.split(",").map((x) => { const [id, st] = x.split(":"); return { id: id!, state: (st ?? "idle") as RoomState }; }));
 const offices = q.get("offices");
