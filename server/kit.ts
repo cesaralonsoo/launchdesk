@@ -428,6 +428,9 @@ async function runKitInner(projectId: string, deps: KitDeps, stage: string): Pro
     put(r);
     await set(name, "done");
   };
+  // The photo searches that do not need the site plan start now (cached for kitPhotos), so waiting for the plan's
+  // menu-driven searches costs less time on the way to the designed page.
+  if (!deps.photos && !kit.site?.photos?.length) void import("./site/photos.js").then((m) => m.prewarmPhotos({ idea: input.idea, city: input.brand.city })).catch(() => {});
   await Promise.allSettled([
     part<LogoResult>(
       "logo",

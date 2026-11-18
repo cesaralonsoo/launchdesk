@@ -179,6 +179,35 @@ export function templateSite(input: KitInput): ModelSite {
   };
 }
 
+/**
+ * Mock mode only (MOCK_AI=1 demos and e2e runs): a small opening menu for a café or bakery so offline runs show the
+ * price list. Prices are set from the founder's own price; the validator (menuOf) still checks them like a model's.
+ * Never used for a real kit (a real kit's menu comes from the plan step or is left out).
+ */
+export function mockMenu(input: KitInput): ModelSite["menu"] | undefined {
+  const { report } = input;
+  const base = Number(report.offer.normal) > Number(report.offer.price) ? Number(report.offer.normal) : Number(report.offer.price);
+  if (report.offer.free || !(base > 0) || base >= 15 || kindOf(input) !== "food") return undefined;
+  const p = (f: number) => Math.round(base * f * 10) / 10;
+  const offer = trimDot(report.offer.what || "Opening offer").slice(0, 40);
+  const coffee = /coffee|caf[eé]|espresso|latte|flat white|kiosk/i.test(`${input.idea} ${offer}`);
+  const items = coffee
+    ? [
+        { group: "Coffee", name: "Espresso", desc: "A single shot", price: p(0.6), photo: "espresso" },
+        { group: "Coffee", name: "Americano", desc: "Espresso with hot water", price: p(0.75), photo: "americano" },
+        { group: "With milk", name: offer, desc: "The opening offer", price: base, photo: "flat white" },
+        { group: "With milk", name: "Latte", desc: "Espresso with more steamed milk", price: p(1.15), photo: "latte" },
+        { group: "Something to eat", name: "Croissant", desc: "Plain butter croissant", price: p(0.75), photo: "croissant" },
+      ]
+    : [
+        { group: "Bread", name: offer, desc: "The opening offer", price: base, photo: "bread" },
+        { group: "Bread", name: "Half loaf", desc: "The same bread, half the size", price: p(0.6), photo: "bread loaf" },
+        { group: "Something sweet", name: "Croissant", desc: "Plain butter croissant", price: p(0.6), photo: "croissant" },
+        { group: "Something sweet", name: "Slice of cake", desc: "A simple slice to go", price: p(0.9), photo: "cake slice" },
+      ];
+  return { kind: "menu", title: "Menu", intro: "", items };
+}
+
 /** A 30-day plan (PlanV2) with no outside sources: only actions the founder controls and goals they set. */
 export function templatePlan(input: KitInput): PlanV2 {
   // a free early-access list is for an app or service people sign up to online: online channels, never a shop window

@@ -110,11 +110,13 @@ test("filters: licence, size, museum objects, stickers, ratio, dedupe", () => {
   assert.equal(dup.length, 2, "same URL and same series are dropped");
 });
 
-test("download URLs: rawpixel goes to the clean editor_1024 variant, WordPress to 1536", () => {
+test("download URLs: rawpixel goes to the clean editor_1024 variant, WordPress to 1536 (2048 for the hero)", () => {
   const [c] = P.parseOpenverse({ results: [ovResult(OV_HITS[0]!)] }, "q", "hero");
   assert.deepEqual(P.downloadUrls(c!), ["https://images.rawpixel.com/editor_1024/czNmcy1wcml2YXRl.jpg"]);
   const [w] = P.parseOpenverse({ results: [ovResult(OV_HITS[1]!)] }, "q", "hero");
   assert.deepEqual(P.downloadUrls(w!), ["https://pd.w.org/2025/09/abc-1536x957.jpg", "https://pd.w.org/2025/09/abc-2048x1276.jpg"]);
+  assert.deepEqual(P.downloadUrls(w!, "hero"), ["https://pd.w.org/2025/09/abc-2048x1276.jpg", "https://pd.w.org/2025/09/abc-1536x957.jpg"], "the hero tries the 2048px file first");
+  assert.ok(P.score(w!, "hero") > P.score({ ...w!, provider: "rawpixel" }, "hero"), "a hero that arrives big enough ranks first");
 });
 
 test("Commons parsing: licence mapping, artist HTML stripped, unknown licences dropped", () => {

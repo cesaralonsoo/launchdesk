@@ -165,3 +165,63 @@ test("Sortida example: designed page, its photos and a priced menu from the paid
   assert.match(html, /data-reserve/);
   assert.equal((await app.request("/s/sortida/p/1")).status, 200);
 });
+
+test("menu: a line the report prices stays inside the sourced range; the band sits close to the founder's price", () => {
+  const input = coffee({ stats: [
+    { value: "€3.90", label: "Syra Coffee flat white", sourceUrl: "https://guidavera.com/x", kind: "price" },
+    { value: "€3.00", label: "Syra Coffee cortado", sourceUrl: "https://guidavera.com/x", kind: "price" },
+  ] });
+  const g = priceGuide(input);
+  assert.deepEqual(g.band, { min: 1.25, max: 7.02 }, "0.5x the lowest anchor to 1.8x the highest");
+  const issues: string[] = [];
+  const m = menuOf({ kind: "menu", title: "", intro: "", items: [
+    { group: "Coffee", name: "Espresso", desc: "", price: 1.8, photo: "" },
+    { group: "With milk", name: "Flat white", desc: "", price: 3, photo: "" },
+    { group: "With milk", name: "Cortado", desc: "", price: 2.6, photo: "" },
+    { group: "Something to eat", name: "Croissant", desc: "", price: 2.2, photo: "" },
+    { group: "Something to eat", name: "Cake", desc: "", price: 9, photo: "" },
+  ] }, input, issues)!;
+  const price = (n: string) => m.groups.flatMap((x) => x.items).find((i) => i.name === n)?.price;
+  assert.equal(price("Cortado"), 3, "moved up into the sourced €3.00-€3.90 range");
+  assert.equal(price("Espresso"), 1.8, "not priced by the report: kept, inside the band");
+  assert.equal(price("Cake"), undefined, "outside the band: dropped");
+  assert.ok(issues.some((i) => /Cortado.*sourced range/.test(i)));
+});
+
+test("menu: walks or other services get 'Opening prices', even when the model calls them a menu", () => {
+  const app = "Midday dog walks in Madrid for people who work long days";
+  const priced = coffee({ offer: { what: "One 30-minute walk", price: 10, normal: 12 }, stats: [{ value: "€10–15", label: "Madrid 30-minute walk", sourceUrl: "https://example.org/w", kind: "price" }] }, app);
+  const walks = [
+    { group: "Walks", name: "30-minute walk", desc: "One dog", price: 12, photo: "" },
+    { group: "Walks", name: "45-minute walk", desc: "One dog", price: 15, photo: "" },
+    { group: "Walks", name: "60-minute walk", desc: "One dog", price: 18, photo: "" },
+  ];
+  assert.equal(menuOf({ kind: "menu", title: "", intro: "", items: walks }, priced)!.note, "Opening prices · they may change before we open");
+  assert.equal(menuOf({ kind: "menu", title: "", intro: "", items }, coffee())!.note, "Opening menu · prices may change before we open");
+});
+
+test("no wallet: how-it-works steps and offer bullets never promise payment", () => {
+  const model = {
+    ...fx.model,
+    how: { title: "How it works", steps: [
+      { icon: "wallet", title: "Pay from your phone", body: "Hold it at the opening price." },
+      { icon: "map-pin", title: "Come by", body: "On your way to work." },
+      { icon: "coffee", title: "Pick it up", body: "Made to go." },
+    ] },
+    offer: { ...fx.model.offer, bullets: ["Reserve and pay from your phone", "Made to go"] },
+  } as unknown as Parameters<typeof validateModelSite>[0];
+  const { spec } = validateModelSite(model, { ...coffee(), founderAddress: "" });
+  const how = spec.sections.find((s) => s.kind === "how-it-works-for-customer");
+  assert.ok(how && how.kind === "how-it-works-for-customer" && !how.steps.some((s) => /pay/i.test(s.title)));
+  const offer = spec.sections.find((s) => s.kind === "offer");
+  assert.ok(offer && offer.kind === "offer" && offer.bullets.join(" ") === "Made to go");
+});
+
+test("mock mode: a café demo gets a small opening menu", async () => {
+  const { planSiteDetailed } = await import("../server/site/plan.js");
+  const input = { ...coffee(), brand: { ...coffee().brand, name: "Demo Café" } };
+  const { spec } = await planSiteDetailed(input, { mock: true });
+  const menu = spec.sections.find((s) => s.kind === "menu");
+  assert.ok(menu && menu.kind === "menu" && menu.groups.flatMap((g) => g.items).length >= 4);
+  assert.ok(menu.groups.flatMap((g) => g.items).some((i) => i.offer && i.price === 3));
+});

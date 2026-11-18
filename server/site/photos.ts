@@ -416,7 +416,15 @@ export function score(c: Candidate, role: PhotoRole, category?: string): number 
   // Dog walks are city walks, but a dog park is fine for a detail.
   const outdoorHit = category && INDOOR_OR_URBAN.has(category) && OUTDOOR.test(`${c.title} ${c.tags.slice(0, 8).join(" ")}`) && !(category === "dogs" && role === "detail");
   const outdoor = outdoorHit ? (role === "people" || role === "hero" ? -15 : -6) : 0;
-  return relevance + roleMatch + source + cc0 + outdoor;
+  // The hero is shown about 640px wide on desktop (1280px on retina): prefer a file that arrives big enough.
+  const sharp = role === "hero" ? (deliveredWidth(c) >= 1500 ? 6 : deliveredWidth(c) >= 1200 ? 2 : -3) : 0;
+  return relevance + roleMatch + source + cc0 + outdoor + sharp;
+}
+
+/** The width of the file we will actually download (see downloadUrls): the hero wants about 1500px or more. */
+export function deliveredWidth(c: Pick<Candidate, "provider" | "width">): number {
+  const cap = { rawpixel: 1024, wordpress: 2048, stocksnap: 960, wikimedia: 1280 }[c.provider] ?? 1024;
+  return Math.min(c.width || 0, cap);
 }
 
 // ───────────────────────────────────────────────────────────── API parsing
@@ -507,16 +515,18 @@ export function parseCommons(json: unknown, query: string, queryRole: PhotoRole 
 }
 
 /** The URL we actually download, as a list to try in order (variant first, then the API's own URL). */
-export function downloadUrls(c: Candidate): string[] {
+export function downloadUrls(c: Candidate, role?: PhotoRole): string[] {
   if (c.provider === "rawpixel") {
     // image_1300 carries a visible "rawpixel" watermark; editor_1024 is clean (WebP, ~200 KB). Checked 16 Nov.
     return [c.url.replace(/\/(editor|image)_\d+\//, "/editor_1024/")];
   }
   if (c.provider === "wordpress") {
     const m = c.url.match(/-(\d+)x(\d+)\.(jpe?g)$/i);
+    // the hero is shown big (about 1280px on a retina laptop): it keeps the 2048px file, the others get 1536px
     if (m && Number(m[1]) > 1536) {
       const h = Math.round((Number(m[2]) * 1536) / Number(m[1]));
-      return [c.url.replace(/-(\d+)x(\d+)\.(jpe?g)$/i, `-1536x${h}.$3`), c.url];
+      const small = c.url.replace(/-(\d+)x(\d+)\.(jpe?g)$/i, `-1536x${h}.$3`);
+      return role === "hero" ? [c.url, small] : [small, c.url];
     }
     return [c.url];
   }
@@ -745,6 +755,27 @@ export async function findPhotos(input: FindPhotosInput): Promise<SitePhoto[]> {
   }
 }
 
+/**
+ * Started with the kit, before the site plan lands: runs the searches that do not depend on the plan (the place photo
+ * on Commons, often the slowest, and the idea's first hero search) so their results are cached when findPhotos runs
+ * with the plan's menu searches. Free and keyless; never throws; no photo check (no spend).
+ */
+export async function prewarmPhotos(input: Pick<FindPhotosInput, "idea" | "city" | "area" | "mock" | "cache"> & { fetch?: typeof fetch }): Promise<void> {
+  if (input.mock ?? config.mockAi) return;
+  try {
+    const cache = input.cache === undefined ? await defaultCache() : input.cache;
+    if (!cache) return;
+    const area = cleanCity(input.area ?? areaOf(input.idea, input.city));
+    const q = buildQueries({ idea: input.idea, city: input.city, area });
+    const ctx: Ctx = { f: input.fetch ?? fetch, signal: AbortSignal.timeout(9000), deadline: Date.now() + 9000, cache, log: () => {}, idea: input.idea };
+    const quiet = (p: Promise<unknown>) => p.catch(() => null);
+    await Promise.all([
+      (async () => { for (const s of q.place.slice(0, 2)) if (((await quiet(searchCommons(ctx, s))) as Candidate[] | null)?.length) return; })(),
+      ...q.hero.slice(0, 1).map((s) => quiet(searchOpenverse(ctx, s, "hero"))),
+    ]);
+  } catch { /* a warm-up only */ }
+}
+
 async function defaultCache(): Promise<FindPhotosInput["cache"]> {
   try {
     const m = await import("./photos-db.js");
@@ -863,7 +894,7 @@ async function pickAndDownload(pool: Candidate[], ctx: { f: typeof fetch; signal
     for (let attempt = 0; attempt < 3 && !ctx.signal.aborted; attempt++) {
       const c = next(role);
       if (!c) return null;
-      for (const url of downloadUrls(c)) {
+      for (const url of downloadUrls(c, role)) {
         try {
           const bytes = await fetchCapped(ctx.f, url, ctx.signal);
           const kind = sniffImage(bytes);
@@ -1060,7 +1091,7 @@ async function visionCheck(pool: Candidate[], input: FindPhotosInput, ctx: { f: 
   ok.forEach((t, i) => content.push({ type: "text", text: `#${i}` }, { type: "image", source: { type: "base64", media_type: t.mime, data: t.data } }));
   content.push({
     type: "text",
-    text: "Reject any photo that is off-topic for this business, an illustration, painting, engraving, old print or museum object, black-and-white or sepia, a product cut-out on white, a sign or text, dark or blurry, low quality, a famous landmark, or one where a person's face is the main subject. Also reject photos showing uniforms, logos, government-agency or brand marks, or screens with unrelated data, and keep only photos whose main subject is the product, the customer or the setting of this business: fewer photos are better than off-topic ones. Also reject photos whose setting contradicts the business (an outdoor farm or field for an indoor shop or a city service, a costume or party). Pick the best hero: a real, wide, well-lit photo of the thing the business sells or does, with calm space for a headline. For every photo you keep, write a plain alt text (6-16 words) that says only what is visible: the main subject, what it is doing, and the setting (indoors, street, park). Never guess brands, places or actions you cannot see. Then rank the kept photos in \"best\" as a picky magazine photo editor would for this business's own website: sharp, well lit, well composed, appetising or inviting, the product clearly the subject, no visible text or watermark, no close-up faces; most appealing first. Use the numbers above. hero is -1 if none fits.",
+    text: "Reject any photo that is off-topic for this business, an illustration, painting, engraving, old print or museum object, black-and-white or sepia, a product cut-out on white, a sign or text, dark or blurry, low quality, a famous landmark, or one where a person's face is the main subject. Also reject photos showing uniforms, logos, government-agency or brand marks, or screens with unrelated data, and keep only photos whose main subject is the product, the customer or the setting of this business: fewer photos are better than off-topic ones. Also reject photos whose setting contradicts the business (an outdoor farm or field for an indoor shop or a city service, a costume or party). Pick the best hero: a real, wide, well-lit photo of the exact thing the idea names (a flat white or a takeaway coffee cup for a flat-white kiosk, not a near relative in a fancy cup with unrelated props), with calm space for a headline. For every photo you keep, write a plain alt text (6-16 words) that says only what is visible: the main subject, what it is doing, and the setting (indoors, street, park). Never guess brands, places or actions you cannot see. Then rank the kept photos in \"best\" as a picky magazine photo editor would for this business's own website: sharp, well lit, well composed, appetising or inviting, the product clearly the subject, no visible text or watermark, no close-up faces; most appealing first. Use the numbers above. hero is -1 if none fits.",
   });
   const msg = await client.messages.create(
     {

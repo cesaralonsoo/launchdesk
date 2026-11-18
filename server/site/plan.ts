@@ -9,7 +9,7 @@ import { recordUsage, usdOf } from "../cost.js";
 import type { KitInput, LogoOption } from "../kit-contract.js";
 import { ICONS, MODEL_SITE_SCHEMA, type ModelSite, type SiteSpec } from "./spec.js";
 import { priceGuide, validateModelSite } from "./validate.js";
-import { templateSite } from "../kit-templates.js";
+import { mockMenu, templateSite } from "../kit-templates.js";
 
 export const SITE_MODEL = process.env.MODEL_SITE || "claude-sonnet-5-5";
 
@@ -92,7 +92,11 @@ export async function planSiteDetailed(input: KitInput, opts: { mock?: boolean; 
     // from the founder's own input, so a demo never shows another business's claims or numbers.
     const fx = mockFixtureFor(input);
     const same = fx.input.brand.name.toLowerCase() === input.brand.name.toLowerCase() && fx.input.brand.lang === input.brand.lang;
-    const { spec, issues } = validateModelSite(same ? fx.model : templateSite(input), input);
+    // a café or bakery demo gets a small opening menu (mock only), so offline runs show the price list too
+    const menu = same ? undefined : mockMenu(input);
+    const base = same ? fx.model : templateSite(input);
+    const model = menu ? { ...base, menu, order: ["menu", ...base.order.filter((k) => k !== "menu-or-services")] as ModelSite["order"] } : base;
+    const { spec, issues } = validateModelSite(model, input);
     return { spec, issues, usd: 0, mock: true };
   }
   const prompt = `Digest:\n${JSON.stringify(siteDigest(input))}${opts.variantHint ? `\n\nStyle hint from the founder: ${opts.variantHint.slice(0, 200)}` : ""}`;

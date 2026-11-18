@@ -97,7 +97,9 @@ export function priceGuide(input: KitInput): PriceGuide {
   }
   const market = nums.length ? { low: Math.min(...nums), high: Math.max(...nums), examples: examples.slice(0, 6) } : null;
   const anchors = [...(offer ? [offer.price, offer.normal ?? offer.price] : []), ...(market ? [market.low, market.high] : [])];
-  const band = anchors.length ? { min: round2(Math.min(...anchors) * 0.4), max: round2(Math.max(...anchors) * (market ? 2.5 : 3)) } : null;
+  // Tight around the anchors: a small business's other lines sit near its own price (an espresso at half a flat white,
+  // a cake slice a bit above it), never at a fraction or a multiple of it.
+  const band = anchors.length ? { min: round2(Math.min(...anchors) * 0.5), max: round2(Math.max(...anchors) * 1.8) } : null;
   return { currency, offer, market, band, software: SOFTWARE.test(input.idea) };
 }
 
@@ -145,8 +147,12 @@ export function menuOf(raw: Partial<ModelSite["menu"]> | null | undefined, input
       const price = menuPrice(Number(it?.price));
       if (!name || seen.has(key)) continue;
       if (!(price >= g.band.min && price <= g.band.max)) { issues.push(`menu price ${it?.price} for "${name}" outside ${g.band.min}-${g.band.max}`); continue; }
+      // A line the report prices (its name is in a sourced market price label, "flat white" in "Syra Coffee flat white")
+      // stays inside the sourced market range: below it is moved to the low end, above it to the high end.
+      const sourced = sameKindAsMarket(name, g) ? menuPrice(Math.min(g.market!.high, Math.max(g.market!.low, price))) : price;
+      if (sourced !== price) issues.push(`menu price ${price} for "${name}" moved to ${sourced} (sourced range ${g.market!.low}-${g.market!.high})`);
       seen.add(key);
-      items.push({ name, desc: clean(it?.desc, 90), price, ...(cleanPhotoWords(it?.photo) ? { photo: cleanPhotoWords(it?.photo) } : {}) });
+      items.push({ name, desc: clean(it?.desc, 90), price: sourced, ...(cleanPhotoWords(it?.photo) ? { photo: cleanPhotoWords(it?.photo) } : {}) });
       total++;
     }
     if (items.length) groups.push({ name: gname, items });
@@ -166,8 +172,21 @@ export function menuOf(raw: Partial<ModelSite["menu"]> | null | undefined, input
   }
   if (total < 3) { issues.push(`menu dropped (only ${total} lines kept)`); return null; }
   const ui = uiFor((input.brand.lang || "en").slice(0, 5));
+  // "Opening menu" only for food and drink; walks, cuts or lessons get "Opening prices" whatever the model called them.
+  const food = label === "menu" && FOOD_DRINK.test(`${input.idea} ${groups.flatMap((x) => [x.name, ...x.items.map((i) => i.name)]).join(" ")}`);
   const fallbackTitle = { menu: "Menu", services: "Services & prices", classes: "Classes", plans: "Plans" }[label];
-  return { kind: "menu", label, title: clean(raw.title, 40) || fallbackTitle, intro: clean(raw.intro, 140), note: (label === "menu" ? ui.menuNote : ui.priceNote) ?? "", groups };
+  return { kind: "menu", label, title: clean(raw.title, 40) || fallbackTitle, intro: clean(raw.intro, 140), note: (food ? ui.menuNote : ui.priceNote) ?? "", groups };
+}
+
+/** Food and drink words (EN/ES): a "menu" of these is a café or food menu, anything else is a price list. */
+const FOOD_DRINK = /\b(?:caf[eé]s?|coffee|espresso|latte|tea|bakery|panader[ií]a|bread|pan|pastr(?:y|ies)|cake|croissant|restaurant|food|comida|drinks?|bebidas?|bar|brunch|lunch|breakfast|desayuno|pizza|burger|sandwich|bocadillo|juice|zumo|ice cream|helado|wine|vino|beer|cerveza|kitchen|cocina)\b/i;
+
+/** The line names something the report prices: its words appear together in one sourced market price label. */
+function sameKindAsMarket(name: string, g: PriceGuide): boolean {
+  if (!g.market) return false;
+  const n = String(name).normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
+  if (n.length < 4) return false;
+  return g.market.examples.some((e) => ` ${String(e.label).normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ")} `.includes(` ${n} `));
 }
 
 const cleanPhotoWords = (v: unknown) => String(v ?? "").normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z ]+/g, " ").replace(/\s+/g, " ").trim().split(" ").slice(0, 3).join(" ").slice(0, 30);
@@ -229,8 +248,8 @@ export function validateModelSite(raw: Partial<ModelSite> | null | undefined, in
   const CLOCK = /\b\d{1,2}[:.]\d{2}\b|\b\d{1,2}\s?(?:am|pm|h)\b/i;
   const lim = Number(report.offer.limit) > 0 ? String(report.offer.limit) : "";
   const limitTalk = (t: string) => Boolean(lim) && new RegExp(`(^|[^\\d.,])${lim}([^\\d.,]|$)`).test(t) && /limit|only|first|available|left|reserve early|quedan|solo|primer/i.test(t);
-  const PAY_TALK = /bitcoin|\bbch\b|\bpay(?:ing|ment)?\b[^.]{0,40}\b(?:phone|wallet|reserv)|\bpaga[rs]?\b[^.]{0,40}\b(?:m[oó]vil|cartera|reserv)/i;
-  const steps = list<Step>(r.how?.steps).map(step).filter((x) => x.title).filter((x) => canPay || !/bitcoin|\bbch\b/i.test(`${x.title} ${x.body}`)).slice(0, 3);
+  const PAY_TALK = /bitcoin|\bbch\b|\bpay(?:ing|ment)?\b[^.]{0,40}\b(?:phone|wallet|reserv|hold|lock)|\b(?:reserve|hold|lock)\b[^.]{0,40}\bpa(?:y|id)\b|\bpre-?(?:order|pay)|\bpaga[rs]?\b[^.]{0,40}\b(?:m[oó]vil|cartera|reserv)/i;
+  const steps = list<Step>(r.how?.steps).map(step).filter((x) => x.title).filter((x) => canPay || !PAY_TALK.test(`${x.title} ${x.body}`)).slice(0, 3);
   const services = list<Step>(r.services?.items).map(step).filter((x) => x.title).slice(0, 6);
   const faq = list<{ q: unknown; a: unknown }>(r.faq?.items)
     .map((x) => ({ q: clean(x?.q, 100), a: clean(x?.a, 280) }))
@@ -239,7 +258,7 @@ export function validateModelSite(raw: Partial<ModelSite> | null | undefined, in
     // not open yet: no clock times ("between 7:30 and 9:30" read as opening hours) and no stock count from the analysis
     .filter((x) => !CLOCK.test(`${x.q} ${x.a}`) && !limitTalk(`${x.q} ${x.a}`))
     .slice(0, 6);
-  const bullets = list<string>(r.offer?.bullets).map((b) => clean(b, 80)).filter(Boolean).slice(0, 4);
+  const bullets = list<string>(r.offer?.bullets).map((b) => clean(b, 80)).filter(Boolean).filter((b) => canPay || !PAY_TALK.test(b)).slice(0, 4);
 
   const menu = menuOf(r.menu, input, issues);
   const build: Record<SectionKind, Section | null> = {
