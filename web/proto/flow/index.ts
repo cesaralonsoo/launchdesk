@@ -212,6 +212,8 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
   const baseCap = (): WorldLevel => report?.scalability.cap ?? levelCapFor(0, "go");
   const cap = (): WorldLevel =>
     (committed[project.id] != null && report?.verdict !== "no-go" ? Math.min(3, baseCap() + 1) : baseCap()) as WorldLevel;
+  /** v8: the cap gates nothing; only a No-go (cap 0) hides the dashed offices plate (the world never renders wl 0). */
+  const capNow = (): WorldLevel => (report?.verdict === "no-go" ? 0 : WORLD_CAP);
   const emit = (prev: FlowStateV7) => cbs.forEach((cb) => cb(state, prev));
   const set = (patch: Partial<FlowStateV7>) => {
     const prev = state;
@@ -275,9 +277,9 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
     return Math.max(1, STEP_LEVEL[STEP_ALIAS[step] ?? step]) as WorldLevel;
   }
   function paintProject(level: WorldLevel) {
-    world.setLevelCap(WORLD_CAP);
+    world.setLevelCap(capNow());
     world.setRoster(roster);
-    void world.setProject({ ...worldProjectOf(project), level: Math.max(1, level) as WorldLevel, roster: [...roster], cap: WORLD_CAP, capWhy: report?.scalability.why }, { animate: false });
+    void world.setProject({ ...worldProjectOf(project), level: Math.max(1, level) as WorldLevel, roster: [...roster], cap: capNow(), capWhy: report?.scalability.why }, { animate: false });
   }
 
   // ───────────────────────────── step players
@@ -434,7 +436,7 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
     if (!demo && live && after(step, "floor")) reach(level);
     if (unpaid && after(step, "hire")) unpaid = null; // paid: the same idea again is a new project
     // world
-    world.setLevelCap(WORLD_CAP);
+    world.setLevelCap(capNow());
     world.setRoster(roster);
     world.setSign(signFor(step, builder, phase));
     const moveAnimated = animate && !reduced && world.worldLevel !== level && (step === "building" || step === "district" || step === "end" || world.worldLevel > 1);
@@ -510,7 +512,7 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
         findings = [...r.findings];
         revealed = findings.length;
         if (r.project.v7.report) report = r.project.v7.report;
-        world.setLevelCap(WORLD_CAP);
+        world.setLevelCap(capNow());
         for (const id of res.rerun) world.setActorState(id, "done");
         for (const f of s.findings) world.pulse(f.analyst, f.kind);
         void world.focusActor("overview", { ms: 900 });
@@ -548,7 +550,7 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
     findings = [...findings];
     revealed = findings.length;
     if (res.report) report = res.report;
-    world.setLevelCap(WORLD_CAP);
+    world.setLevelCap(capNow());
     for (const id of res.rerun) world.setActorState(id, "done");
     for (const f of res.findings) world.pulse(f.analyst, f.kind);
     void world.focusActor("overview", { ms: 900 });
@@ -623,7 +625,7 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
     get chosenPath() { return committed[project.id] ?? null; },
     commitPath(i) {
       committed = { ...committed, [project.id]: i };
-      world.setLevelCap(WORLD_CAP);
+      world.setLevelCap(capNow());
       const st = state.step;
       if (st === "building" || st === "district") enter({ step: st }, true);
       else ping();
@@ -780,14 +782,14 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
       resnapRoster();
       if (!after(state.step, "hire")) roster.forEach((a) => world.setActorState(a.id, "absent", { instant: true }));
     }
-    world.setLevelCap(WORLD_CAP);
+    world.setLevelCap(capNow());
     if (after(state.step, "build")) world.setSign(signFor(state.step, state.builder, state.phase));
     ping();
   }
   /** A live roster change (first poll, a steer hire): re-apply the whole project so the world snaps every new figure to
    *  the current level (a plain setRoster leaves new floor figures visible above the room at level 0). */
   function resnapRoster() {
-    void world.setProject({ ...worldProjectOf(project), level: Math.max(1, world.worldLevel) as WorldLevel, roster: [...roster], cap: WORLD_CAP, capWhy: report?.scalability.why }, { animate: false });
+    void world.setProject({ ...worldProjectOf(project), level: Math.max(1, world.worldLevel) as WorldLevel, roster: [...roster], cap: capNow(), capWhy: report?.scalability.why }, { animate: false });
   }
   /** Where a real project stands on the server. */
   function liveHome(r: LiveRun): Partial<FlowStateV7> & { step: FlowStepV7 } {

@@ -69,7 +69,6 @@ type Proof = {
 
 /** Mounts the home. `host` (the #home slot of the UI root) stays empty: the home is the static #ld-home of index.html. */
 export function mountHome(host: HTMLElement, deps: HomeDeps): () => void {
-  void host;
   const { world, flow } = deps;
   const root = document.getElementById("ld-home");
   const html = document.documentElement;
@@ -136,6 +135,7 @@ export function mountHome(host: HTMLElement, deps: HomeDeps): () => void {
     if (v === active) return;
     active = v;
     if (v) {
+      host.dataset.owns = "idea"; // ui/index.ts skips its own idea card (REQUESTS R1)
       html.classList.add("home");
       html.classList.remove("nohome");
       placeWorld();
@@ -148,6 +148,7 @@ export function mountHome(host: HTMLElement, deps: HomeDeps): () => void {
       requestAnimationFrame(() => requestAnimationFrame(() => html.classList.add("h-ready")));
       paintIdeas();
     } else {
+      delete host.dataset.owns;
       focusStage(0);
       html.style.scrollBehavior = "auto";
       window.scrollTo(0, 0);
@@ -277,7 +278,8 @@ export function mountHome(host: HTMLElement, deps: HomeDeps): () => void {
       if (active) world.setShowcase(mine ? "yours" : "example");
     }
     clearTimeout(signTimer);
-    if (mine) signTimer = window.setTimeout(() => active && world.setLobbyScreen(null, signWords(ta.value)), 250);
+    // the door sign of "your" floor shows the first words of the idea (WP-B: setSign draft; the wall screen stays blank)
+    if (mine) signTimer = window.setTimeout(() => active && world.setSign({ kind: "draft", name: signWords(ta.value) || "Your idea", color: "#1E2229" }), 250);
   }
   on(ta, "input", onType);
   offs.push(() => clearTimeout(signTimer));
