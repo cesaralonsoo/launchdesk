@@ -5,6 +5,9 @@ import type { KitBrand, KitInput } from "../kit-contract.js";
 import { DEFAULT_ORDER, ICONS, uiFor, type IconName, type MenuGroup, type MenuLabel, type ModelSite, type Section, type SectionKind, type SitePhotoQueries, type SiteSpec, type Stat, type Step } from "./spec.js";
 import { statKind } from "./stat-kind.js";
 
+/** Wording that says the visitor can pay (Bitcoin Cash, pay from your phone, pre-order). Only allowed when the page can take a payment. */
+export const PAY_TALK = /bitcoin|\bbch\b|\bpay(?:ing|ment)?\b[^.]{0,40}\b(?:phone|wallet|reserv|hold|lock)|\b(?:reserve|hold|lock)\b[^.]{0,40}\bpa(?:y|id)\b|\bpre-?(?:order|pay)|\bpaga[rs]?\b[^.]{0,40}\b(?:m[oó]vil|cartera|reserv)/i;
+
 // ---------- text ----------
 
 const HYPE = /\b(revolutionary|revolutionise|revolutionize|seamless(ly)?|unlock|elevate|game[- ]?changer|cutting[- ]edge|next[- ]level|world[- ]class|best[- ]in[- ]class|disrupt(ive)?|synergy|supercharge)\b/gi;
@@ -248,7 +251,6 @@ export function validateModelSite(raw: Partial<ModelSite> | null | undefined, in
   const CLOCK = /\b\d{1,2}[:.]\d{2}\b|\b\d{1,2}\s?(?:am|pm|h)\b/i;
   const lim = Number(report.offer.limit) > 0 ? String(report.offer.limit) : "";
   const limitTalk = (t: string) => Boolean(lim) && new RegExp(`(^|[^\\d.,])${lim}([^\\d.,]|$)`).test(t) && /limit|only|first|available|left|reserve early|quedan|solo|primer/i.test(t);
-  const PAY_TALK = /bitcoin|\bbch\b|\bpay(?:ing|ment)?\b[^.]{0,40}\b(?:phone|wallet|reserv|hold|lock)|\b(?:reserve|hold|lock)\b[^.]{0,40}\bpa(?:y|id)\b|\bpre-?(?:order|pay)|\bpaga[rs]?\b[^.]{0,40}\b(?:m[oó]vil|cartera|reserv)/i;
   const steps = list<Step>(r.how?.steps).map(step).filter((x) => x.title).filter((x) => canPay || !PAY_TALK.test(`${x.title} ${x.body}`)).slice(0, 3);
   const services = list<Step>(r.services?.items).map(step).filter((x) => x.title).slice(0, 6);
   const faq = list<{ q: unknown; a: unknown }>(r.faq?.items)

@@ -48,6 +48,17 @@ test("the gold page passes the gate and gets wired", () => {
   assert.doesNotMatch(s.body, /ld-photo:|data-ld/);
 });
 
+test("reserve off: a page that says you can pay fails the gate", () => {
+  const noReserve = (inject: string) => page(inject).replace(/<a [^>]*data-ld="reserve"[^>]*>[^<]*<\/a>/g, "");
+  assert.ok(gateCustom(noReserve("<p>Join the list for opening news.</p>"), ctx({ reserveEnabled: false })), "plain page passes");
+  for (const bad of ["<p>Pay with Bitcoin Cash.</p>", "<p>Reserve yours and pay from your phone.</p>", "<p>Pre-order your first coffee.</p>", "<p>We take BCH.</p>"]) {
+    const r = sanitize(noReserve(bad), ctx({ reserveEnabled: false }));
+    assert.ok(r.problems.some((p) => /talks about paying/.test(p)), bad);
+    assert.equal(gateCustom(noReserve(bad), ctx({ reserveEnabled: false })), null, bad);
+  }
+  assert.deepEqual(sanitize(page("<p>Pay with Bitcoin Cash.</p>"), ctx()).problems, [], "allowed when reserve is on");
+});
+
 test("store mode keeps neutral hooks and is idempotent", () => {
   const a = sanitize(GOLD, ctx({ mode: "store" }));
   assert.deepEqual(a.problems, []);
