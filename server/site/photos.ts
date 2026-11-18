@@ -1,6 +1,6 @@
 // site2 photos: real, on-topic, free-licensed photos for each generated website, with no API key and no signup.
 //
-//   findPhotos({ idea, city, queries? })  → 0..6 SitePhoto (1 hero, ≤3 detail, 1 people, 1 place), bytes included
+//   findPhotos({ idea, city, queries? })  → 0..8 SitePhoto (1 hero, ≤5 detail, 1 people, 1 place), bytes included
 //   savePhotos / listPhotos (photos-db.ts) → stored in site_photos, served by photoRoute() at GET /s/:slug/p/:n
 //   photoCredits(photos)                   → the short footer credit line + per-photo links
 //
@@ -102,7 +102,7 @@ export interface FindPhotosInput {
 
 const UA = "LaunchDeskSiteBuilder/1.0 (small-business website photo picker)";
 export const MAX_PHOTO_BYTES = 900_000;
-const MAX_PHOTOS = 6;
+const MAX_PHOTOS = 8;
 const OPENVERSE = "https://api.openverse.org/v1/images/";
 const COMMONS = "https://commons.wikimedia.org/w/api.php";
 
@@ -219,6 +219,7 @@ const ABSTRACT_WORD = new Set(["solution", "solutions", "service", "services", "
 export function buildQueries(input: { idea: string; city?: string; area?: string; queries?: Partial<PhotoQueries> }): PhotoQueries {
   const cat = categoryOf(input.idea) ?? GENERIC;
   const merge = (a: string[] | undefined, b: string[], max = 4) => [...new Set([...(a ?? []), ...b].map(cleanQuery).filter((q) => q.length >= 3))].slice(0, max);
+  // The plan step's searches (menu items: "flat white", "croissant") lead the detail list; up to 8 are kept.
   const prod = productOf(input.idea);
   const one = prod ? prod.phrase.split(" ").map((w, i, a) => (i === a.length - 1 ? singular(w) : w)).join(" ") : "";
   // the thing sold leads hero and detail; the category's stock scenes follow (a generic "small shop" only when nothing else is known)
@@ -228,9 +229,9 @@ export function buildQueries(input: { idea: string; city?: string; area?: string
       ? { hero: [prod.phrase, one], detail: [`${one} closeup`, one], people: [`${one} hands`] }
       : { hero: [prod.phrase], detail: one !== prod.phrase ? [one] : [], people: [] };
     const pick = (role: "hero" | "detail" | "people", max = 4) => merge([...(input.queries?.[role] ?? []), ...lead[role]], generic ? [] : cat[role], max);
-    return { hero: pick("hero"), detail: pick("detail"), people: pick("people", 3), place: placeQueries(input) };
+    return { hero: pick("hero"), detail: pick("detail", 8), people: pick("people", 3), place: placeQueries(input) };
   }
-  return { hero: merge(input.queries?.hero, cat.hero), detail: merge(input.queries?.detail, cat.detail), people: merge(input.queries?.people, cat.people, 3), place: placeQueries(input) };
+  return { hero: merge(input.queries?.hero, cat.hero), detail: merge(input.queries?.detail, cat.detail, 8), people: merge(input.queries?.people, cat.people, 3), place: placeQueries(input) };
 }
 function placeQueries(input: { idea: string; city?: string; area?: string; queries?: Partial<PhotoQueries> }): string[] {
   const city = cleanCity(input.city);
@@ -386,7 +387,7 @@ export function onTopic(c: Pick<Candidate, "title" | "tags" | "desc">, t: PhotoT
 }
 
 /** Words that name the main subject of a photo ("monstera", "leash"), for keeping detail photos different. */
-const GENERIC_WORD = /^(free|photo|image|picture|stock|with|from|into|over|under|small|large|little|white|black|brown|green|yellow|close|closeup|view|top|background|indoor|indoors|outdoor|outdoors|house|home|potted|plant|plants|coffee|dogs?|bread|food|people|woman|man|person|wooden|table|sits|sitting|front|light)$/;
+const GENERIC_WORD = /^(free|photo|image|picture|stock|with|from|into|over|under|beside|behind|across|through|while|onto|near|inside|blurred|setting|surface|shot|visible|several|pair|holds|holding|showing|shows|small|large|little|white|black|brown|green|yellow|close|closeup|view|top|background|indoor|indoors|outdoor|outdoors|house|home|potted|plant|plants|coffee|dogs?|bread|food|people|woman|man|person|wooden|table|sits|sitting|front|light)$/;
 export function subjectWords(title: string): string[] {
   return [...new Set(title.toLowerCase().replace(/[^a-z ]+/g, " ").split(/\s+/).filter((w) => w.length >= 4 && !GENERIC_WORD.test(w)).map((w) => w.replace(/(es|s)$/, "")))].slice(0, 8);
 }
@@ -410,7 +411,7 @@ const INDOOR_OR_URBAN = new Set(["plants", "coffee", "bakery", "food", "beauty",
 export function score(c: Candidate, role: PhotoRole, category?: string): number {
   const relevance = 20 - Math.min(c.rank, 19);
   const roleMatch = c.queryRole === role ? 12 : 0;
-  const source = role === "hero" ? { wordpress: 8, rawpixel: 6, stocksnap: 3, wikimedia: 2 }[c.provider] : { wordpress: 5, rawpixel: 5, stocksnap: 5, wikimedia: role === "place" ? 9 : 1 }[c.provider];
+  const source = role === "hero" ? { wordpress: 8, rawpixel: 6, stocksnap: 3, wikimedia: 2 }[c.provider] : { wordpress: 5, rawpixel: 5, stocksnap: 5, wikimedia: role === "place" ? 9 : 3 }[c.provider];
   const cc0 = c.license === "cc0" || c.license === "pdm" ? 2 : 0;
   // Dog walks are city walks, but a dog park is fine for a detail.
   const outdoorHit = category && INDOOR_OR_URBAN.has(category) && OUTDOOR.test(`${c.title} ${c.tags.slice(0, 8).join(" ")}`) && !(category === "dogs" && role === "detail");
@@ -465,7 +466,7 @@ export function commonsLicense(short: string): { license: PhotoLicense; version?
   return { license: kind, version: m[2], url: `https://creativecommons.org/licenses/${kind}/${m[2]}/` };
 }
 
-export function parseCommons(json: unknown, query: string): Candidate[] {
+export function parseCommons(json: unknown, query: string, queryRole: PhotoRole = "place"): Candidate[] {
   const pages = (json as { query?: { pages?: Record<string, Json> } })?.query?.pages ?? {};
   const list = Object.values(pages).sort((a, b) => num(a.index) - num(b.index));
   const out: Candidate[] = [];
@@ -496,7 +497,7 @@ export function parseCommons(json: unknown, query: string): Candidate[] {
       height: num(info.height),
       tags: cats,
       query,
-      queryRole: "place",
+      queryRole,
       rank,
       ...(desc ? { desc } : {}),
       ...(ym ? { year: Number(ym[1]) } : {}),
@@ -701,14 +702,18 @@ export async function findPhotos(input: FindPhotosInput): Promise<SitePhoto[]> {
     const area = cleanCity(input.area ?? areaOf(input.idea, input.city));
     const q = buildQueries({ ...input, area });
     const names = area ? [area] : input.city ? [cleanCity(input.city)] : [];
-    const pool = await search(q, { f, signal: all, deadline: started + Math.min(Math.round(budget * 0.4), 8000), cache, log, names, idea: input.idea });
+    const pool = await search(q, { f, signal: all, deadline: started + Math.min(Math.round(budget * 0.4), 9000), cache, log, names, idea: input.idea });
     if (all.aborted || !pool.length) return [];
-    let ranked = pool;
+    let ranked: Candidate[];
     const useVision = (input.vision ?? process.env.PHOTO_VISION !== "0") && !config.mockAi;
     let alts = new Map<string, string>();
+    let appeal: Map<string, number> | undefined;
     const category = categoryOf(input.idea)?.key;
+    // Commons product photos are never used unseen (their search is the noisiest).
+    const unseenOk = (c: Candidate) => c.provider !== "wikimedia" || c.queryRole === "place";
+    ranked = pool.filter(unseenOk);
     if (useVision && deadline - Date.now() > 9000) {
-      const v = await visionCheck(pool, input, { f, signal: all, deadline: Date.now() + Math.min(11_000, deadline - Date.now() - 6000) }, category).catch((e) => {
+      const v = await visionCheck(pool, input, { f, signal: all, deadline: Date.now() + Math.min(14_000, deadline - Date.now() - 6000) }, category).catch((e) => {
         log(`[photos] vision check skipped: ${(e as Error).message}`);
         return null;
       });
@@ -720,15 +725,16 @@ export async function findPhotos(input: FindPhotosInput): Promise<SitePhoto[]> {
         ranked = (seenStock.length >= 4 ? [...seenStock, ...seen.filter((c) => c.provider === "wikimedia")] : kept.filter((c) => c.provider !== "wikimedia" || v.alts.has(c.id)))
           .map((c) => (v.hero === c.id ? { ...c, rank: -10, queryRole: "hero" as PhotoRole } : c));
         alts = v.alts;
+        appeal = v.order;
       }
     }
     // Word-level relevance after the photo check (its alt text counts): a photo about another product is dropped,
     // and fewer photos (or none, the page then shows without them) is the result rather than an off-topic one.
     const topic = topicOf(input.idea, input.city);
     const before = ranked.length;
-    ranked = ranked.filter((c) => c.provider === "wikimedia" || onTopic(c, topic, alts.get(c.id)));
+    ranked = ranked.filter((c) => (c.provider === "wikimedia" && c.queryRole === "place") || onTopic(c, topic, alts.get(c.id)));
     if (ranked.length < before) log(`[photos] ${before - ranked.length} off-topic candidates dropped`);
-    const photos = await pickAndDownload(ranked, { f, signal: all, alts, log, category, topic });
+    const photos = await pickAndDownload(ranked, { f, signal: all, alts, log, category, topic, appeal });
     log(`[photos] ${photos.length} photos in ${Date.now() - started} ms (${pool.length} candidates)`);
     return photos;
   } catch (e) {
@@ -769,14 +775,16 @@ async function searchOpenverse(ctx: Ctx, query: string, role: PhotoRole): Promis
   }).then((list) => list.map((c) => ({ ...c, query, queryRole: role })));
 }
 
-async function searchCommons(ctx: Ctx, query: string): Promise<Candidate[]> {
-  return cached(ctx, `wm2|${query}`, async () => {
+/** Commons: the place (city/area search), or a product close-up among Commons "Quality images" (title must name it). */
+async function searchCommons(ctx: Ctx, query: string, role: PhotoRole = "place"): Promise<Candidate[]> {
+  const product = role !== "place";
+  return cached(ctx, `${product ? "wq1" : "wm2"}|${query}`, async () => {
     const u = `${COMMONS}?${new URLSearchParams({
       action: "query",
       format: "json",
       origin: "*",
       generator: "search",
-      gsrsearch: `${query} filetype:bitmap`,
+      gsrsearch: product ? `intitle:"${query.replace(/"/g, "")}" incategory:Quality_images filetype:bitmap` : `${query} filetype:bitmap`,
       gsrnamespace: "6",
       gsrlimit: "20",
       prop: "imageinfo",
@@ -787,19 +795,25 @@ async function searchCommons(ctx: Ctx, query: string): Promise<Candidate[]> {
     const sig = AbortSignal.any([ctx.signal, AbortSignal.timeout(Math.max(500, ctx.deadline - Date.now()))]);
     const res = await ctx.f(u, { headers: { "User-Agent": UA, Accept: "application/json" }, signal: sig });
     if (!res.ok) throw new Error(`Commons ${res.status}`);
-    return parseCommons(await res.json(), query);
+    return parseCommons(await res.json(), query, role);
   });
 }
 
-/** Up to 5 Openverse searches + up to 2 Commons searches, in parallel, within the search deadline. */
+/**
+ * Up to 8 Openverse searches (2 hero, 5 detail: one per product, 1 people), up to 2 Commons "Quality images" product
+ * searches and up to 2 Commons place searches, in parallel, within the search deadline.
+ */
 async function search(q: PhotoQueries, ctx: Ctx): Promise<Candidate[]> {
   const plan: Array<[PhotoRole, string]> = [];
   const take = (role: PhotoRole, n: number) => q[role].slice(0, n).forEach((s) => plan.push([role, s]));
   take("hero", 2);
-  take("detail", 2);
+  take("detail", 5);
   take("people", 1);
   const settle = <T>(p: Promise<T[]>, label: string) => p.catch((e: Error) => (ctx.log(`[photos] ${label}: ${e.message}`), [] as T[]));
   const ov = Promise.all(plan.map(([role, s]) => settle(searchOpenverse(ctx, s, role), `search "${s}"`)));
+  // Commons product photos are only used after the photo check has looked at them (see findPhotos).
+  const qi = Promise.all(q.detail.filter((s) => s.split(" ").length <= 2).slice(0, 2).map((s) => settle(searchCommons(ctx, s, "detail"), `quality "${s}"`)))
+    .then((ls) => ls.flat().filter((c) => keepCandidate(c, ctx.idea) && !/\b(bw|b&w|black and white|monochrome)\b|\(bw\)/i.test(c.title)));
   const place = (async () => {
     for (const s of q.place.slice(0, 2)) {
       const r = (await settle(searchCommons(ctx, s), `place "${s}"`)).filter((c) => keepCandidate(c, ctx.idea)).filter((c) => ratioOk(c, "place") && placeOk(c, ctx.names ?? []));
@@ -807,19 +821,24 @@ async function search(q: PhotoQueries, ctx: Ctx): Promise<Candidate[]> {
     }
     return [] as Candidate[];
   })();
-  const [lists, places] = await Promise.all([ov, place]);
+  const [lists, places, quality] = await Promise.all([ov, place, qi]);
   let pool = dedupe(lists.flat().filter((c) => keepCandidate(c, ctx.idea)));
   // Thin results: one more try with a category default the plan did not run yet.
   if (pool.filter((c) => ratioOk(c, "hero")).length < 2 && Date.now() < ctx.deadline - 1500) {
     const extra = [...q.hero.slice(2), ...q.detail.slice(2)][0];
     if (extra) pool = dedupe([...pool, ...(await settle(searchOpenverse(ctx, extra, "hero"), `search "${extra}"`)).filter((c) => keepCandidate(c, ctx.idea))]);
   }
-  return dedupe([...pool, ...places]);
+  // the place photos before the Commons product hits: the same file found by both stays a place photo
+  return dedupe([...pool, ...places, ...quality]);
 }
 
 /** Fills the slots (hero, 3 detail, people, place) with downloaded, verified photos. Each slot tries ≤3 candidates. */
-async function pickAndDownload(pool: Candidate[], ctx: { f: typeof fetch; signal: AbortSignal; alts: Map<string, string>; log: (m: string) => void; category?: string; topic?: PhotoTopic }): Promise<SitePhoto[]> {
-  const slots: PhotoRole[] = ["hero", "detail", "detail", "detail", "people", "place"];
+async function pickAndDownload(pool: Candidate[], ctx: { f: typeof fetch; signal: AbortSignal; alts: Map<string, string>; log: (m: string) => void; category?: string; topic?: PhotoTopic; appeal?: Map<string, number> }): Promise<SitePhoto[]> {
+  const slots: PhotoRole[] = ["hero", "detail", "detail", "detail", "detail", "detail", "people", "place"];
+  // Each detail slot shows a different product: one per search ("flat white", "espresso", "croissant").
+  const usedQueries = new Set<string>();
+  // The photo check's appeal order (sharp, well lit, appetising first): a strong but not overriding bonus.
+  const appeal = (c: Candidate) => { const i = ctx.appeal?.get(c.id); return i == null ? 0 : Math.max(0, 16 - i * 2); };
   const claimed = new Set<string>();
   // Main-subject words already used by a picked photo: two "monstera" or two "leash" details read as one photo twice.
   const usedWords = new Set<string>();
@@ -827,13 +846,15 @@ async function pickAndDownload(pool: Candidate[], ctx: { f: typeof fetch; signal
   const coreBonus = (c: Candidate) => (ctx.topic && wordsOf(`${c.title} ${ctx.alts.get(c.id) ?? ""}`).map(singular).some((w) => ctx.topic!.core.has(w)) ? 8 : 0);
   const next = (role: PhotoRole): Candidate | null => {
     const fit = pool
-      .filter((c) => !claimed.has(c.id) && ratioOk(c, role) && (role === "place" ? c.provider === "wikimedia" : c.provider !== "wikimedia"))
-      .sort((a, b) => score(b, role, ctx.category) + coreBonus(b) - (score(a, role, ctx.category) + coreBonus(a)));
+      .filter((c) => !claimed.has(c.id) && ratioOk(c, role) && (role === "place" ? c.provider === "wikimedia" && c.queryRole === "place" : c.provider !== "wikimedia" || c.queryRole !== "place"))
+      .sort((a, b) => score(b, role, ctx.category) + coreBonus(b) + appeal(b) - (score(a, role, ctx.category) + coreBonus(a) + appeal(a)));
     const fresh = role === "place" ? fit : fit.filter((c) => !subjectWords(`${ctx.alts.get(c.id) ?? ""} ${c.title}`).some((w) => usedWords.has(w)));
-    const c = fresh[0] ?? fit[0] ?? null;
+    const newQuery = role === "detail" ? fresh.filter((c) => c.queryRole !== "detail" || !usedQueries.has(c.query)) : fresh;
+    const c = newQuery[0] ?? fresh[0] ?? fit[0] ?? null;
     if (c) {
       claimed.add(c.id);
-      subjectWords(c.title).forEach((w) => usedWords.add(w));
+      subjectWords(`${ctx.alts.get(c.id) ?? ""} ${c.title}`).forEach((w) => usedWords.add(w));
+      if (role === "detail" && c.queryRole === "detail") usedQueries.add(c.query);
     }
     return c;
   };
@@ -985,11 +1006,12 @@ export const PHOTO_CHECK_MODEL = process.env.MODEL_PHOTO_CHECK || "claude-haiku-
 const VISION_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["reject", "hero", "alts"],
+  required: ["reject", "hero", "alts", "best"],
   properties: {
     reject: { type: "array", items: { type: "integer" } },
     hero: { type: "integer" },
     alts: { type: "array", items: { type: "object", additionalProperties: false, required: ["i", "alt"], properties: { i: { type: "integer" }, alt: { type: "string" } } } },
+    best: { type: "array", items: { type: "integer" } },
   },
 };
 
@@ -997,17 +1019,28 @@ const VISION_SCHEMA = {
  * One Haiku call over ≤14 small thumbnails (12 Openverse /thumb/ + 2 Commons 330px, ~30 KB each). Returns ids to drop, the best hero, and
  * plain alt texts. About $0.0005 per site. Recorded with recordUsage("site-photos") and in .notes/next/spend.log.
  */
-async function visionCheck(pool: Candidate[], input: FindPhotosInput, ctx: { f: typeof fetch; signal: AbortSignal; deadline: number }, category?: string): Promise<{ reject: Set<string>; hero: string | null; alts: Map<string, string> }> {
-  // The best stock candidates plus the best 2 place candidates (the place photo is the riskiest pick).
-  const stock = pool.filter((c) => c.thumb && c.provider !== "wikimedia").sort((a, b) => score(b, b.queryRole, category) - score(a, a.queryRole, category)).slice(0, 12);
-  const place = pool.filter((c) => c.thumb && c.provider === "wikimedia").sort((a, b) => score(b, "place") - score(a, "place")).slice(0, 2);
+async function visionCheck(pool: Candidate[], input: FindPhotosInput, ctx: { f: typeof fetch; signal: AbortSignal; deadline: number }, category?: string): Promise<{ reject: Set<string>; hero: string | null; alts: Map<string, string>; order: Map<string, number> }> {
+  // The best 3 candidates of every search (so each product gets a fair look), up to 22, plus the best 2 place
+  // candidates (the place photo is the riskiest pick).
+  const byScore = (a: Candidate, b: Candidate) => score(b, b.queryRole, category) - score(a, a.queryRole, category);
+  const stockAll = pool.filter((c) => c.thumb && (c.provider !== "wikimedia" || c.queryRole !== "place")).sort(byScore);
+  const perQuery = new Map<string, number>();
+  const stock: Candidate[] = [];
+  for (const c of stockAll) {
+    const k = `${c.queryRole}|${c.query}`;
+    if ((perQuery.get(k) ?? 0) >= 3 || stock.length >= 22) continue;
+    perQuery.set(k, (perQuery.get(k) ?? 0) + 1);
+    stock.push(c);
+  }
+  for (const c of stockAll) if (stock.length < 16 && !stock.includes(c)) stock.push(c);
+  const place = pool.filter((c) => c.thumb && c.provider === "wikimedia" && c.queryRole === "place").sort((a, b) => score(b, "place") - score(a, "place")).slice(0, 2);
   const picks = [...stock, ...place];
   if (picks.length < 3) throw new Error("too few thumbnails");
   const sig = AbortSignal.any([ctx.signal, AbortSignal.timeout(Math.max(500, ctx.deadline - Date.now()))]);
   const thumbs = await Promise.all(
     picks.map(async (c) => {
       try {
-        if (c.provider === "wikimedia") await sleep(150, sig);
+        if (c.provider === "wikimedia") await sleep(150 * (place.indexOf(c) + 1 || 1), sig);
         const b = await fetchCapped(ctx.f, c.thumb!, AbortSignal.any([sig, AbortSignal.timeout(3500)]), 200_000);
         const k = sniffImage(b);
         return k ? { c, data: Buffer.from(b).toString("base64"), mime: k.mime } : null;
@@ -1027,12 +1060,12 @@ async function visionCheck(pool: Candidate[], input: FindPhotosInput, ctx: { f: 
   ok.forEach((t, i) => content.push({ type: "text", text: `#${i}` }, { type: "image", source: { type: "base64", media_type: t.mime, data: t.data } }));
   content.push({
     type: "text",
-    text: "Reject any photo that is off-topic for this business, an illustration, painting, engraving, old print or museum object, black-and-white or sepia, a product cut-out on white, a sign or text, dark or blurry, low quality, a famous landmark, or one where a person's face is the main subject. Also reject photos showing uniforms, logos, government-agency or brand marks, or screens with unrelated data, and keep only photos whose main subject is the product, the customer or the setting of this business: fewer photos are better than off-topic ones. Also reject photos whose setting contradicts the business (an outdoor farm or field for an indoor shop or a city service, a costume or party). Pick the best hero: a real, wide, well-lit photo of the thing the business sells or does, with calm space for a headline. For every photo you keep, write a plain alt text (6-16 words) that says only what is visible: the main subject, what it is doing, and the setting (indoors, street, park). Never guess brands, places or actions you cannot see. Use the numbers above. hero is -1 if none fits.",
+    text: "Reject any photo that is off-topic for this business, an illustration, painting, engraving, old print or museum object, black-and-white or sepia, a product cut-out on white, a sign or text, dark or blurry, low quality, a famous landmark, or one where a person's face is the main subject. Also reject photos showing uniforms, logos, government-agency or brand marks, or screens with unrelated data, and keep only photos whose main subject is the product, the customer or the setting of this business: fewer photos are better than off-topic ones. Also reject photos whose setting contradicts the business (an outdoor farm or field for an indoor shop or a city service, a costume or party). Pick the best hero: a real, wide, well-lit photo of the thing the business sells or does, with calm space for a headline. For every photo you keep, write a plain alt text (6-16 words) that says only what is visible: the main subject, what it is doing, and the setting (indoors, street, park). Never guess brands, places or actions you cannot see. Then rank the kept photos in \"best\" as a picky magazine photo editor would for this business's own website: sharp, well lit, well composed, appetising or inviting, the product clearly the subject, no visible text or watermark, no close-up faces; most appealing first. Use the numbers above. hero is -1 if none fits.",
   });
   const msg = await client.messages.create(
     {
       model: PHOTO_CHECK_MODEL,
-      max_tokens: 3000,
+      max_tokens: 4000,
       messages: [{ role: "user", content }],
       output_config: { effort: "low", format: { type: "json_schema", schema: VISION_SCHEMA } },
     } as never,
@@ -1053,9 +1086,9 @@ async function visionCheck(pool: Candidate[], input: FindPhotosInput, ctx: { f: 
 }
 
 /** Parses the vision JSON against the shown candidates (exported for tests). Bad JSON = keep everything. */
-export function applyVision(text: string, shown: Candidate[]): { reject: Set<string>; hero: string | null; alts: Map<string, string> } {
-  const out = { reject: new Set<string>(), hero: null as string | null, alts: new Map<string, string>() };
-  let j: { reject?: unknown; hero?: unknown; alts?: unknown };
+export function applyVision(text: string, shown: Candidate[]): { reject: Set<string>; hero: string | null; alts: Map<string, string>; order: Map<string, number> } {
+  const out = { reject: new Set<string>(), hero: null as string | null, alts: new Map<string, string>(), order: new Map<string, number>() };
+  let j: { reject?: unknown; hero?: unknown; alts?: unknown; best?: unknown };
   try {
     j = JSON.parse(text) as typeof j;
   } catch {
@@ -1070,6 +1103,11 @@ export function applyVision(text: string, shown: Candidate[]): { reject: Set<str
       const c = at(a?.i);
       const alt = typeof a?.alt === "string" ? a.alt.replace(/[<>"]/g, "").replace(/\s+/g, " ").trim().slice(0, 140) : "";
       if (c && alt) out.alts.set(c.id, alt);
+    }
+  if (Array.isArray(j.best))
+    for (const i of j.best) {
+      const c = at(i);
+      if (c && !out.reject.has(c.id) && !out.order.has(c.id)) out.order.set(c.id, out.order.size);
     }
   return out;
 }

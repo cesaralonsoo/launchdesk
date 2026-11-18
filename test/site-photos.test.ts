@@ -163,12 +163,12 @@ test("altFrom and credits: scene-only alt, BY/BY-SA credited with link and licen
 });
 
 // ───────────────────────────────────────────── findPhotos (fake network)
-test("findPhotos: ≤6 verified photos, hero first, roles, ≤6 searches, credits for every photo", async () => {
+test("findPhotos: ≤8 verified photos, hero first, roles, ≤9 searches, credits for every photo", async () => {
   P._resetRateLimit();
   const { f, calls } = fakeFetch();
   const photos = await P.findPhotos({ idea: "A plant shop in Leith", city: "Leith Shore", mock: false, fetch: f, cache: null, log: quiet });
   // the fake search answers every query with the same mixed hits: only the plant photos (+ the place) are on topic
-  assert.ok(photos.length >= 3 && photos.length <= 6, `got ${photos.length}`);
+  assert.ok(photos.length >= 3 && photos.length <= 8, `got ${photos.length}`);
   assert.deepEqual(photos.filter((p) => p.provider !== "wikimedia").map((p) => p.id).sort(), ["rawpixel:a1", "wordpress:a2"], "no laptop, barista or dog photo for a plant shop");
   assert.equal(photos[0]!.role, "hero");
   assert.ok(photos[0]!.width / photos[0]!.height >= 1.25, "hero is landscape");
@@ -187,7 +187,7 @@ test("findPhotos: ≤6 verified photos, hero first, roles, ≤6 searches, credit
   assert.equal(place!.provider, "wikimedia");
   assert.equal(place!.license, "by-sa");
   const searches = calls.filter((u) => u.startsWith("https://api.openverse.org/v1/images/?"));
-  assert.ok(searches.length <= 6, `${searches.length} Openverse searches`);
+  assert.ok(searches.length <= 9, `${searches.length} Openverse searches`);
   assert.ok(calls.every((u) => !u.includes("image_1300")), "never downloads the watermarked rawpixel size");
 });
 
@@ -252,7 +252,7 @@ test("mock: bundled fixtures, no network, on-topic or nothing", async () => {
   assert.equal(P.mockPhotos("Invoicing app for freelancers").length, 2);
   assert.deepEqual(P.mockPhotos("Yoga for seniors"), [], "no fixture for this category: zero photos, not wrong ones");
   const filled = P.mockPhotos("Yoga for seniors", { fill: true });
-  assert.equal(filled.length, 6);
+  assert.equal(filled.length, 8);
   for (const p of filled) assert.ok(P.sniffImage(p.bytes) && p.license === "cc0" && p.sourceUrl.startsWith("https://"));
 });
 
@@ -276,7 +276,7 @@ test("storage and GET /s/:slug/p/:n: bytes round-trip, long cache, nosniff, 404s
   const photos = P.mockPhotos("Plant shop", { fill: true });
   await DB.savePhotos("proj1", photos);
   const meta = await DB.listPhotos("proj1");
-  assert.equal(meta.length, 6);
+  assert.equal(meta.length, 8);
   assert.equal((meta[0] as unknown as { bytes?: unknown }).bytes, undefined, "metadata has no bytes");
   assert.equal(meta[0]!.hash, photos[0]!.hash);
   const got = await DB.getPhotoBytes("proj1", 1);
