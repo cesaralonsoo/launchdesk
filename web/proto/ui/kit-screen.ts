@@ -38,7 +38,8 @@ const TEMPLATES: Array<{ id: SiteTemplate; name: string; note: string }> = [
 ];
 
 // ───────────────────────────── the offer card (after the report)
-export function kitOfferHtml(cents = 50): string {
+/** `sample`: a practice run or the tour (a MOCK_AI server): nothing is charged, so the footer says so. */
+export function kitOfferHtml(cents = 50, sample = false): string {
   return `
   <section class="kit-offer">
     <span class="eyebrow" data-st>Next step</span>
@@ -50,7 +51,7 @@ export function kitOfferHtml(cents = 50): string {
       <li>${I.report(18)}<span><b>Your 30-day plan</b>What to do each week to win your first customers, with posts ready to copy.</span></li>
     </ul>
     <button class="btn btn-primary ko-go" data-act="next" type="button" data-st><span>Get my launch kit</span><span class="btn-price">${usd(cents)}</span></button>
-    <p class="ko-foot" data-st>Paid in Bitcoin Cash from your wallet.</p>
+    <p class="ko-foot" data-st>${sample ? "Sample run · nothing is charged." : "Paid in Bitcoin Cash from your wallet."}</p>
   </section>`;
 }
 
@@ -188,21 +189,6 @@ export function kitScreenHtml(data: KitPayload): string {
       <p class="kit-own">This page is yours on this device. Keep your private link to come back.</p>
       <button type="button" class="btn btn-primary" data-kit-act="offices"><span>Open your offices</span>${I.arrow(16)}</button>
     </footer>
-  </section>`;
-}
-
-/** "Your offices" teaser: what comes after the kit. */
-export function officesTeaserHtml(name: string): string {
-  return `
-  <section class="offices kit-offices">
-    <header class="of-head"><h2 class="t-display">Your offices</h2><button class="btn btn-ghost btn-icon ov-x" data-act="close" type="button" aria-label="Close">${I.close(16)}</button></header>
-    <p class="of-sub"><b>Coming next.</b> The team that made ${esc(name)} keeps working for you, and you pay only for each task you ask for.</p>
-    <ul class="ko-list">
-      <li>${I.report(18)}<span><b>Answer your customers</b>Replies to messages and reservations, in your voice.</span></li>
-      <li>${I.brand(18)}<span><b>Post your plan</b>The texts of your 30-day plan, ready on the right day.</span></li>
-      <li>${I.globe(18)}<span><b>Keep your website fresh</b>New offers and opening hours with one sentence from you.</span></li>
-    </ul>
-    <p class="of-sub">Each task is paid in Bitcoin Cash when you ask for it. No subscription.</p>
   </section>`;
 }
 
