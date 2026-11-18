@@ -25,15 +25,37 @@
 
 /* page mode: only on the untouched home. The world sits under the hero and scrolls away with it. */
 html.home, html.home body { height: auto; overflow-x: clip; overflow-y: auto; background: #F6F4EF; scroll-behavior: smooth; }
-html.home #world { position: absolute; left: 0; right: 0; top: 0; bottom: auto; height: clamp(640px, 100svh, 1000px); z-index: 0; background: #F6F4EF !important; }
+html.home { --blaze-h: 36px; }
+html.home #world { position: absolute; left: 0; right: 0; top: var(--blaze-h); bottom: auto; height: calc(clamp(640px, 100svh, 1000px) - var(--blaze-h)); z-index: 0; background: #F6F4EF !important; }
 html.home #world canvas { opacity: 0; transition: opacity 400ms ease; }
 html.home.h-ready #world canvas { opacity: 1; }
 html.home .ui.v7 { z-index: 3; }
 /* the app's own surfaces wait while the home is up (the "My ideas" overlay still opens over it) */
 html.home .ui.v7 > :not(.overlay) { display: none !important; }
 
+/* ─── BCH BLAZE 2026 strip (banner/index.ts mountTopBar): the very top of the page, light and one row ─── */
+.h-blaze { position: relative; z-index: 6; height: var(--blaze-h, 36px); background: var(--surface); border-bottom: 1px solid var(--line); font-size: 12.5px; color: var(--muted); }
+.h-blaze-in { height: 100%; padding: 0 32px; display: flex; align-items: center; justify-content: space-between; gap: 16px; white-space: nowrap; overflow-x: auto; scrollbar-width: none; }
+.h-blaze-in::-webkit-scrollbar { display: none; }
+.h-blaze-ev { display: inline-flex; align-items: center; gap: 8px; }
+.h-blaze-ev i { width: 7px; height: 7px; border-radius: 50%; background: var(--bch); flex: none; }
+.h-blaze-ev b, .h-blaze-vote b { color: var(--ink); font-weight: 600; letter-spacing: .01em; }
+.h-blaze-r { display: inline-flex; align-items: center; gap: 18px; }
+.h-blaze-r a { display: inline-flex; align-items: center; gap: 4px; color: var(--ink-2); font-weight: 550; text-decoration: none; }
+.h-blaze-r a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.h-blaze-vote { display: inline-flex; align-items: center; gap: 8px; }
+.h-blaze-vote code { font: 500 11.5px/1 ui-monospace, "SF Mono", Menlo, monospace; color: var(--ink-2); background: var(--fill); padding: 5px 7px; border-radius: 6px; }
+.h-blaze-as { display: none; }
+.h-blaze-vote button { height: 24px; padding: 0 10px; border-radius: var(--r-pill); border: 1px solid var(--line-2); background: var(--surface); font-size: 12px; font-weight: 600; color: var(--ink); cursor: pointer; }
+.h-blaze-vote button:hover { background: #F3F2EE; }
+.h-blaze-vote button[data-done="1"] { color: var(--bch-ink); border-color: var(--bch); }
+@media (max-width: 1100px) {
+  .h-blaze-tr, .h-blaze-al { display: none; }
+  .h-blaze-as { display: inline; }
+}
+
 /* ─── top bar ─── */
-.h-top { position: absolute; inset: 0 0 auto 0; height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 32px; z-index: 5; }
+.h-top { position: absolute; inset: var(--blaze-h, 0px) 0 auto 0; height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 32px; z-index: 5; }
 .h-top-l { display: flex; align-items: center; gap: 8px; }
 .h-brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; }
 .h-brand svg { display: block; }
@@ -46,7 +68,7 @@ html.home .ui.v7 > :not(.overlay) { display: none !important; }
 .h-nav .h-ph { display: none; }
 
 /* ─── hero ─── */
-.h-hero { position: relative; min-height: var(--hero-h); display: flex; align-items: center; padding: 72px 0 56px; pointer-events: none; }
+.h-hero { position: relative; min-height: calc(var(--hero-h) - var(--blaze-h, 0px)); display: flex; align-items: center; padding: 72px 0 56px; pointer-events: none; }
 .h-hero > * { pointer-events: auto; }
 .h-stage { position: absolute; inset: 0; pointer-events: none; }
 .h-pins { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
@@ -136,7 +158,7 @@ html.home .ui.v7 > :not(.overlay) { display: none !important; }
 .h-rep-s small { font-size: 14px; font-weight: 500; color: var(--muted); letter-spacing: 0; margin-left: 2px; }
 .h-rep-v { font: 650 13px/1 var(--font-t); color: var(--warn); background: #FBF1E2; padding: 6px 9px; border-radius: var(--r-pill); }
 .h-rep-f { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-.h-rep-f li { display: grid; grid-template-columns: 104px 1fr 26px; align-items: center; gap: 10px; font-size: 12.5px; color: var(--ink-2); }
+.h-rep-f li { display: grid; grid-template-columns: minmax(0, 150px) 1fr 26px; align-items: center; gap: 10px; font-size: 12.5px; line-height: 16px; color: var(--ink-2); }
 .h-rep-f em { font-style: normal; color: var(--faint); font-size: 11px; }
 .h-rep-f i { height: 6px; border-radius: 3px; background: rgba(11, 13, 18, .08); overflow: hidden; }
 .h-rep-f b { display: block; height: 100%; border-radius: 3px; }
@@ -277,7 +299,17 @@ html.home .ui.v7 > :not(.overlay) { display: none !important; }
 /* ─── phones: a normal scrolling document, the 3D is a block at the top ─── */
 @media (max-width: 767px) {
   .ldh { --gutter: 16px; }
-  html.home #world { top: 52px; height: 300px; }
+  html.home #world { top: calc(52px + var(--blaze-h)); height: 300px; }
+  .h-top { inset: auto; }
+  .h-blaze-ev i, .h-blaze-bch { display: none; }
+  html.home { --blaze-h: 34px; }
+  .h-blaze { font-size: 12px; }
+  .h-blaze-in { padding: 0 12px; gap: 8px; }
+  .h-blaze-r { gap: 10px; }
+  .h-blaze-vl { display: none; }
+  .h-blaze-vote { gap: 6px; }
+  .h-blaze-vote code { padding: 4px 5px; font-size: 11px; }
+  .h-blaze-vote button { height: 26px; padding: 0 9px; }
   .h-top { position: relative; height: 52px; padding: 0 16px; }
   .h-brand b { font-size: 17px; }
   .h-tag { display: none; }
@@ -356,3 +388,16 @@ html.home .ui.v7 > :not(.overlay) { display: none !important; }
 /* fix round: the strip's price never starts its own line with a stray middle dot */
 .h-cell .h-mid { font-style: normal; }
 @media (max-width: 1100px) { .h-cell .h-mid { display: none; } }
+
+/* ─── portrait tablets (768–1100 px, taller than wide): the hero stacks like on phones, with a bigger 3D block on top
+   and the copy centred below it (home.ts stacked()), so the building is never hidden under the copy column ─── */
+@media (min-width: 768px) and (max-width: 1100px) and (max-aspect-ratio: 1/1) {
+  .ldh { --stack-h: min(48vh, 540px); }
+  html.home #world { top: calc(64px + var(--blaze-h)); height: min(48vh, 540px); }
+  .h-hero { min-height: 0; display: flex; flex-direction: column; align-items: stretch; padding: 64px 0 24px; }
+  .h-stage { position: relative; inset: auto; height: var(--stack-h); order: 1; flex: none; }
+  .h-copy { order: 3; width: auto; max-width: 640px; margin: 0 auto; padding: 28px 32px 0; }
+  .h-h1 { font-size: 44px; line-height: 50px; }
+  .h-chip { right: 20px; bottom: 14px; }
+  .h-cue { display: none; }
+}

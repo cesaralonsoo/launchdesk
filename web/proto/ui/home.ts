@@ -15,7 +15,7 @@ import { STEP_EVENT } from "../game/types";
 import { exampleKit, exampleName, examples, mainExample, type ExampleCard } from "./example";
 import { checkReportHash } from "./escrow-proof";
 import { mountLabels, type LabelPoint } from "./labels";
-import { mountFooter } from "../banner";
+import { mountFooter, mountTopBar } from "../banner";
 import { liveConfig } from "../live/adapter";
 import { projects as savedProjects } from "../../src/app/projects";
 // the real task catalog the server charges from (plain data; the prices on the page are the prices you pay)
@@ -44,6 +44,8 @@ const short = (h: string) => (h.length > 20 ? `${h.slice(0, 8)}…${h.slice(-8)}
 const cents = (c: number) => (c >= 100 ? `$${(c / 100).toFixed(2)}` : `${c}¢`);
 const day = (ms: number) => new Date(ms).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 const phone = () => matchMedia("(max-width: 767px)").matches;
+/** The hero stacks (3D block on top, copy below): phones, and portrait tablets (home.css). */
+const stacked = () => phone() || matchMedia("(min-width: 768px) and (max-width: 1100px) and (max-aspect-ratio: 1/1)").matches;
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /** The first words of an idea for the door sign ("A coffee kiosk at a metro exit" → "Coffee kiosk"). */
@@ -107,14 +109,15 @@ export function mountHome(host: HTMLElement, deps: HomeDeps): () => void {
       worldEl.style.removeProperty("height");
       return;
     }
-    const top = phone() ? stage.offsetTop + hero.offsetTop : 0;
-    const h = phone() ? stage.offsetHeight : hero.offsetHeight;
+    // the hero starts under the BLAZE strip at the top of the page
+    const top = stacked() ? stage.offsetTop + hero.offsetTop : hero.offsetTop;
+    const h = stacked() ? stage.offsetHeight : hero.offsetHeight;
     worldEl.style.top = `${top}px`;
     worldEl.style.height = `${h}px`;
   }
   function applyInsets() {
     if (!active) return;
-    if (phone()) setInsetsApp({ left: 0, right: 0, top: 0, bottom: 0 });
+    if (stacked()) setInsetsApp({ left: 0, right: 0, top: 0, bottom: phone() ? 0 : 40 });
     else {
       const r = copy.getBoundingClientRect();
       setInsetsApp({ left: Math.round(r.right + 40), right: 16, top: 72, bottom: 64 });
@@ -378,6 +381,8 @@ export function mountHome(host: HTMLElement, deps: HomeDeps): () => void {
   }).join("");
   const footer = $("#blaze");
   if (footer) offs.push(mountFooter(footer));
+  const topBar = $("#blaze-top");
+  if (topBar) offs.push(mountTopBar(topBar));
   void liveConfig().then((c) => {
     const notCoffee = (c?.sampleIdeas ?? []).filter((x) => !/coffee|caf[eé]/i.test(x));
     if (notCoffee.length) samples = notCoffee;
