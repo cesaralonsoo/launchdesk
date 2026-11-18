@@ -392,12 +392,12 @@ html.home .ui.v7 > :not(.overlay) { display: none !important; }
 /* ─── portrait tablets (768–1100 px, taller than wide): the hero stacks like on phones, with a bigger 3D block on top
    and the copy centred below it (home.ts stacked()), so the building is never hidden under the copy column ─── */
 @media (min-width: 768px) and (max-width: 1100px) and (max-aspect-ratio: 1/1) {
-  .ldh { --stack-h: min(48vh, 540px); }
-  html.home #world { top: calc(64px + var(--blaze-h)); height: min(48vh, 540px); }
+  .ldh { --stack-h: min(36vh, 420px); }
+  html.home #world { top: calc(64px + var(--blaze-h)); height: min(36vh, 420px); }
   .h-hero { min-height: 0; display: flex; flex-direction: column; align-items: stretch; padding: 64px 0 24px; }
   .h-stage { position: relative; inset: auto; height: var(--stack-h); order: 1; flex: none; }
-  .h-copy { order: 3; width: auto; max-width: 640px; margin: 0 auto; padding: 28px 32px 0; }
-  .h-h1 { font-size: 44px; line-height: 50px; }
+  .h-copy { order: 3; width: auto; max-width: 640px; margin: 0 auto; padding: 18px 32px 0; }
+  .h-h1 { font-size: 40px; line-height: 46px; margin-top: 10px; }
   .h-chip { right: 20px; bottom: 14px; }
   .h-cue { display: none; }
 }
