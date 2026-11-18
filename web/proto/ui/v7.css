@@ -499,7 +499,12 @@
 .recap li { display: flex; gap: 12px; align-items: flex-start; font-size: 14px; color: var(--c-muted); }
 .recap li b { display: block; color: var(--c-ink); font-weight: 650; }
 .recap .st-dot { margin-top: 2px; }
-.of-list .of-t b { display: inline-flex; gap: 8px; align-items: center; }
+.of-list .of-t b { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; }
+/* My ideas rows: title + line on the left, score on the right; nothing is cut off on a phone. */
+.v7 .of-list button { grid-template-columns: minmax(0, 1fr) auto; align-items: start; }
+.v7 .of-t > span { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.v7 .of-t b .of-tag { overflow: visible; white-space: nowrap; flex: none; text-overflow: clip; }
+.v7 .of-r { padding-top: 1px; text-align: right; }
 
 /* phones: every step panel is a sheet at 55% of the screen; its grip (or scrolling it) opens it full height */
 .v7 .panel[data-pos="sheet"] { max-height: 55vh; max-height: 55dvh; transition: opacity 360ms var(--ease), transform var(--t-in) var(--spring), max-height 420ms var(--ease); overscroll-behavior: contain; }

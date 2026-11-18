@@ -17,6 +17,7 @@ import { kitOfferHtml } from "./kit-screen";
 import { knownExamples, mainExample, pausedHtml } from "./example";
 import { fullSentences, leadLine, plainText, verdictWhy, VERDICT_RULE_V7 } from "../../../server/v7";
 import { OFFICES } from "../../../server/offices/catalog";
+import { projects as savedRuns } from "../../src/app/projects";
 
 /** WP4: the Launch kit price, in cents (server config.priceCents.build). */
 export const KIT_CENTS = 50;
@@ -465,9 +466,15 @@ function ideasList(f: ProtoFlowV7): string {
   const mine = f.mine.filter((p) => !finished.some((x) => x.id === p.id) && !/^ex-/.test(p.id)).map((m) => f.projects.find((x) => x.id === m.id) ?? m);
   const row = (p: (typeof f.projects)[number]) => {
     const r = p.v7.report;
+    // This browser's saved row knows the score and how far the run got, even before the run is opened again.
+    const sv = savedRuns.get(p.id);
+    const score = r?.score ?? sv?.score ?? null;
+    const verdict = r?.verdict ?? sv?.verdict ?? undefined;
+    const stage = { new: "Not paid yet", validating: "Research running", validated: "Report ready", building: "Launch kit in progress", live: "Launch kit ready" }[sv?.stage ?? "new"];
+    const sub = p.idea.trim() && p.idea.trim() !== p.title.trim() ? p.idea : stage;
     return `<li><button type="button" data-act="switch" data-id="${esc(p.id)}" aria-current="${p.id === f.project.id}">
-        <span class="of-t"><b>${esc(p.title)}</b><span>${esc(!r && p.idea.trim() === p.title.trim() ? "No report yet" : p.idea)}</span></span>
-        <span class="of-r">${r ? `<b class="num">${one(r.score)}</b><em>${esc(verdictOf(r.verdict))}</em>` : `<em>No report yet</em>`}</span>
+        <span class="of-t"><b>${esc(p.title)}</b><span>${esc(sub)}</span></span>
+        <span class="of-r">${score != null ? `<b class="num">${one(score)}</b><em>${esc(verdictOf(verdict ?? undefined))}</em>` : `<em>${esc(stage)}</em>`}</span>
       </button></li>`;
   };
   return `${mine.length ? `<ul class="of-list">${mine.map(row).join("")}</ul>` : `<p class="of-sub">Nothing yet. Your first idea will be here.</p>`}
