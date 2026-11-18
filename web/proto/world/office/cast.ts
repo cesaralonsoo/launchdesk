@@ -363,6 +363,37 @@ export class Figure {
       const a = new Float32Array(n * 3);
       for (let i = 0; i < n; i++) (a[i * 3] = eyeC.r), (a[i * 3 + 1] = eyeC.g), (a[i * 3 + 2] = eyeC.b);
       geo.setAttribute("color", new THREE.Float32BufferAttribute(a, 3));
+      // fold the two catchlights into the eye itself: one draw call per eye instead of three (they still blink with it)
+      const parts: THREE.BufferGeometry[] = [geo.index ? geo.toNonIndexed() : geo];
+      for (const ch of [...e.children]) {
+        if (!(ch instanceof THREE.Mesh)) continue;
+        ch.updateMatrix();
+        const cg = (ch.geometry as THREE.BufferGeometry).toNonIndexed();
+        cg.applyMatrix4(ch.matrix);
+        parts.push(cg);
+        ch.geometry.dispose();
+        ch.removeFromParent();
+      }
+      if (parts.length > 1) {
+        let count = 0;
+        for (const g of parts) count += g.attributes.position!.count;
+        const pos = new Float32Array(count * 3), nor = new Float32Array(count * 3), col = new Float32Array(count * 3);
+        let o = 0;
+        for (const g of parts) {
+          pos.set(g.attributes.position!.array as Float32Array, o * 3);
+          nor.set(g.attributes.normal!.array as Float32Array, o * 3);
+          col.set(g.attributes.color!.array as Float32Array, o * 3);
+          o += g.attributes.position!.count;
+          g.dispose();
+        }
+        const merged = new THREE.BufferGeometry();
+        merged.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+        merged.setAttribute("normal", new THREE.BufferAttribute(nor, 3));
+        merged.setAttribute("color", new THREE.BufferAttribute(col, 3));
+        merged.computeBoundingSphere();
+        if (geo !== parts[0]) geo.dispose();
+        e.geometry = merged;
+      }
     }
 
     // props: a laptop on the lap (bedroom work), a paper to present a finding
