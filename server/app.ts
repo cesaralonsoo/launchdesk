@@ -597,9 +597,11 @@ app.get("/s/:slug", async (c, next) => {
 });
 
 app.get("/r/:shareId", async (c, next) => {
+  const p = await sharedProject(c.req.param("shareId")).catch(() => null);
+  // the current app never makes /r links: an unknown or revoked one goes to the real home, not the old v4 page
+  if (!p) return c.redirect("/", 302);
   const html = readIndex();
   if (!html) return next();
-  const p = await sharedProject(c.req.param("shareId")).catch(() => null);
   const title = p?.results.mia?.title ?? "Shared report";
   const leo = p?.results.leo;
   const verdict = leo ? `${leo.score.toFixed(1)}/10 · ${leo.verdict === "go" ? "Go" : leo.verdict === "pivot" ? "Pivot first" : "No-go"}. ` : "";
