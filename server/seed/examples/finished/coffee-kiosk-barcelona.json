@@ -1,5 +1,5 @@
 {
- "_source": "Snapshot of real runs (no edits to the content). Report, sources and escrow: local.db project xFjb99Z6b4, 16 Nov 2026 (paid $0.10 from Selene on Bitcoin Cash mainnet; report $0.0654 of AI, 77.7 s). Launch kit: the brand name and logo from the first kit run on 16 Nov; the website plan, its photos (CC0 and CC BY-SA, credited on the page), the designed page and the marketing plan from a real AI run on 18 Nov 2026 made from this report in test mode (site $0.0181, photo check $0.0019, page $0.0836, marketing $0.1117; nothing paid).",
+ "_source": "Snapshot of real runs (no edits to the content). Report, sources and escrow: local.db project xFjb99Z6b4, 16 Nov 2026 (paid $0.10 from Selene on Bitcoin Cash mainnet; report $0.0654 of AI, 77.7 s). Launch kit: the brand name and logo from the first kit run on 16 Nov; the website plan, its photos (CC0 and CC BY-SA, credited on the page), the designed page and the marketing plan from a real AI run on 18 Nov 2026 made from this report in test mode (site $0.0177, photo check $0.0022, page $0.0783, marketing $0.1117; nothing paid; only the photos the page uses are kept).",
  "id": "ex-coffee-bcn",
  "slug": "sortida",
  "idea": "A specialty coffee kiosk at a Barcelona metro exit, €3 flat whites for commuters",
@@ -8,7 +8,7 @@
   "title": "Coffee kiosk in Barcelona",
   "run": "Real run on 16 Nov 2026",
   "paid": "Paid $0.10 in Bitcoin Cash on mainnet",
-  "kitNote": "Launch kit: a real AI run from this report on 18 Nov 2026, made in test mode (not paid). The brand name and logo come from the first kit run."
+  "kitNote": "Launch kit: a real AI run from this report on 18 Nov 2026, made in test mode (not paid). The brand name and logo come from the first kit run. Menu prices are opening prices: the flat white is the founder's own, the cortado sits in the report's sourced range, the rest are estimates."
  },
  "jobs": [
   {
@@ -2179,54 +2179,43 @@
     "v": 1,
     "lang": "en",
     "seo": {
-     "title": "Sortida: Flat White Kiosk at a Barcelona Metro Exit",
-     "description": "Specialty flat whites at a Barcelona metro exit. Quick takeaway coffee for commuters, reserve and pay with Bitcoin Cash from your phone."
+     "title": "Sortida – Flat White Kiosk at Barcelona Metro Exit",
+     "description": "Specialty flat whites at a Barcelona metro exit kiosk. Quick takeaway coffee for weekday commuters, reserve and pay from your phone."
     },
     "hero": {
-     "eyebrow": "Barcelona metro exit",
+     "eyebrow": "Barcelona metro kiosk",
      "headline": "A good flat white, one step out of the metro",
-     "sub": "Sortida is a specialty coffee kiosk opening soon at a Barcelona metro exit. Quick takeaway flat whites for weekday commuters, ready as you walk through.",
+     "sub": "Sortida is a small specialty coffee kiosk opening soon by a Barcelona metro exit. Quick takeaway flat whites for weekday commuters, ready on your way to work.",
      "cta": "Reserve yours",
-     "secondary": "See how it works"
+     "secondary": "See the menu"
     },
     "sections": [
      {
       "kind": "how-it-works-for-customer",
-      "title": "Three steps to your coffee",
+      "title": "How it works",
       "steps": [
        {
         "icon": "phone",
         "title": "Reserve from your phone",
-        "body": "Pick your flat white and reserve it before you reach the exit."
+        "body": "Pick your flat white and pay with Bitcoin Cash before you reach the station."
        },
        {
         "icon": "walk",
         "title": "Walk out of the metro",
-        "body": "The kiosk is right at the exit, so there is no detour."
+        "body": "The kiosk is right by the exit, so there is no detour on your commute."
        },
        {
         "icon": "coffee",
         "title": "Take your coffee",
-        "body": "Your flat white is ready to take away. Drink it on the way to work."
+        "body": "Your flat white is made fresh and handed over in a takeaway cup."
        }
       ]
-     },
-     {
-      "kind": "offer",
-      "title": "Your flat white, takeaway",
-      "item": "One flat white, takeaway",
-      "bullets": [
-       "Made by a barista at the kiosk",
-       "Right at the metro exit",
-       "Reserve and pay from your phone"
-      ],
-      "note": "Reserve ahead, then pick it up at the kiosk on your way."
      },
      {
       "kind": "menu",
       "label": "menu",
       "title": "Menu",
-      "intro": "Short and simple. Everything is made to take away.",
+      "intro": "Simple coffee, made to take away.",
       "note": "Opening menu · prices may change before we open",
       "groups": [
        {
@@ -2239,10 +2228,10 @@
           "photo": "espresso"
          },
          {
-          "name": "Americano",
-          "desc": "Espresso with hot water",
-          "price": 2.2,
-          "photo": "americano"
+          "name": "Double espresso",
+          "desc": "Two shots in one cup",
+          "price": 2.4,
+          "photo": "double espresso"
          }
         ]
        },
@@ -2251,7 +2240,7 @@
         "items": [
          {
           "name": "Flat white",
-          "desc": "Double espresso, steamed whole milk, takeaway",
+          "desc": "Double espresso, steamed milk, takeaway cup",
           "price": 3,
           "photo": "flat white",
           "offer": true
@@ -2259,45 +2248,39 @@
          {
           "name": "Cortado",
           "desc": "Espresso with a little steamed milk",
-          "price": 2.6,
+          "price": 3,
           "photo": "cortado"
          },
          {
-          "name": "Latte",
-          "desc": "Espresso with more steamed milk",
-          "price": 3.4,
-          "photo": "latte"
-         },
-         {
           "name": "Cappuccino",
-          "desc": "Espresso, steamed milk, milk foam",
+          "desc": "Espresso, steamed milk, light foam",
           "price": 3.2,
           "photo": "cappuccino"
-         }
-        ]
-       },
-       {
-        "name": "Something to eat",
-        "items": [
-         {
-          "name": "Croissant",
-          "desc": "Plain butter croissant",
-          "price": 2.2,
-          "photo": "croissant"
          },
          {
-          "name": "Slice of cake",
-          "desc": "A simple slice to go",
-          "price": 3.2,
-          "photo": "cake slice"
+          "name": "Latte",
+          "desc": "Espresso with plenty of steamed milk",
+          "price": 3.5,
+          "photo": "latte"
          }
         ]
        }
       ]
      },
      {
+      "kind": "offer",
+      "title": "Your morning flat white",
+      "item": "One flat white, takeaway",
+      "bullets": [
+       "Made by a barista while you wait",
+       "Takeaway cup, ready to carry",
+       "Reserve and pay from your phone"
+      ],
+      "note": "Reserve ahead, then pick it up at the kiosk as you leave the metro."
+     },
+     {
       "kind": "proof-stats",
-      "title": "How we compare",
+      "title": "Coffee prices around the city",
       "stats": [
        {
         "value": "€3.90",
@@ -2315,13 +2298,13 @@
      },
      {
       "kind": "about",
-      "title": "Why Sortida exists",
-      "body": "We want people who walk out of the metro every morning to find a good flat white right there. No queue across the street, no skipping coffee. One step out, your coffee in hand."
+      "title": "Coffee where you already walk",
+      "body": "Most commuters either queue somewhere out of their way or skip coffee altogether. Sortida is a small kiosk placed right at the metro exit. We want you to have a good flat white, a fair price and no wait, so you can get on with your day."
      },
      {
       "kind": "local",
-      "title": "At a Barcelona metro exit",
-      "body": "Opening soon by a metro exit in Barcelona, made for the people who walk through it on weekdays.",
+      "title": "Right by the metro exit",
+      "body": "Opening soon at a Barcelona metro exit, made for people who walk through it on their way to work.",
       "area": "Barcelona",
       "hours": ""
      },
@@ -2331,30 +2314,30 @@
       "items": [
        {
         "q": "Where is Sortida?",
-        "a": "We are opening soon at a metro exit in Barcelona. Reserve now and we will tell you everything you need for pickup."
+        "a": "We are opening soon at a metro exit in Barcelona. Join the list and we will tell you as soon as the kiosk is ready."
        },
        {
         "q": "How do I pay?",
-        "a": "You reserve and pay with Bitcoin Cash from your phone. Then you just collect your flat white at the kiosk."
+        "a": "You reserve and pay with Bitcoin Cash from your phone. Then you pick up your flat white at the kiosk."
        },
        {
-        "q": "Is it takeaway only?",
-        "a": "Yes. Sortida is a small kiosk made for people on their way to work, so every drink is made to go."
+        "q": "Is it a quick stop?",
+        "a": "Yes. It is a takeaway kiosk by the exit, built for people on their way to work."
        },
        {
-        "q": "What do I get when I reserve?",
-        "a": "One flat white, takeaway, made by a barista at the kiosk and ready for you when you walk out of the metro."
+        "q": "What can I order?",
+        "a": "Flat whites, plus espresso, cortado, cappuccino and latte. The list is short on purpose so the coffee comes out fast."
        },
        {
-        "q": "Who is it for?",
-        "a": "Weekday commuters who want a quick, good coffee on the way, instead of buying elsewhere or skipping it."
+        "q": "Can I drink it there?",
+        "a": "Sortida is a kiosk, so everything is takeaway. Your coffee comes in a cup you can carry on your way."
        }
       ]
      }
     ],
     "finalCta": {
-     "headline": "Your coffee is one step out",
-     "sub": "Reserve your flat white and pick it up on your way to work.",
+     "headline": "Your coffee, one step out",
+     "sub": "Reserve your flat white and pick it up on your way out of the metro.",
      "cta": "Reserve yours"
     },
     "footer": {
@@ -2388,6 +2371,7 @@
      "howItWorks": "How it works",
      "offer": "Opening offer",
      "menuNote": "Opening menu · prices may change before we open",
+     "priceNote": "Opening prices · they may change before we open",
      "offerTag": "{price} opening offer"
     },
     "photoQueries": {
@@ -2399,15 +2383,15 @@
       "flat white",
       "latte art",
       "espresso cup",
-      "croissant",
-      "takeaway coffee",
+      "coffee beans",
+      "takeaway coffee cup",
       "espresso",
-      "americano",
+      "double espresso",
       "cortado"
      ],
      "people": [
       "barista pouring",
-      "commuter coffee"
+      "person holding coffee"
      ]
     }
    },
@@ -2417,71 +2401,49 @@
     {
      "n": 1,
      "ref": "p1",
-     "id": "rawpixel:df4f69f2-7562-4277-b2b5-70d7065a8724",
+     "id": "rawpixel:7be80175-5593-4f40-a439-9b14bcdadae3",
      "role": "hero",
-     "alt": "Latte with heart-shaped foam in a blue cup on a wooden table, with a cookie",
-     "title": "Free flat white coffee, latte",
+     "alt": "Hand pouring steamed milk into white paper cup of coffee at counter.",
+     "title": "barista pouring milk coffee cup",
      "credit": "Rawpixel",
      "license": "cc0",
      "licenseVersion": "1.0",
      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-     "sourceUrl": "https://www.rawpixel.com/image/5919178/image-public-domain-coffee-free",
+     "sourceUrl": "https://www.rawpixel.com/image/3303274/free-photo-image-coffee-beverage-camera",
      "provider": "rawpixel",
      "width": 1024,
      "height": 683,
      "mime": "image/webp",
-     "size": 239212,
-     "hash": "fef6facac99185dcb3131b46701398ad03d538a0911704f905b695eac023d01b",
-     "shows": "Latte with heart-shaped foam in a blue cup on a wooden table, with a cookie (checked by looking at the photo)"
+     "size": 107068,
+     "hash": "2ec94cddd7c815d485fa5ac9533749948a42e629d1cbf21596508a1c83ff59f6",
+     "shows": "Hand pouring steamed milk into white paper cup of coffee at counter. (checked by looking at the photo)"
     },
     {
      "n": 2,
      "ref": "p2",
-     "id": "stocksnap:6e72baa1-752b-4233-b208-bb50f8c55275",
+     "id": "rawpixel:0feb5ddc-4760-42bb-95f7-e3a3fa2890cd",
      "role": "detail",
-     "alt": "Croissant, chocolate bar, steaming black coffee and sugar on a white board indoors",
-     "title": "Croissant Coffee",
-     "creator": "PICSELI",
-     "creatorUrl": "https://stocksnap.io/author/805",
-     "credit": "PICSELI / StockSnap",
-     "license": "cc0",
-     "licenseVersion": "1.0",
-     "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-     "sourceUrl": "https://stocksnap.io/photo/croissant-coffee-QJJJN8RWGX",
-     "provider": "stocksnap",
-     "width": 960,
-     "height": 690,
-     "mime": "image/jpeg",
-     "size": 85084,
-     "hash": "69fd62fc0d4e6a407f4a7a2e541ff944cc2ba262f430938947962b9e06c64a0b",
-     "shows": "Croissant, chocolate bar, steaming black coffee and sugar on a white board indoors (checked by looking at the photo)"
-    },
-    {
-     "n": 3,
-     "ref": "p3",
-     "id": "rawpixel:24d9208e-5cb0-4506-9551-9349afb6f5fc",
-     "role": "detail",
-     "alt": "Takeaway coffee cup with cardboard sleeve on a wooden table indoors",
-     "title": "takeaway coffee mug protective heat",
+     "alt": "Overhead view of latte with leaf latte art on wooden table.",
+     "title": "Free coffee latte art image",
      "credit": "Rawpixel",
      "license": "cc0",
      "licenseVersion": "1.0",
      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-     "sourceUrl": "https://www.rawpixel.com/image/3295706/free-photo-image-cafeteria-beverage-cafe",
+     "sourceUrl": "https://www.rawpixel.com/image/5908079/image-public-domain-art-coffee",
      "provider": "rawpixel",
      "width": 1024,
-     "height": 768,
+     "height": 683,
      "mime": "image/webp",
-     "size": 263032,
-     "hash": "5a1900689b2d061761693527bdcff0110dccccd6d7e52e1c53f8cde2a13fc6c2",
-     "shows": "Takeaway coffee cup with cardboard sleeve on a wooden table indoors (checked by looking at the photo)"
+     "size": 256310,
+     "hash": "0facbd491293fee0db216e96ec0e42f9b6526c945c5fd0f889856d8da9b355d4",
+     "shows": "Overhead view of latte with leaf latte art on wooden table. (checked by looking at the photo)"
     },
     {
-     "n": 4,
-     "ref": "p4",
+     "n": 3,
+     "ref": "p3",
      "id": "wordpress:6e105a95-2757-466c-821f-e53e32a4d2c3",
      "role": "detail",
-     "alt": "Small white cup of espresso on a saucer on a wooden table",
+     "alt": "Small white cup of espresso on saucer on brown wooden table.",
      "title": "A small white ceramic espresso cup filled with coffee sits on a matching saucer, placed on a wooden table. The photo is taken from above at ",
      "creator": "Ludwig You",
      "creatorUrl": "https://ludwig-you.fr/",
@@ -2496,54 +2458,36 @@
      "mime": "image/jpeg",
      "size": 195316,
      "hash": "345742490d6cd0d86c10308952a5981bb7da51faddbb331a7a71a412e1d9d511",
-     "shows": "Small white cup of espresso on a saucer on a wooden table (checked by looking at the photo)"
+     "shows": "Small white cup of espresso on saucer on brown wooden table. (checked by looking at the photo)"
+    },
+    {
+     "n": 4,
+     "ref": "p4",
+     "id": "stocksnap:4e999d87-d46f-43c0-9519-136c2846fe97",
+     "role": "detail",
+     "alt": "Two hands raising brown takeaway coffee cups with black lids together.",
+     "title": "Coffee Cup",
+     "creator": "Senior Living",
+     "creatorUrl": "https://stocksnap.io/author/148922",
+     "credit": "Senior Living / StockSnap",
+     "license": "cc0",
+     "licenseVersion": "1.0",
+     "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+     "sourceUrl": "https://stocksnap.io/photo/coffee-cup-KBPLPXZBRB",
+     "provider": "stocksnap",
+     "width": 960,
+     "height": 640,
+     "mime": "image/jpeg",
+     "size": 550554,
+     "hash": "87acb7451b30efb57bc7d1dd70ec705bee00bceb4839ea30a497ebc4da712055",
+     "shows": "Two hands raising brown takeaway coffee cups with black lids together. (checked by looking at the photo)"
     },
     {
      "n": 5,
      "ref": "p5",
-     "id": "rawpixel:bc37559c-3b78-46a0-90bb-a1b2c49b065e",
-     "role": "detail",
-     "alt": "Pour-over coffee being poured through a filter with a copper kettle indoors",
-     "title": "Free barista pouring coffee photo",
-     "credit": "Rawpixel",
-     "license": "cc0",
-     "licenseVersion": "1.0",
-     "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-     "sourceUrl": "https://www.rawpixel.com/image/5926501/photo-image-public-domain-hands-person",
-     "provider": "rawpixel",
-     "width": 1024,
-     "height": 683,
-     "mime": "image/webp",
-     "size": 225138,
-     "hash": "b9cdd2f4eb4f41c150db5c748da4a21412a02ca80a6cc413ebbffe8d26ab8c4f",
-     "shows": "Pour-over coffee being poured through a filter with a copper kettle indoors (checked by looking at the photo)"
-    },
-    {
-     "n": 6,
-     "ref": "p6",
-     "id": "rawpixel:0feb5ddc-4760-42bb-95f7-e3a3fa2890cd",
-     "role": "detail",
-     "alt": "Overhead view of latte with leaf-pattern foam in a brown cup on wood",
-     "title": "Free coffee latte art image",
-     "credit": "Rawpixel",
-     "license": "cc0",
-     "licenseVersion": "1.0",
-     "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-     "sourceUrl": "https://www.rawpixel.com/image/5908079/image-public-domain-art-coffee",
-     "provider": "rawpixel",
-     "width": 1024,
-     "height": 683,
-     "mime": "image/webp",
-     "size": 256310,
-     "hash": "0facbd491293fee0db216e96ec0e42f9b6526c945c5fd0f889856d8da9b355d4",
-     "shows": "Overhead view of latte with leaf-pattern foam in a brown cup on wood (checked by looking at the photo)"
-    },
-    {
-     "n": 7,
-     "ref": "p7",
      "id": "stocksnap:4802d604-beda-4c20-958a-0b1f42c67032",
      "role": "people",
-     "alt": "Pour-over coffee being poured from a steel kettle into filters in a cafe",
+     "alt": "Person pouring water from steel kettle over pour-over coffee drippers indoors.",
      "title": "Barista Pouring",
      "creator": "Burst",
      "creatorUrl": "https://burst.shopify.com",
@@ -2558,34 +2502,13 @@
      "mime": "image/jpeg",
      "size": 527433,
      "hash": "264dcfd659555e6e23ddc26140745677736f2f52207f31645092d53db47494ef",
-     "shows": "Pour-over coffee being poured from a steel kettle into filters in a cafe (checked by looking at the photo)"
-    },
-    {
-     "n": 8,
-     "ref": "p8",
-     "id": "wikimedia:158276432",
-     "role": "place",
-     "alt": "Aerial view of dense Barcelona city blocks with buildings and tree-lined streets",
-     "title": "Plaça Sagrada Família, house 1 to 7 Barcelona, Spain 1",
-     "creator": "Reda Kerbush",
-     "credit": "\"Plaça Sagrada Família, house to Barcelona, Spain\" by Reda Kerbush",
-     "license": "by-sa",
-     "licenseVersion": "4.0",
-     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-     "sourceUrl": "https://commons.wikimedia.org/wiki/File:Pla%C3%A7a_Sagrada_Fam%C3%ADlia,_house_1_to_7_Barcelona,_Spain_1.jpg",
-     "provider": "wikimedia",
-     "width": 1280,
-     "height": 976,
-     "mime": "image/jpeg",
-     "size": 437866,
-     "hash": "73ae45d3ed6e03e9603a73e5ca609adf822a307b9418f78af65b3e1b99ab53c1",
-     "shows": "Aerial view of dense Barcelona city blocks with buildings and tree-lined streets (checked by looking at the photo)"
+     "shows": "Person pouring water from steel kettle over pour-over coffee drippers indoors. (checked by looking at the photo)"
     }
    ],
    "custom": {
     "status": "done",
     "version": 1,
-    "usd": 0.0836
+    "usd": 0.0783
    }
   },
   "logo": {
@@ -3144,9 +3067,9 @@
   }
  },
  "custom": {
-  "html": "<style>:root{--roast:#2A1B14;--teal:#2F6F5E;--milk:#F6EFE4;--ink:#2A1B14;--milk-2:#EBE0CF;--teal-d:#245748;--teal-l:#8FC6B4;--muted:#5E4B40;--hair:#D6C8B3;--display:\"Fraunces\",Georgia,\"Times New Roman\",serif;--text:\"Instrument Sans\",system-ui,-apple-system,\"Segoe UI\",sans-serif;--sec:clamp(72px,10vw,136px);color-scheme:light}\n*,*::before,*::after{box-sizing:border-box}\nbody{margin:0;background:var(--milk);color:var(--ink);font:400 1.0625rem/1.6 var(--text)}\nimg{display:block;max-width:100%;height:auto}\nfigure{margin:0}\np{margin:0}\na{color:inherit}\na:focus-visible,button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--teal);outline-offset:3px}\n.wrap{max-width:1180px;margin:0 auto;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}\nh1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;letter-spacing:-.02em;font-variation-settings:\"opsz\" 144}\nh2{font-size:clamp(2.25rem,4.6vw,3.75rem);line-height:1.02}\nh3{font-size:1.5rem;line-height:1.15;font-variation-settings:\"opsz\" 48}\nem{font-style:italic;color:var(--teal)}\n.kicker{font:600 .75rem/1.3 var(--text);letter-spacing:.14em;text-transform:uppercase;color:var(--teal-d)}\n.lede{font-size:1.2rem;line-height:1.55;max-width:38ch;color:var(--muted)}\n.btn{display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:0 1.6rem;border-radius:4px;font:600 1rem/1 var(--text);text-decoration:none;border:1.5px solid transparent;transition:background-color .2s}\n.b1{background:var(--teal);color:var(--milk)}\n.b1:hover{background:var(--teal-d)}\n.b2{border-color:var(--roast);color:var(--roast)}\n.top{background:var(--milk);border-bottom:1px solid var(--hair)}\n.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:14px}\n.mark{font:500 1.6rem/1 var(--display);text-decoration:none;letter-spacing:-.02em}\n.top nav{display:flex;align-items:center;gap:24px;font-size:.95rem}\n.top nav a:not(.btn){text-decoration:none}\n.top .btn{min-height:44px;padding:0 1.1rem;font-size:.92rem}\n.hero-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);min-height:min(760px,100svh)}\n.hero-copy{display:flex;flex-direction:column;justify-content:center;gap:26px;padding:64px 48px 64px max(20px,calc((100vw - 1180px)/2 + 20px))}\n.hero h1{font-size:clamp(3rem,7vw,6.5rem);line-height:.94;letter-spacing:-.035em;font-weight:300}\n.hero h1 em{font-weight:300}\n.offer-line{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;padding-top:20px;border-top:1px solid var(--roast);max-width:440px}\n.price{font:400 3rem/1 var(--display);letter-spacing:-.03em;color:var(--teal-d)}\n.was{color:var(--muted)}\n.offer-line p{flex-basis:100%;font-size:.95rem;color:var(--muted)}\n.cta{display:flex;flex-wrap:wrap;gap:12px}\n.hero-photo{position:relative;min-height:420px}\n.hero-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 50%}\n.hero-tag{position:absolute;left:-32px;bottom:48px;width:230px;background:var(--milk);color:var(--ink);padding:16px 18px;border:1.5px solid var(--roast);border-radius:4px}\n.hero-tag b{display:block;font:italic 400 1.35rem/1.1 var(--display);margin-bottom:8px}\n.hero-tag div{display:flex;justify-content:space-between;gap:10px;font-size:.82rem;padding-top:6px;border-top:1px solid var(--hair)}\n.hero-tag dt{font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--teal-d)}\n.hero-tag dd{margin:0}\n.hero-tag dl{margin:0;display:grid;gap:6px}\n.menu{padding-block:var(--sec)}\n.menu-head{display:grid;gap:14px;margin-bottom:56px}\n.menu-head h2{max-width:14ch}\n.groups{display:grid;gap:56px}\n.grp{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(24px,5vw,72px);align-items:center}\n.grp:nth-child(even){grid-template-columns:minmax(0,7fr) minmax(0,5fr)}\n.grp:nth-child(even) figure{order:2}\n.grp img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:4px}\n.grp figcaption{margin-top:10px;font-size:.85rem;color:var(--muted)}\n.grp h3{font-size:1.9rem;padding-bottom:12px;border-bottom:1.5px solid var(--roast)}\n.lines{list-style:none;margin:0;padding:0}\n.lines li{display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:16px 0;border-bottom:1px solid var(--hair);flex-wrap:wrap}\n.lines .d{flex:1 1 0;min-width:0;display:grid;gap:2px}\n.lines b{font-weight:600}\n.lines span.s{font-size:.92rem;color:var(--muted)}\n.lines .num{font-weight:600;font-variant-numeric:tabular-nums}\n.lines .on{background:rgba(47,111,94,.1);padding-inline:12px;margin-inline:-12px;border-left:3px solid var(--teal);margin-left:-15px;padding-left:12px}\n.lines .tag{flex-basis:100%;font-size:.8rem;font-weight:600;color:var(--teal-d)}\n.fine{margin-top:32px;font-size:.85rem;color:var(--muted)}\n.order{background:var(--milk-2);padding-block:var(--sec)}\n.order-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(32px,6vw,96px);align-items:center}\n.order h2{margin-top:14px}\n.steps{list-style:none;margin:32px 0 0;padding:0;counter-reset:s}\n.steps li{counter-increment:s;display:grid;grid-template-columns:3.5rem minmax(0,1fr);gap:16px;padding:22px 0;border-top:1px solid var(--hair)}\n.steps li::before{content:counter(s);font:italic 300 2.4rem/1 var(--display);color:var(--teal-d)}\n.steps h3{margin-bottom:4px}\n.steps p{color:var(--muted)}\n.ticket{background:var(--milk);border:1.5px solid var(--roast);border-radius:4px;padding:clamp(24px,4vw,40px);display:grid;gap:18px}\n.ticket h3{font-size:1.9rem}\n.ticket .buy{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 16px}\n.ticket img{width:100%;aspect-ratio:3/2;object-fit:cover;border-radius:4px}\n.band{background:var(--roast);color:var(--milk);padding-block:var(--sec)}\n.band h2{max-width:18ch;margin-bottom:40px}\n.band h2 em{color:var(--teal-l)}\n.cols{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid rgba(246,239,228,.25)}\n.cols>div{padding:28px 32px 8px 0}\n.cols>div+div{padding-left:32px;border-left:1px solid rgba(246,239,228,.25)}\n.cols h3{margin-bottom:14px}\n.cols ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}\n.cols p{color:rgba(246,239,228,.75)}\n.mk{margin-top:28px;font-size:.85rem;color:rgba(246,239,228,.75)}\n.mk a{color:var(--teal-l)}\n.where{padding-block:var(--sec)}\n.where-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(32px,6vw,96px);align-items:center}\n.where h2{margin:14px 0 18px}\n.where img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:4px}\n.faq{background:var(--milk-2);padding-block:var(--sec)}\n.faq-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(32px,6vw,96px);align-items:start}\ndetails{border-top:1px solid var(--roast);padding:18px 0}\ndetails:last-child{border-bottom:1px solid var(--roast)}\nsummary{cursor:pointer;font:400 1.35rem/1.25 var(--display);list-style:none}\nsummary::-webkit-details-marker{display:none}\ndetails p{margin-top:10px;color:var(--muted);max-width:60ch}\n.join{padding-block:var(--sec)}\n.card{background:var(--teal);color:var(--milk);border-radius:4px;display:grid;grid-template-columns:1fr 1fr}\n.card h2{font-size:clamp(2.5rem,5.4vw,4.5rem)}\n.card h2 em{color:var(--milk)}\n.cc{padding:clamp(32px,5vw,64px);display:grid;gap:20px;align-content:center}\n.cc+.cc{border-left:1px solid rgba(246,239,228,.25)}\n.cc p{max-width:40ch}\n.join form{display:flex;flex-wrap:wrap;gap:10px}\n.join label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}\n.join input{flex:1 1 220px;min-height:52px;padding:0 18px;border-radius:4px;border:1.5px solid rgba(246,239,228,.6);background:transparent;color:var(--milk);font:inherit}\n.join input::placeholder{color:rgba(246,239,228,.8)}\n.join button{min-height:52px;padding:0 1.5rem;border-radius:4px;border:0;background:var(--milk);color:var(--roast);font:600 1rem/1 var(--text);cursor:pointer}\n.join .b1{background:var(--roast)}\nfooter{border-top:1px solid var(--hair);padding-block:40px;font-size:.92rem;color:var(--muted)}\nfooter .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px 24px}\nfooter nav{display:flex;gap:20px}\n@media (max-width:900px){.hero-grid{grid-template-columns:1fr;min-height:0}.hero-photo{order:-1;min-height:0;aspect-ratio:4/3}.hero-copy{padding:36px max(20px,env(safe-area-inset-left,0px)) 56px}.hero-tag{left:auto;right:12px;bottom:12px;width:190px;padding:12px 14px}.grp,.grp:nth-child(even),.order-grid,.where-grid,.faq-grid,.card{grid-template-columns:1fr}.grp:nth-child(even) figure{order:0}.cc+.cc{border-left:0;padding-top:0}}@media (max-width:560px){.top nav a:not(.btn){display:none}.btn{width:100%}.top .btn{width:auto}.cols{grid-template-columns:1fr}.cols>div,.cols>div+div{padding:24px 0 8px;border-left:0}.cols>div+div{border-top:1px solid rgba(246,239,228,.25)}.hero-tag{width:150px;padding:8px 10px}.hero-tag b{font-size:1.05rem;margin-bottom:4px}.hero-tag div{font-size:.72rem}}@media (prefers-reduced-motion:reduce){*{transition:none!important}}</style><header class=\"top\">\n<div class=\"wrap\">\n<a class=\"mark\" href=\"#top\">Sortida</a>\n<nav aria-label=\"Main\"><a href=\"#menu\">Menu</a><a href=\"#visit\">Visit</a><a href=\"#questions\">Questions</a><a class=\"btn b1\" href=\"#reserve\" data-ld=\"reserve\">Reserve</a></nav>\n</div>\n</header><main id=\"top\">\n<section class=\"hero\">\n<div class=\"hero-grid\">\n<div class=\"hero-copy\">\n<p class=\"kicker\">Opening soon · Barcelona metro exit</p>\n<h1>Your coffee, <em>one step out.</em></h1>\n<p class=\"lede\">A small coffee kiosk where the metro lets you out. A good flat white, made to take away, for the walk to work.</p>\n<div class=\"offer-line\"><span class=\"price num\">€2.50</span><span class=\"was\">normally <s>€3</s></span><p>Opening offer: one flat white, takeaway</p></div>\n<div class=\"cta\"><a class=\"btn b1\" href=\"#reserve\" data-ld=\"reserve\">Reserve with BCH · €2.50</a><a class=\"btn b2\" href=\"#join\">Not ready? Join the list</a></div>\n</div>\n<figure class=\"hero-photo\">\n<img src=\"ld-photo:p1\" alt=\"Latte with heart-shaped foam in a blue cup on a wooden table, with a cookie\" width=\"1200\" height=\"800\">\n<div class=\"hero-tag\" aria-hidden=\"true\"><b>Flat white</b><dl><div><dt>Milk</dt><dd>Steamed whole</dd></div><div><dt>Price</dt><dd class=\"num\">€3</dd></div></dl></div>\n</figure>\n</div>\n</section>\n\n<section class=\"menu\" id=\"menu\">\n<div class=\"wrap\">\n<div class=\"menu-head\"><p class=\"kicker\">Menu</p><h2>Short list. <em>Quick</em> hands.</h2></div>\n<div class=\"groups\">\n<div class=\"grp\">\n<figure><img src=\"ld-photo:p4\" alt=\"Small white cup of espresso on a saucer on a wooden table\" width=\"1200\" height=\"900\"><figcaption>Espresso</figcaption></figure>\n<div><h3>Coffee</h3>\n<ul class=\"lines\">\n<li><div class=\"d\"><b>Espresso</b><span class=\"s\">Single shot, short and strong</span></div><span class=\"num\">€1.80</span></li>\n<li><div class=\"d\"><b>Americano</b><span class=\"s\">Espresso with hot water</span></div><span class=\"num\">€2.20</span></li>\n</ul></div>\n</div>\n<div class=\"grp\">\n<figure><img src=\"ld-photo:p6\" alt=\"Overhead view of latte with leaf-pattern foam in a brown cup on wood\" width=\"1200\" height=\"800\"><figcaption>Latte</figcaption></figure>\n<div><h3>With milk</h3>\n<ul class=\"lines\">\n<li><div class=\"d\"><b>Flat white</b><span class=\"s\">Double espresso, steamed whole milk, takeaway</span></div><span class=\"num\">€3</span><span class=\"tag\">€2.50 opening offer</span></li>\n<li><div class=\"d\"><b>Cortado</b><span class=\"s\">Espresso with a little steamed milk</span></div><span class=\"num\">€2.60</span></li>\n<li><div class=\"d\"><b>Latte</b><span class=\"s\">Espresso with more steamed milk</span></div><span class=\"num\">€3.40</span></li>\n<li><div class=\"d\"><b>Cappuccino</b><span class=\"s\">Espresso, steamed milk, milk foam</span></div><span class=\"num\">€3.20</span></li>\n</ul></div>\n</div>\n<div class=\"grp\">\n<figure><img src=\"ld-photo:p2\" alt=\"Croissant, chocolate bar, steaming black coffee and sugar on a white board indoors\" width=\"1200\" height=\"900\"><figcaption>Croissant</figcaption></figure>\n<div><h3>Something to eat</h3>\n<ul class=\"lines\">\n<li><div class=\"d\"><b>Croissant</b><span class=\"s\">Plain butter croissant</span></div><span class=\"num\">€2.20</span></li>\n<li><div class=\"d\"><b>Slice of cake</b><span class=\"s\">A simple slice to go</span></div><span class=\"num\">€3.20</span></li>\n</ul></div>\n</div>\n</div>\n<p class=\"fine\">Opening menu · prices may change before we open</p>\n</div>\n</section>\n\n<section class=\"order\">\n<div class=\"wrap order-grid\">\n<div>\n<p class=\"kicker\">How it works</p>\n<h2>Reserve now. <em>Collect</em> on the way.</h2>\n<ol class=\"steps\">\n<li><div><h3>Reserve your flat white</h3><p>Pay from your phone and hold it at the opening price.</p></div></li>\n<li><div><h3>Come out of the metro</h3><p>The kiosk is right at the exit.</p></div></li>\n<li><div><h3>Pick up and go</h3><p>Your flat white is made for you, to take away.</p></div></li>\n</ol>\n</div>\n<div class=\"ticket\">\n<p class=\"kicker\">The opening offer</p>\n<h3>One flat white, takeaway</h3>\n<img src=\"ld-photo:p3\" alt=\"Takeaway coffee cup with cardboard sleeve on a wooden table indoors\" width=\"1200\" height=\"900\">\n<div class=\"buy\"><span class=\"price num\">€2.50</span><span class=\"was\">normally <s>€3</s></span></div>\n<a class=\"btn b1\" href=\"#reserve\" data-ld=\"reserve\">Reserve with BCH</a>\n</div>\n</div>\n</section>\n\n<section class=\"band\">\n<div class=\"wrap\">\n<h2>A quick coffee should be <em>good</em> too.</h2>\n<div class=\"cols\">\n<div><h3>What you want</h3><p>A quick, good flat white at €3, paid by card or app, on a walk you already make.</p></div>\n<div><h3>What Sortida does</h3><p>One small kiosk at the exit, a short menu and drinks made to go. The flat white is €3, and €2.50 while we open.</p></div>\n</div>\n<p class=\"mk\">For comparison in Barcelona: Syra Coffee flat white €3.90 and cortado €3.00. <a href=\"https://guidavera.com/spain/barcelona/best-specialty-coffee\" rel=\"noopener nofollow\" target=\"_blank\">Source: guidavera.com</a></p>\n</div>\n</section>\n\n<section class=\"where\" id=\"visit\">\n<div class=\"wrap where-grid\">\n<div>\n<p class=\"kicker\">Where and when</p>\n<h2>Opening soon in <em>Barcelona</em></h2>\n<p class=\"lede\">We are at a metro exit in the city. Reserve and we will tell you what you need for pickup.</p>\n</div>\n<figure><img src=\"ld-photo:p8\" alt=\"Aerial view of dense Barcelona city blocks with buildings and tree-lined streets\" width=\"1200\" height=\"900\"></figure>\n</div>\n</section>\n\n<section class=\"faq\" id=\"questions\">\n<div class=\"wrap faq-grid\">\n<h2>Good to <em>know</em></h2>\n<div>\n<details open><summary>Where is Sortida?</summary><p>We are opening soon at a metro exit in Barcelona. Reserve now and we will tell you everything you need for pickup.</p></details>\n<details><summary>How do I pay?</summary><p>You reserve and pay with Bitcoin Cash from your phone. Then you just collect your flat white at the kiosk.</p></details>\n<details><summary>Is it takeaway only?</summary><p>Yes. Sortida is a small kiosk made for people on their way to work, so every drink is made to go.</p></details>\n<details><summary>What do I get when I reserve?</summary><p>One flat white, takeaway, made by a barista at the kiosk and ready for you when you walk out of the metro.</p></details>\n<details><summary>Who is it for?</summary><p>Weekday commuters who want a quick, good coffee on the way, instead of buying elsewhere or skipping it.</p></details>\n</div>\n</div>\n</section>\n\n<section class=\"join\" id=\"join\">\n<div class=\"wrap\">\n<div class=\"card\">\n<div class=\"cc\"><h2>Hear when we <em>open</em></h2><a class=\"btn b1\" href=\"#reserve\" data-ld=\"reserve\">Reserve with BCH</a></div>\n<div class=\"cc\">\n<p>One email when we open. Nothing else.</p>\n<form data-ld=\"waitlist\"><label for=\"email\">Your email</label><input id=\"email\" type=\"email\" name=\"email\" required maxlength=\"160\" autocomplete=\"email\" placeholder=\"you@example.com\"><button type=\"submit\">Join the list</button></form>\n</div>\n</div>\n</div>\n</section>\n</main><footer>\n<div class=\"wrap\"><span>Sortida · Your coffee, one step out.</span><nav aria-label=\"Footer\"><a href=\"#menu\">Menu</a><a href=\"#visit\">Visit</a><a href=\"#questions\">Questions</a></nav></div>\n</footer>",
+  "html": "<style>:root{--crust:#2A1B14;--pine:#2F6F5E;--cream:#F6EFE4;--ink:#2A1B14;--cream-2:#EDE3D2;--pine-d:#1F5245;--pine-l:#8CC7B5;--muted:#6B5A4F;--line:#D8CBB6;--display:\"Fraunces\",Georgia,\"Times New Roman\",serif;--text:\"Instrument Sans\",system-ui,-apple-system,\"Segoe UI\",sans-serif;--sec:clamp(72px,10vw,136px);color-scheme:light}\n*,*::before,*::after{box-sizing:border-box}\nbody{margin:0;background:var(--cream);color:var(--ink);font:400 1.0625rem/1.6 var(--text)}\nimg{display:block;max-width:100%;height:auto}\nfigure{margin:0}\np{margin:0}\na{color:inherit}\na:focus-visible,button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--pine);outline-offset:3px}\n.wrap{max-width:1200px;margin:0 auto;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}\nh1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;letter-spacing:-.02em;line-height:1.02;font-variation-settings:\"opsz\" 144}\nh2{font-size:clamp(2.25rem,4.6vw,3.75rem)}\nh3{font-size:1.5rem;line-height:1.15;font-variation-settings:\"opsz\" 48}\nem{font-style:italic;color:var(--pine)}\n.kicker{font:600 .75rem/1.3 var(--text);letter-spacing:.14em;text-transform:uppercase;color:var(--pine-d)}\n.lede{font-size:clamp(1.125rem,1.6vw,1.3rem);line-height:1.55;max-width:38ch;color:var(--muted)}\n.btn{display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:0 1.6rem;border-radius:4px;font:600 1rem/1 var(--text);text-decoration:none;border:1.5px solid transparent;transition:background-color .2s}\n.btn-p{background:var(--pine);color:var(--cream)}\n.btn-p:hover{background:var(--pine-d)}\n.btn-l{border-color:var(--ink)}\n.btn-l:hover{background:var(--cream-2)}\n.top{background:var(--cream);border-bottom:1px solid var(--line)}\n.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:14px}\n.mark{font:500 1.6rem/1 var(--display);letter-spacing:-.02em;text-decoration:none}\n.mark i{color:var(--pine)}\n.top nav{display:flex;align-items:center;gap:24px;font-size:.95rem}\n.top nav a:not(.btn){text-decoration:none}\n.top nav a:not(.btn):hover{text-decoration:underline;text-underline-offset:4px}\n.top .btn{min-height:44px;padding:0 1.1rem;font-size:.9rem}\n.hero-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);min-height:min(760px,100svh)}\n.hero-copy{display:flex;flex-direction:column;justify-content:center;gap:26px;padding:64px 48px 64px max(20px,calc((100vw - 1200px)/2 + 20px))}\n.hero h1{font-size:clamp(3rem,7vw,6.75rem);line-height:.94;letter-spacing:-.035em;font-weight:300}\n.hero h1 em{font-weight:300}\n.offer-line{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 14px;padding-top:20px;border-top:1.5px solid var(--ink);max-width:460px}\n.price{font:400 3rem/1 var(--display);letter-spacing:-.03em;color:var(--pine-d)}\n.was{color:var(--muted)}\n.offer-line p{flex-basis:100%;font-size:.95rem;color:var(--muted)}\n.cta{display:flex;flex-wrap:wrap;gap:12px}\n.hero-photo{position:relative;min-height:420px;background:var(--crust)}\n.hero-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 50%}\n.hero-tag{position:absolute;left:-28px;bottom:40px;background:var(--cream);padding:16px 18px;width:210px;border-left:4px solid var(--pine)}\n.hero-tag b{display:block;font:italic 400 1.3rem/1.1 var(--display);margin-bottom:8px}\n.hero-tag div{display:flex;justify-content:space-between;gap:10px;font-size:.8rem;padding-top:4px}\n.hero-tag dt{font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:.68rem;color:var(--pine-d)}\n.menu{padding-block:var(--sec)}\n.menu-head{display:grid;gap:14px;margin-bottom:48px;max-width:640px}\n.groups{display:grid;gap:56px}\n.group{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(24px,5vw,72px);align-items:start}\n.group:nth-child(even){grid-template-columns:minmax(0,7fr) minmax(0,5fr)}\n.group:nth-child(even) .gphoto{order:2}\n.gphoto img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:4px}\n.gphoto figcaption{margin-top:10px;font-size:.85rem;color:var(--muted)}\n.group h3{font-size:1.9rem;margin-bottom:16px}\n.lines{list-style:none;margin:0;padding:0;border-top:1.5px solid var(--ink)}\n.lines li{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 16px;padding:16px 10px;border-bottom:1px solid var(--line)}\n.lines li>div{flex:1 1 0;min-width:0;display:grid;gap:2px}\n.lines b{font:600 1.1rem/1.3 var(--text)}\n.lines span:not(.num){color:var(--muted);font-size:.93rem}\n.lines .num{font-weight:600;font-variant-numeric:tabular-nums}\n.lines .on{background:rgba(47,111,94,.12);box-shadow:inset 4px 0 0 var(--pine)}\n.tag{flex-basis:100%;font-size:.8rem;font-weight:600;color:var(--pine-d)}\n.fine{margin-top:32px;font-size:.85rem;color:var(--muted)}\n.how{background:var(--cream-2);padding-block:var(--sec)}\n.how-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(32px,6vw,88px);align-items:center}\n.how h2{margin:14px 0 20px}\n.steps{list-style:none;margin:32px 0;padding:0;counter-reset:s}\n.steps li{counter-increment:s;display:grid;grid-template-columns:3.5rem minmax(0,1fr);gap:16px;padding:22px 0;border-top:1px solid var(--line)}\n.steps li::before{content:counter(s);font:italic 300 2.4rem/1 var(--display);color:var(--pine-d)}\n.steps h3{margin-bottom:4px}\n.steps p{color:var(--muted)}\n.buy{display:flex;align-items:center;flex-wrap:wrap;gap:16px 24px}\n.how img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:4px}\n.how figcaption{margin-top:10px;font-size:.85rem;color:var(--muted)}\n.band{background:var(--crust);color:var(--cream);padding-block:var(--sec)}\n.band h2{max-width:18ch;margin-bottom:40px}\n.band h2 em{color:var(--pine-l)}\n.cols{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid rgba(246,239,228,.25)}\n.cols>div{padding:28px 32px 8px 0}\n.cols>div+div{padding-left:32px;border-left:1px solid rgba(246,239,228,.25)}\n.cols h3{margin-bottom:14px}\n.cols ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}\n.cols p{color:#CDBFAE;max-width:44ch}\n.mk{margin-top:32px;font-size:.85rem;color:#CDBFAE}\n.place{padding-block:var(--sec)}\n.place-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(32px,6vw,88px);align-items:center}\n.place h2{margin:14px 0 20px}\n.place img{width:100%;aspect-ratio:3/2;object-fit:cover;border-radius:4px}\n.faq{background:var(--cream-2);padding-block:var(--sec)}\n.faq-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(32px,6vw,88px);align-items:start}\ndetails{border-top:1px solid var(--line);padding:18px 0}\ndetails:last-child{border-bottom:1px solid var(--line)}\nsummary{cursor:pointer;font:500 1.3rem/1.25 var(--display);list-style:none;min-height:44px;display:flex;align-items:center}\nsummary::-webkit-details-marker{display:none}\ndetails p{margin-top:8px;color:var(--muted);max-width:56ch}\n.join{padding-block:var(--sec)}\n.card{display:grid;grid-template-columns:1fr 1fr;background:var(--pine);color:var(--cream);border-radius:6px;overflow:hidden}\n.card>div{padding:clamp(32px,5vw,64px);display:grid;gap:20px;align-content:center}\n.card h2{font-size:clamp(2.5rem,5.4vw,4.5rem)}\n.card h2 em{color:#CFEBDF}\n.card p{max-width:40ch;color:#E3F1EA}\nform{display:flex;flex-wrap:wrap;gap:10px}\nlabel{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}\ninput{flex:1 1 220px;min-height:52px;padding:0 18px;border-radius:4px;border:1.5px solid rgba(246,239,228,.6);background:transparent;color:var(--cream);font:inherit}\ninput::placeholder{color:#CFEBDF}\nbutton{min-height:52px;padding:0 1.5rem;border-radius:4px;border:0;background:var(--cream);color:var(--pine-d);font:600 1rem/1 var(--text);cursor:pointer}\nfooter{border-top:1px solid var(--line);padding-block:40px;font-size:.9rem;color:var(--muted)}\nfooter .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px 24px}\nfooter nav{display:flex;gap:18px}\n@media (max-width:900px){.hero-grid{grid-template-columns:1fr;min-height:0}.hero-photo{order:-1;min-height:0;aspect-ratio:3/2}.hero-copy{padding:36px max(20px,env(safe-area-inset-left,0px)) 56px}.group,.group:nth-child(even),.how-grid,.place-grid,.faq-grid,.card{grid-template-columns:1fr}.group:nth-child(even) .gphoto{order:0}.cols{grid-template-columns:1fr}.cols>div+div{padding-left:0;border-left:0;border-top:1px solid rgba(246,239,228,.25);margin-top:20px}}@media (max-width:560px){.top nav a:not(.btn){display:none}.hero-photo{aspect-ratio:4/3}.hero-tag{left:auto;right:10px;bottom:10px;width:auto;padding:8px 10px}.hero-tag b{margin:0;font-size:1rem}.btn{width:100%}.top .btn{width:auto}.cta .btn{width:100%}}@media (prefers-reduced-motion:reduce){*{transition:none!important}}</style><header class=\"top\">\n<div class=\"wrap\">\n<a class=\"mark\" href=\"#top\">Sorti<i>da</i></a>\n<nav aria-label=\"Main\">\n<a href=\"#menu\">Menu</a>\n<a href=\"#visit\">Visit</a>\n<a href=\"#questions\">Questions</a>\n<a class=\"btn btn-p\" href=\"#reserve\" data-ld=\"reserve\">Reserve</a>\n</nav>\n</div>\n</header><main id=\"top\">\n<section class=\"hero\">\n<div class=\"hero-grid\">\n<div class=\"hero-copy\">\n<p class=\"kicker\">Opening soon · Barcelona</p>\n<h1>Your coffee, <em>one step out.</em></h1>\n<p class=\"lede\">A takeaway kiosk at a metro exit. A good flat white, a short menu, and no queue of tables between you and work.</p>\n<div class=\"offer-line\">\n<span class=\"price num\">€2.50</span>\n<span class=\"was\">normally <s>€3</s></span>\n<p>Opening offer: one flat white, takeaway</p>\n</div>\n<div class=\"cta\">\n<a class=\"btn btn-p\" href=\"#reserve\" data-ld=\"reserve\">Reserve with BCH · €2.50</a>\n<a class=\"btn btn-l\" href=\"#join\">Not ready? Join the list</a>\n</div>\n</div>\n<figure class=\"hero-photo\">\n<img src=\"ld-photo:p1\" alt=\"Hand pouring steamed milk into a white paper cup of coffee at a counter\" width=\"1200\" height=\"800\">\n<div class=\"hero-tag\">\n<b>Flat white</b>\n<dl><div><dt>To go</dt><dd>Paper cup</dd></div><div><dt>Price</dt><dd class=\"num\">€3</dd></div></dl>\n</div>\n</figure>\n</div>\n</section>\n\n<section class=\"menu\" id=\"menu\">\n<div class=\"wrap\">\n<div class=\"menu-head\">\n<p class=\"kicker\">The menu</p>\n<h2>Short on purpose, <em>quick</em> to pour</h2>\n</div>\n<div class=\"groups\">\n<div class=\"group\">\n<figure class=\"gphoto\">\n<img src=\"ld-photo:p3\" alt=\"Small white cup of espresso on a saucer on a brown wooden table\" width=\"1200\" height=\"900\">\n<figcaption>Espresso</figcaption>\n</figure>\n<div>\n<h3>Coffee</h3>\n<ul class=\"lines\">\n<li><div><b>Espresso</b><span>Single shot, short and strong</span></div><span class=\"num\">€1.80</span></li>\n<li><div><b>Double espresso</b><span>Two shots in one cup</span></div><span class=\"num\">€2.40</span></li>\n</ul>\n</div>\n</div>\n<div class=\"group\">\n<figure class=\"gphoto\">\n<img src=\"ld-photo:p2\" alt=\"Overhead view of a latte with leaf latte art on a wooden table\" width=\"1200\" height=\"800\">\n<figcaption>Latte</figcaption>\n</figure>\n<div>\n<h3>With milk</h3>\n<ul class=\"lines\">\n<li><div><b>Flat white</b><span>Double espresso, steamed milk, takeaway cup</span></div><span class=\"num\">€3</span><em class=\"tag\">€2.50 opening offer</em></li>\n<li><div><b>Cortado</b><span>Espresso with a little steamed milk</span></div><span class=\"num\">€3</span></li>\n<li><div><b>Cappuccino</b><span>Espresso, steamed milk, light foam</span></div><span class=\"num\">€3.20</span></li>\n<li><div><b>Latte</b><span>Espresso with plenty of steamed milk</span></div><span class=\"num\">€3.50</span></li>\n</ul>\n</div>\n</div>\n</div>\n<p class=\"fine\">Opening menu · prices may change before we open</p>\n</div>\n</section>\n\n<section class=\"how\" id=\"how\">\n<div class=\"wrap how-grid\">\n<div>\n<p class=\"kicker\">How it works</p>\n<h2>Reserve, walk up, <em>take it</em></h2>\n<ol class=\"steps\">\n<li><div><h3>Reserve your flat white</h3><p>Pay from your phone and hold the opening price.</p></div></li>\n<li><div><h3>Come by the kiosk</h3><p>It will be at a metro exit in Barcelona.</p></div></li>\n<li><div><h3>Pick up and go</h3><p>Your coffee comes in a cup you can carry.</p></div></li>\n</ol>\n<div class=\"buy\">\n<span class=\"price num\">€2.50</span><span class=\"was\">normally <s>€3</s></span>\n<a class=\"btn btn-p\" href=\"#reserve\" data-ld=\"reserve\">Reserve with BCH</a>\n</div>\n</div>\n<figure>\n<img src=\"ld-photo:p4\" alt=\"Two hands raising brown takeaway coffee cups with black lids together\" width=\"1200\" height=\"800\">\n<figcaption>Takeaway cups</figcaption>\n</figure>\n</div>\n</section>\n\n<section class=\"band\">\n<div class=\"wrap\">\n<h2>A good coffee on the way to work shouldn't mean <em>a detour.</em></h2>\n<div class=\"cols\">\n<div>\n<h3>What commuters want</h3>\n<p>A quick, good flat white at €3. Many people buy coffee elsewhere, or skip it.</p>\n</div>\n<div>\n<h3>What Sortida does</h3>\n<p>One kiosk right at the exit, a short list that comes out fast, and the price on the menu before you walk up.</p>\n</div>\n</div>\n<p class=\"mk\">For context, a flat white at Syra Coffee is €3.90 and a cortado is €3.00. <a href=\"https://guidavera.com/spain/barcelona/best-specialty-coffee\" rel=\"noopener nofollow\" target=\"_blank\">Source: guidavera.com</a></p>\n</div>\n</section>\n\n<section class=\"place\" id=\"visit\">\n<div class=\"wrap place-grid\">\n<div>\n<p class=\"kicker\">Where and when</p>\n<h2>Opening soon in <em>Barcelona</em></h2>\n<p class=\"lede\">We will be at a metro exit in Barcelona. Join the list and we will tell you as soon as the kiosk is ready.</p>\n</div>\n<figure>\n<img src=\"ld-photo:p5\" alt=\"Person pouring water from a steel kettle over pour-over coffee drippers indoors\" width=\"1200\" height=\"800\">\n</figure>\n</div>\n</section>\n\n<section class=\"faq\" id=\"questions\">\n<div class=\"wrap faq-grid\">\n<div>\n<p class=\"kicker\">Questions</p>\n<h2>Before you <em>ask</em></h2>\n</div>\n<div>\n<details open><summary>Where is Sortida?</summary><p>We are opening soon at a metro exit in Barcelona. Join the list and we will tell you as soon as the kiosk is ready.</p></details>\n<details><summary>How do I pay?</summary><p>You reserve and pay with Bitcoin Cash from your phone. Then you pick up your flat white at the kiosk.</p></details>\n<details><summary>Is it a quick stop?</summary><p>Yes. It is a takeaway kiosk by the exit, built for people on their way to work.</p></details>\n<details><summary>What can I order?</summary><p>Flat whites, plus espresso, cortado, cappuccino and latte. The list is short on purpose so the coffee comes out fast.</p></details>\n<details><summary>Can I drink it there?</summary><p>Sortida is a kiosk, so everything is takeaway. Your coffee comes in a cup you can carry on your way.</p></details>\n</div>\n</div>\n</section>\n\n<section class=\"join\" id=\"join\">\n<div class=\"wrap\">\n<div class=\"card\">\n<div><h2>Hear when we open in <em>Barcelona</em></h2></div>\n<div>\n<p>One email when we open. Nothing else.</p>\n<form data-ld=\"waitlist\">\n<label for=\"email\">Your email</label>\n<input id=\"email\" type=\"email\" name=\"email\" required maxlength=\"160\" autocomplete=\"email\" placeholder=\"you@example.com\">\n<button type=\"submit\">Join the list</button>\n</form>\n</div>\n</div>\n</div>\n</section>\n</main><footer>\n<div class=\"wrap\">\n<span>Sortida · Your coffee, one step out.</span>\n<nav aria-label=\"Footer\"><a href=\"#menu\">Menu</a><a href=\"#visit\">Visit</a><a href=\"#questions\">Questions</a></nav>\n</div>\n</footer>",
   "version": 1,
-  "created_at": 1795032675254
+  "created_at": 1795034046740
  },
  "photos": [
   {
@@ -3156,105 +3079,73 @@
    "file": "sortida-1.webp",
    "width": 1024,
    "height": 683,
-   "hash": "fef6facac99185dcb3131b46701398ad03d538a0911704f905b695eac023d01b",
+   "hash": "2ec94cddd7c815d485fa5ac9533749948a42e629d1cbf21596508a1c83ff59f6",
    "meta": {
     "n": 1,
     "ref": "p1",
-    "id": "rawpixel:df4f69f2-7562-4277-b2b5-70d7065a8724",
+    "id": "rawpixel:7be80175-5593-4f40-a439-9b14bcdadae3",
     "role": "hero",
-    "alt": "Latte with heart-shaped foam in a blue cup on a wooden table, with a cookie",
-    "title": "Free flat white coffee, latte",
+    "alt": "Hand pouring steamed milk into white paper cup of coffee at counter.",
+    "title": "barista pouring milk coffee cup",
     "credit": "Rawpixel",
     "license": "cc0",
     "licenseVersion": "1.0",
     "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-    "sourceUrl": "https://www.rawpixel.com/image/5919178/image-public-domain-coffee-free",
+    "sourceUrl": "https://www.rawpixel.com/image/3303274/free-photo-image-coffee-beverage-camera",
     "provider": "rawpixel",
     "width": 1024,
     "height": 683,
     "mime": "image/webp",
-    "size": 239212,
-    "hash": "fef6facac99185dcb3131b46701398ad03d538a0911704f905b695eac023d01b",
-    "shows": "Latte with heart-shaped foam in a blue cup on a wooden table, with a cookie (checked by looking at the photo)"
+    "size": 107068,
+    "hash": "2ec94cddd7c815d485fa5ac9533749948a42e629d1cbf21596508a1c83ff59f6",
+    "shows": "Hand pouring steamed milk into white paper cup of coffee at counter. (checked by looking at the photo)"
    },
-   "created_at": 1795032675254
+   "created_at": 1795034046740
   },
   {
    "n": 2,
    "role": "detail",
-   "mime": "image/jpeg",
-   "file": "sortida-2.jpg",
-   "width": 960,
-   "height": 690,
-   "hash": "69fd62fc0d4e6a407f4a7a2e541ff944cc2ba262f430938947962b9e06c64a0b",
+   "mime": "image/webp",
+   "file": "sortida-2.webp",
+   "width": 1024,
+   "height": 683,
+   "hash": "0facbd491293fee0db216e96ec0e42f9b6526c945c5fd0f889856d8da9b355d4",
    "meta": {
     "n": 2,
     "ref": "p2",
-    "id": "stocksnap:6e72baa1-752b-4233-b208-bb50f8c55275",
+    "id": "rawpixel:0feb5ddc-4760-42bb-95f7-e3a3fa2890cd",
     "role": "detail",
-    "alt": "Croissant, chocolate bar, steaming black coffee and sugar on a white board indoors",
-    "title": "Croissant Coffee",
-    "creator": "PICSELI",
-    "creatorUrl": "https://stocksnap.io/author/805",
-    "credit": "PICSELI / StockSnap",
-    "license": "cc0",
-    "licenseVersion": "1.0",
-    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-    "sourceUrl": "https://stocksnap.io/photo/croissant-coffee-QJJJN8RWGX",
-    "provider": "stocksnap",
-    "width": 960,
-    "height": 690,
-    "mime": "image/jpeg",
-    "size": 85084,
-    "hash": "69fd62fc0d4e6a407f4a7a2e541ff944cc2ba262f430938947962b9e06c64a0b",
-    "shows": "Croissant, chocolate bar, steaming black coffee and sugar on a white board indoors (checked by looking at the photo)"
-   },
-   "created_at": 1795032675254
-  },
-  {
-   "n": 3,
-   "role": "detail",
-   "mime": "image/webp",
-   "file": "sortida-3.webp",
-   "width": 1024,
-   "height": 768,
-   "hash": "5a1900689b2d061761693527bdcff0110dccccd6d7e52e1c53f8cde2a13fc6c2",
-   "meta": {
-    "n": 3,
-    "ref": "p3",
-    "id": "rawpixel:24d9208e-5cb0-4506-9551-9349afb6f5fc",
-    "role": "detail",
-    "alt": "Takeaway coffee cup with cardboard sleeve on a wooden table indoors",
-    "title": "takeaway coffee mug protective heat",
+    "alt": "Overhead view of latte with leaf latte art on wooden table.",
+    "title": "Free coffee latte art image",
     "credit": "Rawpixel",
     "license": "cc0",
     "licenseVersion": "1.0",
     "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-    "sourceUrl": "https://www.rawpixel.com/image/3295706/free-photo-image-cafeteria-beverage-cafe",
+    "sourceUrl": "https://www.rawpixel.com/image/5908079/image-public-domain-art-coffee",
     "provider": "rawpixel",
     "width": 1024,
-    "height": 768,
+    "height": 683,
     "mime": "image/webp",
-    "size": 263032,
-    "hash": "5a1900689b2d061761693527bdcff0110dccccd6d7e52e1c53f8cde2a13fc6c2",
-    "shows": "Takeaway coffee cup with cardboard sleeve on a wooden table indoors (checked by looking at the photo)"
+    "size": 256310,
+    "hash": "0facbd491293fee0db216e96ec0e42f9b6526c945c5fd0f889856d8da9b355d4",
+    "shows": "Overhead view of latte with leaf latte art on wooden table. (checked by looking at the photo)"
    },
-   "created_at": 1795032675254
+   "created_at": 1795034046740
   },
   {
-   "n": 4,
+   "n": 3,
    "role": "detail",
    "mime": "image/jpeg",
-   "file": "sortida-4.jpg",
+   "file": "sortida-3.jpg",
    "width": 1536,
    "height": 1152,
    "hash": "345742490d6cd0d86c10308952a5981bb7da51faddbb331a7a71a412e1d9d511",
    "meta": {
-    "n": 4,
-    "ref": "p4",
+    "n": 3,
+    "ref": "p3",
     "id": "wordpress:6e105a95-2757-466c-821f-e53e32a4d2c3",
     "role": "detail",
-    "alt": "Small white cup of espresso on a saucer on a wooden table",
+    "alt": "Small white cup of espresso on saucer on brown wooden table.",
     "title": "A small white ceramic espresso cup filled with coffee sits on a matching saucer, placed on a wooden table. The photo is taken from above at ",
     "creator": "Ludwig You",
     "creatorUrl": "https://ludwig-you.fr/",
@@ -3269,84 +3160,56 @@
     "mime": "image/jpeg",
     "size": 195316,
     "hash": "345742490d6cd0d86c10308952a5981bb7da51faddbb331a7a71a412e1d9d511",
-    "shows": "Small white cup of espresso on a saucer on a wooden table (checked by looking at the photo)"
+    "shows": "Small white cup of espresso on saucer on brown wooden table. (checked by looking at the photo)"
    },
-   "created_at": 1795032675254
+   "created_at": 1795034046740
+  },
+  {
+   "n": 4,
+   "role": "detail",
+   "mime": "image/jpeg",
+   "file": "sortida-4.jpg",
+   "width": 960,
+   "height": 640,
+   "hash": "87acb7451b30efb57bc7d1dd70ec705bee00bceb4839ea30a497ebc4da712055",
+   "meta": {
+    "n": 4,
+    "ref": "p4",
+    "id": "stocksnap:4e999d87-d46f-43c0-9519-136c2846fe97",
+    "role": "detail",
+    "alt": "Two hands raising brown takeaway coffee cups with black lids together.",
+    "title": "Coffee Cup",
+    "creator": "Senior Living",
+    "creatorUrl": "https://stocksnap.io/author/148922",
+    "credit": "Senior Living / StockSnap",
+    "license": "cc0",
+    "licenseVersion": "1.0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "sourceUrl": "https://stocksnap.io/photo/coffee-cup-KBPLPXZBRB",
+    "provider": "stocksnap",
+    "width": 960,
+    "height": 640,
+    "mime": "image/jpeg",
+    "size": 550554,
+    "hash": "87acb7451b30efb57bc7d1dd70ec705bee00bceb4839ea30a497ebc4da712055",
+    "shows": "Two hands raising brown takeaway coffee cups with black lids together. (checked by looking at the photo)"
+   },
+   "created_at": 1795034046740
   },
   {
    "n": 5,
-   "role": "detail",
-   "mime": "image/webp",
-   "file": "sortida-5.webp",
-   "width": 1024,
-   "height": 683,
-   "hash": "b9cdd2f4eb4f41c150db5c748da4a21412a02ca80a6cc413ebbffe8d26ab8c4f",
-   "meta": {
-    "n": 5,
-    "ref": "p5",
-    "id": "rawpixel:bc37559c-3b78-46a0-90bb-a1b2c49b065e",
-    "role": "detail",
-    "alt": "Pour-over coffee being poured through a filter with a copper kettle indoors",
-    "title": "Free barista pouring coffee photo",
-    "credit": "Rawpixel",
-    "license": "cc0",
-    "licenseVersion": "1.0",
-    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-    "sourceUrl": "https://www.rawpixel.com/image/5926501/photo-image-public-domain-hands-person",
-    "provider": "rawpixel",
-    "width": 1024,
-    "height": 683,
-    "mime": "image/webp",
-    "size": 225138,
-    "hash": "b9cdd2f4eb4f41c150db5c748da4a21412a02ca80a6cc413ebbffe8d26ab8c4f",
-    "shows": "Pour-over coffee being poured through a filter with a copper kettle indoors (checked by looking at the photo)"
-   },
-   "created_at": 1795032675254
-  },
-  {
-   "n": 6,
-   "role": "detail",
-   "mime": "image/webp",
-   "file": "sortida-6.webp",
-   "width": 1024,
-   "height": 683,
-   "hash": "0facbd491293fee0db216e96ec0e42f9b6526c945c5fd0f889856d8da9b355d4",
-   "meta": {
-    "n": 6,
-    "ref": "p6",
-    "id": "rawpixel:0feb5ddc-4760-42bb-95f7-e3a3fa2890cd",
-    "role": "detail",
-    "alt": "Overhead view of latte with leaf-pattern foam in a brown cup on wood",
-    "title": "Free coffee latte art image",
-    "credit": "Rawpixel",
-    "license": "cc0",
-    "licenseVersion": "1.0",
-    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-    "sourceUrl": "https://www.rawpixel.com/image/5908079/image-public-domain-art-coffee",
-    "provider": "rawpixel",
-    "width": 1024,
-    "height": 683,
-    "mime": "image/webp",
-    "size": 256310,
-    "hash": "0facbd491293fee0db216e96ec0e42f9b6526c945c5fd0f889856d8da9b355d4",
-    "shows": "Overhead view of latte with leaf-pattern foam in a brown cup on wood (checked by looking at the photo)"
-   },
-   "created_at": 1795032675254
-  },
-  {
-   "n": 7,
    "role": "people",
    "mime": "image/jpeg",
-   "file": "sortida-7.jpg",
+   "file": "sortida-5.jpg",
    "width": 960,
    "height": 640,
    "hash": "264dcfd659555e6e23ddc26140745677736f2f52207f31645092d53db47494ef",
    "meta": {
-    "n": 7,
-    "ref": "p7",
+    "n": 5,
+    "ref": "p5",
     "id": "stocksnap:4802d604-beda-4c20-958a-0b1f42c67032",
     "role": "people",
-    "alt": "Pour-over coffee being poured from a steel kettle into filters in a cafe",
+    "alt": "Person pouring water from steel kettle over pour-over coffee drippers indoors.",
     "title": "Barista Pouring",
     "creator": "Burst",
     "creatorUrl": "https://burst.shopify.com",
@@ -3361,40 +3224,9 @@
     "mime": "image/jpeg",
     "size": 527433,
     "hash": "264dcfd659555e6e23ddc26140745677736f2f52207f31645092d53db47494ef",
-    "shows": "Pour-over coffee being poured from a steel kettle into filters in a cafe (checked by looking at the photo)"
+    "shows": "Person pouring water from steel kettle over pour-over coffee drippers indoors. (checked by looking at the photo)"
    },
-   "created_at": 1795032675254
-  },
-  {
-   "n": 8,
-   "role": "place",
-   "mime": "image/jpeg",
-   "file": "sortida-8.jpg",
-   "width": 1280,
-   "height": 976,
-   "hash": "73ae45d3ed6e03e9603a73e5ca609adf822a307b9418f78af65b3e1b99ab53c1",
-   "meta": {
-    "n": 8,
-    "ref": "p8",
-    "id": "wikimedia:158276432",
-    "role": "place",
-    "alt": "Aerial view of dense Barcelona city blocks with buildings and tree-lined streets",
-    "title": "Plaça Sagrada Família, house 1 to 7 Barcelona, Spain 1",
-    "creator": "Reda Kerbush",
-    "credit": "\"Plaça Sagrada Família, house to Barcelona, Spain\" by Reda Kerbush",
-    "license": "by-sa",
-    "licenseVersion": "4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Pla%C3%A7a_Sagrada_Fam%C3%ADlia,_house_1_to_7_Barcelona,_Spain_1.jpg",
-    "provider": "wikimedia",
-    "width": 1280,
-    "height": 976,
-    "mime": "image/jpeg",
-    "size": 437866,
-    "hash": "73ae45d3ed6e03e9603a73e5ca609adf822a307b9418f78af65b3e1b99ab53c1",
-    "shows": "Aerial view of dense Barcelona city blocks with buildings and tree-lined streets (checked by looking at the photo)"
-   },
-   "created_at": 1795032675254
+   "created_at": 1795034046740
   }
  ],
  "escrow": {

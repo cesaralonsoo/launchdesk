@@ -143,6 +143,18 @@ test("Sortida example: designed page, its photos and a priced menu from the paid
     assert.ok(existsSync(f), p.file);
     assert.equal(createHash("sha256").update(readFileSync(f)).digest("hex"), p.hash, p.file);
   }
+  // photos are addressed by position: ld-photo:pN is the N-th stored photo, and the page's alt text describes that photo
+  assert.deepEqual(ex.photos.map((p: { n: number }) => p.n), ex.photos.map((_: unknown, i: number) => i + 1));
+  const words = (t: string) => new Set(String(t).toLowerCase().match(/[a-z]{4,}/g) ?? []);
+  for (const m of ex.custom.html.matchAll(/<img src="ld-photo:p(\d+)" alt="([^"]*)"/g)) {
+    const meta = ex.photos[Number(m[1]) - 1]?.meta;
+    assert.ok(meta, `ld-photo:p${m[1]} has a stored photo`);
+    const shared = [...words(m[2])].filter((w) => words(meta.alt).has(w)).length;
+    assert.ok(shared >= 3, `p${m[1]}: "${m[2]}" describes "${meta.alt}"`);
+  }
+  for (const [, n] of ex.custom.html.matchAll(/ld-photo:p(\d+)/g)) assert.ok(Number(n) <= ex.photos.length);
+  assert.ok(new Set([...ex.custom.html.matchAll(/ld-photo:p(\d+)/g)].map((m: RegExpMatchArray) => m[1])).size === ex.photos.length, "every stored photo is used");
+  assert.doesNotMatch(ex.custom.html, /card or app|\bwe are at\b/i);
   const menu = ex.kit.site.spec.sections.find((s: { kind: string }) => s.kind === "menu");
   const offer = menu.groups.flatMap((g: { items: unknown[] }) => g.items).find((i: { offer?: boolean }) => i.offer);
   assert.equal(offer.price, 3);
