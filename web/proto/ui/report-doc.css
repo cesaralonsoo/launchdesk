@@ -163,11 +163,15 @@ a.rd-src:hover { color: var(--c-ink) !important; border-color: currentColor; }
 @media print {
   @page { size: A4; margin: 16mm 15mm 18mm; }
   html, body { height: auto !important; overflow: visible !important; background: #fff !important; }
-  #world, #banner, .chrome, .demo-bar, .atag, .wtag, .wbub, .overlay, .no-print { display: none !important; }
-  .ui, .ui .panels { position: static !important; inset: auto !important; pointer-events: auto; }
-  .ui .panels > .panel:not([data-key="doc"]) { display: none !important; }
-  .panel[data-pos="doc"] { -webkit-mask-image: none !important; mask-image: none !important; position: static !important; padding: 0 !important; overflow: visible !important; max-height: none !important; background: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; transform: none !important; opacity: 1 !important; }
-  .panel[data-pos="doc"] [data-st] { opacity: 1 !important; transform: none !important; }
+  /* only the report prints: no world, no app chrome, no example strip, no HUD or 3D labels, no home page */
+  #world, #banner, #ld-home, #hud, .hud, .gp-layer, .ex-ribbon-host, .ex-lock-host, .chrome, .demo-bar, .atag, .wtag, .wbub, .overlay, .no-print, .kit-toast { display: none !important; }
+  .ui, .ui .panels { position: static !important; inset: auto !important; pointer-events: auto; transform: none !important; }
+  .ui .panels > .panel:not([data-key="doc"]), .ui .panels > .panel.out { display: none !important; }
+  /* the report panel, whatever its screen layout (full page "doc", side "card" on wide windows, "sheet" on phones) */
+  .panel[data-key="doc"] { -webkit-mask-image: none !important; mask-image: none !important; position: static !important; inset: auto !important; left: auto !important; top: auto !important; bottom: auto !important; translate: none !important; width: auto !important; height: auto !important; padding: 0 !important; overflow: visible !important; max-height: none !important; background: none !important; box-shadow: none !important; border: 0 !important; border-radius: 0 !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; transform: none !important; opacity: 1 !important; }
+  .panel[data-key="doc"] [data-st] { opacity: 1 !important; transform: none !important; }
+  .panel[data-key="doc"] .sheet-grip, .panel[data-key="doc"] .ep-panel, .panel[data-key="doc"] .rd-decide { display: none !important; }
+  .v7 .panel[data-key="doc"] .rd-paper { padding: 0 !important; margin: 0 !important; box-shadow: none !important; }
   .rdoc { max-width: none; padding: 0; }
   .rd-paper { box-shadow: none !important; border-radius: 0; padding: 0 !important; margin: 0 !important; font-size: 10.5pt; line-height: 1.5; }
   .rd-cover { break-after: page; padding-top: 30mm; border-bottom: 0; }
