@@ -70,3 +70,5 @@
 /* the finished example's kit is read-only (kit-screen.ts readOnly): no "Use this one", no design picker, no ownership line */
 .kit.kit-ro .lp-cta, .kit.kit-ro .ks-pick, .kit.kit-ro .ks-tpl, .kit.kit-ro .kit-own { display: none !important; }
 .kit.kit-ro .lp-pick { cursor: default; }
+/* over a report page the strip is solid, so the text scrolling under it never shows through */
+.ui[data-doc="1"] .ex-ribbon { background: var(--c-surface); backdrop-filter: none; -webkit-backdrop-filter: none; }

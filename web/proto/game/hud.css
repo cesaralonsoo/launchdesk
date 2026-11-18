@@ -704,3 +704,7 @@ html.ld-reading .hud.phone:not([data-open="1"]) .hud-pill {
     left: 24px;
   }
 }
+/* a full-width report or kit leaves only a sliver of the 3D: no labels crowd it */
+html[data-ld-wide="1"] .gp-layer {
+  display: none;
+}
