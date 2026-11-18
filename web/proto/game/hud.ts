@@ -241,6 +241,7 @@ export function mountHud(host: HTMLElement, deps: HudDeps): () => void {
     open = false;
     menu = false;
     document.documentElement.classList.add("ld-campus");
+    world.setInsets(phoneMq.matches ? { left: 0, right: 0, top: 130, bottom: 16 } : { left: 320, right: 24, top: 80, bottom: 24 });
     void world.setWorldLevel(3, { animate: !reduced });
     world.shotFor("campus");
     render();
@@ -250,6 +251,7 @@ export function mountHud(host: HTMLElement, deps: HudDeps): () => void {
     const b = campus.back;
     campus = null;
     document.documentElement.classList.remove("ld-campus");
+    dispatchEvent(new Event("resize")); // ui/index.ts re-measures the step panel's insets
     void world.setWorldLevel(b as 1 | 2, { animate: !reduced });
     render();
   }
