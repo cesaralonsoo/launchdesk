@@ -6,6 +6,7 @@
 //   "store" → canonical fragment kept in the DB: photos stay `ld-photo:<id>`, hooks stay `data-ld=…`. Re-sanitizable.
 //   "page"  → wired for one page: photo URLs, reserve links, the waitlist form (action, honeypot, thanks line), data-hero.
 import { parseFragment, type DefaultTreeAdapterTypes as P } from "parse5";
+import { PAY_TALK } from "./validate.js";
 
 // ───────────────────────────────────────────────────────────── types
 
@@ -662,6 +663,11 @@ export function sanitize(html: string, ctx: SanitizeCtx): Sanitized {
   if (ctx.reserveEnabled) {
     if (counts.reserve < 2) problems.push(`only ${counts.reserve} reserve button(s), needs 2`);
     if (counts.reserveTop < 1) problems.push("no reserve button in the header or the first section");
+  }
+  if (!ctx.reserveEnabled) {
+    // No reservations: the page may not say you can pay (the prompt asks for this; the code makes sure).
+    const pay = textOf(tree, false).replace(/\s+/g, " ").split(/(?<=[.!?])\s+/).find((t) => PAY_TALK.test(t));
+    if (pay) problems.push(`talks about paying but reservations are off ("${pay.trim().slice(0, 60)}")`);
   }
   const nPhotos = Object.keys(ctx.photos).length;
   const distinct = new Set(st.usedPhotos).size;

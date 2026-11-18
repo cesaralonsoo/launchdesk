@@ -16,7 +16,22 @@ export const ICONS = [
 ] as const;
 export type IconName = (typeof ICONS)[number];
 
-export type SectionKind = "offer" | "how-it-works-for-customer" | "proof-stats" | "menu-or-services" | "about" | "faq" | "local";
+export type SectionKind = "offer" | "how-it-works-for-customer" | "proof-stats" | "menu-or-services" | "menu" | "about" | "faq" | "local";
+
+/** What a priced list is called on the page. */
+export type MenuLabel = "menu" | "services" | "classes" | "plans";
+/** One priced line. Prices are set in the plan step and repaired by code (validate.ts menuOf): never by the page designer. */
+export interface MenuItem {
+  name: string;
+  desc: string;
+  /** In the site's currency (spec.reserve.currency). */
+  price: number;
+  /** The founder's own offer (its regular price; the opening offer price is shown next to it). */
+  offer?: boolean;
+  /** 1-3 plain English words a stock photo of this item is tagged with ("flat white", "croissant"), or "". */
+  photo?: string;
+}
+export interface MenuGroup { name: string; items: MenuItem[] }
 
 export interface Step { icon: IconName; title: string; body: string }
 export interface Stat { value: string; label: string; sourceUrl: string; source: string }
@@ -26,6 +41,8 @@ export type Section =
   | { kind: "how-it-works-for-customer"; title: string; steps: Step[] }
   | { kind: "proof-stats"; title: string; stats: Stat[] }
   | { kind: "menu-or-services"; title: string; intro: string; items: Step[] }
+  /** The priced menu / price list (6-12 lines, grouped). `note` is the honest line under it ("Opening menu · prices may change before we open"). */
+  | { kind: "menu"; label: MenuLabel; title: string; intro: string; note: string; groups: MenuGroup[] }
   | { kind: "about"; title: string; body: string }
   | { kind: "faq"; title: string; items: Array<{ q: string; a: string }> }
   | { kind: "local"; title: string; body: string; area: string; hours: string };
@@ -41,6 +58,9 @@ export interface Reserve {
   waitlist?: boolean;
 }
 
+/** Stock-photo search words written in the plan step (English, concrete), used by the photo finder. */
+export interface SitePhotoQueries { hero: string[]; detail: string[]; people: string[] }
+
 export interface SiteSpec {
   v: 1;
   lang: string;
@@ -52,6 +72,8 @@ export interface SiteSpec {
   reserve: Reserve;
   /** Simple, honest labels the page uses (in `lang`): button texts, form texts. */
   ui: SiteUi;
+  /** Photo search words for this business (optional: older specs have none). */
+  photoQueries?: SitePhotoQueries;
 }
 
 export interface SiteUi {
@@ -74,6 +96,12 @@ export interface SiteUi {
   faq: string;
   howItWorks: string;
   offer: string;
+  /** The honest line under a priced menu (optional: older stored specs have none). */
+  menuNote?: string;
+  /** the same note for a price list that is not food and drink */
+  priceNote?: string;
+  /** "Opening offer" price label next to a menu line ("{price} opening offer"). */
+  offerTag?: string;
 }
 
 // ---------- the model's output (flat, every field required) ----------
@@ -84,20 +112,25 @@ export interface ModelSite {
   offer: { title: string; item: string; bullets: string[]; note: string };
   how: { title: string; steps: Array<{ icon: string; title: string; body: string }> };
   services: { title: string; intro: string; items: Array<{ icon: string; title: string; body: string }> };
+  /** Optional in code-built copy (no prices are invented there); always asked of the model. */
+  menu?: { kind: string; title: string; intro: string; items: Array<{ group: string; name: string; desc: string; price: number; photo: string }> };
+  photoQueries?: { hero: string | string[]; detail: string | string[]; people: string | string[] };
   about: { title: string; body: string };
   local: { title: string; body: string; area: string; hours: string };
   faq: { title: string; items: Array<{ q: string; a: string }> };
   proof: { title: string; picks: number[] };
   order: string[];
   finalCta: { headline: string; sub: string; cta: string };
-  footer: { tagline: string };
+  /** Not asked of the model (structured-output size limit): the brand tagline is used. */
+  footer?: { tagline: string };
 }
 
 type Schema = Record<string, unknown>;
 const s = (description: string): Schema => ({ type: "string", description });
 const arr = (items: Schema, description?: string): Schema => ({ type: "array", items, ...(description ? { description } : {}) });
 const obj = (properties: Record<string, Schema>): Schema => ({ type: "object", properties, required: Object.keys(properties), additionalProperties: false });
-const iconSchema: Schema = { enum: [...ICONS] };
+// A plain string (an enum here made the structured-output grammar too large once the priced menu was added); validate.ts maps any unknown name to "spark".
+const iconSchema: Schema = s("One icon name from the list in the instructions");
 const card = obj({ icon: iconSchema, title: s("2-5 words"), body: s("One sentence, max 22 words") });
 
 export const MODEL_SITE_SCHEMA: Schema = obj({
@@ -117,16 +150,37 @@ export const MODEL_SITE_SCHEMA: Schema = obj({
   }),
   how: obj({ title: s("Max 5 words"), steps: arr(card, "Exactly 3 steps from the customer's point of view") }),
   services: obj({ title: s("Max 5 words"), intro: s("Max 20 words"), items: arr(card, "3 to 6 items: products, menu or services") }),
+  menu: obj({
+    kind: { enum: ["menu", "services", "classes", "plans", "none"], description: "menu = food and drink; services = priced services; classes = classes or sessions; plans = software plans (only if the digest has market prices for them); none = nothing with a price fits" },
+    title: s("Max 4 words, what a customer of this kind of place calls it: 'Menu', 'Services & prices', 'Classes'"),
+    intro: s("Max 18 words, plain"),
+    items: arr(
+      obj({
+        group: s("Max 3 words, the menu group this line sits in, e.g. 'Coffee', 'With milk', 'Something to eat' (same text for lines of one group)"),
+        name: s("Max 4 words, the item as a customer orders it"),
+        desc: s("One plain line, max 12 words: what it is (no stacked adjectives, no claims)"),
+        price: { type: "number", description: "Price in the brand currency, from priceGuide" },
+        photo: s("1-3 plain English words a stock photo of this item is tagged with (e.g. 'flat white', 'croissant'), or ''"),
+      }),
+      "6 to 12 lines in 1 to 4 groups, grouped lines next to each other; the founder's offer item is one of them",
+    ),
+  }),
+  // Comma-separated strings (arrays here made the structured-output grammar too large); split in validate.ts.
+  photoQueries: obj({
+    hero: s("2 searches, comma separated, each 1-3 plain English words: a wide, calm photo of the thing sold or where it is sold (e.g. 'coffee kiosk, barista counter')"),
+    detail: s("4-6 searches, comma separated, each 1-3 plain English words: close-ups of the actual products or work (e.g. 'latte art, espresso cup, croissant')"),
+    people: s("1-2 searches, comma separated: someone doing the work (e.g. 'barista pouring')"),
+  }),
   about: obj({ title: s("Max 6 words"), body: s("Max 60 words, why this exists, in the founder's voice. No invented history.") }),
-  local: obj({ title: s("Max 5 words"), body: s("Max 30 words"), area: s("Where it is or which area it serves, or empty"), hours: s("Only if known from the digest, else empty") }),
+  // no "hours": a business that is not open yet has none to state (and the grammar stays under the structured-output size limit)
+  local: obj({ title: s("Max 5 words"), body: s("Max 30 words"), area: s("Where it is or which area it serves, or empty") }),
   faq: obj({ title: s("Max 5 words"), items: arr(obj({ q: s("Max 12 words"), a: s("Max 40 words") }), "4 to 6 real buyer questions") }),
   proof: obj({ title: s("Max 6 words"), picks: arr({ type: "integer" }, "Indexes (0-based) into digest.stats, best 2-3; empty if none fit") }),
-  order: arr({ enum: ["how-it-works-for-customer", "menu-or-services", "proof-stats", "about", "local", "offer", "faq"] }, "Section order; drop sections that don't fit (keep offer and faq)"),
+  order: arr({ enum: ["how-it-works-for-customer", "menu", "menu-or-services", "proof-stats", "about", "local", "offer", "faq"] }, "Section order; drop sections that don't fit (keep offer and faq). With a menu, drop menu-or-services."),
   finalCta: obj({ headline: s("Max 8 words"), sub: s("Max 20 words"), cta: s("Max 4 words") }),
-  footer: obj({ tagline: s("Max 10 words") }),
 });
 
-export const DEFAULT_ORDER: SectionKind[] = ["how-it-works-for-customer", "menu-or-services", "proof-stats", "offer", "about", "local", "faq"];
+export const DEFAULT_ORDER: SectionKind[] = ["menu", "how-it-works-for-customer", "menu-or-services", "proof-stats", "offer", "about", "local", "faq"];
 
 const UI_EN: SiteUi = {
   reserve: "Reserve with BCH",
@@ -148,6 +202,9 @@ const UI_EN: SiteUi = {
   faq: "Questions",
   howItWorks: "How it works",
   offer: "Opening offer",
+  menuNote: "Opening menu · prices may change before we open",
+  priceNote: "Opening prices · they may change before we open",
+  offerTag: "{price} opening offer",
 };
 
 const UI_ES: SiteUi = {
@@ -170,6 +227,9 @@ const UI_ES: SiteUi = {
   faq: "Preguntas",
   howItWorks: "Cómo funciona",
   offer: "Oferta de apertura",
+  menuNote: "Carta de apertura · los precios pueden cambiar antes de abrir",
+  priceNote: "Precios de apertura · pueden cambiar antes de abrir",
+  offerTag: "{price} oferta de apertura",
 };
 
 export function uiFor(lang: string): SiteUi {

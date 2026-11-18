@@ -110,11 +110,13 @@ test("filters: licence, size, museum objects, stickers, ratio, dedupe", () => {
   assert.equal(dup.length, 2, "same URL and same series are dropped");
 });
 
-test("download URLs: rawpixel goes to the clean editor_1024 variant, WordPress to 1536", () => {
+test("download URLs: rawpixel goes to the clean editor_1024 variant, WordPress to 1536 (2048 for the hero)", () => {
   const [c] = P.parseOpenverse({ results: [ovResult(OV_HITS[0]!)] }, "q", "hero");
   assert.deepEqual(P.downloadUrls(c!), ["https://images.rawpixel.com/editor_1024/czNmcy1wcml2YXRl.jpg"]);
   const [w] = P.parseOpenverse({ results: [ovResult(OV_HITS[1]!)] }, "q", "hero");
   assert.deepEqual(P.downloadUrls(w!), ["https://pd.w.org/2025/09/abc-1536x957.jpg", "https://pd.w.org/2025/09/abc-2048x1276.jpg"]);
+  assert.deepEqual(P.downloadUrls(w!, "hero"), ["https://pd.w.org/2025/09/abc-2048x1276.jpg", "https://pd.w.org/2025/09/abc-1536x957.jpg"], "the hero tries the 2048px file first");
+  assert.ok(P.score(w!, "hero") > P.score({ ...w!, provider: "rawpixel" }, "hero"), "a hero that arrives big enough ranks first");
 });
 
 test("Commons parsing: licence mapping, artist HTML stripped, unknown licences dropped", () => {
@@ -163,12 +165,12 @@ test("altFrom and credits: scene-only alt, BY/BY-SA credited with link and licen
 });
 
 // ───────────────────────────────────────────── findPhotos (fake network)
-test("findPhotos: ≤6 verified photos, hero first, roles, ≤6 searches, credits for every photo", async () => {
+test("findPhotos: ≤8 verified photos, hero first, roles, ≤11 searches, credits for every photo", async () => {
   P._resetRateLimit();
   const { f, calls } = fakeFetch();
   const photos = await P.findPhotos({ idea: "A plant shop in Leith", city: "Leith Shore", mock: false, fetch: f, cache: null, log: quiet });
   // the fake search answers every query with the same mixed hits: only the plant photos (+ the place) are on topic
-  assert.ok(photos.length >= 3 && photos.length <= 6, `got ${photos.length}`);
+  assert.ok(photos.length >= 3 && photos.length <= 8, `got ${photos.length}`);
   assert.deepEqual(photos.filter((p) => p.provider !== "wikimedia").map((p) => p.id).sort(), ["rawpixel:a1", "wordpress:a2"], "no laptop, barista or dog photo for a plant shop");
   assert.equal(photos[0]!.role, "hero");
   assert.ok(photos[0]!.width / photos[0]!.height >= 1.25, "hero is landscape");
@@ -187,7 +189,8 @@ test("findPhotos: ≤6 verified photos, hero first, roles, ≤6 searches, credit
   assert.equal(place!.provider, "wikimedia");
   assert.equal(place!.license, "by-sa");
   const searches = calls.filter((u) => u.startsWith("https://api.openverse.org/v1/images/?"));
-  assert.ok(searches.length <= 6, `${searches.length} Openverse searches`);
+  assert.ok(searches.length <= 11, `${searches.length} Openverse searches`);
+  assert.ok(searches.filter((u) => /source=wordpress(&|$)/.test(u)).length <= 3, "at most 3 WordPress-only hero searches (2048px files)");
   assert.ok(calls.every((u) => !u.includes("image_1300")), "never downloads the watermarked rawpixel size");
 });
 
@@ -238,6 +241,11 @@ test("vision JSON is applied safely (bad indexes ignored, bad JSON keeps everyth
   const rejectedHero = P.applyVision(JSON.stringify({ reject: [2], hero: 2, alts: [] }), shown);
   assert.equal(rejectedHero.hero, null);
   assert.equal(P.applyVision("not json", shown).reject.size, 0);
+  // a soft first hero gives way to the check's sharp second choice, never the other way round
+  const sized = shown.map((c, i) => ({ ...c, provider: (i === 3 ? "wordpress" : "rawpixel") as typeof c.provider, width: 3000, height: 2000 }));
+  assert.equal(P.applyVision(JSON.stringify({ reject: [], hero: 2, hero2: 3, alts: [] }), sized).hero, sized[3]!.id, "1024px rawpixel hero swapped for the 2048px one");
+  assert.equal(P.applyVision(JSON.stringify({ reject: [], hero: 3, hero2: 2, alts: [] }), sized).hero, sized[3]!.id, "a sharp hero stays");
+  assert.equal(P.applyVision(JSON.stringify({ reject: [], hero: 2, hero2: 0, alts: [] }), sized).hero, sized[2]!.id, "no swap for another soft one");
 });
 
 // ───────────────────────────────────────────── mock mode
@@ -252,7 +260,7 @@ test("mock: bundled fixtures, no network, on-topic or nothing", async () => {
   assert.equal(P.mockPhotos("Invoicing app for freelancers").length, 2);
   assert.deepEqual(P.mockPhotos("Yoga for seniors"), [], "no fixture for this category: zero photos, not wrong ones");
   const filled = P.mockPhotos("Yoga for seniors", { fill: true });
-  assert.equal(filled.length, 6);
+  assert.equal(filled.length, 8);
   for (const p of filled) assert.ok(P.sniffImage(p.bytes) && p.license === "cc0" && p.sourceUrl.startsWith("https://"));
 });
 
@@ -276,7 +284,7 @@ test("storage and GET /s/:slug/p/:n: bytes round-trip, long cache, nosniff, 404s
   const photos = P.mockPhotos("Plant shop", { fill: true });
   await DB.savePhotos("proj1", photos);
   const meta = await DB.listPhotos("proj1");
-  assert.equal(meta.length, 6);
+  assert.equal(meta.length, 8);
   assert.equal((meta[0] as unknown as { bytes?: unknown }).bytes, undefined, "metadata has no bytes");
   assert.equal(meta[0]!.hash, photos[0]!.hash);
   const got = await DB.getPhotoBytes("proj1", 1);

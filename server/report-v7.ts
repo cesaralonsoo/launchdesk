@@ -560,6 +560,9 @@ export function parseReport(md: string, opts: { idea?: string; meta?: WriterMeta
     for (const m of (s?.body ?? "").matchAll(/^\s*[-*]\s*\[(S\d+)\]\s*\[([^\]]*)\]\((https?:[^)\s]+)\)/gm)) srcList.push({ id: m[1]!, title: m[2]!, url: m[3]! });
   }
   const known = new Map(srcList.map((s) => [s.id, s]));
+  // a row that names one of the report's sources in its text ("guidavera says...") is not "no source"
+  const srcNames = [...new Set([...srcList, ...(opts.sources ?? [])].map((s) => hostOf(s.url).replace(/^www\./, "").split(".")[0]!.toLowerCase()).filter((n) => n.length >= 5))];
+  const namesSource = (t: string) => srcNames.some((n) => new RegExp(`\\b${n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(t));
   const plans = fallbackBlockPlans(opts.idea ?? "");
   const blocks: Partial<Record<BlockId, BlockOut>> = {};
   const cites: Partial<Record<BlockId, SourceRef[]>> = {};
@@ -595,7 +598,7 @@ export function parseReport(md: string, opts: { idea?: string; meta?: WriterMeta
       const imp = imps[i]!;
       const kind: FindingKind = e.source ? (/\d/.test(e.text) ? "number" : "fact") : imp < 0 ? "risk" : imp > 0 ? "strength" : "estimate";
       const display = e.source ? (/(?:[A-Z]{1,2})?[€$£¥₹]\s?\d[\d.,]*(?:\s?[–-]\s?\d[\d.,]*)?|\d[\d.,]*\s?(?:%|€)/.exec(e.text)?.[0] ?? null) : null;
-      return { text: e.text, kind: e.unknown && !e.source ? "estimate" : kind, impact: imp, source: e.source, basis: e.source ? null : e.unknown ? "Not found in the research" : "No source cited in the report", display, competitor: null };
+      return { text: e.text, kind: e.unknown && !e.source ? "estimate" : kind, impact: imp, source: e.source, basis: e.source ? null : e.unknown ? "Not found in the research" : namesSource(e.text) ? "Names a source but does not link it" : "No source cited in the report", display, competitor: null };
     });
     const key_numbers = tableOf(p["key numbers"])
       .filter((r) => r.length >= 2 && r[1] && !/^(not found|—|-|n\/a)$/i.test(r[1]!.trim()))

@@ -2,6 +2,7 @@
 import type { KitBrand } from "../../kit-contract.js";
 import type { IconName, Section, SiteSpec, SiteUi } from "../spec.js";
 import type { Tokens } from "../validate.js";
+import { money } from "../validate.js";
 
 export const esc = (s: unknown) =>
   String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
@@ -27,6 +28,8 @@ export interface RenderCtx {
   photos?: CtxPhoto[];
   /** Footer credit for those photos (required for CC BY / BY-SA). */
   photoCredits?: CtxPhotoCredit[];
+  /** A read-only example made by LaunchDesk: a notice on top, and the reserve button opens a sheet that takes no money. */
+  example?: boolean;
 }
 
 export interface CtxPhoto { url: string; alt: string; width: number; height: number }
@@ -148,11 +151,42 @@ export const BCH_COIN = `<svg width="18" height="18" viewBox="0 0 100 100" aria-
 /** A free early-access list: the same button, no coin, taking people to the email form in the offer section (none
  *  where the form already sits next to it: pass nearForm). */
 export const reserveBtn = (c: RenderCtx, label = reserveLabel(c), cls = "btn btn-p", nearForm = false) =>
-  c.spec.reserve.address
+  canReserve(c)
     ? `<a class="${cls}" href="#reserve" data-reserve>${BCH_COIN}<span>${esc(label)}</span></a>`
     : c.spec.reserve.waitlist && !nearForm
       ? `<a class="${cls}" href="#offer"><span>${esc(label === c.ui.reserve ? c.ui.joinList : label)}</span></a>`
       : "";
+
+/** The page shows a reserve button: a founder wallet, or an example (whose sheet takes no money). */
+export const canReserve = (c: Pick<RenderCtx, "spec" | "example">) => Boolean(c.spec.reserve.address) || (Boolean(c.example) && c.spec.reserve.price > 0 && !c.spec.reserve.waitlist);
+
+/** Example sites: what the notice and the sheet say (English and Spanish; the rest English). */
+export function exampleWords(lang: string) {
+  return lang.toLowerCase().startsWith("es")
+    ? { notice: "Sitio de ejemplo hecho por LaunchDesk · el negocio aún no existe y los pagos están desactivados", sheet: "Esto es un sitio de ejemplo, así que los pagos están desactivados. En un sitio real, este botón muestra un QR que paga directamente a la cartera del fundador.", note: "Sitio de ejemplo · pagos desactivados", home: "Crea el tuyo" }
+    : { notice: "Example site made by LaunchDesk · this business is not open yet, and payments are off", sheet: "This is an example site, so payments are off. On a real site, this button shows a QR code that pays the founder's own wallet directly.", note: "Example site · payments are off", home: "Make your own" };
+}
+
+/** The thin strip at the very top of an example site. */
+export function exampleNotice(c: Pick<RenderCtx, "spec" | "example" | "homeHref">): string {
+  if (!c.example) return "";
+  const w = exampleWords(c.spec.lang);
+  return `<div id="ld-example" role="note"><span>${esc(w.notice)}</span> <a href="${esc(c.homeHref)}">${esc(w.home)} →</a></div>`;
+}
+export const EXAMPLE_CSS = `#ld-example{all:revert;display:block;box-sizing:border-box;padding:9px max(16px,env(safe-area-inset-left,0px));background:#16181d;color:#f4f2ee;font:500 13px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;text-align:center}#ld-example span{all:revert}#ld-example a{all:revert;color:#7fe0bf;font-weight:600;text-underline-offset:2px;white-space:nowrap}`;
+
+/** The priced menu: groups of lines (name, price, one plain line), the offer marked, the honest note under it. */
+export function menuList(c: RenderCtx, s: Extract<Section, { kind: "menu" }>): string {
+  const cur = c.spec.reserve.currency || c.brand.currency || "$";
+  const lang = c.spec.lang;
+  const tag = (it: { offer?: boolean }) => (it.offer && c.price && c.spec.reserve.price > 0 ? `<span class="mtag">${esc(fill(c.ui.offerTag ?? "{price} opening offer", { price: c.price }))}</span>` : "");
+  const groups = s.groups
+    .map((g) => `<div class="mg rv">${g.name ? `<h3>${esc(g.name)}</h3>` : ""}<ul class="mlist">${g.items
+      .map((it) => `<li${it.offer ? ` class="moffer"` : ""}><div class="ml"><b>${esc(it.name)}</b><i aria-hidden="true"></i><span class="mp">${esc(money(it.price, cur, lang))}</span></div>${it.desc ? `<p>${esc(it.desc)}</p>` : ""}${tag(it)}</li>`)
+      .join("")}</ul></div>`)
+    .join("");
+  return `<div class="mgroups">${groups}</div>${s.note ? `<p class="mnote">${esc(s.note)}</p>` : ""}`;
+}
 
 /** Price block: "€29  normally €39" + "Only 100 available". */
 export function priceLine(c: RenderCtx): string {
@@ -192,7 +226,19 @@ export function chrome(c: RenderCtx): string {
   const s = c.spec;
   const offer = sectionOf(s, "offer");
   const amount = c.bch ? `<p class="sh-amt"><b>${esc(c.bch)} BCH</b>${c.price ? ` <span>≈ ${esc(c.price)}</span>` : ""}</p>` : c.price ? `<p class="sh-amt"><b>${esc(c.price)}</b></p>` : "";
-  const sheet = s.reserve.address
+  const ex = !s.reserve.address && c.example ? exampleWords(s.lang) : null;
+  const sheet = ex
+    ? `<div class="sheet" id="reserve" role="dialog" aria-modal="true" aria-labelledby="sh-t">
+<a class="sheet-bg" href="#" data-close aria-label="${esc(c.ui.close)}"></a>
+<div class="sheet-card">
+<a class="sheet-x" href="#" data-close aria-label="${esc(c.ui.close)}">×</a>
+<div class="sheet-head">${mark(c, 40)}<div><p class="sh-k">${esc(c.brand.name)}</p><h2 id="sh-t">${esc(offer?.item || c.ui.reserve)}</h2></div></div>
+${amount}
+<div class="sh-qr sh-off" aria-hidden="true">${BCH_COIN}</div>
+<p class="sh-scan sh-ex">${esc(ex.sheet)}</p>
+<a class="btn btn-p sh-open" href="#" data-close>${esc(c.ui.close)}</a>
+</div></div>`
+    : s.reserve.address
     ? `<div class="sheet" id="reserve" role="dialog" aria-modal="true" aria-labelledby="sh-t">
 <a class="sheet-bg" href="#" data-close aria-label="${esc(c.ui.close)}"></a>
 <div class="sheet-card">
@@ -279,6 +325,15 @@ details[open] summary i{transform:rotate(45deg)}details p{padding:0 48px 24px 0;
 .pgrid.n1 figure{aspect-ratio:21/9}
 @media(min-width:760px){.pgrid.n2{grid-template-columns:1fr 1fr}.pgrid.n3{grid-template-columns:1.4fr 1fr 1fr}.pgrid.n3 figure:first-child{aspect-ratio:auto}}
 @media(max-width:759px){.pgrid.n1 figure{aspect-ratio:4/3}.pgrid.n3 figure:first-child{grid-column:1/-1}.pgrid.n3{grid-template-columns:1fr 1fr}}
+.mgroups{display:grid;gap:44px;margin-top:52px}@media(min-width:900px){.mgroups{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:72px;row-gap:52px}}
+.mg{min-width:0}.mg h3{font:400 clamp(26px,2.6vw,32px)/1.1 var(--fd);letter-spacing:-.01em;padding-bottom:14px;border-bottom:1.5px solid var(--ink)}
+.mlist{list-style:none;margin:0;padding:0}.mlist li{padding:18px 0;border-bottom:1px solid var(--ln)}
+.ml{display:flex;align-items:baseline;gap:12px}.ml b{font-weight:600;font-size:18px;min-width:0}.ml i{flex:1;min-width:16px;border-bottom:1px dotted color-mix(in srgb,var(--ink) 30%,transparent);transform:translateY(-4px)}
+.mp{font:600 18px/1 var(--fb);font-variant-numeric:tabular-nums lining-nums;white-space:nowrap}
+.mlist p{margin-top:6px;color:var(--mu);font-size:15px;line-height:1.5;max-width:44ch}
+.mtag{display:inline-block;margin-top:10px;padding:5px 12px;border-radius:999px;background:var(--tint);color:var(--ink);font-size:13px;font-weight:600}
+.mnote{margin-top:32px;font-size:14px;color:var(--mu)}
+.sh-off{display:grid;place-items:center;height:160px;color:#c9ccd3}.sh-off svg{width:72px!important;height:72px}.sh-ex{line-height:1.5}
 .pcred{flex-basis:100%;font-size:12px;line-height:1.5;color:var(--mu)}.pcred a{color:inherit;text-underline-offset:2px}
 @media(max-width:899px){body{padding-bottom:84px}}`;
 }

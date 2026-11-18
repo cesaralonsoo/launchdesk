@@ -139,6 +139,11 @@ assert.match(prompt, /"pivot": \{"idea"/);
   const p2 = rp.parseReport(md2, { idea: "x", meta: { scores: { customers: 2 } }, sources: [{ id: "S1", url: "https://example.org/a", title: "A" }] });
   assert.deepEqual(p2.blocks.customers!.evidence.map((e) => e.impact), [0, 0, 0]);
   assert.deepEqual(p2.blocks.customers!.evidence.map((e) => e.basis), ["Not found in the research", "Not found in the research", null]);
+  // a row that names a listed source in its text is not "no source cited"
+  const md3 = "# Founder report: X\n\n## Verdict\n\n**TEST FIRST**\n\n- Demand is open.\n\n## Money\n\n**Evidence:**\n- (+) Guidavera lists flat whites at €2.80 to €3.50.\n- (+) People like good coffee.\n- (=) A latte costs €3 [S1].\n";
+  const p3 = rp.parseReport(md3, { idea: "x", sources: [{ id: "S1", url: "https://www.guidavera.com/cafe", title: "Cafe prices" }] });
+  const b3 = Object.values(p3.blocks).find((b) => b?.evidence.length)!;
+  assert.deepEqual(b3.evidence.map((e) => e.basis), ["Names a source but does not link it", "No source cited in the report", null]);
 }
 
 // 6. the two saved live reports, re-finished offline (zero spend): both were No-go only on missing data

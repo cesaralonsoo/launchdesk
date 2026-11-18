@@ -20,7 +20,7 @@ import { kitRoutes } from "./kit-routes.js";
 import { exampleRoutes } from "./examples.js";
 import { officeRoutes } from "./offices/routes.js";
 import { siteRowFor } from "./kit.js";
-import { siteRoutes } from "./site/routes.js";
+import { siteNotFoundHtml, siteRoutes } from "./site/routes.js";
 import { getSite } from "./site/db.js";
 import { STAGE_DEPTS, type AppConfig, type CreatedProject, type Project, type Quote, type ShareLink, type SiteData, type Stage, type Stats, type WorkDept } from "./types.js";
 
@@ -588,7 +588,8 @@ app.get("/s/:slug", async (c, next) => {
     const p = r.rows[0] ? await getProject(String(r.rows[0].id)) : null;
     const nova = p?.results.nova;
     const brand = nova ? (nova.names[nova.chosen] ?? nova.names[0]) : null;
-    if (!p || !brand || !p.results.pip) return c.html(html, 404);
+    // nothing published here: a server page with today's prices (the old SPA 404 named a stale price)
+    if (!p || !brand || !p.results.pip) return c.html(siteNotFoundHtml(c.req.param("slug").toLowerCase()), 404);
     const headline = p.results.dex?.landing.headline;
     return c.html(withMeta(html, { title: brand.tagline ? `${brand.name} · ${brand.tagline}` : brand.name, description: headline || brand.tagline || brand.name }));
   } catch {

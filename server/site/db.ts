@@ -43,6 +43,8 @@ export interface SiteRow {
   photos?: SitePhotoMeta[];
   /** The stored custom page fragment, read only when a request needs it. */
   customHtml?: () => Promise<string | null>;
+  /** A read-only example made by LaunchDesk (notice on top, reserve sheet takes no money). */
+  example?: boolean;
 }
 
 /** Saves (or replaces) a site. Only brand and logo of the kit are kept. */

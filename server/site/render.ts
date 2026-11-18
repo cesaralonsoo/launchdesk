@@ -5,7 +5,7 @@ import qrcode from "qrcode-generator";
 import type { Kit, SiteTemplate, StandardTemplate } from "../kit-contract.js";
 import type { SiteSpec } from "./spec.js";
 import { SITE_TEMPLATES } from "./spec.js";
-import { baseCss, esc, reserveLabel, SITE_JS, type CtxPhoto, type CtxPhotoCredit, type RenderCtx } from "./templates/shared.js";
+import { baseCss, esc, EXAMPLE_CSS, reserveLabel, SITE_JS, type CtxPhoto, type CtxPhotoCredit, type RenderCtx } from "./templates/shared.js";
 import * as editorial from "./templates/editorial.js";
 import * as bold from "./templates/bold.js";
 import * as warm from "./templates/warm.js";
@@ -34,6 +34,8 @@ export interface RenderOpts {
   /** Real photos (same-origin URLs), hero first, and their footer credits. */
   photos?: CtxPhoto[];
   photoCredits?: CtxPhotoCredit[];
+  /** A read-only example made by LaunchDesk: a notice on top, and a reserve sheet that takes no money. */
+  example?: boolean;
 }
 
 const FX: Record<string, number> = { "$": 1, "€": 1.08, "£": 1.27 };
@@ -135,6 +137,7 @@ export function buildCtx(spec: SiteSpec, kit: Pick<Kit, "brand" | "logo">, live:
     homeHref: origin ? `${origin}/` : "/",
     leadAction: `/api/sites/${encodeURIComponent(slug)}/lead`,
     ...(opts.photos?.length ? { photos: opts.photos, photoCredits: opts.photoCredits ?? [] } : {}),
+    ...(opts.example ? { example: true } : {}),
   };
 }
 
@@ -176,7 +179,7 @@ export function renderSite(spec: SiteSpec, kit: Pick<Kit, "brand" | "logo">, tem
     `<link rel="icon" href="${favicon}">`,
     `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>`,
     `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?${T.fonts.href}&display=swap">`,
-    `<style>${baseCss(t)}${T.css}</style>`,
+    `<style>${baseCss(t)}${T.css}${ctx.example ? EXAMPLE_CSS : ""}</style>`,
     `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\\u003c")}</script>`,
   ].filter(Boolean);
   return `<!doctype html><html lang="${esc(spec.lang)}" data-template="${isTemplate(template) ? template : "editorial"}"><head>${head.join("\n")}</head><body>

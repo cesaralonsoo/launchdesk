@@ -97,6 +97,11 @@ em{font-style:italic}
 .care{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 0;padding:0;list-style:none}
 .care li{font-size:.8rem;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--paper)}
 
+.pl{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:0;font-family:var(--display);font-size:1.5rem}.pl b{font-weight:400}.pl .num{font-family:var(--text);font-size:1.05rem;font-weight:600}
+.more{margin-top:56px;display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr);gap:24px 56px;align-items:start}.more h3{margin:0;font-family:var(--display);font-weight:400;font-size:1.75rem}
+.lines{list-style:none;margin:0;padding:0;border-top:1.5px solid var(--ink)}.lines li{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 16px;padding:16px 0;border-bottom:1px solid var(--line)}.lines li>div{display:grid;gap:2px;min-width:0}.lines b{font-weight:600}.lines span:not(.num){color:var(--ink-2);font-size:.95rem}.lines .num{font-weight:600}
+.lines .tag{flex-basis:100%;font-style:normal;font-size:.8rem;font-weight:600;color:var(--green)}.fine{grid-column:2;margin:0;font-size:.85rem;color:var(--ink-2)}
+@media (max-width:900px){.more{grid-template-columns:1fr}.fine{grid-column:1}}
 /* how */
 .how{padding-block:var(--sec)}
 .how-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(40px,6vw,96px);align-items:start}
@@ -247,25 +252,38 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px}
     </div>
   </section>
 
-  <section class="plants">
+  <section class="plants" id="prices">
     <div class="wrap">
       <div class="plants-head">
-        <h2>Plants that <em>forgive</em> you</h2>
+        <div>
+          <p class="kicker">Price list</p>
+          <h2>Plants that <em>forgive</em> you</h2>
+        </div>
         <p>We start you on plants that cope with Edinburgh's grey months and the odd missed watering.</p>
       </div>
       <div class="trio">
         <article class="plant">
           <img src="ld-photo:p2" alt="Snake plant with yellow-edged leaves" width="1536" height="2048">
-          <div><h3>Snake plant</h3><ul class="care"><li>Low to bright light</li><li>Water every 2–3 weeks</li></ul></div>
+          <div><p class="pl"><b>Snake plant</b><span class="num">£18</span></p><ul class="care"><li>Low to bright light</li><li>Water every 2–3 weeks</li></ul></div>
         </article>
         <article class="plant">
           <img src="ld-photo:p3" alt="Glossy ZZ plant leaves" width="683" height="1024">
-          <div><h3>ZZ plant</h3><ul class="care"><li>Copes with shade</li><li>Lets soil dry out</li></ul></div>
+          <div><p class="pl"><b>ZZ plant</b><span class="num">£22</span></p><ul class="care"><li>Copes with shade</li><li>Lets soil dry out</li></ul></div>
         </article>
         <article class="plant">
           <img src="ld-photo:p5" alt="Split monstera leaves against a pale wall" width="960" height="1444">
-          <div><h3>Monstera</h3><ul class="care"><li>Bright, indirect light</li><li>Water when top soil is dry</li></ul></div>
+          <div><p class="pl"><b>Monstera</b><span class="num">£28</span></p><ul class="care"><li>Bright, indirect light</li><li>Water when top soil is dry</li></ul></div>
         </article>
+      </div>
+      <div class="more">
+        <h3>Also on the shelf</h3>
+        <ul class="lines">
+          <li><div><b>Terracotta pot</b><span>Plain clay, with a saucer</span></div><span class="num">£9</span></li>
+          <li><div><b>Care visit</b><span>One visit at home, for any plant</span></div><span class="num">£15</span></li>
+          <li><div><b>Repotting</b><span>Your plant, a bigger pot, fresh soil</span></div><span class="num">£20</span></li>
+          <li><div><b>Starter Jungle</b><span>3 easy plants + 2 care visits</span></div><span class="num">£60</span><em class="tag">£45 opening offer</em></li>
+        </ul>
+        <p class="fine">Opening prices · they may change before we open</p>
       </div>
     </div>
   </section>

@@ -40,18 +40,19 @@ export const SITE_DESIGNS: readonly SiteTemplate[] = ["custom", ...SITE_TEMPLATE
 
 /**
  * Reservation estimates per part (PLAN.md §4, list prices). custom = the designed page (one Sonnet 5.5 call,
- * ~4k cached system + ~1.5k brief in, 6-10k out with thinking at "medium": typically $0.08-0.12, $0.17 worst case
- * at the 16k cap). Photos are free (keyless Openverse/Commons). The sum must stay ≤ KIT_CAP_USD (test/kit.test.ts).
+ * ~4.5k cached system + ~3k brief in (menu included), 8-14k out with thinking at "medium": typically $0.10-0.15, $0.25 worst case
+ * at the 24k cap). Photos are free (keyless Openverse/Commons). The sum must stay ≤ KIT_CAP_USD (test/kit.test.ts).
  */
-export const KIT_EST = { brand: 0.04, logo: 0.09, site: 0.045, marketing: 0.115, custom: 0.08 } as const;
+export const KIT_EST = { brand: 0.04, logo: 0.09, site: 0.05, marketing: 0.115, custom: 0.12 } as const;
 
 export interface KitDeps {
   brand(p: Project): Promise<NovaBrand>;
   logos(brand: KitBrand, avoid: string[], ctx?: { idea: string; report?: ReportDigest }): Promise<LogoOption[]>;
   site(input: KitInput): Promise<unknown>;
   marketing(input: KitInput): Promise<MarketingResult>;
-  /** Real photos for the idea (never throws; [] is fine). Default: site/photos.ts findPhotos. */
-  photos?(input: KitInput): Promise<SitePhoto[]>;
+  /** Real photos for the idea (never throws; [] is fine). Default: site/photos.ts findPhotos, with the search words the
+   *  website plan wrote (its menu items: "flat white", "croissant"). */
+  photos?(input: KitInput, queries?: SiteSpec["photoQueries"]): Promise<SitePhoto[]>;
   /** The page designed for this business; html null when it did not pass the checks. Default: site/custom.ts. */
   custom?(input: KitInput, photos: CustomPhoto[], spec: SiteSpec): Promise<{ html: string | null; usd: number; issues: string[] }>;
 }
@@ -252,9 +253,9 @@ export const defaultDeps: KitDeps = {
     if (!m) throw new NotReady("marketing");
     return m.planMarketing(input);
   },
-  async photos(input) {
+  async photos(input, queries) {
     const { findPhotos } = await import("./site/photos.js");
-    return findPhotos({ idea: input.idea, city: input.brand.city });
+    return findPhotos({ idea: input.idea, city: input.brand.city, ...(queries ? { queries } : {}) });
   },
   async custom(input, photos, spec) {
     const { generateCustomSite } = await import("./site/custom.js");
@@ -313,7 +314,9 @@ export async function siteRowFor(slug: string): Promise<SiteRow | null> {
   const stored = kit?.site ? asSiteSpec(kit.site.spec) : null;
   if (!kit || !stored) return null;
   // A finished example is a showcase, not a shop: no reserve address, so no button can send real coins to anyone.
-  const spec = Number(r.rows[0]?.example ?? 0) === 1 ? { ...stored, reserve: { ...stored.reserve, address: "" } } : stored;
+  // The page says so on top, and its reserve button opens a sheet that explains instead of showing a QR code.
+  const example = Number(r.rows[0]?.example ?? 0) === 1;
+  const spec = example ? { ...stored, reserve: { ...stored.reserve, address: "" } } : stored;
   const site = kit.site!;
   const projectId = String(id);
   const customReady = site.custom?.status === "done";
@@ -328,6 +331,7 @@ export async function siteRowFor(slug: string): Promise<SiteRow | null> {
     version: site.custom?.version ?? 1,
     updatedAt: Date.now(),
     ...(site.photos?.length ? { photos: site.photos } : {}),
+    ...(example ? { example: true } : {}),
     ...(customReady ? { customHtml: async () => (await (await import("./site/custom-db.js")).loadCustom(projectId))?.html ?? null } : {}),
   };
 }
@@ -398,9 +402,8 @@ async function runKitInner(projectId: string, deps: KitDeps, stage: string): Pro
   const slug = await reserveSlug(projectId, kit.brand.name);
   const input: KitInput = { projectId, idea: p.idea, brand: kit.brand, report: digestOf(p, await loadV7(projectId)), founderAddress: row?.founder_address ?? "", slug };
 
-  // 2. Photos start now (free, ≤12 s), in parallel with logo, website copy and plan; the designed page needs them.
-  const photosP = kitPhotos(projectId, kit, input, deps);
-
+  // 2. Photos (free, ≤30 s) start as soon as the website copy is written: its menu names the products to photograph.
+  //    Logo and plan keep running in parallel; the designed page waits for both copy and photos.
   // 3. Logo, website and plan in parallel.
   const part = async <R>(name: KitPart, est: number, make: () => Promise<R>, fallback: () => R | Promise<R>, put: (r: R) => void) => {
     if (kit.status[name] === "done") return;
@@ -425,6 +428,9 @@ async function runKitInner(projectId: string, deps: KitDeps, stage: string): Pro
     put(r);
     await set(name, "done");
   };
+  // The photo searches that do not need the site plan start now (cached for kitPhotos), so waiting for the plan's
+  // menu-driven searches costs less time on the way to the designed page.
+  if (!deps.photos && !kit.site?.photos?.length) void import("./site/photos.js").then((m) => m.prewarmPhotos({ idea: input.idea, city: input.brand.city })).catch(() => {});
   await Promise.allSettled([
     part<LogoResult>(
       "logo",
@@ -453,7 +459,7 @@ async function runKitInner(projectId: string, deps: KitDeps, stage: string): Pro
       },
       () => ({ spec: fallbackSite(input), template: templateFor(input.idea) }),
       (r) => (kit.site = { ...r, base: r.template as StandardTemplate }),
-    ).then(() => customStep(projectId, kit, input, deps, guard, photosP, save)),
+    ).then(() => customStep(projectId, kit, input, deps, guard, kitPhotos(projectId, kit, input, deps), save)),
     part<MarketingResult>("marketing", KIT_EST.marketing, () => deps.marketing(input), () => fallbackMarketing(input), (r) => (kit.marketing = { ...r, plan: r.plan && typeof r.plan === "object" && Array.isArray((r.plan as PlanV2).weeks) ? withValidateFirst(r.plan as PlanV2, input.report as ReportGate) : r.plan })),
   ]);
   await save();
@@ -475,7 +481,7 @@ async function kitPhotos(projectId: string, kit: Kit, input: KitInput, deps: Kit
     const { listPhotos, savePhotos } = await import("./site/photos-db.js");
     const have = await listPhotos(projectId);
     if (have.length) return have;
-    const found = await (deps.photos ?? defaultDeps.photos!)(input);
+    const found = await (deps.photos ?? defaultDeps.photos!)(input, asSiteSpec(kit.site?.spec)?.photoQueries);
     if (!found.length) return [];
     await savePhotos(projectId, found);
     return await listPhotos(projectId);

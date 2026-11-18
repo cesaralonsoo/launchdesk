@@ -9,7 +9,7 @@ Object.assign(process.env, { MOCK_AI: "1", ANTHROPIC_API_KEY: "" });
 
 const { sanitize, gateCustom, sanitizeCss, inventedClaims, extractFragment } = await import("../server/site/sanitize.js");
 const { generateCustomSite, customBrief, storeCtx, aspectOf, CUSTOM_SYSTEM } = await import("../server/site/custom.js");
-const { customRender, fontsHref, photoKey, headerLogo } = await import("../server/site/custom-render.js");
+const { customRender, fontsHref, photoKey, headerLogo, headerFallbackCss } = await import("../server/site/custom-render.js");
 const { SCRIPT_HASH } = await import("../server/site/render.js");
 const { SITE_JS } = await import("../server/site/templates/shared.js");
 const { loadFixture } = await import("../server/site/plan.js");
@@ -46,6 +46,17 @@ test("the gold page passes the gate and gets wired", () => {
   assert.match(s.body, /<section class="hero" data-hero>/);
   assert.match(s.body, new RegExp(`href="${STAT}" rel="noopener nofollow" target="_blank"`));
   assert.doesNotMatch(s.body, /ld-photo:|data-ld/);
+});
+
+test("reserve off: a page that says you can pay fails the gate", () => {
+  const noReserve = (inject: string) => page(inject).replace(/<a [^>]*data-ld="reserve"[^>]*>[^<]*<\/a>/g, "");
+  assert.ok(gateCustom(noReserve("<p>Join the list for opening news.</p>"), ctx({ reserveEnabled: false })), "plain page passes");
+  for (const bad of ["<p>Pay with Bitcoin Cash.</p>", "<p>Reserve yours and pay from your phone.</p>", "<p>Pre-order your first coffee.</p>", "<p>We take BCH.</p>"]) {
+    const r = sanitize(noReserve(bad), ctx({ reserveEnabled: false }));
+    assert.ok(r.problems.some((p) => /talks about paying/.test(p)), bad);
+    assert.equal(gateCustom(noReserve(bad), ctx({ reserveEnabled: false })), null, bad);
+  }
+  assert.deepEqual(sanitize(page("<p>Pay with Bitcoin Cash.</p>"), ctx()).problems, [], "allowed when reserve is on");
 });
 
 test("store mode keeps neutral hooks and is idempotent", () => {
@@ -277,4 +288,13 @@ test("the chosen logo sits next to the wordmark in the header, only when the lin
   assert.equal(count(withLogo), 1);
   assert.equal(count(without), 0);
   assert.match(withLogo, /header a\[href="#top"\]>svg\.ld-logo\{/);
+});
+
+test("a page whose CSS forgot the header gets a plain one-row header; a styled header is left alone", () => {
+  assert.match(headerFallbackCss(".wrap{max-width:1200px}.mark{font-size:2rem}"), /header>div,header>\.wrap\{display:flex/);
+  assert.match(headerFallbackCss(""), /@media \(max-width:640px\)\{header nav a:not\(\[data-reserve\]\)\{display:none\}\}/);
+  assert.equal(headerFallbackCss("header{position:sticky}"), "");
+  assert.equal(headerFallbackCss(".a{x:1}\n.site-header .wrap{display:flex}"), "");
+  assert.equal(headerFallbackCss("@media (max-width:600px){header nav{display:none}}"), "");
+  assert.notEqual(headerFallbackCss("/* header */ .x{color:red}"), "", "a comment is not a rule");
 });
