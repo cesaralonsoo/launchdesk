@@ -2,7 +2,12 @@
 // ?scene=office|building|district  ?time=…  ?cycle=…  ?still=1  ?quality=low  ?portfolio=0..6  ?built=1  ?labels=1  ?clock=1
 // v7: ?wl=0..3 (world level) ?cap=0..3 ?ask=0..3 (asks past the cap → ghost) ?boom=<ms> (pose the boom) ?play=boom
 //     ?pixel=0..2 ?roster=3..5 (sample analysts from ROLE_LIBRARY) ?focus=<actor>
+// v8 (redesign WP-B): ?rooms=r0:done,r1:working,… (floor room states) ?offices=working,done,off,off[&results=1,3,0,0]
+//     ?campus=0..6 (fixture ideas: 0 = only free plots) ?showcase=example|yours ?shot=wing:back|wing:front|plate|room:r1|
+//     office:money|plot:<id> ?unlock=research|studio (play the unlock beat) ?levelup=offices|campus ?labels=1 (v8 label
+//     points as pills) ?sample=1 (offices plate tinted as sample) ?nogo=1 (cap 0: the offices plate goes)
 import type { ActorId, Analyst, AnalystRole, AtmospherePreset, PortfolioItem, WorldLevel } from "../contracts";
+import type { Area, RoomState } from "./api-v8";
 import { BUILD_TEAM, ROLE_LIBRARY, readParams } from "../contracts";
 import { createDevRoom } from "./dev-room";
 import { createWorldX } from "./index";
@@ -40,13 +45,56 @@ const n = Math.max(0, Math.min(6, +(q.get("portfolio") ?? (level === 3 ? 3 : 0))
 const TITLES = ["Night bakery", "Bike repair van", "Study planner", "Plant shop", "Language swap", "Pet sitter"];
 const items: PortfolioItem[] = Array.from({ length: n }, (_, i) => ({ id: `p${i}`, title: TITLES[i]!, level: ([3, 2, 1, 2, 1, 1] as const)[i]!, score: null }));
 world.setPortfolio?.(items);
+// ── v8 fixtures
+// ?idea=1: the "this will be yours" state the flow paints at the idea step (founder alone, every other room locked)
+if (q.get("idea") === "1") {
+  world.setActorState("founder", "idle", { instant: true });
+  roster.forEach((a) => world.setActorState(a.id, "absent", { instant: true }));
+  for (const b of BUILD_TEAM) world.setActorState(b, "asleep", { instant: true });
+  world.setSign({ kind: "draft", name: q.get("name") ?? "Coffee kiosk", color: "#2B2B33" });
+}
+const toYours = q.get("toyours");
+if (toYours) setTimeout(() => world.setShowcase("yours"), +toYours);
+const rooms = q.get("rooms");
+if (rooms) world.setRooms(rooms.split(",").map((x) => { const [id, st] = x.split(":"); return { id: id!, state: (st ?? "idle") as RoomState }; }));
+const offices = q.get("offices");
+if (offices) {
+  const res = (q.get("results") ?? "").split(",").map((x) => +x || 0);
+  const ids = ["marketing", "research", "money", "customers"] as const;
+  world.setOffices(offices.split(",").map((st, i) => ({ id: ids[i % 4]!, state: (st || "off") as "off" | "working" | "done", results: res[i] ?? (st === "done" ? 2 : 0) })), { sample: q.get("sample") === "1" });
+}
+const campusN = q.get("campus");
+if (campusN != null) {
+  const fx: Parameters<typeof world.setCampus>[0] = [
+    { id: "ex-coffee-bcn", name: "Sortida", score: 5.5, verdict: "Test first", stage: 2 },
+    { id: "mine-1", name: "Night bakery", score: 6.8, verdict: "Go", stage: 3 },
+    { id: "mine-2", name: "Pet sitter app", score: 3.1, verdict: "No-go", stage: 1, nogo: true },
+    { id: "mine-3", name: "Bike repair van", stage: 0 },
+    { id: "ex-yoga-vlc", name: "Yoga Valencia", score: 6.1, verdict: "Test first", stage: 2 },
+    { id: "mine-4", name: "Plant shop", score: 7.0, verdict: "Go", stage: 1 },
+  ];
+  world.setCampus(fx.slice(0, Math.max(0, Math.min(6, +campusN))));
+}
+if (q.get("nogo") === "1") world.setLevelCap(0);
+const sc = q.get("showcase");
+if (sc === "example" || sc === "yours") world.setShowcase(sc);
+const shot = q.get("shot");
+if (shot) setTimeout(() => world.shotFor(shot as Area), 300);
+const unlock = q.get("unlock");
+if (unlock === "research" || unlock === "studio") setTimeout(() => void world.unlockWing(unlock), +(q.get("delay") ?? 800));
+const lu = q.get("levelup");
+if (lu === "offices" || lu === "campus" || lu === "research" || lu === "studio") setTimeout(() => void world.levelUp(lu), +(q.get("delay") ?? 800));
+world.onPick((id) => console.log("pick", id));
 const labels = document.getElementById("labels")!;
 if (q.get("labels") === "1") {
   const draw = () => {
-    labels.innerHTML = world.portfolioScreenPoints().map((s) => `<span style="left:${s.x}px;top:${s.y}px">${items.find((i) => i.id === s.id)?.title ?? s.id}</span>`).join("");
+    labels.innerHTML = world.labelPoints().filter((s) => s.visible).map((s) => `<span style="left:${s.x}px;top:${s.y}px">${s.id}</span>`).join("");
   };
   world.onCameraChange(draw);
-  setInterval(draw, 500);
+  setInterval(draw, 200);
 }
 if (q.get("clock") === "1") world.onClock((i) => (document.getElementById("clock")!.textContent = `${i.name} · t ${i.t.toFixed(3)} · daylight ${i.daylight.toFixed(2)} · warmth ${i.warmth.toFixed(2)}`));
 Object.assign(window, { __proto: { world } });
+// ?pause=<ms>: stop the render loop after that long (screenshot scripts on a busy machine)
+const pauseAt = q.get("pause");
+if (pauseAt) setTimeout(() => world.setPaused(true), +pauseAt);

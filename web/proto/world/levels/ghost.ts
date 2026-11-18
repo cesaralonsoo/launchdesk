@@ -3,7 +3,8 @@
 // Dashes are thin instanced boxes (not GL lines) so they read at every distance and through the pixel pass.
 import * as THREE from "three";
 
-export type GhostKind = "floor" | "tower" | "district";
+/** v8: "plate" = the dashed offices floor above the office (no padlock: it is a promise with a price, not a wall). */
+export type GhostKind = "floor" | "tower" | "district" | "plate";
 
 /** Pixel padlock (12 × 14 art pixels), drawn on a canvas with hard edges. */
 function lockTexture(): THREE.Texture {
@@ -56,7 +57,7 @@ function lockTexture(): THREE.Texture {
 }
 
 /** Dashes along the 12 edges of each box + optional horizontal rings every `ringEvery` metres (floor lines). */
-function dashes(boxes: THREE.Box3[], o: { dash: number; gap: number; thick: number; ringEvery?: number; ringFrom?: number }): THREE.Matrix4[] {
+function dashes(boxes: THREE.Box3[], o: { dash: number; gap: number; thick: number; ringEvery?: number; ringFrom?: number; posts?: number }): THREE.Matrix4[] {
   const out: THREE.Matrix4[] = [];
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3();
   const seg = (a: THREE.Vector3, b: THREE.Vector3) => {
@@ -84,9 +85,13 @@ function dashes(boxes: THREE.Box3[], o: { dash: number; gap: number; thick: numb
       seg(V(c.x, y, a.z), V(c.x, y, c.z));
     }
     for (const x of [a.x, c.x]) for (const z of [a.z, c.z]) seg(V(x, a.y, z), V(x, c.y, z));
+    // v8 plate: short dashed corner posts hanging under the slab (they point at the floor it will sit on)
+    if (o.posts) for (const x of [a.x, c.x]) for (const z of [a.z, c.z]) seg(V(x, a.y - o.posts, z), V(x, a.y, z));
   }
   return out;
 }
+
+const PLATE_INK = "#9C86E6", PLATE_FILL = "#C9BDF2";
 
 export interface Ghost {
   readonly root: THREE.Group;
@@ -102,7 +107,7 @@ export interface Ghost {
   dispose(): void;
 }
 
-export function createGhost(src: { floor: () => THREE.Box3[]; tower: () => THREE.Box3[]; district: () => THREE.Box3[] }, opts: { reduced: boolean }): Ghost {
+export function createGhost(src: { floor: () => THREE.Box3[]; tower: () => THREE.Box3[]; district: () => THREE.Box3[]; plate?: () => THREE.Box3[] }, opts: { reduced: boolean }): Ghost {
   const root = new THREE.Group();
   root.name = "ghost";
   const mat = new THREE.MeshBasicMaterial({ color: "#B9B2A6", transparent: true, opacity: 0, depthWrite: false, fog: true });
@@ -115,7 +120,8 @@ export function createGhost(src: { floor: () => THREE.Box3[]; tower: () => THREE
   const ar = 18 / 16;
   lock.scale.set(0.034, 0.034 * ar, 1);
   root.add(lock);
-  const SPEC: Record<GhostKind, { dash: number; gap: number; thick: number; ringEvery?: number; fill: number }> = {
+  const SPEC: Record<GhostKind, { dash: number; gap: number; thick: number; ringEvery?: number; fill: number; posts?: number }> = {
+    plate: { dash: 0.42, gap: 0.34, thick: 0.055, fill: 0.08, posts: 2.2 },
     floor: { dash: 0.5, gap: 0.4, thick: 0.07, fill: 0.12 },
     tower: { dash: 1.1, gap: 0.9, thick: 0.17, ringEvery: 3.2, fill: 0.1 },
     district: { dash: 2.2, gap: 1.6, thick: 0.36, ringEvery: 6.4, fill: 0.1 },
@@ -124,7 +130,7 @@ export function createGhost(src: { floor: () => THREE.Box3[]; tower: () => THREE
   function build(k: GhostKind) {
     let b = built.get(k);
     if (b) return b;
-    const boxes = src[k]();
+    const boxes = (k === "plate" ? src.plate?.() : src[k]()) ?? [];
     const ms = dashes(boxes, { ...SPEC[k], ringFrom: boxes[0]?.min.y });
     const inst = new THREE.InstancedMesh(geo, mat, ms.length);
     ms.forEach((m, i) => inst.setMatrixAt(i, m));
@@ -142,7 +148,7 @@ export function createGhost(src: { floor: () => THREE.Box3[]; tower: () => THREE
       g.add(v);
     }
     const all = boxes.reduce((a, x) => a.union(x), new THREE.Box3());
-    const top = new THREE.Vector3((all.min.x + all.max.x) / 2, all.max.y + (k === "floor" ? 0.9 : k === "tower" ? 3 : 6), (all.min.z + all.max.z) / 2);
+    const top = new THREE.Vector3((all.min.x + all.max.x) / 2, all.max.y + (k === "floor" || k === "plate" ? 0.9 : k === "tower" ? 3 : 6), (all.min.z + all.max.z) / 2);
     if (k === "district") top.set(0, 12 * 3.2 + 9, 0); // above the hero tower's roof
     g.visible = false;
     root.add(g);
@@ -163,6 +169,10 @@ export function createGhost(src: { floor: () => THREE.Box3[]; tower: () => THREE
         b.g.visible = true;
         lock.position.copy(b.top);
         fillK = SPEC[next].fill;
+        if (next === "plate") {
+          mat.color.set(PLATE_INK);
+          fill.color.set(PLATE_FILL);
+        }
         if (!kind) k = animate && !opts.reduced ? 0 : 1;
         target = 1;
       } else target = 0;
@@ -178,19 +188,25 @@ export function createGhost(src: { floor: () => THREE.Box3[]; tower: () => THREE
       lock.scale.set(s, s * ar, 1);
     },
     setClay(c, night) {
+      nightK = night;
+      if (kind === "plate") {
+        // the offices stage colour, muted: a promise, not a building
+        mat.color.set(PLATE_INK);
+        fill.color.set(PLATE_FILL);
+        return;
+      }
       mat.color.copy(c).multiplyScalar(0.82).lerp(new THREE.Color("#9AA6C4"), night * 0.6);
       fill.color.set(night > 0.5 ? "#7F8DAE" : "#FFFFFF");
-      nightK = night;
     },
     update(dt, t) {
       if (k !== target) {
         k += Math.sign(target - k) * Math.min(Math.abs(target - k), dt / 0.7);
         if (k === 0) for (const b of built.values()) b.g.visible = false;
       }
-      const breathe = opts.reduced ? 1 : 0.86 + 0.14 * Math.sin(t * 1.6);
-      mat.opacity = 0.95 * k * breathe;
+      const breathe = opts.reduced || kind === "plate" ? 1 : 0.86 + 0.14 * Math.sin(t * 1.6);
+      mat.opacity = (kind === "plate" ? 0.85 : 0.95) * k * breathe;
       fill.opacity = fillK * k * (1 - 0.55 * nightK);
-      lockMat.opacity = k;
+      lockMat.opacity = kind === "plate" ? 0 : k;
       root.visible = k > 0.001;
       return k !== target;
     },
