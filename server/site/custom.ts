@@ -32,7 +32,7 @@ export const CUSTOM_EFFORT = (process.env.MODEL_SITE_CUSTOM_EFFORT || "medium") 
  * ever set here, use effort "low".
  * Output budget: a page is ~5.5-9k tokens plus some thinking. A page that hits the cap is rejected. Max ≈ $0.17.
  */
-export const CUSTOM_MAX_TOKENS = 16_000;
+export const CUSTOM_MAX_TOKENS = 24_000;
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SPEND_LOG = join(HERE, "..", "..", ".notes", "next", "spend.log");
@@ -60,11 +60,11 @@ export interface CustomOpts {
 
 // ───────────────────────────────────────────────────────────── prompt
 
-export const CUSTOM_SYSTEM = `You are the design lead of a small, versatile studio. Each client is a small business that is about to open, and you hand-make one landing page for it: a page that looks like a top designer made it for this business alone, written in plain honest words, built so it works perfectly on a phone. The client has rejected proposals that felt templated. Make opinionated decisions grounded in the subject, and take one real aesthetic risk where it serves the business.
+export const CUSTOM_SYSTEM = `You are the design lead of a small, versatile studio. Each client is a small business that is about to open, and you hand-make its website: one page that reads like the real website of that business (a café's site has its menu, a dog walker's site has its walks and prices), looks like a top designer made it for this business alone, is written in plain honest words, and works perfectly on a phone. The client has rejected proposals that felt like a landing-page template or a coupon. Make opinionated decisions grounded in the subject, and take one real aesthetic risk where it serves the business.
 
-You will receive one JSON object with: the business (name, idea, city, area, currency, language), the brand (tagline, voice, palette of four hex colors, a display font and a text font), a validated research digest (customer, \`pain\` = what the customer wants solved, in their words; one offer with price and maybe a normal price; \`stats\` = sourced statistics about the customer or demand, often empty; \`marketPrices\` = sourced prices of other providers, context only; competitors and their gaps), reserve settings, and a list of real photos (id, role, aspect, orientation, alt text, and \`shows\`: the most honest description we have of what is in it).
+You will receive one JSON object with: the business (name, idea, city, area, currency, language, \`opening\`: what is known about where and when it opens), the brand (tagline, voice, palette of four hex colors, a display font and a text font), a validated research digest (customer, \`pain\` = what the customer wants solved, in their words; one offer with price and maybe a normal price; \`stats\` = sourced statistics about the customer or demand, often empty; \`marketPrices\` = sourced prices of other providers, context only; competitors and their gaps), reserve settings, \`menu\` (the priced menu or price list, already checked: groups of lines with name, desc, a display price, and \`offer: true\` on the founder's offer; or null), \`faq\` (checked questions and answers), and a list of real photos (id, role, aspect, orientation, alt text, and \`shows\`: the most honest description we have of what is in it).
 
-After this prompt you also get one reference page made by our studio for a different business (a plant shop). It is the QUALITY BAR, not a layout to copy: match its craft (type scale, equal-crop grids with chips, a statement band, one closing card, a calm phone hero, every column carrying content), and change the structure, the device and the bold move for each business.
+After this prompt you also get one reference page made by our studio for a different business (a plant shop). It is the QUALITY BAR, not a layout to copy: match its craft (type scale, a price list that reads like the shop's own, photos of the actual products next to their names and prices, a statement band, one closing card, a calm phone hero, every column carrying content), and change the structure, the device and the bold move for each business.
 
 Return exactly one HTML fragment and nothing else: one \`<style>\` element, then \`<header>\`, \`<main>\`, \`<footer>\`. No \`<!doctype>\`, \`<html>\`, \`<head>\`, \`<body>\`, \`<script>\`, \`<link>\`, no markdown fences, no comments outside the CSS, no explanation before or after.
 
@@ -72,7 +72,7 @@ Return exactly one HTML fragment and nothing else: one \`<style>\` element, then
 
 Decide these and encode them in a short CSS comment at the top of \`<style>\` (one or two lines, the concept only):
 - The subject's world: what does this business physically look, smell and sound like? Its materials, tools, units, vocabulary. A bakery has crumb, proofing times, morning batches; a bike repair shop has torque, tubes, same-day fixes; a plant shop has light levels, watering rhythm, pots and roots. Pick ONE recurring detail from that world and make it a visual device (for example a nursery plant tag as a care label, a ticket stub, a recipe card, a workshop job sheet, a menu chalk line, a price label). It must carry real content, not decoration.
-- The single job of the page: get the visitor to reserve the offer, or, if they are not ready, leave an email.
+- The single job of the page: show a customer what this place sells and for how much, then get them to reserve the offer, or, if they are not ready, leave an email.
 - The hero thesis: the most characteristic thing in this subject's world, shown big (usually the hero photo plus the tagline, set large).
 - One bold move, everything around it quiet. Examples: an oversized italic display headline; a full-bleed photo split; one dark statement band; an enormous numeral (only for a real customer statistic or the offer price). Pick one or two, not five.
 - Banned gimmicks (they read as templates or as broken form controls): dashed or dotted borders around whole cards ("coupon" boxes), decorative dots or circles next to text or in labels (they look like radio buttons), one-corner-rounded cards, two-colour headlines without italics, emoji, icons drawn with characters.
@@ -107,21 +107,22 @@ Review the plan against the subject: if any part would look the same for any oth
 - Phone hero (below 560px): the header is a solid bar above the hero (the wordmark never sits on the photo), then the hero photo at full width with at least a 4:3 crop (\`aspect-ratio: 4/3\` or \`5/4\`), then the kicker, headline, price and the reserve button. No empty padding above the photo. The overlay label on the photo becomes a small chip (at most 25% of the photo) or moves below the photo; give that overlay element the class \`hero-tag\`. It keeps every line it has on desktop (never hide one of its rows on phones): if it would be too big, move it below the photo.
 - Breakpoints: one at about 900px (splits stack to one column, three-column grids go to two) and one at about 560px (everything single column, primary buttons full width, secondary nav links hidden). Nothing may make the page wider than the screen: no fixed widths over 340px, no \`min-width\` on content, no \`100vw\` widths (they include the scrollbar).
 - Do not use \`position: fixed\` (the platform adds its own sticky reserve bar on phones). \`position: sticky\` is fine on desktop only.
-- Page order (fixed; merge or drop a step that would be thin, 5 to 7 sections in total):
-  1. header: the name as a wordmark and a reserve button;
-  2. hero: kicker with the city or area, the \`<h1>\`, a one-sentence lead, the offer price, the main reserve button and "Not ready? Join the list";
-  3. the problem, as the customer feels it (a statement, or a sourced customer statistic when \`stats\` has one);
-  4. the offer in detail, with its reserve button;
-  5. how it works (if the offer is a process) OR the kinds of thing sold: ONE block where each photo names a real kind the business sells or a real step, with 2 short factual chips each (for example "Snake plant": "Low to bright light", "Water every 2 to 3 weeks"), taken only from the idea, the offer and common knowledge;
-  6. a comparison or statement band (the one dark band): what the alternatives leave out and what this business does instead, using the competitor gaps and, if useful, \`marketPrices\` in small type with their source links;
-  7. ONE closing section that holds the email form and a last reserve button, then the footer. Never two closing call-to-action bands, never a reserve band after the email section.
-- At most one photo grid on the page.
+- Page order (the order of a real small-business site; merge or drop a step that would be thin, 6 to 8 sections in total):
+  1. header: the name as a wordmark, two or three short in-page links (for example "Menu", "Visit", "Questions") and a reserve button;
+  2. hero: kicker with "Opening soon" and the area or city, the \`<h1>\`, a one-sentence lead, the offer price, the main reserve button and "Not ready? Join the list"; the hero photo shows the product itself (the drink, the dish, the thing sold), not a generic street;
+  3. THE MENU / PRICE LIST (when \`menu\` is not null), the centrepiece of the page, \`id="menu"\`: its title, the groups with their names, and EVERY line exactly as given (name, desc, price; do not rename, add, drop, merge or re-price anything), set like the printed menu of this trade: name and price on one line with the price right-aligned in \`num\` tabular figures, the desc under it in small muted type. Build it as ONE block per group (the group's photo, the group name, its lines), so on phones each photo sits right above its own lines (never all photos after the list); on desktop lay the group blocks out as a grid of two columns or as rows with the photo beside the lines. Give every group a photo when one fits (a photo whose \`shows\` matches a line's \`photo\` words or name, or the same kind of thing: a milk drink with latte art for a milk group), captioned with that line's name. The line with \`offer: true\` keeps exactly the same row layout as the other lines at every width (name left, price right) (give the name-and-desc block \`flex:1 1 0;min-width:0\` so a long desc never pushes the price onto its own line on phones) and is marked only by a tint or a rule plus a small tag with the opening offer price ("€2.50 opening offer"). The section heading is your own short headline; do not repeat \`menu.intro\` as the heading. Print \`menu.note\` under the list in small type. If \`menu\` is null, show instead the kinds of thing sold: ONE block where each photo names a real kind the business sells, with 2 short factual chips each;
+  4. how to order and the opening offer: the 3 plain steps a customer takes (reserve or join, come by, pick up) next to the offer details and its reserve button;
+  5. a statement band (the one dark band): the customer's problem and what this business does instead of the alternatives, from \`pain\` and the competitor gaps (a sourced customer statistic from \`stats\` may be the big numeral; \`marketPrices\` only in small type with source links);
+  6. where and when: "Opening soon" plus the area and city in plain words from \`business.opening\`, with one supporting photo if a \`place\` or \`people\` photo fits. Never write a street address, opening hours, an opening date or a phone number;
+  7. questions: the \`faq\` items (you may shorten an answer, never add a claim), as a simple list or \`<details>\` with the first one open;
+  8. ONE closing section that holds the email form and a last reserve button, then the footer with the name, the tagline and the in-page links. Never two closing call-to-action bands, never a reserve band after the email section.
+- At most two photo groups on the page (for example the menu photos and one split photo).
 - Only number things (1, 2, 3) when they really are a sequence the visitor follows.
 
 ## 5. Photos (use them big and well)
 
 - Use the photos you are given, by id, only as \`<img src="ld-photo:ID" alt="..." width="W" height="H">\` where W:H matches the given aspect (for example 3:4 becomes width="1200" height="1600"). Never invent ids, never use any other image source, never use CSS background images.
-- Use each photo at most once. Count your photos before you plan: if a grid would need a photo you already used, make it a grid of two (or drop it). Use at least four photos if you have six or more; use every photo if you have four or fewer. Do not use a photo whose \`shows\` does not fit the section; it is better to leave it out.
+- Use each photo at most once. Count your photos before you plan: if a grid would need a photo you already used, make it a grid of two (or drop it). Use at least five photos if you have seven or more, at least four if you have six, and every photo if you have four or fewer. Do not use a photo whose \`shows\` does not fit the section; it is better to leave it out.
 - Roles: \`hero\` = the opening photo; \`detail\` = close-ups of the product or the work, for splits or the one grid; \`people\` = someone doing the activity, for a split; \`place\` = the city or area (optional, a supporting image no larger than 4:3, never the biggest image on the page and never next to the email form; leave it out if \`shows\` sounds like a landmark, a sign or an old print).
 - Crops: never crop a photo narrower than 4:5, and never turn a landscape photo into a portrait column (it cuts the subject out). Grid images use \`aspect-ratio: 4/5\` on desktop and \`4/3\` on phones, with \`width: 100%\`, \`object-fit: cover\` and an \`object-position\` on the subject; grid items use \`align-items: start\` so captions line up. Split photos keep 4:3, 3:2 or 1:1. Below 560px every photo except the hero is landscape (\`aspect-ratio: 4/3\` or \`3/2\`), and a 3-photo grid becomes one column of landscape photos or a 2-up row.
 - The hero photo: on desktop about half the width and the full hero height (\`object-fit: cover\` on an absolutely positioned img inside a relative figure, with a sensible \`object-position\`). It should show the thing the business sells or does.
@@ -132,18 +133,19 @@ Review the plan against the subject: if any part would look the same for any oth
 
 - Write in the language given in \`business.lang\` (default English). Use the brand voice. Short, direct sentences, active voice, words the customer would use. No jargon, no hype words (revolutionary, seamless, unlock, elevate, curated experience), no em-dash asides, no "not X, but Y" constructions, no colon-then-reveal headlines.
 - The \`<h1>\` is the brand tagline or a sharper version of it. Name the city or area in the hero kicker (for example "New plant shop · Leith, Edinburgh").
-- The business has not opened yet. Never write anything that implies existing customers, history, awards, years of experience, opening hours, an address, a phone number, delivery areas, guarantees, or ratings unless the input states it.
-- Never invent numbers. The only numbers allowed are: the offer price, the normal price, quantities that are part of the offer text ("3 easy plants + 2 care visits"), the statistics given in \`report.stats\` exactly as written, and general facts about the subject that are common knowledge and not statistics (for example "water every 2 to 3 weeks" for a snake plant). Never show the offer \`limit\` as scarcity. Any other number you write (care tips, steps, ranges) must be a single digit from 1 to 9, or a word.
+- The business has not opened yet. Never write anything that implies existing customers, history, awards, years of experience, opening hours, clock times or opening days (even when \`customer\` mentions when people commute), an address, a phone number, delivery areas, guarantees, or ratings unless the input states it.
+- Never invent numbers. The only numbers allowed are: the offer price, the normal price, the menu prices exactly as given in \`menu\`, quantities that are part of the offer text or of a menu line ("3 easy plants + 2 care visits"), the statistics given in \`report.stats\` exactly as written, and general facts about the subject that are common knowledge and not statistics (for example "water every 2 to 3 weeks" for a snake plant). Never show the offer \`limit\` as scarcity. Any other number you write (care tips, steps, ranges) must be a single digit from 1 to 9, or a word.
 - Never write testimonials, reviews, quotes from customers, customer names, star ratings, logos of press or partners, or follower counts.
 - Each statistic or market price you show appears with its exact value and label and a link to its source: \`<a href="SOURCE_URL" rel="noopener nofollow" target="_blank">SOURCE: HOSTNAME</a>\`, where SOURCE is \`business.sourceWord\` exactly ("Source" in English). A number with no \`sourceUrl\` is not shown.
 - Only a statistic in \`stats\` (about the customer or their problem) may be a big numeral. If \`stats\` is empty, do not make a giant statistic: use a statement band instead (like "A plant is easy to buy. Keeping it is the hard part."), or set the offer price big. Never make a competitor's price or price range the hero numeral or the main statistic; \`marketPrices\` only appear in small type inside the comparison, if at all. Never write meta phrases about the research ("prices vary a lot, so here are two more ranges", "studies show").
+- \`pain\` and \`customer\` describe what the customer wants today, not what this business offers: never turn them into promises (for example never claim card, app or cash payment, delivery or hours because \`pain\` mentions them). The only payment method on the page is \`reserve.payment\`.
 - Competitors: describe them by the name given and the gap given, fairly and without mocking. Present the difference as what this business does instead.
 - Price: show it with the currency symbol in the input (\`£45\`). If \`normal\` exists, show it struck through next to it ("normally <s>£60</s>").
-- Payment is in Bitcoin Cash. The hero's reserve button uses \`reserve.label\` exactly (for example "Reserve with BCH · £45"); the builder adds the coin mark and a one-line note under it, so do not write your own note about paying. Other reserve buttons may say "Reserve with BCH" or "Reserve your Starter Jungle". "Join the list" for the email. The email section explains in one line what the visitor will receive ("One email when we open. Nothing else.").
+- Payment: when \`reserve.enabled\` is true, payment is in Bitcoin Cash. The hero's reserve button uses \`reserve.label\` exactly (for example "Reserve with BCH · £45"); the builder adds the coin mark and a one-line note under it, so do not write your own note about paying. Other reserve buttons may say "Reserve with BCH" or "Reserve your Starter Jungle". "Join the list" for the email. The email section explains in one line what the visitor will receive ("One email when we open. Nothing else.").
 
 ## 7. Required hooks (the builder wires these; the page is rejected without them)
 
-- Reserve buttons: \`<a class="..." href="#reserve" data-ld="reserve">Label</a>\`. Put one in the header, one in the hero, and one next to the offer details. Only when \`reserve.enabled\` is false, leave every \`data-ld="reserve"\` element out and make the email signup the main action.
+- Reserve buttons: \`<a class="..." href="#reserve" data-ld="reserve">Label</a>\`. Put one in the header, one in the hero, and one next to the offer details. Only when \`reserve.enabled\` is false, leave every \`data-ld="reserve"\` element out, make the email signup the main action, and never write anything about paying, Bitcoin Cash, BCH, pre-ordering or reserving with money anywhere on the page.
 - Email signup: exactly one form:
   \`<form data-ld="waitlist"><label for="email">Your email</label><input id="email" type="email" name="email" placeholder="you@example.com" required><button type="submit">Join the list</button></form>\`
   You may add classes, change the visible label, placeholder and button text, and visually hide the label with a class. Do not add \`action\`, \`method\` or other inputs. Put the section with this form on \`id="join"\` and link to it from the hero ("Not ready? Join the list").
@@ -152,7 +154,7 @@ Review the plan against the subject: if any part would look the same for any oth
 
 ## 8. CSS rules
 
-- One \`<style>\` block, compact (target under 9 KB): one rule per line, short class names, no comments except the concept line, no unused rules, no vendor prefixes except \`-webkit-backdrop-filter\`.
+- One \`<style>\` block, compact (target under 11 KB): one rule per line, short class names, no comments except the concept line, no unused rules, no vendor prefixes except \`-webkit-backdrop-filter\`.
 - Allowed: custom properties, grid, flex, \`clamp()\`, \`min()\`, \`max()\`, \`aspect-ratio\`, \`object-fit\`, \`object-position\`, gradients, \`rgba()\`, \`backdrop-filter\`, \`::before\`/\`::after\` with \`content: ""\` or short text, \`counter()\`, transitions under 300ms on hover/focus, \`@media\` queries for width, \`prefers-reduced-motion\`.
 - Not allowed: \`url()\` of any kind, \`@import\`, \`@font-face\`, \`position: fixed\`, \`expression()\`, animations that start content invisible (no \`opacity: 0\` waiting for scroll), \`100vh\` heroes on phones.
 - Every interactive element has a visible \`:focus-visible\` style. Buttons at least 44px tall. Respect \`prefers-reduced-motion\` by disabling transitions.
@@ -162,6 +164,7 @@ Review the plan against the subject: if any part would look the same for any oth
 
 - Exactly one \`<h1>\`. Headings in order. Every \`<img>\` uses \`ld-photo:\` with a given id, has alt, width and height, and no id is used twice.
 - At least three \`data-ld="reserve"\` links (if reserve is enabled) and exactly one \`<form data-ld="waitlist">\` with an \`<input name="email">\`.
+- If \`menu\` is given: every line is on the page with its exact price, the offer line has its tag, and \`menu.note\` is printed under the list.
 - No invented numbers, quotes, names, addresses, hours or claims. Every statistic links to its source. No earnings, payouts, rewards or savings for the visitor that the idea does not state.
 - No \`<script>\`, no \`style=""\` attributes, no event attributes, no external URLs other than statistic sources.
 - At 390px nothing is wider than the screen, the header sits above the hero photo, the hero label covers at most a quarter of the photo, no photo except the hero is portrait, and the first screen shows name, photo and headline; at 1280px the hero is a strong composition with the photo big and no portrait photo tower is taller than about 560px.
@@ -229,13 +232,16 @@ export function demandStats<T extends { value: string; label: string; kind?: str
 }
 
 /** The user message (see "Input" in the prompt notes). No address, no slug, no risks, no offer limit. */
-export function customBrief(input: KitInput, photos: CustomPhoto[]) {
+export function customBrief(input: KitInput, photos: CustomPhoto[], spec?: SiteSpec) {
   const { brand, report } = input;
   const lang = (brand.lang || "en").slice(0, 5);
   const price = report.offer.price > 0 ? money(report.offer.price, brand.currency, lang) : "";
   const sourced = report.stats.filter((s) => httpsOnly(s.sourceUrl)).map((s) => ({ ...s, kind: s.kind ?? statKind(s) }));
   return {
-    business: { name: brand.name, idea: input.idea, city: brand.city ?? "", area: areaOf(input.idea, brand.city), currency: brand.currency, lang, sourceWord: uiFor(lang).source },
+    business: {
+      name: brand.name, idea: input.idea, city: brand.city ?? "", area: areaOf(input.idea, brand.city), currency: brand.currency, lang, sourceWord: uiFor(lang).source,
+      opening: brand.city ? "Not open yet. Only the area and city in the idea are known: no street address, no opening date, no hours." : "Not open yet. Sold online: no shop to visit.",
+    },
     brand: { tagline: brand.tagline, voice: brand.voice, palette: brand.palette, fonts: brand.fonts },
     report: {
       customer: report.customer,
@@ -249,8 +255,38 @@ export function customBrief(input: KitInput, photos: CustomPhoto[]) {
       competitors: report.competitors.slice(0, 3),
     },
     reserve: { enabled: Boolean(input.founderAddress) && report.offer.price > 0, label: reserveLabel(price, lang), payment: "Bitcoin Cash" },
+    menu: menuBrief(spec, brand.currency, lang, price),
+    faq: spec ? (spec.sections.find((x) => x.kind === "faq") as { items?: Array<{ q: string; a: string }> } | undefined)?.items ?? [] : [],
     photos: photos.slice(0, 8).map((p, i) => ({ id: photoKey(i), role: p.role ?? (i === 0 ? "hero" : "detail"), aspect: aspectOf(p.width, p.height), orientation: orientationOf(p.width, p.height), alt: p.alt, shows: p.shows ?? `${p.alt} (short title only, details unknown)` })),
   };
+}
+
+type MenuSec = Extract<SiteSpec["sections"][number], { kind: "menu" }>;
+const menuSec = (spec?: SiteSpec) => spec?.sections.find((x): x is MenuSec => x.kind === "menu") ?? null;
+
+/** The checked menu as the designer sees it: display prices only (the page never computes one). */
+export function menuBrief(spec: SiteSpec | undefined, currency: string, lang: string, offerPrice: string) {
+  const m = menuSec(spec);
+  if (!m) return null;
+  const cur = spec!.reserve.currency || currency;
+  return {
+    kind: m.label,
+    title: m.title,
+    intro: m.intro,
+    note: m.note,
+    groups: m.groups.map((g) => ({
+      name: g.name,
+      items: g.items.map((it) => ({ name: it.name, desc: it.desc, price: money(it.price, cur, lang), ...(it.photo ? { photo: it.photo } : {}), ...(it.offer && offerPrice ? { offer: true, offerTag: (spec!.ui.offerTag || uiFor(lang).offerTag || "{price} opening offer").replace("{price}", offerPrice) } : {}) })),
+    })),
+  };
+}
+
+/** The menu's own words and prices: allowed numbers for the honesty gate (they come from the checked spec, not the designer). */
+export function menuWords(spec: SiteSpec | undefined, currency: string, lang: string): string[] {
+  const m = menuSec(spec);
+  if (!m) return [];
+  const cur = spec!.reserve.currency || currency;
+  return m.groups.flatMap((g) => [g.name, ...g.items.flatMap((it) => [it.name, it.desc, money(it.price, cur, lang), String(it.price), it.price.toFixed(2)])]).concat(m.title, m.intro, m.note);
 }
 
 /** Numbers and sourced stats the page may show (everything the founder or the report actually said). */
@@ -346,7 +382,9 @@ export async function generateCustomSite(input: KitInput, photos: CustomPhoto[],
     return { html: s.problems.length ? null : s.css ? `<style>${s.css}</style>${s.body}` : null, usd: 0, ms: Date.now() - t0, issues: s.problems, warnings: s.warnings, model: "mock", mock: true };
   }
 
-  const brief = customBrief(input, photos);
+  const brief = customBrief(input, photos, spec);
+  const words = menuWords(spec, input.brand.currency, (input.brand.lang || "en").slice(0, 5));
+  const faqWords = JSON.stringify(brief.faq);
   let msg: Anthropic.Beta.BetaMessage;
   try {
     msg = await getClient()
@@ -380,7 +418,7 @@ export async function generateCustomSite(input: KitInput, photos: CustomPhoto[],
   if (msg.stop_reason === "refusal") return { ...base, html: null, issues: ["the designer declined this idea"], warnings: [] };
   if (msg.stop_reason === "max_tokens") return { ...base, html: null, issues: ["the page was cut off (too long)"], warnings: [] };
   const text = msg.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("");
-  const s = sanitize(extractFragment(text), storeCtx(input, photos));
+  const s = sanitize(extractFragment(text), storeCtx(input, photos, [...words, faqWords], [...words, faqWords]));
   s.css = heroTagInFlow(keepHeroTagRows(s.css));
   if (s.problems.length) console.warn(`[site-custom] rejected: ${s.problems.join("; ")}`);
   return { ...base, html: s.problems.length ? null : `<style>${s.css}</style>${s.body}`, issues: s.problems, warnings: s.warnings };

@@ -7,7 +7,7 @@ import type { Kit } from "../kit-contract.js";
 import type { SiteSpec } from "./spec.js";
 import type { LiveData, RenderOpts } from "./render.js";
 import { buildCtx } from "./render.js";
-import { BCH_COIN, chrome, credit, esc, mark, sectionOf, SITE_JS, type RenderCtx } from "./templates/shared.js";
+import { BCH_COIN, canReserve, chrome, credit, esc, EXAMPLE_CSS, exampleNotice, exampleWords, mark, sectionOf, SITE_JS, type RenderCtx } from "./templates/shared.js";
 import { currencySymbol, ensureContrast, mix, onColor, type Tokens } from "./validate.js";
 import { codeFor } from "../money.js";
 import { sanitize, type SanitizePhoto, type Sanitized } from "./sanitize.js";
@@ -109,7 +109,7 @@ export function fontsHref(fonts: { display: string; text: string }): string {
 // ───────────────────────────────────────────────────────────── ctx (shared with render.ts)
 
 export function customCtx(spec: SiteSpec, kit: Pick<Kit, "brand" | "logo">, live: LiveData, opts: CustomRenderOpts): RenderCtx {
-  return buildCtx(spec, kit, live, { origin: opts.origin, preview: opts.preview, slug: opts.slug }, "light");
+  return buildCtx(spec, kit, live, { origin: opts.origin, preview: opts.preview, slug: opts.slug, example: opts.example }, "light");
 }
 
 // ───────────────────────────────────────────────────────────── our chrome's CSS
@@ -143,6 +143,7 @@ html.lock{overflow:hidden}
 #reserve .sh-qr{margin:10px auto;width:220px;padding:10px;border:1px solid #ececf0;border-radius:20px}
 #reserve .sh-qr svg{width:100%;height:auto}
 #reserve .sh-scan{margin:0 0 16px;font-size:13px;color:#6b6f78}
+#reserve .sh-off{display:grid;place-items:center;height:150px;color:#c9ccd3}#reserve .sh-off svg{width:72px;height:72px}#reserve .sh-ex{font-size:14px;line-height:1.5;color:#3d4048}
 #reserve .sh-open{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:52px;border-radius:999px;background:#0ac18e;color:#fff;font:600 16px/1 ${fb};text-decoration:none}
 #reserve .sh-copy{display:block;margin:10px 0 0;width:100%;min-height:44px;border-radius:999px;border:1px solid #e3e4e8;background:#fff;color:#16181d;font:600 15px/1 ${fb};cursor:pointer}
 #reserve a:focus-visible,#reserve button:focus-visible,#ld-bar a:focus-visible{outline:2px solid #0ac18e;outline-offset:2px}
@@ -185,7 +186,7 @@ main :is(h1,h2,h3)+p{margin-top:.75em}
 :where(main) img{max-width:100%}
 .ld-coin{display:inline-block;width:1.1em;height:1.1em;flex:none;vertical-align:-.2em;margin-right:.45em}
 :where([data-reserve]){gap:.35em}
-:where(main) :where(div,li,p,dd)>b+span::before{content:"\\a0"}
+:where(main) :where(p,dd)>b+span::before{content:"\\a0"}
 header a[href="#top"]>svg.ld-logo{display:inline-block!important;width:1.35em!important;height:1.35em!important;margin:0 .4em 0 0!important;vertical-align:-.25em;flex:none;border-radius:22%}
 .ld-note{margin:.6em 0 0;font-size:.8125rem;line-height:1.4;letter-spacing:.01em;opacity:.82}
 @media(max-width:560px){
@@ -286,12 +287,16 @@ export function pageCtx(row: CustomRow, c: RenderCtx, opts: CustomRenderOpts) {
     mode: "page" as const,
     photos,
     links: "any-https" as const, // stat links were checked against the report when the page was made
-    reserveEnabled: Boolean(row.spec.reserve.address),
+    reserveEnabled: canReserve(c),
     fonts: row.kit.brand.fonts,
     leadAction: c.leadAction,
     thanks: c.ui.thanks,
     emailLabel: c.ui.emailPlaceholder,
-    ...(row.spec.reserve.address ? { reserveNote: row.spec.lang.startsWith("es") ? "Paga con Bitcoin Cash · al instante · sin cuenta" : "Pay with Bitcoin Cash · instant · no account" } : {}),
+    ...(row.spec.reserve.address
+      ? { reserveNote: row.spec.lang.startsWith("es") ? "Paga con Bitcoin Cash · al instante · sin cuenta" : "Pay with Bitcoin Cash · instant · no account" }
+      : canReserve(c)
+        ? { reserveNote: exampleWords(row.spec.lang).note }
+        : {}),
   };
 }
 
@@ -332,7 +337,7 @@ export function customRender(row: CustomRow, live: LiveData, opts: CustomRenderO
       ...(r.price > 0 ? [{ "@type": "Product", name: offer?.item || brand.name, brand: brand.name, offers: { "@type": "Offer", price: r.price, priceCurrency: codeFor(currencySymbol(cur)) || cur, availability: "https://schema.org/PreOrder" } }] : []),
     ],
   };
-  const withBar = Boolean(r.address);
+  const withBar = canReserve(c);
   const head = [
     `<meta charset="utf-8">`,
     `<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">`,
@@ -351,7 +356,7 @@ export function customRender(row: CustomRow, live: LiveData, opts: CustomRenderO
     `<link rel="icon" href="${favicon}">`,
     `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>`,
     `<link rel="stylesheet" href="${esc(fontsHref(brand.fonts))}">`,
-    `<style>${hooksCss(t, brand.fonts.text, withBar)}</style>`,
+    `<style>${hooksCss(t, brand.fonts.text, withBar)}${c.example ? EXAMPLE_CSS : ""}</style>`,
     `<style>${s.css}</style>`,
     `<style>${guardCss(deco.chars)}</style>`,
     `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\\u003c")}</script>`,
@@ -365,7 +370,7 @@ export function customRender(row: CustomRow, live: LiveData, opts: CustomRenderO
   const foot = `<div id="ld-foot">${creditsLine(row.photos, used, spec.lang)}${credit(c)}</div>`;
   const hasTop = /\sid="top"/.test(s.body);
   return `<!doctype html><html lang="${esc(spec.lang)}" data-template="custom"><head>${head.join("\n")}</head><body${hasTop ? "" : ` id="top"`}>
-${s.body}
+${exampleNotice(c)}${s.body}
 ${foot}
 ${sheet}${bar}
 <script>${SITE_JS}</script>
