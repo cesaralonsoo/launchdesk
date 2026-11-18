@@ -397,7 +397,13 @@ button.hud-next:hover .hud-next-t {
   min-width: 0;
 }
 .hud-menu-why {
-  margin: 6px 2px 0;
+  margin: 10px 2px 2px;
+  line-height: 1.4;
+}
+/* A clear gap between "My ideas" and the examples. */
+.hud-menu .hud-note + .hud-menu-h,
+.hud-menu ul + .hud-menu-h {
+  margin-top: 14px;
 }
 .hud-btn {
   flex: 1;

@@ -36,17 +36,20 @@ export function exampleKit(id: string): Promise<ExampleKit | null> {
   }
   return k;
 }
-/** GET /api/examples once ([] when the server has none or is older than this page). Resolves once the examples' brand
- *  names are known too (or could not be read), so every surface names an example the same way from its first paint. */
+/** GET /api/examples once ([] when the server has none or is older than this page). Waits up to 700 ms for the
+ *  examples' brand names too, so every surface usually names an example the same way from its first paint. */
 export function examples(): Promise<ExampleCard[]> {
   return (list ??= fetch("/api/examples", { cache: "no-store" })
     .then((r) => (r.ok ? r.json() : { examples: [] }))
     .then(async (j: { examples?: ExampleCard[] }) => {
       const xs = Array.isArray(j.examples) ? j.examples : [];
-      await Promise.all(xs.map(async (x) => {
+      const names = Promise.all(xs.map(async (x) => {
         const name = (await exampleKit(x.id))?.kit?.brand?.name?.trim();
         if (name) brands.set(x.id, name);
       }));
+      // The brand names are worth a short wait (one name from the first paint), never a slow first paint: after
+      // 700 ms the list resolves with what is known, and the names fill in when their kits arrive.
+      await Promise.race([names, new Promise((r) => setTimeout(r, 700))]);
       return (known = xs);
     })
     .catch(() => ((list = null), [])));
