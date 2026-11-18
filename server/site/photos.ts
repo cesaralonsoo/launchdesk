@@ -796,10 +796,11 @@ async function cached(ctx: Ctx, key: string, run: () => Promise<Candidate[]>): P
   return v;
 }
 
-async function searchOpenverse(ctx: Ctx, query: string, role: PhotoRole): Promise<Candidate[]> {
-  return cached(ctx, `ov1|${query}`, async () => {
+async function searchOpenverse(ctx: Ctx, query: string, role: PhotoRole, source = "stocksnap,rawpixel,wordpress"): Promise<Candidate[]> {
+  const only = source === "wordpress";
+  return cached(ctx, `ov1|${only ? "wp|" : ""}${query}`, async () => {
     if (!ovAllow()) return [];
-    const u = `${OPENVERSE}?${new URLSearchParams({ q: query, license_type: "commercial", mature: "false", page_size: "20", source: "stocksnap,rawpixel,wordpress" })}`;
+    const u = `${OPENVERSE}?${new URLSearchParams({ q: query, license_type: "commercial", mature: "false", page_size: only ? "12" : "20", source })}`;
     const sig = AbortSignal.any([ctx.signal, AbortSignal.timeout(Math.max(500, ctx.deadline - Date.now()))]);
     const res = await ctx.f(u, { headers: { "User-Agent": UA, Accept: "application/json" }, signal: sig });
     if (!res.ok) throw new Error(`Openverse ${res.status}`);
@@ -832,7 +833,7 @@ async function searchCommons(ctx: Ctx, query: string, role: PhotoRole = "place")
 }
 
 /**
- * Up to 8 Openverse searches (2 hero, 5 detail: one per product, 1 people), up to 2 Commons "Quality images" product
+ * Up to 11 Openverse searches (2 hero + up to 3 WordPress-only hero, 5 detail: one per product, 1 people), up to 2 Commons "Quality images" product
  * searches and up to 2 Commons place searches, in parallel, within the search deadline.
  */
 async function search(q: PhotoQueries, ctx: Ctx): Promise<Candidate[]> {
@@ -842,7 +843,14 @@ async function search(q: PhotoQueries, ctx: Ctx): Promise<Candidate[]> {
   take("detail", 5);
   take("people", 1);
   const settle = <T>(p: Promise<T[]>, label: string) => p.catch((e: Error) => (ctx.log(`[photos] ${label}: ${e.message}`), [] as T[]));
-  const ov = Promise.all(plan.map(([role, s]) => settle(searchOpenverse(ctx, s, role), `search "${s}"`)));
+  const ov = Promise.all([
+    ...plan.map(([role, s]) => settle(searchOpenverse(ctx, s, role), `search "${s}"`)),
+    // Rawpixel and StockSnap only give clean files up to 1024px: hero searches in the WordPress Photo Directory
+    // (2048px files, wide and on topic only) so a sharp hero is in the running.
+    ...[...new Set([...q.hero.slice(0, 1), ...q.detail.slice(0, 2)])].map((s) =>
+      settle(searchOpenverse(ctx, s, "hero", "wordpress"), `wordpress "${s}"`).then((l) => l.filter((c) => ratioOk(c, "hero") && onTopic(c, topicOf(ctx.idea ?? "")))),
+    ),
+  ]);
   // Commons product photos are only used after the photo check has looked at them (see findPhotos).
   const qi = Promise.all(q.detail.filter((s) => s.split(" ").length <= 2).slice(0, 2).map((s) => settle(searchCommons(ctx, s, "detail"), `quality "${s}"`)))
     .then((ls) => ls.flat().filter((c) => keepCandidate(c, ctx.idea) && !/\b(bw|b&w|black and white|monochrome)\b|\(bw\)/i.test(c.title)));
@@ -882,7 +890,15 @@ async function pickAndDownload(pool: Candidate[], ctx: { f: typeof fetch; signal
       .sort((a, b) => score(b, role, ctx.category) + coreBonus(b) + appeal(b) - (score(a, role, ctx.category) + coreBonus(a) + appeal(a)));
     const fresh = role === "place" ? fit : fit.filter((c) => !subjectWords(`${ctx.alts.get(c.id) ?? ""} ${c.title}`).some((w) => usedWords.has(w)));
     const newQuery = role === "detail" ? fresh.filter((c) => c.queryRole !== "detail" || !usedQueries.has(c.query)) : fresh;
-    const c = newQuery[0] ?? fresh[0] ?? fit[0] ?? null;
+    let c = newQuery[0] ?? fresh[0] ?? fit[0] ?? null;
+    // The hero is shown about 700 CSS px wide (1400px on retina): a sharp file that scores nearly as well beats a soft one.
+    if (role === "hero" && c && deliveredWidth(c) < 1500) {
+      const total = (x: Candidate) => score(x, role, ctx.category) + coreBonus(x) + appeal(x);
+      // The photo check's own hero choice (rank -10) stands: it is about the subject and the setting (a takeaway cup
+      // for a kiosk), and the check already swaps in its sharp second choice (applyVision).
+      const sharp = c.rank === -10 ? undefined : fit.find((x) => deliveredWidth(x) >= 1500 && (!ctx.appeal || ctx.appeal.has(x.id)) && total(x) >= total(c!) - 14);
+      if (sharp) c = sharp;
+    }
     if (c) {
       claimed.add(c.id);
       subjectWords(`${ctx.alts.get(c.id) ?? ""} ${c.title}`).forEach((w) => usedWords.add(w));
@@ -1038,10 +1054,11 @@ export const PHOTO_CHECK_MODEL = process.env.MODEL_PHOTO_CHECK || "claude-haiku-
 const VISION_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["reject", "hero", "alts", "best"],
+  required: ["reject", "hero", "hero2", "alts", "best"],
   properties: {
     reject: { type: "array", items: { type: "integer" } },
     hero: { type: "integer" },
+    hero2: { type: "integer" },
     alts: { type: "array", items: { type: "object", additionalProperties: false, required: ["i", "alt"], properties: { i: { type: "integer" }, alt: { type: "string" } } } },
     best: { type: "array", items: { type: "integer" } },
   },
@@ -1059,7 +1076,7 @@ async function visionCheck(pool: Candidate[], input: FindPhotosInput, ctx: { f: 
   const perQuery = new Map<string, number>();
   const stock: Candidate[] = [];
   for (const c of stockAll) {
-    const k = `${c.queryRole}|${c.query}`;
+    const k = `${c.queryRole}|${c.query}|${c.provider === "wordpress" ? "wp" : ""}`;
     if ((perQuery.get(k) ?? 0) >= 3 || stock.length >= 22) continue;
     perQuery.set(k, (perQuery.get(k) ?? 0) + 1);
     stock.push(c);
@@ -1086,13 +1103,15 @@ async function visionCheck(pool: Candidate[], input: FindPhotosInput, ctx: { f: 
   const { default: Anthropic } = await import("@anthropic-ai/sdk");
   const { recordUsage, usdOf } = await import("../cost.js");
   const client = new Anthropic({ apiKey: config.anthropicKey, maxRetries: 0, timeout: Math.max(1500, ctx.deadline - Date.now()) });
+  // the menu searches ("flat white", "croissant"): a photo of a product or method it does not sell reads as another business
+  const sells = [...new Set((input.queries?.detail ?? []).map((x) => cleanQuery(x).slice(0, 40)).filter(Boolean))].slice(0, 10);
   const content: unknown[] = [
-    { type: "text", text: `Business idea: ${input.idea.slice(0, 300)}${input.city ? `\nCity: ${input.city.slice(0, 60)}` : ""}\nThese are candidate photos for its website, numbered 0-${ok.length - 1}.` },
+    { type: "text", text: `Business idea: ${input.idea.slice(0, 300)}${input.city ? `\nCity: ${input.city.slice(0, 60)}` : ""}${sells.length ? `\nWhat it sells (its menu): ${sells.join(", ")}` : ""}\nThese are candidate photos for its website, numbered 0-${ok.length - 1}.` },
   ];
-  ok.forEach((t, i) => content.push({ type: "text", text: `#${i}` }, { type: "image", source: { type: "base64", media_type: t.mime, data: t.data } }));
+  ok.forEach((t, i) => content.push({ type: "text", text: `#${i} (${deliveredWidth(t.c)}px wide)` }, { type: "image", source: { type: "base64", media_type: t.mime, data: t.data } }));
   content.push({
     type: "text",
-    text: "Reject any photo that is off-topic for this business, an illustration, painting, engraving, old print or museum object, black-and-white or sepia, a product cut-out on white, a sign or text, dark or blurry, low quality, a famous landmark, or one where a person's face is the main subject. Also reject photos showing uniforms, logos, government-agency or brand marks, or screens with unrelated data, and keep only photos whose main subject is the product, the customer or the setting of this business: fewer photos are better than off-topic ones. Also reject photos whose setting contradicts the business (an outdoor farm or field for an indoor shop or a city service, a costume or party). Pick the best hero: a real, wide, well-lit photo of the exact thing the idea names, in the setting the idea describes (for a takeaway or on-the-go business: the product in a takeaway cup or box, or being made at a counter; never a sit-down table scene with unrelated props), with calm space for a headline. For every photo you keep, write a plain alt text (6-16 words) that says only what is visible: the main subject, what it is doing, and the setting (indoors, street, park). Never guess brands, places or actions you cannot see. Then rank the kept photos in \"best\" as a picky magazine photo editor would for this business's own website: sharp, well lit, well composed, appetising or inviting, the product clearly the subject, no visible text or watermark, no close-up faces; most appealing first. Use the numbers above. hero is -1 if none fits.",
+    text: "Reject any photo that is off-topic for this business, an illustration, painting, engraving, old print or museum object, black-and-white or sepia, a product cut-out on white, a sign or text, dark or blurry, low quality, a famous landmark, or one where a person's face is the main subject. Also reject photos showing uniforms, logos, government-agency or brand marks, or screens with unrelated data, and keep only photos whose main subject is the product, the customer or the setting of this business: fewer photos are better than off-topic ones. When the menu is given, also reject a photo whose main subject is a product, drink or way of making it that is not on the menu and is not plainly the same kind of thing (for an espresso-drinks menu: no pour-over drippers, cocktails or tea sets); a photo of the counter, the machine or a customer with the product is fine. Also reject photos whose setting contradicts the business (an outdoor farm or field for an indoor shop or a city service, a costume or party). Pick the best hero: a real, wide, well-lit, sharp photo at least 1500px wide when one fits nearly as well (it is shown big on retina screens) of the exact thing the idea names, in the setting the idea describes (for a takeaway or on-the-go business: the product in a takeaway cup or box, or being made at a counter; never a sit-down table scene with unrelated props), with calm space for a headline. For every photo you keep, write a plain alt text (6-16 words) that says only what is visible: the main subject, what it is doing, and the setting (indoors, street, park). Never guess brands, places or actions you cannot see. Then rank the kept photos in \"best\" as a picky magazine photo editor would for this business's own website: sharp, well lit, well composed, appetising or inviting, the product clearly the subject, no visible text or watermark, no close-up faces; most appealing first. Use the numbers above. hero is -1 if none fits. hero2 is a different photo that also meets every hero rule (subject and setting) nearly as well, or -1.",
   });
   const msg = await client.messages.create(
     {
@@ -1120,7 +1139,7 @@ async function visionCheck(pool: Candidate[], input: FindPhotosInput, ctx: { f: 
 /** Parses the vision JSON against the shown candidates (exported for tests). Bad JSON = keep everything. */
 export function applyVision(text: string, shown: Candidate[]): { reject: Set<string>; hero: string | null; alts: Map<string, string>; order: Map<string, number> } {
   const out = { reject: new Set<string>(), hero: null as string | null, alts: new Map<string, string>(), order: new Map<string, number>() };
-  let j: { reject?: unknown; hero?: unknown; alts?: unknown; best?: unknown };
+  let j: { reject?: unknown; hero?: unknown; hero2?: unknown; alts?: unknown; best?: unknown };
   try {
     j = JSON.parse(text) as typeof j;
   } catch {
@@ -1130,6 +1149,10 @@ export function applyVision(text: string, shown: Candidate[]): { reject: Set<str
   if (Array.isArray(j.reject)) for (const i of j.reject) { const c = at(i); if (c) out.reject.add(c.id); }
   const h = at(j.hero);
   if (h && !out.reject.has(h.id)) out.hero = h.id;
+  // The hero is shown about 700 CSS px wide (1400px on retina): when the first choice arrives soft (Rawpixel and
+  // StockSnap stop at about 1000px) and the second, equally fitting choice arrives sharp, the sharp one leads.
+  const h2 = at(j.hero2);
+  if (h2 && h2 !== h && !out.reject.has(h2.id) && deliveredWidth(h2) >= 1500 && (!out.hero || deliveredWidth(shown.find((c) => c.id === out.hero)!) < 1500)) out.hero = h2.id;
   if (Array.isArray(j.alts))
     for (const a of j.alts as Array<{ i?: unknown; alt?: unknown }>) {
       const c = at(a?.i);

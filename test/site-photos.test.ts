@@ -165,7 +165,7 @@ test("altFrom and credits: scene-only alt, BY/BY-SA credited with link and licen
 });
 
 // ───────────────────────────────────────────── findPhotos (fake network)
-test("findPhotos: ≤8 verified photos, hero first, roles, ≤9 searches, credits for every photo", async () => {
+test("findPhotos: ≤8 verified photos, hero first, roles, ≤11 searches, credits for every photo", async () => {
   P._resetRateLimit();
   const { f, calls } = fakeFetch();
   const photos = await P.findPhotos({ idea: "A plant shop in Leith", city: "Leith Shore", mock: false, fetch: f, cache: null, log: quiet });
@@ -189,7 +189,8 @@ test("findPhotos: ≤8 verified photos, hero first, roles, ≤9 searches, credit
   assert.equal(place!.provider, "wikimedia");
   assert.equal(place!.license, "by-sa");
   const searches = calls.filter((u) => u.startsWith("https://api.openverse.org/v1/images/?"));
-  assert.ok(searches.length <= 9, `${searches.length} Openverse searches`);
+  assert.ok(searches.length <= 11, `${searches.length} Openverse searches`);
+  assert.ok(searches.filter((u) => /source=wordpress(&|$)/.test(u)).length <= 3, "at most 3 WordPress-only hero searches (2048px files)");
   assert.ok(calls.every((u) => !u.includes("image_1300")), "never downloads the watermarked rawpixel size");
 });
 
@@ -240,6 +241,11 @@ test("vision JSON is applied safely (bad indexes ignored, bad JSON keeps everyth
   const rejectedHero = P.applyVision(JSON.stringify({ reject: [2], hero: 2, alts: [] }), shown);
   assert.equal(rejectedHero.hero, null);
   assert.equal(P.applyVision("not json", shown).reject.size, 0);
+  // a soft first hero gives way to the check's sharp second choice, never the other way round
+  const sized = shown.map((c, i) => ({ ...c, provider: (i === 3 ? "wordpress" : "rawpixel") as typeof c.provider, width: 3000, height: 2000 }));
+  assert.equal(P.applyVision(JSON.stringify({ reject: [], hero: 2, hero2: 3, alts: [] }), sized).hero, sized[3]!.id, "1024px rawpixel hero swapped for the 2048px one");
+  assert.equal(P.applyVision(JSON.stringify({ reject: [], hero: 3, hero2: 2, alts: [] }), sized).hero, sized[3]!.id, "a sharp hero stays");
+  assert.equal(P.applyVision(JSON.stringify({ reject: [], hero: 2, hero2: 0, alts: [] }), sized).hero, sized[2]!.id, "no swap for another soft one");
 });
 
 // ───────────────────────────────────────────── mock mode
