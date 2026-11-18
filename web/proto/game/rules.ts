@@ -248,7 +248,7 @@ export function computeGame(s: GameSnapshot): GameState {
       id: "kit-paid",
       name: "Kit paid",
       earned: paid2,
-      line: paid2 ? (isRealTxid(p?.paid.build?.txid) ? "The studio is yours." : "The studio is yours. Practice run: no money moved.") : "Get the launch kit for 50¢.",
+      line: paid2 ? (isRealTxid(p?.paid.build?.txid) ? "The studio is yours." : s.example ? "Kit from a second run; its payment is not in this record." : "The studio is yours. Practice run: no money moved.") : "Get the launch kit for 50¢.",
       proof: txProof(p?.paid.build?.txid, "Kit tx"),
     },
     {

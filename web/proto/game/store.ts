@@ -111,7 +111,8 @@ export function createGameStore(world: World, flow: ProtoFlowV7): GameStore {
       const shown = idx.length > 0 && idx.every((i) => i < flow.revealed);
       return { analyst: a, status: (reported || shown ? "done" : "working") as "done" | "working" };
     });
-    const built = at(step) >= at("build");
+    // the kit counts as paid the moment the 50¢ approves (the tour's level-up plays on the pay card, before the kit is shown)
+    const built = at(step) >= at("build") || (step === "pay2" && flow.paidCents > 10);
     const builder = flow.state.builder;
     const bi = builder ? ["nova", "dex", "rae", "pip"].indexOf(builder) : -1;
     const partDone = (i: number) => at(step) >= at("live") || (step === "build" && (bi > i || (bi === i && flow.state.phase === "result")));
@@ -123,7 +124,8 @@ export function createGameStore(world: World, flow: ProtoFlowV7): GameStore {
       project: {
         paid: at(step) >= at("hire") ? { validate: { txid: "sample" }, ...(built ? { build: { txid: "sample" } } : {}) } : {},
         status: reported ? "done" : at(step) >= at("hire") ? "analysing" : null,
-        roster: at(step) >= at("hire") ? roster.slice(0, Math.max(flow.hired, reported ? roster.length : 0)) : [],
+        // the whole picked team from the hire on, so "rooms lit N/total" keeps one denominator while they arrive
+        roster: at(step) >= at("hire") ? roster : [],
         work,
         report: reported && r ? { score: r.score, verdict: r.verdict } : null,
         steers: flow.steers.map((x) => ({ status: x.status, ...scoreDiff(x) })),
@@ -236,8 +238,10 @@ export function createGameStore(world: World, flow: ProtoFlowV7): GameStore {
   /** Campus: this browser's own ideas (a mini stack at their real stage), then the real finished examples (labelled by
    *  their `ex-` id). Empty plots are the world's dashed "Your next idea". */
   function campusItems(g: GameState): Parameters<WorldV8["setCampus"]>[0] {
-    if (g.sample) return [];
-    const own = saved
+    // a sample world (tour, practice): that sample company, labelled, next to the real finished examples
+    const own = g.sample
+      ? [{ id: g.projectId || "sample", name: `Sample · ${g.name}`, stage: (g.stages[2]!.unlocked ? 3 : g.stages[1]!.unlocked ? 2 : g.stages[0]!.unlocked ? 1 : 0) as 0 | 1 | 2 | 3 }]
+      : saved
       .list()
       .filter((r) => !isExampleId(r.id))
       .slice(0, 4)
@@ -257,16 +261,33 @@ export function createGameStore(world: World, flow: ProtoFlowV7): GameStore {
   }
 
   // ── fetching (real projects only)
+  let examplesAsked = false;
   async function fetchAll() {
-    if (sample || disposed) return recompute();
+    if (disposed) return;
+    if (sample) {
+      // samples fetch nothing of their own; the campus still shows the real finished examples next to them
+      if (!examples.length && !examplesAsked) {
+        examplesAsked = true;
+        const e = await getJson<{ examples: ExampleCard[] }>("/api/examples");
+        examples = e?.examples ?? [];
+      }
+      return recompute();
+    }
     const id = projectId;
     const my = ++seq;
     const ex = isExampleId(id);
-    const [p, k, pr] = await Promise.all([
+    const [p, k] = await Promise.all([
       flow.live && flow.live.id === id && flow.live.server ? Promise.resolve(flow.live.server) : api.get(id).catch(() => null),
       getJson<KitPayload>(`/api/projects/${encodeURIComponent(id)}/kit`),
-      ex ? getJson<Proof>(`/api/examples/${encodeURIComponent(id)}/proof`) : ESCROW ? getJson<Proof>(`/api/escrow/${encodeURIComponent(id)}/validate`, saved.ownerKey(id)) : Promise.resolve(null),
     ]);
+    // the escrow proof exists only once real money was paid (no request before pay1, for practice runs or unknown
+    // ids: the server would answer 404 and fill the console with errors)
+    const paid = p?.payments.validate;
+    const pr = ex
+      ? await getJson<Proof>(`/api/examples/${encodeURIComponent(id)}/proof`)
+      : ESCROW && paid && paid.sats > 0 && !/^(dev|sample|mock)/i.test(paid.txid)
+        ? await getJson<Proof>(`/api/escrow/${encodeURIComponent(id)}/validate`, saved.ownerKey(id))
+        : null;
     if (my !== seq || id !== projectId) return;
     server = p;
     kit = k;

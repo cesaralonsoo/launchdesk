@@ -164,7 +164,8 @@ export function mountHud(host: HTMLElement, deps: HudDeps): () => void {
 
   function pinsFor(g: GameState): Pin[] {
     const lvl = world.worldLevel;
-    if (lvl === 2 && officesFor === g.projectId) {
+    // the offices floor always names its rooms (with the price of the cheapest task) whenever it is on screen
+    if (lvl === 2) {
       const phone = phoneMq.matches;
       return OFFICE_IDS.map((o, i) => {
         const r = g.rooms.find((x) => x.id === `office:${o}`)!;
@@ -174,9 +175,21 @@ export function mountHud(host: HTMLElement, deps: HudDeps): () => void {
         return phone ? { id: `office:${o}`, kind: "dot" as const, tone: ROOM_TINT[o], html: `${i + 1}` } : { id: `office:${o}`, html: pillHtml(OFFICE_NAME[o], sub, ROOM_TINT[o]) };
       });
     }
-    if (lvl === 3 && campus) {
+    // the finished example's floor names its stages, like the home (Research and Launch kit done, Offices with a price)
+    if (lvl === 1 && g.example) {
+      const st = (i: number) => g.stages[i]!;
+      const sub = (i: number, price: string) => (st(i).unlocked ? `done · ${st(i).lit}/${st(i).total}` : price);
+      const defs: [string, string, string, string][] = [
+        ["wing:back", "Research", sub(0, "10¢"), "#4F7CF0"],
+        ["wing:front", "Launch kit", sub(1, "50¢"), "#E3893B"],
+        ["plate", "Offices", "from 2¢", "#8C6BE8"],
+      ];
+      return defs.map(([id, name, s2, c], i) => (phoneMq.matches ? { id, kind: "dot" as const, tone: c, html: `${i + 1}` } : { id, html: pillHtml(name, s2, c) }));
+    }
+    if (lvl === 3) {
       const out: Pin[] = [];
-      for (const r of saved.list().filter((x) => !/^ex-/.test(x.id)).slice(0, 4))
+      if (g.sample) out.push({ id: `campus:${g.projectId || "sample"}`, html: pillHtml(`Sample · ${g.name}`, "tour data") });
+      else for (const r of saved.list().filter((x) => !/^ex-/.test(x.id)).slice(0, 4))
         out.push({ id: `campus:${r.id}`, html: pillHtml(r.id === g.projectId ? g.name : r.title, r.verdict === "no-go" ? "No-go · lesson learned" : r.score != null ? `${VERDICT_LABEL[r.verdict ?? "go"]} ${r.score.toFixed(1)}` : "No report yet") });
       for (const x of store.examples) out.push({ id: `campus:${x.id}`, html: pillHtml(`Example · ${x.title}`, x.verdict ? `${VERDICT_LABEL[x.verdict.verdict]} ${x.verdict.score.toFixed(1)}` : "real run") });
       out.push({ id: "campus:next:0", html: pillHtml("Your next idea", "10¢") });
