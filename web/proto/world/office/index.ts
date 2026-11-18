@@ -48,6 +48,17 @@ export interface OfficeModelExt extends OfficeModelV7 {
   trayPoint(): THREE.Vector3;
   readonly style: OfficeStyle;
   readonly hints: typeof officeRenderHints;
+  // ── v8 (redesign WP-B)
+  /** Per-room lit state from the game (null = derive it from the people in the room, as before). */
+  setRoomState(id: FloorRoom, s: "locked" | "idle" | "working" | "done" | null, o?: { instant?: boolean }): void;
+  /** Hover focus: these rooms fade to a dim, desaturated tint (null/empty = none). */
+  setDim(ids: readonly FloorRoom[] | null): void;
+  /** Floor room under the ray (v7 ids, unlike the legacy pick()). */
+  pickFloor(ray: THREE.Raycaster): FloorRoom | null;
+  /** Lobby wall screen: the chosen logo + one line; null + "" hides it. */
+  setScreen(img: HTMLCanvasElement | null, line: string): void;
+  /** Root-local centre of a room's floor. */
+  roomCenter(id: FloorRoom): THREE.Vector3;
 }
 
 /**
@@ -247,6 +258,11 @@ export function createOfficeModel(opts: OfficeOptions): OfficeModelExt {
     syncRooms(true);
   }
 
+  // ── v8: the game's per-room states (override) and the hover dim
+  const override = new Map<FloorRoom, "locked" | "idle" | "working" | "done">();
+  const dimmed = new Set<FloorRoom>();
+  const OVR = { locked: { locked: 1, work: 0, done: 0 }, idle: { locked: 0, work: 0, done: 0 }, working: { locked: 0, work: 1, done: 0 }, done: { locked: 0, work: 0, done: 1 } } as const;
+
   // ── room state follows the people in it
   function syncRooms(instant: boolean) {
     for (const [id, slot] of slots) {
@@ -263,6 +279,9 @@ export function createOfficeModel(opts: OfficeOptions): OfficeModelExt {
         tg.work = present.some((a) => a.state === "working" || a.state === "presenting" || a.state === "arriving") ? 1 : 0;
         tg.done = present.length > 0 && present.every((a) => a.state === "done") ? 1 : 0;
       }
+      const o = override.get(id);
+      if (o) Object.assign(tg, OVR[o], id === "lobby" ? { locked: 0 } : {});
+      if (dimmed.has(id)) tg.locked = Math.max(tg.locked, 0.9);
       if (instant || still) {
         Object.assign(slot.mix, tg);
         R.resolve(look, mixes, slot.active);
@@ -360,6 +379,55 @@ export function createOfficeModel(opts: OfficeOptions): OfficeModelExt {
   };
   setSign(sign);
 
+  // ── v8: lobby wall screen (the chosen logo + one line), on the left wall in front of the sign
+  const scrCanvas = document.createElement("canvas");
+  scrCanvas.width = 256;
+  scrCanvas.height = 160;
+  const scrTex = new THREE.CanvasTexture(scrCanvas);
+  scrTex.colorSpace = THREE.SRGBColorSpace;
+  scrTex.anisotropy = 4;
+  const scrFace = new THREE.MeshBasicMaterial({ map: scrTex, toneMapped: false });
+  const scrG = new THREE.Group();
+  scrG.position.set(lobby.cx - 2.93, 1.02, lobby.cz + 0.95);
+  scrG.rotation.y = Math.PI / 2;
+  const scrW = 1.25, scrH = scrW * (160 / 256);
+  const scrFrame = new THREE.Mesh(new THREE.BoxGeometry(scrW + 0.08, scrH + 0.08, 0.05), signFrameM);
+  const scrPlane = new THREE.Mesh(new THREE.PlaneGeometry(scrW, scrH), scrFace);
+  scrPlane.position.z = 0.027;
+  scrG.add(scrFrame, scrPlane);
+  scrG.userData.keep = true;
+  scrG.visible = false;
+  slots.get("lobby")!.holder.add(scrG);
+  function setScreen(img: HTMLCanvasElement | null, line: string) {
+    if (!img && !line) {
+      scrG.visible = false;
+      return;
+    }
+    const g = scrCanvas.getContext("2d")!;
+    const W = scrCanvas.width, H = scrCanvas.height;
+    g.fillStyle = "#FBFAF7";
+    g.fillRect(0, 0, W, H);
+    const lh = line ? 34 : 0;
+    if (img) {
+      const box = Math.min(W - 40, H - 24 - lh);
+      const k = Math.min(box / img.width, box / img.height);
+      const iw = img.width * k, ih = img.height * k;
+      g.imageSmoothingEnabled = true;
+      g.drawImage(img, (W - iw) / 2, (H - lh - ih) / 2 + 4, iw, ih);
+    }
+    if (line) {
+      g.fillStyle = "#14161A";
+      g.font = "600 22px Inter, system-ui, sans-serif";
+      g.textAlign = "center";
+      g.textBaseline = "middle";
+      let t = line;
+      while (g.measureText(t).width > W - 24 && t.length > 4) t = t.slice(0, -2) + "…";
+      g.fillText(t, W / 2, img ? H - lh / 2 - 6 : H / 2);
+    }
+    scrTex.needsUpdate = true;
+    scrG.visible = true;
+  }
+
   // ── effects
   const burst = new CubeBurst(5, 18);
   const papers = new Papers(burst, 6);
@@ -451,6 +519,22 @@ export function createOfficeModel(opts: OfficeOptions): OfficeModelExt {
     },
     setSign,
     setReveal,
+    setRoomState(id, st, o) {
+      if (st) override.set(id, st);
+      else override.delete(id);
+      syncRooms(!!o?.instant);
+    },
+    setDim(ids) {
+      dimmed.clear();
+      for (const id of ids ?? []) dimmed.add(id);
+      syncRooms(false);
+    },
+    pickFloor(ray) {
+      const hit = ray.intersectObjects(pickBoxes, false)[0];
+      return hit ? (hit.object.userData.room as FloorRoom) : null;
+    },
+    setScreen,
+    roomCenter: (id) => new THREE.Vector3(ROOM_BY_ID[id].cx, 0, ROOM_BY_ID[id].cz),
     pulse(id: ActorId, kind: FindingKind) {
       const a = actors.get(id);
       if (!a || a.state === "absent") return;
@@ -527,6 +611,8 @@ export function createOfficeModel(opts: OfficeOptions): OfficeModelExt {
       signCanvas.dispose();
       signFace.dispose();
       signFrameM.dispose();
+      scrTex.dispose();
+      scrFace.dispose();
       root.traverse((o) => {
         if (o instanceof THREE.Mesh) o.geometry.dispose();
       });

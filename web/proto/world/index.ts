@@ -14,16 +14,18 @@ import {
 import { createBedroomModel } from "./bedroom";
 import { BOOM, createBoomFx } from "./boom";
 import { Drift, FOV, applyShot, cloneShot, easeInOut, easeLevel, easeOutward, fitShot, levelAngles, lerpShot, roomAngles, type Shot } from "./camera";
-import { createBase, createDistrict, type District } from "./levels/district";
+import { createBase } from "./levels/district";
+import { createCampus, type Campus } from "./levels/campus";
+import { OFFICE_ROOMS, PLATE_Y, createStack, type Stack } from "./levels/stack";
 import { createGhost, type GhostKind } from "./levels/ghost";
 import { Y0, clamp01, disposeFacades, win } from "./levels/kit";
 import type { Palette } from "./levels/palette";
-import { FLOORS, FLOOR_H, createTower, type Tower } from "./levels/tower";
-import { createOfficeModel } from "./office";
+import { FLOORS, FLOOR_H } from "./levels/tower";
+import { createOfficeModel, type OfficeModelExt } from "./office";
 import { DayClock, clockInfo, createDayCycle, type DayState } from "./daycycle";
 import { createPixelPass, readPixelMode, type PixelMode } from "./pixel";
 import { createSky } from "./sky";
-import type { WorldV8 } from "./api-v8";
+import type { Area, OfficeRoomId, RoomState, WorldV8 } from "./api-v8";
 
 /** Additive extras on top of the frozen World contract (see CONTRACTS.md, "Changes by ws-b-levels"). */
 export interface WorldExtras {
@@ -58,7 +60,8 @@ export interface WorldExtras {
 /** v7 options (additive): `worldLevel` (initial, default `level` ?? 1) and `pixel` (default ?pixel= or 1). */
 export type WorldOptionsV7 = WorldOptions & { worldLevel?: WorldLevel; pixel?: PixelMode; /** dev: inject a room model (harness) */ createBedroom?: CreateBedroomModel };
 export type WorldX = WorldV7 & WorldExtras & WorldV8;
-type Office = OfficeModel & Partial<OfficeModelV7>;
+type Office = OfficeModelExt;
+void (null as unknown as OfficeModel & Partial<OfficeModelV7>);
 
 /** Floor rooms → v6 office rooms (same 4 × 2 grid) — used only while the office has no v7 methods. */
 const FLOOR_TO_ROOM: Record<FloorRoom, Room> = { r0: "mia", r1: "leo", r2: "sam", r3: "nova", lobby: "lobby", nova: "dex", dex: "rae", launch: "pip" };
@@ -70,11 +73,19 @@ const OFFICE_REST = new THREE.Matrix4();
 
 /** city = planned massing rising, solid = its clay goes from ghost to solid (both 0 at level 2, 1 at level 3). */
 type Growth = { tower: number; ground: number; city: number; solid: number };
+// v8: tower = the offices floor of the exploded stack (wl 2) · city = the campus (wl 3, replaces floor + stack).
+// No streets, no diorama slab (ground stays 0).
 const GROWTH: Record<Level, Growth> = {
   1: { tower: 0, ground: 0, city: 0, solid: 0 },
-  2: { tower: 1, ground: 1, city: 0, solid: 0 },
-  3: { tower: 1, ground: 1, city: 1, solid: 1 },
+  2: { tower: 1, ground: 0, city: 0, solid: 0 },
+  3: { tower: 0, ground: 0, city: 1, solid: 1 },
 };
+const BACK_ROW: readonly FloorRoom[] = ["r0", "r1", "r2", "r3"];
+const FRONT_ROW: readonly FloorRoom[] = ["nova", "dex", "launch"];
+/** The dashed offices plate above floor 1 (same footprint, slab 7.25..7.5). */
+const PLATE_BOX = new THREE.Box3(new THREE.Vector3(-12.45, PLATE_Y - 0.25, -6.25), new THREE.Vector3(12.45, PLATE_Y, 6.25));
+const EXAMPLE_ID = "ex-coffee-bcn";
+type Showcase = "example" | "yours";
 
 /** v7: returns the WorldV7 directly (the tech-lead adapter in v7.ts is now a pass-through). */
 export const createWorld = (host: HTMLElement, opts: WorldOptionsV7): WorldX => createWorldX(host, opts);
@@ -124,39 +135,45 @@ export function createWorldX(host: HTMLElement, opts: WorldOptionsV7): WorldX {
   scene.add(fx.root);
 
   // lazily built levels
-  let tower: Tower | null = null;
-  let district: District | null = null;
+  let tower: Stack | null = null;
+  let district: Campus | null = null;
   const growth: Growth = { ...GROWTH[1] };
   function ensureLevels() {
     if (tower && district) return;
-    tower = createTower({ quality: opts.quality, env });
-    district = createDistrict({ quality: opts.quality, env });
+    tower = createStack({ quality: opts.quality, env });
+    district = createCampus({ quality: opts.quality, env });
     scene.add(tower.root, district.ground, district.city);
     tower.applyPalette(pal);
     district.applyPalette(pal);
-    district.setBuilt(builtK);
-    tower.setBeacon(beacon, false);
-    district.setPortfolio(portfolio);
+    if (officesState) tower.setOffices(officesState.rooms, { sample: officesState.sample });
+    if (campusItems) district.setCampus(campusItems);
     paintGrowth();
   }
-  const officeShadow = office.root.getObjectByName("office-ground-shadow");
   function paintGrowth() {
-    if (officeShadow && !office.setReveal) officeShadow.visible = growth.tower < 0.03;
-    base.setPresence(Math.min(1, growth.ground * 2.5));
-    if (!tower || !district) return;
-    tower.setGrowth(growth.tower);
-    district.setGround(growth.ground);
+    base.setPresence(0); // v8: no diorama slab at any level
+    const campusOn = growth.city >= 0.5;
+    office.root.visible = !campusOn;
+    if (!tower || !district) {
+      paintPlate();
+      return;
+    }
+    tower.setGrowth(campusOn ? 0 : growth.tower);
     district.setCity(growth.city);
-    district.setSolid(growth.solid);
+    paintPlate();
   }
 
-  // celebration rings on the office floor (paid at the lobby, live at Pip's room)
-  const ringMat = new THREE.MeshBasicMaterial({ color: "#0AC18E", transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide });
-  const ring = new THREE.Mesh(new THREE.RingGeometry(0.92, 1, 64), ringMat);
-  ring.rotation.x = -Math.PI / 2;
-  ring.visible = false;
-  scene.add(ring);
-  let ringT = -1;
+  // celebration rings on the office floor (paid at the lobby, live at Pip's room; v8: one per unlocked room)
+  const ringGeo = new THREE.RingGeometry(0.92, 1, 64);
+  const rings = Array.from({ length: 5 }, () => {
+    const mat = new THREE.MeshBasicMaterial({ color: "#0AC18E", transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide });
+    const mesh = new THREE.Mesh(ringGeo, mat);
+    mesh.rotation.x = -Math.PI / 2;
+    mesh.visible = false;
+    scene.add(mesh);
+    return { mesh, mat, t: -1 };
+  });
+  const ring = rings[0]!.mesh;
+  void ring;
 
   // where the work happens: one soft light in the working department's colour (created at 0 so no recompiles)
   const workLight = new THREE.PointLight("#ffffff", 0, 9, 1.4);
@@ -167,7 +184,8 @@ export function createWorldX(host: HTMLElement, opts: WorldOptionsV7): WorldX {
 
   // ── state
   /** v7 world level actually built (≤ cap) · `asked` = what the flow asked for (> wl ⇒ the ghost of wl+1 shows). */
-  let wl: WorldLevel = opts.worldLevel ?? opts.level ?? 1;
+  // v8: the founder's room (wl 0) is never entered any more: every level request is clamped to ≥ 1
+  let wl: WorldLevel = Math.max(1, opts.worldLevel ?? opts.level ?? 1) as WorldLevel;
   let asked: WorldLevel = wl;
   let cap: WorldLevel = 3;
   /** v6 growth level (the room is drawn on top of a level-1 growth state). */
@@ -191,6 +209,23 @@ export function createWorldX(host: HTMLElement, opts: WorldOptionsV7): WorldX {
   let roster: readonly Analyst[] = [];
   const actorStates = new Map<ActorId, ActorState>();
   let sign: CompanySign | null = null;
+  // ── v8 state
+  /** No-go (cap 0): the floor stays, the offices plate goes. The cap gates nothing else. */
+  let noGo = false;
+  let officesState: { rooms: { id: OfficeRoomId; state: "off" | "working" | "done"; results: number }[]; sample: boolean } | null = null;
+  let campusItems: Parameters<WorldV8["setCampus"]>[0] | null = null;
+  let showcase: Showcase = "yours";
+  /** What the flow/game asked for (the user's own company); shown in "yours", kept aside while the example shows. */
+  const mine = {
+    roster: [] as Analyst[],
+    actors: new Map<ActorId, ActorState>(),
+    sign: null as CompanySign | null,
+    rooms: new Map<FloorRoom, RoomState>(),
+    screen: { img: null as HTMLCanvasElement | null, line: "" },
+  };
+  let paused = false;
+  let framesDrawn = 0;
+  const pickCbs = new Set<(id: string) => void>();
   /** 0 = the room is intact and the floor hidden · 1 = the floor is complete and the room gone. */
   let boomK = wl === 0 ? 0 : 1;
   let boom: { t0: number; from: Shot; done: () => void } | null = null;
@@ -202,10 +237,8 @@ export function createWorldX(host: HTMLElement, opts: WorldOptionsV7): WorldX {
         return rooms.map((r) => floorBounds(r).applyMatrix4(OFFICE_REST));
       },
       tower: () => [new THREE.Box3(new THREE.Vector3(-13.5, FLOOR_H - 0.55, -7.2), new THREE.Vector3(13.5, FLOORS * FLOOR_H - 0.55, 7.2))],
-      district: () => {
-        ensureLevels();
-        return district!.ghostBoxes();
-      },
+      district: () => [],
+      plate: () => [PLATE_BOX.clone()],
     },
     { reduced },
   );
@@ -339,7 +372,7 @@ export function createWorldX(host: HTMLElement, opts: WorldOptionsV7): WorldX {
 
   // ── framing
   /** Focus key: a v6 room / "overview", or `actor:<id>` (v7 focusActor). */
-  type Focus = FocusTarget | `actor:${string}`;
+  type Focus = FocusTarget | `actor:${string}` | `area:${string}`;
   function floorBounds(r: FloorRoom): THREE.Box3 {
     return (office.floorRoomBounds ? office.floorRoomBounds(r) : office.roomBounds(FLOOR_TO_ROOM[r])).clone();
   }
@@ -353,18 +386,51 @@ export function createWorldX(host: HTMLElement, opts: WorldOptionsV7): WorldX {
     const seat = seatOf(id, roster, 1);
     return floorBounds(seat.room as FloorRoom).applyMatrix4(OFFICE_REST);
   }
-  /** The level the camera frames: the built level, or the ghost above it when the flow asked past the cap. */
-  const viewLevel = (): WorldLevel => (asked > wl ? (Math.min(3, wl + 1) as WorldLevel) : wl);
+  /** v8: the camera frames the built level (no ghost levels: the cap gates nothing). */
+  const viewLevel = (): WorldLevel => wl;
+  const portraitNow = () => w / h < 0.85;
+  /** Is the dashed offices plate part of the picture (floor level, not a No-go, the stack not grown)? */
+  const plateWanted = () => wl === 1 && !noGo && !anim?.g1?.tower;
   function boxFor(t: FocusTarget, lv: Level | 0): THREE.Box3 | THREE.Vector3[] {
     if (t !== "overview") return office.roomBounds(t).clone().applyMatrix4(OFFICE_REST);
     if (lv === 0) return bedroomWorld(bedroom.bounds().clone());
-    if (lv === 1) return office.bounds().clone().applyMatrix4(OFFICE_REST);
-    if (lv === 2) return new THREE.Box3(new THREE.Vector3(-24, Y0, -12), new THREE.Vector3(24, 12 * 3.2 + 6, 16));
+    if (lv === 1) {
+      const b = office.bounds().clone().applyMatrix4(OFFICE_REST);
+      return plateWanted() ? b.union(PLATE_BOX) : b;
+    }
     ensureLevels();
+    if (lv === 2) return portraitNow() ? tower!.upperBounds() : tower!.bounds();
     return district!.framePoints();
   }
-  function shotFor(t: Focus, lv: WorldLevel = viewLevel()): Shot {
+  /** v8 area boxes (world space) for camera shots. */
+  function areaBox(a: string): THREE.Box3 | null {
+    const rows = (ids: readonly FloorRoom[]) => ids.reduce((b, r) => b.union(floorBounds(r).applyMatrix4(OFFICE_REST)), new THREE.Box3());
+    if (a === "wing:back") return rows(BACK_ROW).expandByVector(new THREE.Vector3(0.3, 0, 0.3));
+    if (a === "wing:front") return rows(FRONT_ROW).expandByVector(new THREE.Vector3(0.3, 0, 0.3));
+    if (a === "plate") return PLATE_BOX.clone().union(office.bounds().clone().applyMatrix4(OFFICE_REST).setFromCenterAndSize(new THREE.Vector3(0, 1.9, 0), new THREE.Vector3(24.9, 0.2, 12.5)));
+    if (a.startsWith("room:")) return floorBounds(a.slice(5) as FloorRoom).applyMatrix4(OFFICE_REST).expandByVector(new THREE.Vector3(0.8, 0, 0.8));
+    if (a.startsWith("office:")) {
+      ensureLevels();
+      return tower!.roomBox(a.slice(7) as OfficeRoomId).expandByVector(new THREE.Vector3(0.6, 0, 0.6));
+    }
+    if (a.startsWith("plot:")) {
+      ensureLevels();
+      return district!.plotBox(a.slice(5));
+    }
+    return null;
+  }
+  function shotOf(t: Focus, lv: WorldLevel = viewLevel()): Shot {
     const aspect = w / h;
+    if (t.startsWith("area:")) {
+      const b = areaBox(t.slice(5));
+      if (b) {
+        const c = b.getCenter(new THREE.Vector3());
+        const a = t.slice(5);
+        const ang = a.startsWith("office:") ? levelAngles(2, aspect) : a.startsWith("plot:") ? levelAngles(3, aspect) : a === "plate" ? levelAngles(1, aspect) : roomAngles(c.x, aspect);
+        return fitShot(b, ang.yaw, ang.pitch, w, h, insets, a.startsWith("room:") || a.startsWith("office:") ? 0.12 : 0.07);
+      }
+      t = "overview";
+    }
     if (t.startsWith("actor:")) {
       const id = t.slice(6) as ActorId;
       const b = actorBox(id).expandByVector(new THREE.Vector3(wl === 0 ? 0.35 : 0.8, 0, wl === 0 ? 0.35 : 0.8));
@@ -501,8 +567,8 @@ export function createWorldX(host: HTMLElement, opts: WorldOptionsV7): WorldX {
     ghost.setViewport(w, h);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
-    if (anim) anim.to = shotFor(focusT);
-    else if (!boom) void go(shotFor(focusT), { animate: false });
+    if (anim) anim.to = shotOf(focusT);
+    else if (!boom) void go(shotOf(focusT), { animate: false });
   }
   const ro = new ResizeObserver(resize);
   ro.observe(host);
@@ -541,7 +607,7 @@ export function createWorldX(host: HTMLElement, opts: WorldOptionsV7): WorldX {
     level = Math.max(1, lv) as Level;
     boomK = lv === 0 ? 0 : 1;
     applyBoom(lv === 0 ? 0 : 1, lv === 0 ? 0 : 1);
-    ghost.show(asked > wl ? GHOST_FOR[wl] ?? null : null, false);
+    paintPlate(false);
   }
   /** Crossfade the canvas (the CSS sky stays): out, `mid()` snaps the new state, in. */
   function crossfade(ms: number, mid: () => void): Promise<void> {
@@ -582,7 +648,7 @@ export function createWorldX(host: HTMLElement, opts: WorldOptionsV7): WorldX {
     applyBoom(roomK, floorK);
     fx.pose(ms);
     // camera: a short push-in (anticipation), then one smooth pull to the floor overview
-    boomTo = shotFor("overview", Math.max(1, viewLevel()) as WorldLevel);
+    boomTo = shotOf("overview", Math.max(1, viewLevel()) as WorldLevel);
     const kc = win(ms, BOOM.camFrom, BOOM.camLen);
     lerpShot(from, boomTo, easeOutward(kc), cur, 0.05);
     const pre = ms < BOOM.pre ? Math.sin((ms / BOOM.pre) * Math.PI * 0.5) : Math.max(0, 1 - (ms - BOOM.pre) / 260);
@@ -602,49 +668,48 @@ export function createWorldX(host: HTMLElement, opts: WorldOptionsV7): WorldX {
       cur.yaw = boomTo.yaw;
       cur.pitch = boomTo.pitch;
     }
-    void go(shotFor(focusT), { animate: false });
+    void go(shotOf(focusT), { animate: false });
     d();
   }
 
+  /**
+   * v8: floor (1) ↔ offices stack (2) is one camera move while floor 2 slides down into place; anything to or from the
+   * campus (3) crossfades (it replaces the office). The cap never gates a level (cap 0 = No-go only hides the plate).
+   */
   function setWorldLevel(l: WorldLevel, o?: { animate?: boolean }): Promise<void> {
     const animate = (o?.animate ?? true) && !reduced;
-    const want = l;
-    const target = Math.min(l, cap) as WorldLevel;
+    const target = Math.max(1, Math.min(3, l)) as WorldLevel;
     const from = wl;
     if (boom) finishBoom();
-    asked = want;
-    focusT = "overview";
-    const ghostKind = want > target ? GHOST_FOR[target] ?? null : null;
-    const tr = levelTransition(from, target);
-    if (from === target || tr === "pull" || tr === "push") {
+    asked = target;
+    if (!focusT.startsWith("area:") || from !== target) focusT = "overview";
+    if (target !== 1) office.setDim(null);
+    if (from === target || (from !== 3 && target !== 3)) {
       wl = target;
-      level = Math.max(1, target) as Level;
-      ghost.show(ghostKind, animate);
-      const vl = viewLevel();
-      const ms = from === target ? (vl !== target ? 2400 : 1100) : levelMs(Math.max(1, from) as Level, level);
+      level = target as Level;
+      paintPlate();
+      const ms = from === target ? 1100 : 1500;
       const ease = from === target ? easeInOut : target > from ? easeOutward : easeLevel;
-      return go(shotFor("overview", vl), { animate, ms, ease, growthTo: G(target) });
+      return go(shotOf(focusT, target), { animate, ms, ease, growthTo: G(target) });
     }
-    if (tr === "boom" && (o?.animate ?? true)) {
-      if (reduced) return crossfade(400, () => { snapLevel(target); setGrowthNow(G(target)); void go(shotFor("overview"), { animate: false }); });
-      wl = 1;
-      level = 1;
-      ghost.show(ghostKind, true);
-      setGrowthNow(G(1));
-      return startBoom();
-    }
-    // switch (0 ↔ 2/3, 1 → 0) or an instant boom: crossfade (or snap)
     const apply = () => {
       snapLevel(target);
-      ghost.show(ghostKind, false);
       setGrowthNow(G(target));
-      void go(shotFor("overview"), { animate: false });
+      paintPlate();
+      void go(shotOf("overview"), { animate: false });
     };
     if (!(o?.animate ?? true)) {
       apply();
       return Promise.resolve();
     }
     return crossfade(reduced ? 400 : 700, apply);
+  }
+  /** The dashed offices plate: floor level only, never on a No-go, never while the real offices floor shows. */
+  function paintPlate(animate = true) {
+    // a wing or room close-up hides it (its dashes would cut across the rooms); the overview and "plate" show it
+    const close = focusT !== "overview" && focusT !== "area:plate";
+    const on = wl === 1 && !noGo && !close && growth.tower < 0.02 && growth.city < 0.5;
+    ghost.show(on ? "plate" : null, animate && !reduced);
   }
 
   // ── input: clicks on rooms / actors, pointer parallax
@@ -671,6 +736,10 @@ export function createWorldX(host: HTMLElement, opts: WorldOptionsV7): WorldX {
   const onClick = (e: MouseEvent) => {
     const r = renderer.domElement.getBoundingClientRect();
     const x = e.clientX - r.left, y = e.clientY - r.top;
+    if (pickCbs.size) {
+      const id = pickAt(x, y);
+      if (id) for (const cb of pickCbs) cb(id);
+    }
     const room = toRoom(x, y);
     if (room) for (const cb of clickCbs) cb(room);
     if (actorCbs.size) {
@@ -686,9 +755,15 @@ export function createWorldX(host: HTMLElement, opts: WorldOptionsV7): WorldX {
   let raf = 0, last = performance.now(), first = true;
   const clock0 = performance.now();
   const tick = (now: number) => {
+    if (paused) {
+      raf = 0;
+      return;
+    }
     raf = requestAnimationFrame(tick);
-    const dt = Math.min(0.1, (now - last) / 1000);
-    last = now;
+    // rAF timestamps can run behind performance.now() (boot, resume): never step backwards (a negative dt made the
+    // work light's ease diverge into a huge negative light that blew the lobby out to white)
+    const dt = Math.max(0, Math.min(0.1, (now - last) / 1000));
+    last = Math.max(last, now);
     const t = (now - clock0) / 1000;
     stepDay(now);
     if (builtAnim) {
@@ -748,20 +823,23 @@ export function createWorldX(host: HTMLElement, opts: WorldOptionsV7): WorldX {
     if (office.root.visible) office.update(dt, t);
     if (bedroom.root.visible) bedroom.update(dt, t);
     ghost.update(dt, t);
-    if (Math.abs(workLight.intensity - workTarget) > 1e-3) workLight.intensity += (workTarget - workLight.intensity) * (reduced ? 1 : 1 - Math.exp(-dt * 3));
+    if (!office.root.visible || growth.city > 0) workLight.intensity = 0; // the floor's work light never shines on the campus
+    else if (Math.abs(workLight.intensity - workTarget) > 1e-3) workLight.intensity += (workTarget - workLight.intensity) * (reduced ? 1 : 1 - Math.exp(-dt * 3));
     tower?.update(dt, t);
     district?.update(dt, reduced ? 0 : t);
-    if (ringT >= 0) {
-      const k = Math.min(1, (now - ringT) / 800); // wall clock: always gone before the camera leaves the lobby
-      ring.scale.setScalar(0.4 + (1 - Math.pow(1 - k, 3)) * 2.6);
-      ringMat.opacity = (1 - k) * (1 - k) * 0.6;
+    for (const r of rings) {
+      if (r.t < 0) continue;
+      const k = Math.min(1, (now - r.t) / 800); // wall clock: always gone before the camera leaves the lobby
+      r.mesh.scale.setScalar(0.4 + (1 - Math.pow(1 - k, 3)) * 2.6);
+      r.mat.opacity = (1 - k) * (1 - k) * 0.6;
       if (k >= 1) {
-        ringT = -1;
-        ring.visible = false;
+        r.t = -1;
+        r.mesh.visible = false;
       }
     }
     pixel.render(scene, camera);
-    document.documentElement.dataset.busy = anim || builtAnim || boom || fade ? "1" : "0";
+    framesDrawn++;
+    document.documentElement.dataset.busy = anim || builtAnim || boom || fade || rings.some((r) => r.t >= 0) ? "1" : "0";
     if (first) {
       first = false;
       document.documentElement.setAttribute(READY_ATTR, "1");
@@ -786,16 +864,20 @@ export function createWorldX(host: HTMLElement, opts: WorldOptionsV7): WorldX {
   setAtmosphere(opts.atmosphere);
   snapLevel(wl);
   setGrowthNow(G(wl));
-  void go(shotFor("overview"), { animate: false });
+  void go(shotOf("overview"), { animate: false });
   raf = requestAnimationFrame(tick);
 
   function pulseAt(room: Room) {
-    const b = office.roomBounds(room).clone().applyMatrix4(OFFICE_REST);
+    ringAt(office.roomBounds(room).clone().applyMatrix4(OFFICE_REST));
+  }
+  /** One expanding green ring on the floor of a box (a free ring from the pool, else the oldest). */
+  function ringAt(b: THREE.Box3) {
     const c = b.getCenter(new THREE.Vector3());
-    ring.position.set(c.x, b.min.y + 0.03, c.z);
-    ringMat.color.copy(pal.money);
-    ring.visible = true;
-    ringT = performance.now();
+    const r = rings.find((x) => x.t < 0) ?? rings.reduce((a, x) => (x.t < a.t ? x : a));
+    r.mesh.position.set(c.x, b.min.y + 0.03, c.z);
+    r.mat.color.copy(pal.money);
+    r.mesh.visible = true;
+    r.t = performance.now();
   }
   const toScreen = (p: THREE.Vector3, m = 1.05) => {
     p.project(camera);
@@ -834,6 +916,222 @@ export function createWorldX(host: HTMLElement, opts: WorldOptionsV7): WorldX {
     return r === "lobby" ? null : (r as Dept);
   }
 
+  // ── v8: what the office shows. The flow/game's own company ("yours") is kept in `mine`; the home hero may show
+  // the real finished example instead ("example"), read from the example's own project + kit (never invented).
+  function applyRoster(r: readonly Analyst[]) {
+    roster = r.slice();
+    bedroom.setRoster(roster);
+    office.setRoster(roster);
+  }
+  function applyActor(id: ActorId, s: ActorState, o?: { instant?: boolean }) {
+    actorStates.set(id, s);
+    bedroom.setActorState(id, s, o);
+    office.setActorState(id, s, o);
+    paintWorkLight();
+  }
+  function applySign(s: CompanySign) {
+    sign = s;
+    bedroom.setSign(s);
+    office.setSign(s);
+  }
+  const ALL_FLOOR: readonly FloorRoom[] = ["lobby", ...BACK_ROW, ...FRONT_ROW];
+  function applyRooms(m: Map<FloorRoom, RoomState>, instant: boolean) {
+    for (const id of ALL_FLOOR) office.setRoomState(id, m.get(id) ?? null, { instant });
+  }
+  /** Back to the user's own company exactly as the flow/game last described it. */
+  function restoreMine() {
+    applyRoster(mine.roster);
+    actorStates.clear();
+    const def = (id: ActorId): ActorState => (id === "founder" ? "idle" : (BUILD_TEAM as readonly string[]).includes(id) ? "asleep" : "absent");
+    for (const id of ["founder", ...BUILD_TEAM, ...mine.roster.map((a) => a.id)] as ActorId[]) applyActor(id, mine.actors.get(id) ?? def(id), { instant: true });
+    applySign(mine.sign ?? { kind: "draft", name: "Your idea", color: "#1E2229" });
+    applyRooms(mine.rooms, true);
+    office.setScreen(mine.screen.img, mine.screen.line);
+  }
+  type Example = { roster: Analyst[]; sign: CompanySign; logo: HTMLCanvasElement | null; line: string };
+  let example: Example | null = null;
+  let exampleLoad: Promise<Example | null> | null = null;
+  const VERDICT: Record<string, string> = { go: "GO", pivot: "TEST FIRST", "test-first": "TEST FIRST", "no-go": "NO-GO", nogo: "NO-GO" };
+  /** Reads the finished example (GET /api/projects/ex-coffee-bcn + /kit, the same public routes the example page uses). */
+  function loadExample(): Promise<Example | null> {
+    exampleLoad ??= (async () => {
+      try {
+        const [pr, kr] = await Promise.all([fetch(`/api/projects/${EXAMPLE_ID}`), fetch(`/api/projects/${EXAMPLE_ID}/kit`)]);
+        if (!pr.ok) return null;
+        const p = (await pr.json()) as { results?: { v7?: { roster?: Analyst[] }; leo?: { score?: number; verdict?: string } } };
+        const k = kr.ok ? ((await kr.json()) as { kit?: { brand?: { name?: string; tagline?: string; palette?: { primary?: string; bg?: string } }; logo?: { chosen?: string; options?: { id: string; svg: string }[] } } }).kit : undefined;
+        const r = (p.results?.v7?.roster ?? []).filter((a) => a && a.id && a.role).slice(0, 5);
+        const score = p.results?.leo?.score, verdict = p.results?.leo?.verdict;
+        const name = k?.brand?.name?.trim() || "";
+        const tag = [score != null ? score.toFixed(1) : "", verdict ? VERDICT[verdict] ?? verdict.toUpperCase() : ""].filter(Boolean).join(" · ");
+        const sign: CompanySign = name ? { kind: "brand", name, tagline: tag || undefined, color: k?.brand?.palette?.primary || "#1E2229" } : { kind: "draft", name: tag || "Finished example", color: "#1E2229" };
+        const opt = k?.logo?.options?.find((o) => o.id === k.logo?.chosen) ?? k?.logo?.options?.[0];
+        const logo = opt ? await svgCanvas(opt.svg, k?.brand?.palette?.bg) : null;
+        return { roster: r, sign, logo, line: k?.brand?.tagline ?? "" };
+      } catch {
+        return null;
+      }
+    })();
+    return exampleLoad;
+  }
+  function applyExample(ex: Example | null) {
+    const r = ex?.roster.length ? ex.roster : mine.roster;
+    applyRoster(r);
+    actorStates.clear();
+    applyActor("founder", "idle", { instant: true });
+    for (const a of r) applyActor(a.id, "done", { instant: true });
+    for (const b of BUILD_TEAM) applyActor(b, "done", { instant: true });
+    // the end state of a finished run: every research room that had an analyst + the whole studio, done
+    const m = new Map<FloorRoom, RoomState>([["lobby", "idle"]]);
+    BACK_ROW.forEach((id, i) => m.set(id, i < Math.min(4, r.length) ? "done" : "locked"));
+    for (const id of FRONT_ROW) m.set(id, "done");
+    applyRooms(m, true);
+    if (ex) applySign(ex.sign);
+    office.setScreen(ex?.logo ?? null, ex?.logo ? ex.line : "");
+  }
+  let showcaseTok = 0;
+  function setShowcase(mode: Showcase) {
+    if (mode === showcase) return;
+    showcase = mode;
+    const tok = ++showcaseTok;
+    // before anything was drawn (or within the canvas fade-in) the first state is simply set, no crossfade
+    const early = framesDrawn < 20;
+    if (mode === "yours") {
+      if (fadeIn) renderer.domElement.style.opacity = "";
+      fadeIn = false;
+      if (early) restoreMine();
+      else void crossfade(600, restoreMine);
+      return;
+    }
+    if (example) {
+      if (early) applyExample(example);
+      else void crossfade(600, () => applyExample(example));
+      return;
+    }
+    // first time: keep the canvas clear until the example's real data arrives (max 2.5 s), then fade it in
+    fadeIn = true;
+    renderer.domElement.style.opacity = "0";
+    const show = (ex: Example | null) => {
+      if (tok !== showcaseTok || showcase !== "example") return;
+      example = ex;
+      fadeIn = false;
+      fade = { t0: performance.now() - 200, ms: 400, mid: () => applyExample(ex), done: () => {} };
+    };
+    const timer = setTimeout(() => show(null), 2500);
+    void loadExample().then((ex) => {
+      clearTimeout(timer);
+      show(ex);
+    });
+  }
+  let fadeIn = false;
+
+  /** Screen point of a world position (CSS px, unclipped) + whether it is inside the canvas and in front. */
+  const _lp = new THREE.Vector3();
+  function screenOf(p: THREE.Vector3) {
+    _lp.copy(p).project(camera);
+    const x = ((_lp.x + 1) / 2) * w, y = ((1 - _lp.y) / 2) * h;
+    return { x, y, visible: _lp.z < 1 && x >= 0 && x <= w && y >= 0 && y <= h };
+  }
+  /** Anchors for DOM labels at the current level (see WorldV8.labelPoints). */
+  function labelPoints() {
+    const out: { id: string; x: number; y: number; visible: boolean }[] = [];
+    const settled = !fade && !boom && !fadeIn;
+    const push = (id: string, p: THREE.Vector3, ok = true) => {
+      const s = screenOf(p);
+      out.push({ id, x: s.x, y: s.y, visible: s.visible && ok && settled });
+    };
+    if (growth.city >= 0.5) {
+      if (district) for (const a of district.anchors()) push(`campus:${a.id}`, a.p);
+      return out;
+    }
+    const floorOn = growth.tower < 0.5;
+    push("wing:back", new THREE.Vector3(0, 2.25, -3.3), floorOn);
+    push("wing:front", new THREE.Vector3(3, 2.0, 3.3), floorOn);
+    push("plate", new THREE.Vector3(0, PLATE_Y + 0.35, -1.5), floorOn && ghost.kind === "plate");
+    for (const id of ALL_FLOOR) {
+      const c = office.roomCenter(id).applyMatrix4(OFFICE_REST).setY(2.1);
+      push(`room:${id}`, c, floorOn);
+    }
+    if (tower) for (const id of OFFICE_ROOMS) push(`office:${id}`, tower.roomAnchor(id), growth.tower >= 0.5);
+    return out;
+  }
+  /** What a click/tap at (x, y) hits: room:<id> · plate · office:<id> · campus:<id> · campus:next. */
+  function pickAt(x: number, y: number): string | null {
+    if (boom || fade) return null;
+    rayAt(x, y);
+    if (growth.city >= 0.5) {
+      const id = district?.pick(ray);
+      return id ? (id === "next" ? "campus:next" : `campus:${id}`) : null;
+    }
+    if (tower && growth.tower >= 0.5) {
+      const id = tower.pick(ray);
+      if (id) return `office:${id}`;
+    }
+    const fr = office.pickFloor(ray);
+    if (fr) return `room:${fr}`;
+    if (ghost.kind === "plate" && ray.ray.intersectsBox(PLATE_BOX)) return "plate";
+    return null;
+  }
+  /** Camera presets (WorldV8.shotFor). Hovering a wing dims the other rows. */
+  function shotForArea(a: Area) {
+    const key = typeof a === "string" ? a : a.room.includes(":") ? a.room : `room:${a.room}`;
+    if (key === "stack") {
+      office.setDim(null);
+      void setWorldLevel(2);
+      return;
+    }
+    if (key === "campus") {
+      office.setDim(null);
+      void setWorldLevel(3);
+      return;
+    }
+    if (key === "floor") {
+      office.setDim(null);
+      if (wl !== 1) void setWorldLevel(1);
+      else {
+        focusT = "overview";
+        paintPlate();
+        void go(shotOf("overview"), { animate: true, ms: 600 });
+      }
+      return;
+    }
+    const lvFor = key.startsWith("office:") ? 2 : key.startsWith("plot:") || key.startsWith("campus:") ? 3 : 1;
+    const k = key.startsWith("campus:") ? `plot:${key.slice(7)}` : key;
+    office.setDim(k === "wing:back" ? [...FRONT_ROW, "lobby"] : k === "wing:front" ? [...BACK_ROW, "lobby"] : k === "plate" ? ALL_FLOOR : null);
+    focusT = `area:${k}`;
+    paintPlate();
+    if (wl !== lvFor) {
+      void setWorldLevel(lvFor as WorldLevel).then(() => {
+        if (focusT === `area:${k}`) void go(shotOf(focusT), { animate: true, ms: 600 });
+      });
+      return;
+    }
+    void go(shotOf(focusT), { animate: true, ms: 600 });
+  }
+  /** Unlock beat: the wing's rooms go locked → idle one column at a time (120 ms apart), one ring per room. */
+  function unlockWing(wing: "research" | "studio", o?: { animate?: boolean }): Promise<void> {
+    const ids = wing === "research" ? BACK_ROW : FRONT_ROW;
+    const animate = (o?.animate ?? true) && !reduced;
+    const target = mine.rooms;
+    const open = (id: FloorRoom, instant: boolean) => {
+      const was = target.get(id);
+      if (was && was !== "locked") return; // already lit by real work: never step it back
+      target.set(id, "idle");
+      if (showcase === "yours") office.setRoomState(id, "idle", { instant });
+      if (!instant && showcase === "yours" && wl === 1) ringAt(floorBounds(id).applyMatrix4(OFFICE_REST));
+    };
+    if (!animate) {
+      for (const id of ids) open(id, true);
+      return Promise.resolve();
+    }
+    if (wl === 1) shotForArea(wing === "research" ? "wing:back" : "wing:front");
+    office.setDim(null);
+    return new Promise((done) => {
+      ids.forEach((id, i) => setTimeout(() => open(id, false), 250 + i * 120));
+      setTimeout(done, 250 + ids.length * 120 + 800);
+    });
+  }
+
   const world: WorldX = {
     camera,
     debug: { renderer, scene, key, state: () => ({ wl, asked, cap, level, focusT, insets, w, h, boomK, ghost: ghost.kind, pixel: pixel.mode, cur: { t: cur.target.toArray(), d: cur.dist }, growth: { ...growth }, built: builtK }) },
@@ -858,16 +1156,16 @@ export function createWorldX(host: HTMLElement, opts: WorldOptionsV7): WorldX {
     },
     setWorldLevel,
     setLevelCap(c) {
-      // v7 owner update: a cap is not forever. Committing to a scale path raises it; if the flow already asked for a
-      // higher level, the world grows into the ghost right away (the ghost turns into the real thing).
-      const prev = cap;
+      // v8: the cap gates nothing. Cap 0 (a No-go) only hides the offices plate; the floor stays.
       cap = c;
-      if (wl > cap || (c > prev && asked > wl)) void setWorldLevel(asked);
-      else ghost.show(asked > wl && wl === cap ? GHOST_FOR[wl] ?? null : null, true);
+      noGo = c === 0;
+      paintPlate();
     },
     focus(t, o) {
       const prev = focusT;
       focusT = t;
+      office.setDim(null);
+      paintPlate();
       const animate = o?.animate ?? true;
       if (t !== "overview" && level !== 1 && wl !== 0) {
         // a room only exists inside the office: dive back in
@@ -876,10 +1174,10 @@ export function createWorldX(host: HTMLElement, opts: WorldOptionsV7): WorldX {
         wl = 1;
         asked = 1;
         ghost.show(null, animate);
-        return go(shotFor(t, 1), { animate, ms: levelMs(from, 1), ease: easeLevel, growthTo: GROWTH[1] });
+        return go(shotOf(t, 1), { animate, ms: levelMs(from, 1), ease: easeLevel, growthTo: GROWTH[1] });
       }
       const sameKind = (t === "overview") === (prev === "overview");
-      return go(shotFor(t), { animate, ms: o?.ms ?? 1100, arc: t !== "overview" && sameKind ? 0.035 : 0 });
+      return go(shotOf(t), { animate, ms: o?.ms ?? 1100, arc: t !== "overview" && sameKind ? 0.035 : 0 });
     },
     focusActor(id, o) {
       if (id === "overview") return world.focus("overview", o);
@@ -891,11 +1189,13 @@ export function createWorldX(host: HTMLElement, opts: WorldOptionsV7): WorldX {
         wl = 1;
         asked = 1;
         ghost.show(null, true);
-        return go(shotFor(focusT, 1), { animate: o?.animate ?? true, ms: levelMs(from, 1), ease: easeLevel, growthTo: GROWTH[1] });
+        return go(shotOf(focusT, 1), { animate: o?.animate ?? true, ms: levelMs(from, 1), ease: easeLevel, growthTo: GROWTH[1] });
       }
       const prev = focusT;
       focusT = `actor:${id}`;
-      return go(shotFor(focusT), { animate: o?.animate ?? true, ms: o?.ms ?? 1100, arc: prev.startsWith("actor:") ? 0.03 : 0 });
+      office.setDim(null);
+      paintPlate();
+      return go(shotOf(focusT), { animate: o?.animate ?? true, ms: o?.ms ?? 1100, arc: prev.startsWith("actor:") ? 0.03 : 0 });
     },
     setDeptState(d: Dept, s: DeptState) {
       office.setDeptState(d, s);
@@ -903,19 +1203,12 @@ export function createWorldX(host: HTMLElement, opts: WorldOptionsV7): WorldX {
       paintWorkLight();
     },
     setRoster(r) {
-      roster = r.slice();
-      bedroom.setRoster(roster);
-      office.setRoster?.(roster);
+      mine.roster = r.slice();
+      if (showcase === "yours") applyRoster(mine.roster);
     },
     setActorState(id, s, o) {
-      actorStates.set(id, s);
-      bedroom.setActorState(id, s, o);
-      if (office.setActorState) office.setActorState(id, s, o);
-      else {
-        const d = deptOf(id);
-        if (d) office.setDeptState(d, STATE_V6[s]);
-      }
-      paintWorkLight();
+      mine.actors.set(id, s);
+      if (showcase === "yours") applyActor(id, s, o);
     },
     pulse(id: ActorId, kind: FindingKind) {
       if (wl === 0) bedroom.pulse(id, kind);
@@ -942,29 +1235,28 @@ export function createWorldX(host: HTMLElement, opts: WorldOptionsV7): WorldX {
       return () => actorCbs.delete(cb);
     },
     setSign(s: CompanySign) {
-      sign = s;
-      bedroom.setSign(s);
-      office.setSign?.(s);
+      mine.sign = s;
+      if (showcase === "yours") applySign(s);
     },
     setProject(p: WorldProject, o) {
       const apply = () => {
         cap = p.cap;
-        roster = p.roster.slice();
-        bedroom.setRoster(roster);
-        office.setRoster?.(roster);
+        noGo = p.cap === 0;
+        world.setRoster(p.roster);
         actorStates.clear();
+        mine.actors.clear();
         const set = (id: ActorId, s: ActorState) => world.setActorState(id, s, { instant: true });
         set("founder", "idle");
         for (const a of roster) set(a.id, p.level >= 1 ? "done" : "idle");
         for (const b of BUILD_TEAM) set(b, p.builders.includes(b) ? (p.level >= 2 ? "done" : "idle") : "asleep");
         world.setSign(p.sign);
-        asked = Math.min(p.level, cap) as WorldLevel;
+        asked = Math.max(1, Math.min(3, p.level)) as WorldLevel; // v8: the cap no longer limits the level
         focusT = "overview";
         snapLevel(asked);
         setGrowthNow(G(asked));
-        void go(shotFor("overview"), { animate: false });
+        void go(shotOf("overview"), { animate: false });
       };
-      if (o?.animate === false) {
+      if (o?.animate === false || showcase === "example") {
         apply();
         return Promise.resolve();
       }
@@ -998,12 +1290,14 @@ export function createWorldX(host: HTMLElement, opts: WorldOptionsV7): WorldX {
       }
       return out;
     },
+    // v8: no locked-level ghosts any more (the dashed offices plate is not a lock); kept for the v7 contract
     ghostScreenPoint() {
+      if (!ghost.kind || ghost.kind === "plate") return null;
       const a = ghost.anchor();
       return a ? toScreen(a, 1) : null;
     },
     ghostLevel() {
-      return ghost.kind ? (({ floor: 1, tower: 2, district: 3 }) as const)[ghost.kind] : null;
+      return ghost.kind && ghost.kind !== "plate" ? (({ floor: 1, tower: 2, district: 3 }) as const)[ghost.kind] : null;
     },
     clockMode: () => clock.current,
     setInsets(i) {
@@ -1011,10 +1305,10 @@ export function createWorldX(host: HTMLElement, opts: WorldOptionsV7): WorldX {
       insets = { ...i };
       if (boom) return; // the boom re-reads the framing every frame
       if (anim) {
-        anim.to = shotFor(focusT);
+        anim.to = shotOf(focusT);
         return;
       }
-      void go(shotFor(focusT), { animate: true, ms: 600 });
+      void go(shotOf(focusT), { animate: true, ms: 600 });
     },
     celebrate(kind) {
       if (kind === "paid") {
@@ -1069,7 +1363,7 @@ export function createWorldX(host: HTMLElement, opts: WorldOptionsV7): WorldX {
     debugPose(from, to, k) {
       ensureLevels();
       anim = null;
-      const a = shotFor("overview", from), b = shotFor("overview", to);
+      const a = shotOf("overview", from), b = shotOf("overview", to);
       const ease = from === to ? easeInOut : to > from ? easeOutward : easeLevel;
       lerpShot(a, b, ease(clamp01(k)), cur);
       const g = growthAt(GROWTH[from], GROWTH[to], clamp01(k), to > from);
@@ -1088,24 +1382,57 @@ export function createWorldX(host: HTMLElement, opts: WorldOptionsV7): WorldX {
       setGrowthNow(G(1));
       const colors = ["#F2E6D3", "#E9DCC6", "#C9A27A", "#8C6A4F", "#0AC18E", "#FFFFFF", ...roster.map((a) => a.color)];
       fx.arm(LOBBY.clone(), { x: BEDROOM_FOOTPRINT.w / 2, z: BEDROOM_FOOTPRINT.d / 2 }, founderPoint(), colors);
-      poseBoom(Math.max(0, Math.min(BOOM_MS, ms)), shotFor("overview", 0));
+      poseBoom(Math.max(0, Math.min(BOOM_MS, ms)), shotOf("overview", 0));
       sync();
     },
-    // ── v8 seam (WP-0): no-op stubs, implemented by WP-B. Signatures in ./api-v8.ts.
-    unlockWing: () => Promise.resolve(),
-    setRooms: () => {},
-    shotFor: () => {},
-    setOffices: () => {},
-    setCampus: () => {},
-    levelUp: () => Promise.resolve(),
-    setLobbyScreen: () => {},
-    setShowcase: () => {},
-    labelPoints: () => [],
-    onPick: () => () => {},
-    setPaused: () => {},
+    // ── v8 (redesign WP-B). Signatures in ./api-v8.ts.
+    unlockWing,
+    setRooms(rooms) {
+      for (const r of rooms) {
+        if (!(ALL_FLOOR as readonly string[]).includes(r.id)) continue;
+        mine.rooms.set(r.id as FloorRoom, r.state);
+        if (showcase === "yours") office.setRoomState(r.id as FloorRoom, r.state);
+      }
+    },
+    shotFor: shotForArea,
+    setOffices(rooms, o) {
+      officesState = { rooms: rooms.map((r) => ({ ...r })), sample: !!o?.sample };
+      tower?.setOffices(officesState.rooms, { sample: officesState.sample });
+    },
+    setCampus(items) {
+      campusItems = items.map((i) => ({ ...i }));
+      district?.setCampus(campusItems);
+    },
+    async levelUp(to) {
+      if (to === "research" || to === "studio") return unlockWing(to);
+      const lv = to === "offices" ? 2 : 3;
+      await setWorldLevel(lv as WorldLevel);
+      if (lv === 2) tower?.sweep();
+    },
+    setLobbyScreen(img, line) {
+      mine.screen = { img, line };
+      if (showcase === "yours") office.setScreen(img, line);
+    },
+    setShowcase,
+    labelPoints,
+    onPick(cb) {
+      pickCbs.add(cb);
+      return () => pickCbs.delete(cb);
+    },
+    setPaused(p) {
+      if (p === paused) return;
+      paused = p;
+      if (!p && !raf) {
+        last = performance.now();
+        raf = requestAnimationFrame(tick);
+      }
+    },
     dispose() {
+      paused = true;
       cancelAnimationFrame(raf);
       ro.disconnect();
+      ringGeo.dispose();
+      for (const r of rings) r.mat.dispose();
       window.removeEventListener("pointermove", onMove);
       renderer.domElement.removeEventListener("click", onClick);
       office.dispose();
@@ -1132,4 +1459,20 @@ export function createWorldX(host: HTMLElement, opts: WorldOptionsV7): WorldX {
 function easeOutBack(t: number) {
   const c = 1.4;
   return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2);
+}
+
+/** Renders a logo SVG (the kit's own markup, 64 × 64 viewBox) to a canvas for the lobby screen. */
+function svgCanvas(svg: string, bg?: string): Promise<HTMLCanvasElement | null> {
+  return new Promise((res) => {
+    const c = document.createElement("canvas");
+    c.width = c.height = 256;
+    const img = new Image();
+    const src = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="256" height="256">${bg ? `<rect width="64" height="64" fill="${bg.replace(/[^#0-9a-zA-Z]/g, "")}"/>` : ""}${svg}</svg>`;
+    img.onload = () => {
+      c.getContext("2d")!.drawImage(img, 0, 0, 256, 256);
+      res(c);
+    };
+    img.onerror = () => res(null);
+    img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(src)}`;
+  });
 }
