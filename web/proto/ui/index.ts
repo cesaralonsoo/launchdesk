@@ -232,6 +232,8 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     if (key === "doc") return sideDoc() ? "card" : "doc";
     // Home on a wide window: the idea card sits on the left and the office fills the rest, full height.
     if ((key === "idea" || key === "end" || key === "recap") && sideHome()) return "side";
+    // the Launch kit offer and its 50¢ card sit on the left, so the floor (front row) keeps the right half
+    if ((key === "floor" || key === "pay2") && sideHome()) return "side";
     return "bottom"; // every surface rises from the bottom; the world is framed in the space above it
   }
   function build(key: string, s: FlowStateV7): string {
@@ -242,7 +244,7 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
       const st = key === "pay1" ? 1 : 2;
       const avs = st === 1 ? (flow.roster.length ? flow.roster.map((a) => badge(a.name, a.color, 26)).join("") : "") : BUILD_TEAM.filter((b) => b !== "pip").map((b) => builderBadge(b, 26)).join("");
       return livePayHtml(st === 1 ? "validate" : "build", cfg?.prices[st === 1 ? "validate" : "build"] ?? (st === 1 ? 10 : KIT_CENTS), avs,
-        st === 1 ? "Validate your idea" : "Launch kit", st === 1 ? "A research team picked for this idea" : "Your logo · your website · your 30-day plan",
+        st === 1 ? "Research" : "Launch kit", st === 1 ? "A research team picked for this idea" : "Your logo · your website · your 30-day plan",
         !!cfg?.mockAi, ldMark(18, undefined, true));
     }
     if (key === "pay1") return payHtml(flow, 1, !!typedIdea.trim() && typedIdea.trim() !== flow.project.idea.trim());
@@ -341,16 +343,22 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     if (hud && !hudOpen) hudBottom = Math.round(hud.getBoundingClientRect().bottom);
     if (!hud) hudBottom = 0;
     if (hudBottom && (pos === "side" || pos === "card")) top = Math.max(top, hudBottom + 8);
+    // the tour's chapter row sits under the top bar: never frame the floor up under it
+    const meta = root.querySelector<HTMLElement>(".db-meta");
+    if (meta && meta.offsetParent) top = Math.max(top, Math.round(meta.getBoundingClientRect().bottom + 8));
+    // bottom / centre cards on wide screens: the HUD card owns the top-right corner, keep the floor left of it
+    const hudLeft = hud && !hudOpen && !isMobile() ? Math.round(hud.getBoundingClientRect().left) : 0;
+    const right = hudLeft && hudLeft > innerWidth * 0.6 ? Math.round(innerWidth - hudLeft + 12) : 0;
     if (pos === "side" || pos === "card") setInsets({ left: Math.round(r.right + 8), right: 0, top, bottom: 0 });
     else if (pos === "sheet") {
       // an expanded sheet covers the world: keep framing for the collapsed height, the 3D comes back on collapse
       const h = curPanel.dataset.full === "1" ? Math.round(innerHeight * 0.55) : Math.round(innerHeight - r.top);
       setInsets({ left: 0, right: 0, top, bottom: Math.min(Math.round(innerHeight * 0.6), h + 8) });
-    } else if (pos === "bottom" || pos === "center") setInsets({ left: 0, right: 0, top, bottom: Math.round(innerHeight - r.top + 12) });
+    } else if (pos === "bottom" || pos === "center") setInsets({ left: 0, right, top, bottom: Math.round(innerHeight - r.top + 12) });
     else setInsets({ left: 0, right: 0, top: 0, bottom: 0 });
   }
   function setInsets(i: Insets) {
-    if (Math.abs(i.bottom - insets.bottom) < 8 && Math.abs(i.top - insets.top) < 8 && Math.abs(i.left - insets.left) < 8) return;
+    if (Math.abs(i.bottom - insets.bottom) < 8 && Math.abs(i.top - insets.top) < 8 && Math.abs(i.left - insets.left) < 8 && Math.abs(i.right - insets.right) < 8) return;
     insets = i;
     world.setInsets(i);
   }
@@ -405,8 +413,13 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
           ownerKey: savedProjects.ownerKey(id),
           readOnly: !demo && !!exampleOf(id),
           note: !demo ? kitNoteShort(exampleOf(id)?.kitNote) : undefined,
-          // a sample server or a read-only kit: the offices layer opens on its own sample entry (labelled there)
-          onOffices: (name) => void import("./offices").then((m) => m.openOffices({ name })),
+          // a practice / read-only kit has no offices of its own: offer your own idea instead of a blank intake form
+          onOffices: () => {
+            closeOverlay();
+            demo?.exit();
+            typedIdea = "";
+            flow.next({ type: "new-project" });
+          },
           onOwn: () => ((typedIdea = ""), flow.next({ type: "new-project" })),
         });
         // the panels fill in over time: keep the world framed above the sheet

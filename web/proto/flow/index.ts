@@ -818,7 +818,9 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
     const tok = run;
     void (async () => {
       while (!r.server && !r.error) {
-        await r.next(8000);
+        // check every 250 ms: the first fetch can land without an update event, and waiting the full 8 s left a
+        // shared link on a blank page
+        await Promise.race([r.next(8000), new Promise((res) => setTimeout(res, 250))]);
         if (live !== r || !alive(tok)) return;
       }
       if (!r.server) {

@@ -79,7 +79,7 @@ export function ideaHtml(placeholder: string, value: string, end = false, paused
 export function payHtml(f: ProtoFlowV7, stage: 1 | 2, customIdea: boolean): string {
   const cents = stage === 1 ? 10 : KIT_CENTS;
   const avs = stage === 1 ? f.roster.map((a) => badge(a.name, a.color, 26)).join("") : BUILD_TEAM.map((b) => builderBadge(b, 26)).join("");
-  const title = stage === 1 ? "Validate your idea" : "Launch kit";
+  const title = stage === 1 ? "Research" : "Launch kit";
   const line = stage === 1 ? `${f.roster.length} analysts picked for this idea` : "Your logo · your website · your 30-day plan";
   return `
   <section class="pay">
@@ -410,7 +410,9 @@ export function officesFloorHtml(f: ProtoFlowV7, brand: string): string {
       const min = Math.min(...o.tasks.map((t) => t.cents));
       return `<li><b>${esc(o.name)}</b><span>${esc(o.tasks.map((t) => t.title).join(" · "))}</span><em class="num">${o.tasks.length > 1 ? "from " : ""}${min}¢</em></li>`;
     }).join("")}</ul>
-    ${f.demo ? "" : `<footer class="rp-acts" data-st><button class="btn btn-primary" data-act="open-offices" type="button"><span>Open the offices</span>${I.arrow(16)}</button></footer>`}
+    ${f.demo ? "" : sample
+      ? `<footer class="rp-acts" data-st><button class="btn btn-primary" data-act="new" type="button"><span>Check your own idea</span><span class="btn-price">10¢</span></button></footer>`
+      : `<footer class="rp-acts" data-st><button class="btn btn-primary" data-act="open-offices" type="button"><span>Open the offices</span>${I.arrow(16)}</button></footer>`}
   </section>`;
 }
 
@@ -477,7 +479,7 @@ function ideasList(f: ProtoFlowV7): string {
         <span class="of-r">${score != null ? `<b class="num">${one(score)}</b><em>${esc(verdictOf(verdict ?? undefined))}</em>` : `<em>${esc(stage)}</em>`}</span>
       </button></li>`;
   };
-  return `${mine.length ? `<ul class="of-list">${mine.map(row).join("")}</ul>` : `<p class="of-sub">Nothing yet. Your first idea will be here.</p>`}
+  return `${mine.length ? `<ul class="of-list">${mine.map(row).join("")}</ul>` : `<p class="of-sub">${f.demo || !f.live ? "Your own ideas are not here yet: the sample building is tour data." : "Nothing yet. Your first idea will be here."}</p>`}
     ${finished.length ? `<p class="of-sec">Finished examples · real runs</p>
     <ul class="of-list">${finished.map((x) => `<li><button type="button" data-act="switch" data-id="${esc(x.id)}" data-at="report">
         <span class="of-t"><b>${esc(x.title)}<span class="of-tag">Example</span></b><span>${esc(x.run)} · ${esc(x.paid)}</span></span>

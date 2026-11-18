@@ -222,6 +222,10 @@ export function mountKitScreen(root: HTMLElement, o: KitScreenOpts): { stop(): v
     if (own) own.textContent = "This is a finished example. Start your own idea to get a kit like this one.";
     const btn = node.querySelector<HTMLElement>('[data-kit-act="offices"] span');
     if (btn) btn.textContent = "Try your own idea";
+  } else if (o.mock) {
+    // a practice run has no real offices to open: the button says what it does
+    const btn = node.querySelector<HTMLElement>('[data-kit-act="offices"] span');
+    if (btn) btn.textContent = "Check a real idea · 10¢";
   }
   // design thumbnails: the 375 px preview is scaled to the card's real width (no empty strip beside it)
   const fitThumbs = () =>

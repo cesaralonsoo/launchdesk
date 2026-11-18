@@ -155,7 +155,7 @@ export function livePanel(v: View, r7?: { score: number; verdict: string; nextSt
     <div class="biz-main">
       <header class="biz-top" data-st><span class="live-dot"></span><span class="eyebrow">Your website is live · <b>${esc(absUrl(v.pip?.url ?? ""))}</b></span></header>
       <div class="biz-brand" data-st style="--b-font:${stackOf(v.fonts.display)}">${brandLogo(v, 0, 30)}<p>${esc(v.brand?.tagline ?? "")}</p></div>
-      <dl class="facts f3" data-st>
+      <dl class="facts ${(r7 || L) && S ? "f2" : ""}" data-st>
         ${r7 ? `<div class="fact"><dt>Score</dt><dd>${num(r7.score, 1)}<small> · ${esc(V7[r7.verdict] ?? r7.verdict)}</small></dd></div>` : L ? `<div class="fact"><dt>Score</dt><dd>${num(L.score, 1)}<small> · ${esc(verdictText(v))}</small></dd></div>` : ""}
         ${S ? `<div class="fact"><dt>Cash to start${est()}</dt><dd>${esc(S.cash_needed.display)}</dd></div>` : ""}
       </dl>

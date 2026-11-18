@@ -564,3 +564,23 @@
 @media (min-width: 1000px) {
   html.has-hud .v7 .panel[data-pos="bottom"][data-key="live"] { left: calc((100vw - 308px) / 2); width: min(940px, calc(100vw - 348px)); }
 }
+
+/* v8 fix round: the idea step outside the home (the tour's first beat, a link that fell back to it) looks like the home
+   hero: no card, the cream page, the same type; only the input + button group is boxed. */
+.v7 .panel[data-pos="side"][data-key="idea"] {
+  background: transparent !important; border: 0 !important; box-shadow: none !important;
+  -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+  left: clamp(20px, 6.6vw, 96px); width: min(540px, 44vw); padding: 0;
+}
+.v7 .panel[data-pos="side"][data-key="idea"] .v-idea { gap: 22px; }
+.v7 .panel[data-pos="side"][data-key="idea"] .v-idea h1 { font-size: clamp(36px, 3.9vw, 56px); line-height: 1.07; letter-spacing: -0.025em; }
+.v7 .panel[data-pos="side"][data-key="idea"] .v-sub { font-size: 17px; line-height: 1.6; color: #4A505B; }
+.v7 .panel[data-pos="side"][data-key="idea"] .idea-field { background: #fff; border-radius: 14px; box-shadow: 0 1px 2px rgb(0 0 0 / .06), 0 8px 24px rgb(0 0 0 / .06); }
+/* the evidence card never shows a tall empty slot while the next finding loads */
+.ev-slot:has(> .ev-wait:only-child) { min-height: 56px; }
+/* app routes: the top bar is solid, so a close-up never slides the floor under the wordmark */
+html.nohome .ui.v7 .chrome { background: var(--c-bg); }
+/* phones in the tour: the chapter chip sits under the HUD pill, never edge to edge with it */
+@media (max-width: 640px) {
+  html.has-hud .v7 .db-meta, html.has-hud .db-meta { top: 56px !important; right: 12px; }
+}
