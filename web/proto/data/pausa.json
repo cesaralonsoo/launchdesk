@@ -602,7 +602,7 @@
     "nova": {
       "names": [
         {
-          "name": "Sortida",
+          "name": "Pausa",
           "why": "The short stop before the train, named. Same word in Catalan, Spanish and Italian.",
           "tagline": "A proper pause before the train.",
           "palette": [
@@ -672,7 +672,7 @@
         }
       ],
       "chosen": 0,
-      "positioning": "For Eixample commuters who want real coffee before work, Sortida is the takeaway kiosk at the metro exit that opens at 7:00, before the cafés.",
+      "positioning": "For Eixample commuters who want real coffee before work, Pausa is the takeaway kiosk at the metro exit that opens at 7:00, before the cafés.",
       "typography": {
         "display": "Fraunces",
         "body": "Instrument Sans"
@@ -765,7 +765,7 @@
     },
     "rae": {
       "start_date": "2026-11-16",
-      "handle": "@sortida.bcn",
+      "handle": "@pausa.bcn",
       "posts": [
         {
           "day": 1,

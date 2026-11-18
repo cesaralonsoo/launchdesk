@@ -558,7 +558,7 @@
       "what": "factor",
       "key": "viability",
       "before": 4,
-      "after": 4.5,
+      "after": 5.5,
       "why": "No fit-out: less money at risk"
      },
      {
@@ -578,12 +578,12 @@
      {
       "what": "score",
       "before": 5.2,
-      "after": 5.5,
-      "why": "Weighted factors now add up to 5.5"
+      "after": 5.8,
+      "why": "Weighted factors now add up to 5.8"
      }
     ],
     "report": {
-     "score": 5.5,
+     "score": 5.8,
      "verdict": "pivot",
      "verdictLine": "Closer: a weekday stand at Diagonal tests office demand without a lease.",
      "factors": [
@@ -633,7 +633,7 @@
        "analyst": "viability",
        "label": "Viability",
        "weight": 0.29,
-       "score": 4.5,
+       "score": 5.5,
        "findings": [
         "viability-0",
         "viability-1",
@@ -643,7 +643,7 @@
        "total": 3
       }
      ],
-     "math": "0.29×3.5 + 0.24×8.0 + 0.18×7.0 + 0.29×4.5 = 5.5",
+     "math": "0.29×3.5 + 0.24×8.0 + 0.18×7.0 + 0.29×5.5 = 5.8",
      "evidence": {
       "total": 15,
       "sourced": 13,

@@ -570,7 +570,7 @@
 .v7 .panel[data-pos="side"][data-key="idea"] {
   background: transparent !important; border: 0 !important; box-shadow: none !important;
   -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
-  left: clamp(20px, 6.6vw, 96px); width: min(540px, 44vw); padding: 0;
+  left: clamp(20px, 6.6vw, 96px); width: min(620px, 46vw); padding: 0;
 }
 .v7 .panel[data-pos="side"][data-key="idea"] .v-idea { gap: 22px; }
 .v7 .panel[data-pos="side"][data-key="idea"] .v-idea h1 { font-size: clamp(36px, 3.9vw, 56px); line-height: 1.07; letter-spacing: -0.025em; }

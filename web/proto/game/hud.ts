@@ -187,12 +187,15 @@ export function mountHud(host: HTMLElement, deps: HudDeps): () => void {
       return defs.map(([id, name, s2, c], i) => (phoneMq.matches ? { id, kind: "dot" as const, tone: c, html: `${i + 1}` } : { id, html: pillHtml(name, s2, c) }));
     }
     if (lvl === 3) {
+      // phones: short names only (max 18 characters), so a pill never runs off the screen
+      const short = (t: string) => (t.length > 18 ? `${t.slice(0, 17).trimEnd()}…` : t);
+      const pill = (title: string, sub?: string) => (phoneMq.matches ? pillHtml(short(title)) : pillHtml(title, sub));
       const out: Pin[] = [];
-      if (g.sample) out.push({ id: `campus:${g.projectId || "sample"}`, html: pillHtml(`Sample · ${g.name}`, "tour data") });
+      if (g.sample) out.push({ id: `campus:${g.projectId || "sample"}`, html: pill(`Sample · ${g.name}`, "tour data") });
       else for (const r of saved.list().filter((x) => !/^ex-/.test(x.id)).slice(0, 4))
-        out.push({ id: `campus:${r.id}`, html: pillHtml(r.id === g.projectId ? g.name : r.title, r.verdict === "no-go" ? "No-go · lesson learned" : r.score != null ? `${VERDICT_LABEL[r.verdict ?? "go"]} ${r.score.toFixed(1)}` : "No report yet") });
-      for (const x of store.examples) out.push({ id: `campus:${x.id}`, html: pillHtml(`Example · ${x.title}`, x.verdict ? `${VERDICT_LABEL[x.verdict.verdict]} ${x.verdict.score.toFixed(1)}` : "real run") });
-      out.push({ id: "campus:next:0", html: pillHtml("Your next idea", "10¢") });
+        out.push({ id: `campus:${r.id}`, html: pill(r.id === g.projectId ? g.name : r.title, r.verdict === "no-go" ? "No-go · lesson learned" : r.score != null ? `${VERDICT_LABEL[r.verdict ?? "go"]} ${r.score.toFixed(1)}` : "No report yet") });
+      for (const x of store.examples) out.push({ id: `campus:${x.id}`, html: pill(`Example · ${x.title}`, x.verdict ? `${VERDICT_LABEL[x.verdict.verdict]} ${x.verdict.score.toFixed(1)}` : "real run") });
+      out.push({ id: "campus:next:0", html: pill("Your next idea", "10¢") });
       return out;
     }
     return [];
