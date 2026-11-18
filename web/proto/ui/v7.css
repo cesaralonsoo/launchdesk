@@ -486,6 +486,8 @@
 
 /* offices (world level 2) · campus (level 3) · tour recap */
 .v7 .panel[data-pos="bottom"]:is([data-key="offices"], [data-key="campus"], [data-key="recap"]) { width: min(560px, calc(100vw - 32px)); }
+/* Tall bottom cards (the launch kit) stop under the top bar instead of sliding under the Back button. */
+.v7 .panel[data-pos="bottom"] { max-height: calc(100vh - var(--ld-banner-h, 0px) - var(--chrome-h) - 28px); }
 .v-offices, .v-campus, .v-recap { display: grid; gap: 16px; }
 .v-offices h2, .v-campus h2, .v-recap h2 { font-size: 26px; margin-top: 8px; }
 .of-rooms { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--c-line); }
@@ -539,3 +541,6 @@
 }
 /* the tour types the idea itself: no example link, no other ways out of the card */
 .ui.v7[data-demo="1"] .v-idea .idea-try, .ui.v7[data-demo="1"] .v-idea .v-alt { display: none; }
+
+/* Text cards are solid: the 3D world never shows through a paragraph (busy scenes like the street made sheet text hard to read). */
+.v7 .panel.glass:is([data-pos="sheet"], [data-pos="bottom"], [data-pos="card"], [data-pos="side"]) { background: var(--c-surface); backdrop-filter: none; -webkit-backdrop-filter: none; }

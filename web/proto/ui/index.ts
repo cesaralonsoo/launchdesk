@@ -67,7 +67,8 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     cfg = c;
     document.documentElement.dataset.ldPaused = paused() ? "1" : "0"; // example.css hides every pay button (offices too)
     paintMode();
-    if (curKey === "idea" || curKey === "end" || (paused() && (curKey === "pay1" || curKey === "pay2" || curKey === "floor"))) render(true);
+    // A pay panel drawn before the config arrived does not know about sample mode or the price yet: draw it again.
+    if (curKey === "idea" || curKey === "end" || curKey === "pay1" || curKey === "pay2" || curKey === "floor") render(true);
   });
   /** GET /api/config paused:true (the server takes no payments right now): no pay buttons, the example instead. */
   const paused = () => !!(cfg as (AppConfigLike & { paused?: boolean }) | null)?.paused;
