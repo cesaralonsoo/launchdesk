@@ -103,7 +103,7 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
       <div class="chrome-l"><a class="wordmark" href="/" aria-label="LaunchDesk, start over">${ldLogo(24)}</a><a class="blaze-tag" href="/#blaze" data-act="blaze">BLAZE 2026</a><button class="back-btn glass" type="button" data-act="back" hidden title="Back (Esc)" aria-label="Back"><span class="bb-i">${I.back(15)}</span><span class="bb-t">Back</span></button></div>
       <nav class="chrome-r" aria-label="Main"><span class="live-tag" hidden></span><a class="nav-a" href="/#how" data-act="how" data-on-home>How it works</a><button class="nav-a" type="button" data-act="example" data-on-home><span class="na-l">Finished example</span><span class="na-s">Example</span></button><button class="nav-a" type="button" data-act="offices" hidden>My ideas</button></nav>
     </header>
-    <div class="demo-bar" hidden><div class="db-track"></div><div class="db-meta"><span class="db-ch"></span><span class="db-tag">Sample tour</span><span class="db-keys"><kbd>Space</kbd> pause <kbd>→</kbd> skip <kbd>Esc</kbd> exit</span></div></div>
+    <div class="demo-bar" hidden><div class="db-track"></div><div class="db-meta"><span class="db-ch"></span><span class="db-tag">Sample tour</span><span class="db-keys"><kbd>Space</kbd> pause <kbd>→</kbd> skip <kbd>Esc</kbd> exit</span><span class="db-ctl" role="group" aria-label="Tour controls"><button type="button" data-demo="pause" aria-label="Pause the tour">${I.pause(14)}</button><button type="button" data-demo="skip" aria-label="Next chapter">${I.arrow(14)}</button><button type="button" data-demo="exit" aria-label="Exit the tour">${I.close(14)}</button></span></div></div>
     <div class="atag" data-on="0"></div>
     <div class="wtag glass" data-on="0"></div>
     <div class="wbub" data-on="0" aria-hidden="true"></div>
@@ -170,6 +170,19 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
       return `<span class="db-seg" style="flex:${end - at}"><i></i></span>`;
     }).join("");
     const segs = [...demoBar.querySelectorAll<HTMLElement>(".db-seg i")];
+    // on-screen controls (touch screens have no Space / → / Esc): pause or play, next chapter, exit to the real home
+    const pauseBtn = demoBar.querySelector<HTMLButtonElement>("[data-demo=pause]")!;
+    let pauseShown: boolean | null = null;
+    demoBar.addEventListener("click", (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLElement>("[data-demo]")?.dataset.demo;
+      if (!b || !demo) return;
+      if (b === "pause") demo.pause();
+      else if (b === "skip") demo.skip(1);
+      else if (b === "exit") {
+        demo.exit();
+        location.assign("/");
+      }
+    });
     const ch = $(".db-ch");
     demo.onTick(() => {
       if (!demo) return;
@@ -186,6 +199,11 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
       });
       const c = [...DEMO_CHAPTERS].reverse().find(([at]) => at <= demo!.t);
       ch.textContent = `${demo.paused && demo.t < DEMO_LENGTH_S ? "Paused · " : ""}${c?.[1] ?? ""}`;
+      if (pauseShown !== demo.paused) {
+        pauseShown = demo.paused;
+        pauseBtn.innerHTML = demo.paused ? `<svg width="14" height="14" viewBox="0 0 20 20" aria-hidden="true"><path d="M6 4.5v11l9-5.5z" fill="currentColor"/></svg>` : I.pause(14);
+        pauseBtn.setAttribute("aria-label", demo.paused ? "Play the tour" : "Pause the tour");
+      }
     });
   }
 

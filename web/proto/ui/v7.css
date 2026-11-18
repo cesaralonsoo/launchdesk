@@ -460,6 +460,15 @@
 .v7 .demo-bar { top: var(--chrome-h); }
 .v7 .db-meta { top: 12px; }
 .db-tag { font: 600 10.5px/1 var(--font-text); letter-spacing: 0.04em; text-transform: uppercase; color: var(--c-warning, #A15C00); }
+/* tour controls on screen: touch screens and narrow windows (keyboards keep Space / → / Esc, shown as hints) */
+.db-ctl { display: none; gap: 4px; pointer-events: auto; margin-right: -4px; }
+.db-ctl button { display: inline-grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 1px solid var(--c-line); border-radius: 999px; background: var(--c-surface); color: var(--c-ink); cursor: pointer; }
+.db-ctl button:hover { background: var(--c-fill); }
+@media (max-width: 1100px), (pointer: coarse) {
+  .db-ctl { display: inline-flex; }
+  .db-keys { display: none; }
+}
+.demo-bar .db-meta { pointer-events: auto; }
 
 /* stage dots (1 Research · 2 Launch kit · 3 Offices · 4 Campus) */
 .st-dot { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--c); color: #fff; font: 600 10.5px/1 var(--font-num); font-style: normal; flex: none; }
