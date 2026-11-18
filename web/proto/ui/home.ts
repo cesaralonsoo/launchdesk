@@ -12,7 +12,7 @@ import type { WorldV7 } from "../contracts";
 import type { ProtoFlowV7 } from "../flow";
 import type { WorldV8, Area } from "../world/api-v8";
 import { STEP_EVENT } from "../game/types";
-import { examples, mainExample, type ExampleCard } from "./example";
+import { exampleKit, exampleName, examples, mainExample, type ExampleCard } from "./example";
 import { checkReportHash } from "./escrow-proof";
 import { mountLabels, type LabelPoint } from "./labels";
 import { mountFooter } from "../banner";
@@ -397,7 +397,9 @@ export function mountHome(host: HTMLElement, deps: HomeDeps): () => void {
     const v = x.verdict ? (VERDICT[x.verdict.verdict] ?? x.verdict.verdict) : "";
     const score = x.verdict ? x.verdict.score.toFixed(1) : "";
     set("ex-title", x.title);
-    set("cap-report", [x.title, score && `${score} ${v}`].filter(Boolean).join(" · "));
+    // one name for the example everywhere: "Sortida · coffee kiosk in Barcelona"
+    set("ex-name", exampleName(x));
+    set("cap-report", [exampleName(x), score && `${score} ${v}`].filter(Boolean).join(" · "));
     if (x.verdict) {
       set("ex-verdict", v);
       $("[data-h=ex-verdict]")!.dataset.v = x.verdict.verdict;
@@ -414,13 +416,11 @@ export function mountHome(host: HTMLElement, deps: HomeDeps): () => void {
 
   async function loadKit(x: ExampleCard) {
     try {
-      const r = await fetch(`/api/projects/${encodeURIComponent(x.id)}/kit`, { cache: "no-store" });
-      if (!r.ok) return;
-      const j = (await r.json()) as { kit?: { brand?: { name?: string; city?: string } } };
-      const b = j.kit?.brand;
+      const j = await exampleKit(x.id);
+      const b = j?.kit?.brand;
       if (!b?.name) return;
       set("ex-brand", b.name);
-      set("ex-name", b.city ? `${b.name}, ${b.city}` : b.name);
+      set("ex-name", exampleName(x));
     } catch {
       /* the static names stay (they are this example's) */
     }

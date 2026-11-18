@@ -12,7 +12,7 @@ import type { ProtoFlowV7 } from "../flow";
 import { statusLine } from "../live/adapter";
 import { fullSentences, leadLine, plainText, reasonsAfterLead, unitPlural, verdictWhy, VERDICT_RULE_V7 } from "../../../server/v7";
 import { esc } from "./dom";
-import { exampleOf, knownExamples } from "./example";
+import { exampleName, exampleOf, knownExamples } from "./example";
 import { I } from "./icons";
 import { ldMark } from "./logo";
 import { badge } from "./pixel";
@@ -274,7 +274,7 @@ export function reportDocHtml(f: ProtoFlowV7): string {
     <article class="rd-paper">
       <header class="rd-cover">
         <div class="rd-brand">${ldMark(16, undefined, true)}<span>LaunchDesk · Validation report${date ? ` · ${esc(date)}` : ""}</span></div>
-        <h1>${esc(p.title)}</h1>
+        <h1>${esc(ex ? exampleName(ex) : p.title)}</h1>
         <p class="rd-idea">“${esc(p.idea)}”</p>
         <div class="rd-score">
           <div><span class="eyebrow">Verdict</span><b class="rd-v" data-v="${r.verdict}" title="${esc(VERDICT_RULE_V7)}">${VERDICT[r.verdict]}</b></div>
@@ -321,7 +321,7 @@ export function reportDocHtml(f: ProtoFlowV7): string {
       <div><b>What next?</b><span>${isExample ? "This founder's launch kit is already made: logo, website and a 30-day plan." : canGrow ? `Happy with what you read? The next step is the launch kit: a logo, a live website and a 30-day plan.${pv ? ` A change worth testing first: ${esc(pv.idea)}.` : ""}` : `This idea should not grow as it stands. ${pv ? `A better version to try: <b>${esc(pv.idea)}.</b> ${esc(pv.why)}` : "Try another idea, or tell your team what to re-check."} You can still build the launch kit to see it.`}</span></div>
       <div class="rd-btns">
         <button class="btn btn-ghost" data-act="back" type="button">${I.back(15)}<span>Back</span></button>
-        <button class="btn btn-ghost" data-act="steer" type="button"><span>Tell your team</span></button>
+        ${isExample ? "" : `<button class="btn btn-ghost" data-act="steer" type="button"><span>Tell your team</span></button>`}
         ${isExample ? `<button class="btn btn-primary" data-act="grow" type="button"><span>See the launch kit</span>${I.arrow(16)}</button>` : canGrow ? `<button class="btn btn-primary" data-act="grow" type="button"><span>Launch kit</span><span class="btn-price">50¢</span></button>` : `<button class="btn btn-ghost" data-act="grow" type="button"><span>Build the launch kit anyway</span></button><button class="btn btn-primary" data-act="pivot" type="button"><span>Try another idea</span>${I.arrow(16)}</button>`}
       </div>
     </footer>

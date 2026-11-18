@@ -101,3 +101,5 @@
 /* the logo picker (WP2) in the app's colours */
 .kp-logo .lp { --lp-card: var(--c-surface); --lp-line: var(--c-line); --lp-muted: var(--c-muted); --lp-accent: var(--c-positive); }
 .kp-plan .pv-k { display: none; } /* the panel already says "Your 30-day plan" */
+/* the finished example's kit note (server text, shown as it is): a small line, not a second headline */
+.kit-tag.kh-note { font-size: 12.5px; line-height: 1.45; max-width: 62ch; margin-top: 4px; }

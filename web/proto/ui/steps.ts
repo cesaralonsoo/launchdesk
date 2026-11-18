@@ -14,7 +14,7 @@ import { badge, levelGlyph } from "./pixel";
 import { usd } from "./view";
 import { statusLine } from "../live/adapter";
 import { kitOfferHtml } from "./kit-screen";
-import { knownExamples, mainExample, pausedHtml } from "./example";
+import { exampleName, knownExamples, mainExample, pausedHtml } from "./example";
 import { fullSentences, leadLine, plainText, verdictWhy, VERDICT_RULE_V7 } from "../../../server/v7";
 import { OFFICES } from "../../../server/offices/catalog";
 import { projects as savedRuns } from "../../src/app/projects";
@@ -93,6 +93,14 @@ export function payHtml(f: ProtoFlowV7, stage: 1 | 2, customIdea: boolean): stri
     ${stage === 1 && customIdea ? `<p class="pay-note" data-st>This tour plays a sample run: ${esc(f.project.title)}.</p>` : `<p class="pay-foot" data-st>${stage === 1 ? `On mainnet this 10¢ waits in a CashScript contract until the report arrives. <a href="/p/${esc(mainExample()?.id ?? "ex-coffee-bcn")}">See a real one ${I.ext(11)}</a>` : "Paid from your wallet. LaunchDesk never holds your keys."}</p>`}
   </section>`;
 }
+
+/** One set of names for the four score factors everywhere (the written report's section names), whichever analyst
+ *  role scored it: Customers & demand · Competition & alternatives · Money · Risks & how to start. */
+const FACTOR_BLOCK: Partial<Record<string, (typeof BLOCK_IDS)[number]>> = { demand: "customers", market: "customers", competition: "competition", pricing: "money", location: "money", viability: "risks" };
+export const factorName = (role: string, fallback: string) => {
+  const b = FACTOR_BLOCK[role];
+  return b ? BLOCK_LIBRARY[b].label : fallback;
+};
 
 // ───────────────────────────── hire
 /** The analyst's team name: the report section it writes (block contract), else its classic department. */
@@ -286,7 +294,7 @@ function scorePage(f: ProtoFlowV7, r: IdeaReport): string {
     const a = who(f, x.analyst);
     return `<li style="--d:${260 + j * 260}ms;--c:${a.color}">
       ${badge(a.name, a.color, 26)}
-      <span class="fx-l"><b>${esc(x.label)}</b><em>${Math.round(x.weight * 100)}%</em></span>
+      <span class="fx-l"><b>${esc(factorName(x.analyst, x.label))}</b><em>${Math.round(x.weight * 100)}%</em></span>
       <span class="fx-bar"><i style="--w:${x.score / 10}"></i></span>
       <b class="fx-s num">${one(x.score)}</b>
       <span class="fx-src">${x.sourced}/${x.total} sourced</span>
@@ -372,7 +380,7 @@ function steerResultHtml(f: ProtoFlowV7, s: SteerResult): string {
   </div>`;
 }
 function diffChip(f: ProtoFlowV7, c: SteerChange): string {
-  const label = c.what === "factor" && c.key ? ROLE_LIBRARY[c.key as AnalystRole]?.dept ?? c.key : c.what === "score" ? "Score" : c.what === "scalability" ? "Scalability" : c.what === "verdict" ? "Verdict" : c.what === "roster" ? "Team" : "Finding";
+  const label = c.what === "factor" && c.key ? factorName(c.key, ROLE_LIBRARY[c.key as AnalystRole]?.dept ?? c.key) : c.what === "score" ? "Score" : c.what === "scalability" ? "Scalability" : c.what === "verdict" ? "Verdict" : c.what === "roster" ? "Team" : "Finding";
   const b = c.before, a = c.after;
   const dir = typeof b === "number" && typeof a === "number" ? (a > b ? "up" : a < b ? "down" : "") : "";
   const fmt = (v: string | number | null) => (v == null ? "–" : typeof v === "number" ? one(v) : v);
@@ -438,7 +446,7 @@ function companiesList(f: ProtoFlowV7): string {
   const rows: Row[] = [];
   if (f.isSample(f.project.id))
     rows.push({ id: f.project.id, name: brandSign(f.project)?.name ?? f.project.title, tag: "Sample", stage: "Tour data · report + launch kit", score: f.report?.score ?? null, verdict: f.report?.verdict });
-  for (const x of finished) rows.push({ id: x.id, name: x.title, tag: "Example", stage: "Real run · report + launch kit", score: x.verdict?.score ?? null, verdict: x.verdict?.verdict, at: "report" });
+  for (const x of finished) rows.push({ id: x.id, name: exampleName(x), tag: "Example", stage: "Real run · report + launch kit", score: x.verdict?.score ?? null, verdict: x.verdict?.verdict, at: "report" });
   const mine = f.mine.filter((p) => !finished.some((x) => x.id === p.id) && !/^ex-/.test(p.id)).map((m) => f.projects.find((x) => x.id === m.id) ?? m);
   for (const p of mine) {
     const sv = savedRuns.get(p.id);
@@ -509,7 +517,7 @@ function ideasList(f: ProtoFlowV7): string {
   return `${mine.length ? `<ul class="of-list">${mine.map(row).join("")}</ul>` : `<p class="of-sub">${f.demo || !f.live ? "Your own ideas are not here yet: the sample building is tour data." : "Nothing yet. Your first idea will be here."}</p>`}
     ${finished.length ? `<p class="of-sec">Finished examples · real runs</p>
     <ul class="of-list">${finished.map((x) => `<li><button type="button" data-act="switch" data-id="${esc(x.id)}" data-at="report">
-        <span class="of-t"><b>${esc(x.title)}<span class="of-tag">Example</span></b><span>${esc(x.run)} · ${esc(x.paid)}</span></span>
+        <span class="of-t"><b>${esc(exampleName(x))}<span class="of-tag">Example</span></b><span>${esc(x.run)} · ${esc(x.paid)}</span></span>
         <span class="of-r">${x.verdict ? `<b class="num">${one(x.verdict.score)}</b><em>${esc(verdictOf(x.verdict.verdict))}</em>` : ""}</span>
       </button></li>`).join("")}</ul>` : ""}`;
 }

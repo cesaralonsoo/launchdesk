@@ -21,12 +21,49 @@ export type ExampleCard = {
 
 let list: Promise<ExampleCard[]> | null = null;
 let known: ExampleCard[] = [];
-/** GET /api/examples once ([] when the server has none or is older than this page). */
+/** The brand each example's launch kit chose (its logo and website carry it), by example id. */
+const brands = new Map<string, string>();
+const kits = new Map<string, Promise<ExampleKit | null>>();
+export type ExampleKit = { kit?: { brand?: { name?: string; city?: string } } } & Record<string, unknown>;
+/** GET /api/projects/<id>/kit once per example (the home, the HUD and the names share it). */
+export function exampleKit(id: string): Promise<ExampleKit | null> {
+  let k = kits.get(id);
+  if (!k) {
+    k = fetch(`/api/projects/${encodeURIComponent(id)}/kit`, { cache: "no-store" })
+      .then((r) => (r.ok ? (r.json() as Promise<ExampleKit>) : null))
+      .catch(() => (kits.delete(id), null));
+    kits.set(id, k);
+  }
+  return k;
+}
+/** GET /api/examples once ([] when the server has none or is older than this page). Resolves once the examples' brand
+ *  names are known too (or could not be read), so every surface names an example the same way from its first paint. */
 export function examples(): Promise<ExampleCard[]> {
   return (list ??= fetch("/api/examples", { cache: "no-store" })
     .then((r) => (r.ok ? r.json() : { examples: [] }))
-    .then((j: { examples?: ExampleCard[] }) => (known = Array.isArray(j.examples) ? j.examples : []))
+    .then(async (j: { examples?: ExampleCard[] }) => {
+      const xs = Array.isArray(j.examples) ? j.examples : [];
+      await Promise.all(xs.map(async (x) => {
+        const name = (await exampleKit(x.id))?.kit?.brand?.name?.trim();
+        if (name) brands.set(x.id, name);
+      }));
+      return (known = xs);
+    })
     .catch(() => ((list = null), [])));
+}
+/** The example's one display name: "Sortida · coffee kiosk in Barcelona" (brand · what it is), or its title alone. */
+export function exampleName(x: Pick<ExampleCard, "id" | "title">): string {
+  const b = brands.get(x.id);
+  if (!b) return x.title;
+  if (x.title.toLowerCase().includes(b.toLowerCase())) return x.title;
+  return `${b} · ${x.title.charAt(0).toLowerCase()}${x.title.slice(1)}`;
+}
+/** The short form, where there is no room: the brand ("Sortida"), or the title. */
+export const exampleShort = (x: Pick<ExampleCard, "id" | "title">): string => brands.get(x.id) ?? x.title;
+/** The display name for a project id, when it is a known finished example. */
+export function exampleNameOf(id: string | null | undefined): string | null {
+  const x = exampleOf(id);
+  return x ? exampleName(x) : null;
 }
 /** The examples already loaded (sync; empty until examples() resolved). */
 export const knownExamples = () => known;
@@ -40,7 +77,7 @@ const VERDICT: Record<string, string> = { go: "Go", pivot: "Test first", "no-go"
 export function exampleButtonHtml(): string {
   const x = mainExample();
   const sub = x
-    ? `${x.title} · ${x.proof ? "report, website and BCH payment proof" : "report and website"}`
+    ? `${exampleName(x)} · ${x.proof ? "report, website and BCH payment proof" : "report and website"}`
     : "A real run: the report, the website and the payment proof";
   return `<button type="button" class="ex-home" data-act="example">
       <span class="ex-home-i">${I.report(18)}</span>
@@ -49,11 +86,11 @@ export function exampleButtonHtml(): string {
     </button>`;
 }
 
-/** The kit note in one short line ("Kit from a second run (€2.50 flat white version)"), or undefined. */
+/** The example's kit note (from the server), shown as it is in a small line on the kit screen; undefined if none.
+ *  No price wording is added here: the note says what it needs to. */
 export function kitNoteShort(note: string | undefined): string | undefined {
-  if (!note) return undefined;
-  const ver = /\(a ([^)]{1,40}) version\)/.exec(note)?.[1];
-  return `Kit from a second run${ver ? ` (${ver} version)` : " of this idea"}`;
+  const t = note?.trim();
+  return t ? t : undefined;
 }
 
 /** v8 (PLAN.md 6.5): a slim static strip under the top bar (44 px on phones), never over the report text: what it is,
@@ -62,7 +99,7 @@ export function ribbonHtml(x: ExampleCard, at: "report" | "kit" | "proof", other
   const other = others.find((o) => o.id !== x.id);
   const v = x.verdict ? `${VERDICT[x.verdict.verdict] ?? x.verdict.verdict} ${x.verdict.score.toFixed(1)}/10` : "";
   return `<div class="ex-ribbon ex-strip" role="region" aria-label="Finished example">
-    <div class="ex-r-t"><span class="ex-r-tag"><span class="ex-r-long">Finished </span>example</span><b>${esc(x.title)}</b>
+    <div class="ex-r-t"><span class="ex-r-tag"><span class="ex-r-long">Finished </span>example</span><b><span class="ex-r-nl">${esc(exampleName(x))}</span><span class="ex-r-ns">${esc(exampleShort(x))}</span></b>
       <span class="ex-r-meta">${esc(x.paid)}${v ? ` · ${esc(v)}` : ""}${x.sources ? ` · ${x.sources} web pages cited` : ""}</span></div>
     <nav class="ex-r-nav" aria-label="This example">
       <button type="button" data-ex="report" aria-pressed="${at === "report"}">Report</button>

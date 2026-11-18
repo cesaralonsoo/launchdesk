@@ -12,6 +12,7 @@ import { api } from "../../src/api";
 import { projects as saved, shortTitle } from "../../src/app/projects";
 import { computeGame, floorRooms, newlyEarned, officeRooms, OFFICE_IDS, type Badge, type GameSnapshot, type GameState } from "./rules";
 import { createSeen, levelUpsToPlay } from "./seen";
+import { exampleName, exampleNameOf, examples as loadExamples } from "../ui/example";
 import { STEP_EVENT, type OfficeId, type Stage, type StepDetail } from "./types";
 
 type World = WorldV7 & WorldV8;
@@ -156,7 +157,8 @@ export function createGameStore(world: World, flow: ProtoFlowV7): GameStore {
       projectId,
       sample: false,
       example: !!p.example || isExampleId(projectId),
-      name: brand || row?.title || shortTitle(p.idea) || "Your idea",
+      // a finished example has one display name everywhere ("Sortida · coffee kiosk in Barcelona")
+      name: (isExampleId(projectId) ? exampleNameOf(projectId) : null) || brand || row?.title || shortTitle(p.idea) || "Your idea",
       project: {
         paid: { validate: p.payments.validate ? { txid: p.payments.validate.txid } : null, build: p.payments.build ? { txid: p.payments.build.txid } : null },
         status: status ?? null,
@@ -253,7 +255,7 @@ export function createGameStore(world: World, flow: ProtoFlowV7): GameStore {
       });
     const ex = examples.slice(0, Math.max(0, 5 - own.length)).map((x) => ({
       id: x.id,
-      name: x.title,
+      name: exampleName(x),
       ...(x.verdict ? { score: x.verdict.score, verdict: x.verdict.verdict } : {}),
       stage: 2 as const,
       nogo: x.verdict?.verdict === "no-go",
@@ -269,8 +271,7 @@ export function createGameStore(world: World, flow: ProtoFlowV7): GameStore {
       // samples fetch nothing of their own; the campus still shows the real finished examples next to them
       if (!examples.length && !examplesAsked) {
         examplesAsked = true;
-        const e = await getJson<{ examples: ExampleCard[] }>("/api/examples");
-        examples = e?.examples ?? [];
+        examples = (await loadExamples()) as unknown as ExampleCard[];
       }
       return recompute();
     }
@@ -306,7 +307,7 @@ export function createGameStore(world: World, flow: ProtoFlowV7): GameStore {
     }
     loadedFor = id;
     if (!examples.length) {
-      const [e, c] = await Promise.all([getJson<{ examples: ExampleCard[] }>("/api/examples"), getJson<{ mockAi?: boolean }>("/api/config")]);
+      const [e, c] = await Promise.all([loadExamples().then((xs) => ({ examples: xs as unknown as ExampleCard[] })), getJson<{ mockAi?: boolean }>("/api/config")]);
       examples = e?.examples ?? [];
       mockServer = !!c?.mockAi;
     }
