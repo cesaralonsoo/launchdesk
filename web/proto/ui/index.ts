@@ -254,7 +254,7 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     if (key === "report1") return reportOneHtml(flow);
     if (key.startsWith("report:")) return reportPage(flow, s.page ?? "score");
     if (key.startsWith("steer")) return steerHtml(flow, steerDraft);
-    if (key === "floor") return kitOfferHtml(cfg?.prices.build ?? KIT_CENTS);
+    if (key === "floor") return kitOfferHtml(cfg?.prices.build ?? KIT_CENTS, !!cfg?.mockAi || flow.isSample(flow.project.id));
     if (key === "recap") return recapHtml();
     // A real project (also on a demo-mode server): the one Launch kit screen, filled in live from the server.
     if (key === "live" && flow.live) return `<div class="kit-root"></div>`;
@@ -325,12 +325,22 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
   }
   /** Frames the world in the space the panel leaves. The panels are position:fixed, so page scroll (the home) never
    *  moves them; with no panel (the home hero owns the idea step) this leaves the insets to the home. */
+  let hudBottom = 0;
   function measure() {
     if (!curPanel || !curKey) return;
+    // the offices floor and the campus view (game/hud.ts) frame the world themselves; they fire resize on close
+    if (document.documentElement.matches(".ld-offices, .ld-campus")) return;
     const pos = curPanel.dataset.pos as Pos;
     const r = curPanel.getBoundingClientRect();
     // under the top bar, and under the example strip when one is shown
-    const top = (isMobile() ? 52 : 64) + (root.dataset.example === "1" ? (innerWidth <= 760 ? 44 : 48) : 0);
+    let top = (isMobile() ? 52 : 64) + (root.dataset.example === "1" ? (innerWidth <= 760 ? 44 : 48) : 0);
+    // the HUD card (top-right on wide screens, v7.css) is over the world: frame the 3D below it
+    // (an open switcher menu or drawer is a passing overlay: keep the framing of the closed card)
+    const hud = document.documentElement.classList.contains("has-hud") ? root.querySelector<HTMLElement>(".hud:not(.phone) .hud-card") : null;
+    const hudOpen = !!root.querySelector('.hud[data-open="1"], .hud-name[aria-expanded="true"]');
+    if (hud && !hudOpen) hudBottom = Math.round(hud.getBoundingClientRect().bottom);
+    if (!hud) hudBottom = 0;
+    if (hudBottom && (pos === "side" || pos === "card")) top = Math.max(top, hudBottom + 8);
     if (pos === "side" || pos === "card") setInsets({ left: Math.round(r.right + 8), right: 0, top, bottom: 0 });
     else if (pos === "sheet") {
       // an expanded sheet covers the world: keep framing for the collapsed height, the 3D comes back on collapse
@@ -1004,6 +1014,8 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     paintTags();
   });
   render();
+  // the HUD grows/shrinks as the game state changes: re-frame the world under it
+  if (typeof ResizeObserver === "function") new ResizeObserver(() => measure()).observe($("#hud").querySelector(".hud") ?? $("#hud"));
   // the home (ui/home.ts) may take the idea step after this first paint: drop the fallback card then
   const homeMo = typeof MutationObserver === "function" ? new MutationObserver(() => curKey === "idea" && homeOwned() && !demo && render(true)) : null;
   homeMo?.observe(homeSlot, { childList: true, attributes: true, attributeFilter: ["data-owns"] });

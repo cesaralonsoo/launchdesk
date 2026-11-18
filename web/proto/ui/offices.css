@@ -128,7 +128,7 @@ html.ofx-lock, html.ofx-lock body { overflow: hidden; }
    floor stays visible and pickable on the left. Phone: a sheet over the lower 62 % with the floor above it. */
 .ofx.ofx-side { inset: 16px 16px 16px auto; width: min(440px, calc(100vw - 32px)); border-radius: 14px; background: var(--c-surface, #fff); box-shadow: 0 1px 2px rgb(0 0 0 / .06), 0 8px 24px rgb(0 0 0 / .06); }
 .ofx-side .ofx-in { max-width: none; padding: 16px 16px 24px; gap: 14px; }
-.ofx-side .ofx-top { margin: -16px -16px 0; padding: 14px 16px 10px; background: rgb(255 255 255 / 0.96); border-radius: 14px 14px 0 0; }
+.ofx-side .ofx-top { margin: -16px -16px 0; padding: 14px 16px 10px; background: var(--c-surface, #fff); backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: 0 1px 0 var(--c-line, rgb(0 0 0 / .08)); border-radius: 14px 14px 0 0; }
 .ofx-side .ofx-t .t-display { font-size: 24px; letter-spacing: -0.02em; }
 .ofx-side .ofx-lead { font-size: 14px; }
 .ofx-side .ofx-rooms { grid-template-columns: 1fr; gap: 8px; }

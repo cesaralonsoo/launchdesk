@@ -520,7 +520,7 @@
   background: var(--c-surface); box-shadow: var(--shadow-1), 0 0 0 1px var(--c-line); transform: translateX(-24px); }
 .v7 .panel[data-pos="card"].in { transform: none; }
 .v7 .panel[data-pos="card"] .rdoc { max-width: none; padding: 0; }
-.v7 .panel[data-pos="card"] .rd-bar { position: sticky; top: 0; z-index: 2; padding: 12px 20px; background: color-mix(in srgb, var(--c-surface) 94%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid var(--c-line); }
+.v7 .panel[data-pos="card"] .rd-bar { position: sticky; top: 0; z-index: 2; padding: 12px 20px; background: var(--c-surface); border-bottom: 1px solid var(--c-line); }
 .v7 .panel[data-pos="card"] .rd-paper { box-shadow: none; border-radius: 0; padding: 36px 40px 32px; }
 .v7 .panel[data-pos="card"] .rd-decide { margin: 0 16px 16px; box-shadow: none; background: var(--c-fill); }
 .v7 .panel[data-pos="card"] .rd-score { gap: 0; }
@@ -549,3 +549,18 @@
 
 /* Text cards are solid: the 3D world never shows through a paragraph (busy scenes like the street made sheet text hard to read). */
 .v7 .panel.glass:is([data-pos="sheet"], [data-pos="bottom"], [data-pos="card"], [data-pos="side"]) { background: var(--c-surface); backdrop-filter: none; -webkit-backdrop-filter: none; }
+
+/* v8 integration: the HUD (game/hud.css) sits under the top bar (and under the example strip when it shows).
+   On wide screens it moves to the right while a step card owns the left column, so it never covers the card;
+   the offices floor and the campus keep it on the left (their side card is on the right). */
+:root { --hud-top: 76px; --hud-top-phone: 62px; }
+:root:has(.ui[data-example="1"]) { --hud-top: 124px; --hud-top-phone: 106px; }
+/* the tour's chapter bar sits top-right under the top bar: the HUD goes under it */
+:root:has(.ui[data-demo="1"]) { --hud-top: 116px; }
+@media (min-width: 768px) {
+  html.has-hud:not(.ld-offices):not(.ld-campus) .hud:not(.phone) { left: auto; right: 20px; }
+}
+/* the wide kit card shares the screen with the HUD: centre it in the space left of the HUD */
+@media (min-width: 1000px) {
+  html.has-hud .v7 .panel[data-pos="bottom"][data-key="live"] { left: calc((100vw - 308px) / 2); width: min(940px, calc(100vw - 348px)); }
+}
