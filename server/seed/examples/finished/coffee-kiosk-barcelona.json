@@ -1,5 +1,5 @@
 {
- "_source": "Snapshot of real runs, 16 Nov 2026 (no edits to the content). Report, sources and escrow: local.db project xFjb99Z6b4 (paid $0.10 from Selene on Bitcoin Cash mainnet; report $0.0654 of AI, 77.7 s). Launch kit: the second real run of the same coffee idea that morning (server/seed/examples/coffee-kiosk-barcelona-live-2026-11-16.json, project wr1b0iC1xy, kit $0.1533 of AI), shown with a label because it was made from that run's own report.",
+ "_source": "Snapshot of real runs (no edits to the content). Report, sources and escrow: local.db project xFjb99Z6b4, 16 Nov 2026 (paid $0.10 from Selene on Bitcoin Cash mainnet; report $0.0654 of AI, 77.7 s). Launch kit: the brand name and logo from the first kit run on 16 Nov; the website plan, its photos (CC0 and CC BY-SA, credited on the page), the designed page and the marketing plan from a real AI run on 18 Nov 2026 made from this report in test mode (site $0.0181, photo check $0.0019, page $0.0836, marketing $0.1117; nothing paid).",
  "id": "ex-coffee-bcn",
  "slug": "sortida",
  "idea": "A specialty coffee kiosk at a Barcelona metro exit, €3 flat whites for commuters",
@@ -8,7 +8,7 @@
   "title": "Coffee kiosk in Barcelona",
   "run": "Real run on 16 Nov 2026",
   "paid": "Paid $0.10 in Bitcoin Cash on mainnet",
-  "kitNote": "This launch kit comes from a second real run of the same coffee idea that morning (a €2.50 flat white version), so its prices differ from the report."
+  "kitNote": "Launch kit: a real AI run from this report on 18 Nov 2026, made in test mode (not paid). The brand name and logo come from the first kit run."
  },
  "jobs": [
   {
@@ -652,7 +652,7 @@
    "sats": 0,
    "cents": 50,
    "created_at": 1794792945705,
-   "note": "the kit's run was paid in local test mode"
+   "note": "the launch kit was run in test mode, nothing was paid"
   }
  ],
  "v7": {
@@ -2179,84 +2179,135 @@
     "v": 1,
     "lang": "en",
     "seo": {
-     "title": "Sortida: Specialty Flat White at a Barcelona Metro Exit",
-     "description": "Takeaway specialty coffee at a busy Barcelona metro exit. Grab a flat white on your way to the office, pay with Bitcoin Cash."
+     "title": "Sortida: Flat White Kiosk at a Barcelona Metro Exit",
+     "description": "Specialty flat whites at a Barcelona metro exit. Quick takeaway coffee for commuters, reserve and pay with Bitcoin Cash from your phone."
     },
     "hero": {
      "eyebrow": "Barcelona metro exit",
-     "headline": "Your flat white, one step out of the metro",
-     "sub": "Sortida is a small specialty coffee kiosk at a busy Barcelona metro exit. Takeaway only, made fast for people heading to the office before 9am.",
-     "cta": "Reserve your flat white",
+     "headline": "A good flat white, one step out of the metro",
+     "sub": "Sortida is a specialty coffee kiosk opening soon at a Barcelona metro exit. Quick takeaway flat whites for weekday commuters, ready as you walk through.",
+     "cta": "Reserve yours",
      "secondary": "See how it works"
     },
     "sections": [
      {
       "kind": "how-it-works-for-customer",
-      "title": "Three steps to coffee",
+      "title": "Three steps to your coffee",
       "steps": [
        {
         "icon": "phone",
-        "title": "Reserve on your phone",
-        "body": "Choose your flat white and pay with Bitcoin Cash straight from your phone."
+        "title": "Reserve from your phone",
+        "body": "Pick your flat white and reserve it before you reach the exit."
        },
        {
-        "icon": "route",
-        "title": "Step out of the metro",
-        "body": "Come up the stairs. The kiosk is right at the exit, no detour."
+        "icon": "walk",
+        "title": "Walk out of the metro",
+        "body": "The kiosk is right at the exit, so there is no detour."
        },
        {
         "icon": "coffee",
         "title": "Take your coffee",
-        "body": "Show your reservation, pick up your flat white and walk on to work."
-       }
-      ]
-     },
-     {
-      "kind": "menu-or-services",
-      "title": "What you can get",
-      "intro": "A short offer, made well. Right now we start with one drink.",
-      "items": [
-       {
-        "icon": "coffee",
-        "title": "Flat white",
-        "body": "Specialty coffee with smooth steamed milk, served in a cup to take away."
-       },
-       {
-        "icon": "bag",
-        "title": "Takeaway only",
-        "body": "No tables and no queue for a seat. Your coffee is ready to carry."
-       },
-       {
-        "icon": "clock",
-        "title": "Made for mornings",
-        "body": "Built for the rush before 9am, when every minute counts on the way to work."
+        "body": "Your flat white is ready to take away. Drink it on the way to work."
        }
       ]
      },
      {
       "kind": "offer",
-      "title": "Your first flat white",
-      "item": "One flat white, made at the kiosk and ready to take away.",
+      "title": "Your flat white, takeaway",
+      "item": "One flat white, takeaway",
       "bullets": [
-       "Specialty coffee, takeaway only",
+       "Made by a barista at the kiosk",
        "Right at the metro exit",
-       "Limited to 60 flat whites"
+       "Reserve and pay from your phone"
       ],
-      "note": "Reserve on your phone, then pick it up at the kiosk window."
+      "note": "Reserve ahead, then pick it up at the kiosk on your way."
+     },
+     {
+      "kind": "menu",
+      "label": "menu",
+      "title": "Menu",
+      "intro": "Short and simple. Everything is made to take away.",
+      "note": "Opening menu · prices may change before we open",
+      "groups": [
+       {
+        "name": "Coffee",
+        "items": [
+         {
+          "name": "Espresso",
+          "desc": "Single shot, short and strong",
+          "price": 1.8,
+          "photo": "espresso"
+         },
+         {
+          "name": "Americano",
+          "desc": "Espresso with hot water",
+          "price": 2.2,
+          "photo": "americano"
+         }
+        ]
+       },
+       {
+        "name": "With milk",
+        "items": [
+         {
+          "name": "Flat white",
+          "desc": "Double espresso, steamed whole milk, takeaway",
+          "price": 3,
+          "photo": "flat white",
+          "offer": true
+         },
+         {
+          "name": "Cortado",
+          "desc": "Espresso with a little steamed milk",
+          "price": 2.6,
+          "photo": "cortado"
+         },
+         {
+          "name": "Latte",
+          "desc": "Espresso with more steamed milk",
+          "price": 3.4,
+          "photo": "latte"
+         },
+         {
+          "name": "Cappuccino",
+          "desc": "Espresso, steamed milk, milk foam",
+          "price": 3.2,
+          "photo": "cappuccino"
+         }
+        ]
+       },
+       {
+        "name": "Something to eat",
+        "items": [
+         {
+          "name": "Croissant",
+          "desc": "Plain butter croissant",
+          "price": 2.2,
+          "photo": "croissant"
+         },
+         {
+          "name": "Slice of cake",
+          "desc": "A simple slice to go",
+          "price": 3.2,
+          "photo": "cake slice"
+         }
+        ]
+       }
+      ]
      },
      {
       "kind": "proof-stats",
-      "title": "Coffee prices around the city",
+      "title": "How we compare",
       "stats": [
        {
-        "value": "€2.50",
-        "label": "Three Marks flat white",
+        "value": "€3.90",
+        "label": "Syra Coffee flat white",
         "sourceUrl": "https://guidavera.com/spain/barcelona/best-specialty-coffee",
         "source": "guidavera.com"
        },
        {
-        "value": "€3.50",
-        "label": "Sensorial / The Miners flat white",
+        "value": "€3.00",
+        "label": "Syra Coffee cortado",
         "sourceUrl": "https://guidavera.com/spain/barcelona/best-specialty-coffee",
         "source": "guidavera.com"
        }
@@ -2265,55 +2316,55 @@
      {
       "kind": "about",
       "title": "Why Sortida exists",
-      "body": "Many of us buy a takeaway coffee on the way into the office. We wanted that coffee to be better and to be right where you leave the metro. Short line, clear wait, honest drink."
+      "body": "We want people who walk out of the metro every morning to find a good flat white right there. No queue across the street, no skipping coffee. One step out, your coffee in hand."
      },
      {
       "kind": "local",
-      "title": "Find us at the exit",
-      "body": "Sortida is a takeaway kiosk at a busy metro exit in Barcelona, made for people passing through on their way to work.",
+      "title": "At a Barcelona metro exit",
+      "body": "Opening soon by a metro exit in Barcelona, made for the people who walk through it on weekdays.",
       "area": "Barcelona",
       "hours": ""
      },
      {
       "kind": "faq",
-      "title": "Quick questions",
+      "title": "Good to know",
       "items": [
        {
+        "q": "Where is Sortida?",
+        "a": "We are opening soon at a metro exit in Barcelona. Reserve now and we will tell you everything you need for pickup."
+       },
+       {
         "q": "How do I pay?",
-        "a": "You pay with Bitcoin Cash from your phone when you reserve. It takes a few seconds and you don't need cash or a card."
+        "a": "You reserve and pay with Bitcoin Cash from your phone. Then you just collect your flat white at the kiosk."
        },
        {
-        "q": "What do I get?",
-        "a": "One flat white, made at the kiosk and ready to take away."
+        "q": "Is it takeaway only?",
+        "a": "Yes. Sortida is a small kiosk made for people on their way to work, so every drink is made to go."
        },
        {
-        "q": "Can I sit down and drink it?",
-        "a": "No. Sortida is takeaway only, so you pick up your coffee and take it with you."
+        "q": "What do I get when I reserve?",
+        "a": "One flat white, takeaway, made by a barista at the kiosk and ready for you when you walk out of the metro."
        },
        {
-        "q": "How many flat whites are available?",
-        "a": "The first round is limited to 60 flat whites, so reserve yours early."
-       },
-       {
-        "q": "Where do I collect it?",
-        "a": "At the kiosk right at the metro exit in Barcelona. Show your reservation at the window."
+        "q": "Who is it for?",
+        "a": "Weekday commuters who want a quick, good coffee on the way, instead of buying elsewhere or skipping it."
        }
       ]
      }
     ],
     "finalCta": {
      "headline": "Your coffee is one step out",
-     "sub": "Only 60 flat whites in this first round. Reserve yours before your next commute.",
-     "cta": "Reserve your flat white"
+     "sub": "Reserve your flat white and pick it up on your way to work.",
+     "cta": "Reserve yours"
     },
     "footer": {
      "tagline": "Your coffee, one step out."
     },
     "reserve": {
      "address": "bitcoincash:qp9d679zvayvudj65nd9zlgezvjplr8g3vea64wad0",
-     "price": 2,
-     "normal": 2.5,
-     "limit": 60,
+     "price": 2.5,
+     "normal": 3,
+     "limit": 80,
      "currency": "€"
     },
     "ui": {
@@ -2335,10 +2386,207 @@
      "madeWith": "Made with LaunchDesk",
      "faq": "Questions",
      "howItWorks": "How it works",
-     "offer": "Opening offer"
+     "offer": "Opening offer",
+     "menuNote": "Opening menu · prices may change before we open",
+     "offerTag": "{price} opening offer"
+    },
+    "photoQueries": {
+     "hero": [
+      "coffee kiosk",
+      "barista counter"
+     ],
+     "detail": [
+      "flat white",
+      "latte art",
+      "espresso cup",
+      "croissant",
+      "takeaway coffee",
+      "espresso",
+      "americano",
+      "cortado"
+     ],
+     "people": [
+      "barista pouring",
+      "commuter coffee"
+     ]
     }
    },
-   "template": "editorial"
+   "template": "custom",
+   "base": "editorial",
+   "photos": [
+    {
+     "n": 1,
+     "ref": "p1",
+     "id": "rawpixel:df4f69f2-7562-4277-b2b5-70d7065a8724",
+     "role": "hero",
+     "alt": "Latte with heart-shaped foam in a blue cup on a wooden table, with a cookie",
+     "title": "Free flat white coffee, latte",
+     "credit": "Rawpixel",
+     "license": "cc0",
+     "licenseVersion": "1.0",
+     "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+     "sourceUrl": "https://www.rawpixel.com/image/5919178/image-public-domain-coffee-free",
+     "provider": "rawpixel",
+     "width": 1024,
+     "height": 683,
+     "mime": "image/webp",
+     "size": 239212,
+     "hash": "fef6facac99185dcb3131b46701398ad03d538a0911704f905b695eac023d01b",
+     "shows": "Latte with heart-shaped foam in a blue cup on a wooden table, with a cookie (checked by looking at the photo)"
+    },
+    {
+     "n": 2,
+     "ref": "p2",
+     "id": "stocksnap:6e72baa1-752b-4233-b208-bb50f8c55275",
+     "role": "detail",
+     "alt": "Croissant, chocolate bar, steaming black coffee and sugar on a white board indoors",
+     "title": "Croissant Coffee",
+     "creator": "PICSELI",
+     "creatorUrl": "https://stocksnap.io/author/805",
+     "credit": "PICSELI / StockSnap",
+     "license": "cc0",
+     "licenseVersion": "1.0",
+     "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+     "sourceUrl": "https://stocksnap.io/photo/croissant-coffee-QJJJN8RWGX",
+     "provider": "stocksnap",
+     "width": 960,
+     "height": 690,
+     "mime": "image/jpeg",
+     "size": 85084,
+     "hash": "69fd62fc0d4e6a407f4a7a2e541ff944cc2ba262f430938947962b9e06c64a0b",
+     "shows": "Croissant, chocolate bar, steaming black coffee and sugar on a white board indoors (checked by looking at the photo)"
+    },
+    {
+     "n": 3,
+     "ref": "p3",
+     "id": "rawpixel:24d9208e-5cb0-4506-9551-9349afb6f5fc",
+     "role": "detail",
+     "alt": "Takeaway coffee cup with cardboard sleeve on a wooden table indoors",
+     "title": "takeaway coffee mug protective heat",
+     "credit": "Rawpixel",
+     "license": "cc0",
+     "licenseVersion": "1.0",
+     "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+     "sourceUrl": "https://www.rawpixel.com/image/3295706/free-photo-image-cafeteria-beverage-cafe",
+     "provider": "rawpixel",
+     "width": 1024,
+     "height": 768,
+     "mime": "image/webp",
+     "size": 263032,
+     "hash": "5a1900689b2d061761693527bdcff0110dccccd6d7e52e1c53f8cde2a13fc6c2",
+     "shows": "Takeaway coffee cup with cardboard sleeve on a wooden table indoors (checked by looking at the photo)"
+    },
+    {
+     "n": 4,
+     "ref": "p4",
+     "id": "wordpress:6e105a95-2757-466c-821f-e53e32a4d2c3",
+     "role": "detail",
+     "alt": "Small white cup of espresso on a saucer on a wooden table",
+     "title": "A small white ceramic espresso cup filled with coffee sits on a matching saucer, placed on a wooden table. The photo is taken from above at ",
+     "creator": "Ludwig You",
+     "creatorUrl": "https://ludwig-you.fr/",
+     "credit": "Ludwig You / WordPress Photo Directory",
+     "license": "cc0",
+     "licenseVersion": "1.0",
+     "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+     "sourceUrl": "https://wordpress.org/photos/photo/279694bfaa/",
+     "provider": "wordpress",
+     "width": 1536,
+     "height": 1152,
+     "mime": "image/jpeg",
+     "size": 195316,
+     "hash": "345742490d6cd0d86c10308952a5981bb7da51faddbb331a7a71a412e1d9d511",
+     "shows": "Small white cup of espresso on a saucer on a wooden table (checked by looking at the photo)"
+    },
+    {
+     "n": 5,
+     "ref": "p5",
+     "id": "rawpixel:bc37559c-3b78-46a0-90bb-a1b2c49b065e",
+     "role": "detail",
+     "alt": "Pour-over coffee being poured through a filter with a copper kettle indoors",
+     "title": "Free barista pouring coffee photo",
+     "credit": "Rawpixel",
+     "license": "cc0",
+     "licenseVersion": "1.0",
+     "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+     "sourceUrl": "https://www.rawpixel.com/image/5926501/photo-image-public-domain-hands-person",
+     "provider": "rawpixel",
+     "width": 1024,
+     "height": 683,
+     "mime": "image/webp",
+     "size": 225138,
+     "hash": "b9cdd2f4eb4f41c150db5c748da4a21412a02ca80a6cc413ebbffe8d26ab8c4f",
+     "shows": "Pour-over coffee being poured through a filter with a copper kettle indoors (checked by looking at the photo)"
+    },
+    {
+     "n": 6,
+     "ref": "p6",
+     "id": "rawpixel:0feb5ddc-4760-42bb-95f7-e3a3fa2890cd",
+     "role": "detail",
+     "alt": "Overhead view of latte with leaf-pattern foam in a brown cup on wood",
+     "title": "Free coffee latte art image",
+     "credit": "Rawpixel",
+     "license": "cc0",
+     "licenseVersion": "1.0",
+     "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+     "sourceUrl": "https://www.rawpixel.com/image/5908079/image-public-domain-art-coffee",
+     "provider": "rawpixel",
+     "width": 1024,
+     "height": 683,
+     "mime": "image/webp",
+     "size": 256310,
+     "hash": "0facbd491293fee0db216e96ec0e42f9b6526c945c5fd0f889856d8da9b355d4",
+     "shows": "Overhead view of latte with leaf-pattern foam in a brown cup on wood (checked by looking at the photo)"
+    },
+    {
+     "n": 7,
+     "ref": "p7",
+     "id": "stocksnap:4802d604-beda-4c20-958a-0b1f42c67032",
+     "role": "people",
+     "alt": "Pour-over coffee being poured from a steel kettle into filters in a cafe",
+     "title": "Barista Pouring",
+     "creator": "Burst",
+     "creatorUrl": "https://burst.shopify.com",
+     "credit": "Burst / StockSnap",
+     "license": "cc0",
+     "licenseVersion": "1.0",
+     "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+     "sourceUrl": "https://stocksnap.io/photo/barista-pouring-MD4L58LL1E",
+     "provider": "stocksnap",
+     "width": 960,
+     "height": 640,
+     "mime": "image/jpeg",
+     "size": 527433,
+     "hash": "264dcfd659555e6e23ddc26140745677736f2f52207f31645092d53db47494ef",
+     "shows": "Pour-over coffee being poured from a steel kettle into filters in a cafe (checked by looking at the photo)"
+    },
+    {
+     "n": 8,
+     "ref": "p8",
+     "id": "wikimedia:158276432",
+     "role": "place",
+     "alt": "Aerial view of dense Barcelona city blocks with buildings and tree-lined streets",
+     "title": "Plaça Sagrada Família, house 1 to 7 Barcelona, Spain 1",
+     "creator": "Reda Kerbush",
+     "credit": "\"Plaça Sagrada Família, house to Barcelona, Spain\" by Reda Kerbush",
+     "license": "by-sa",
+     "licenseVersion": "4.0",
+     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+     "sourceUrl": "https://commons.wikimedia.org/wiki/File:Pla%C3%A7a_Sagrada_Fam%C3%ADlia,_house_1_to_7_Barcelona,_Spain_1.jpg",
+     "provider": "wikimedia",
+     "width": 1280,
+     "height": 976,
+     "mime": "image/jpeg",
+     "size": 437866,
+     "hash": "73ae45d3ed6e03e9603a73e5ca609adf822a307b9418f78af65b3e1b99ab53c1",
+     "shows": "Aerial view of dense Barcelona city blocks with buildings and tree-lined streets (checked by looking at the photo)"
+    }
+   ],
+   "custom": {
+    "status": "done",
+    "version": 1,
+    "usd": 0.0836
+   }
   },
   "logo": {
    "options": [
@@ -2386,86 +2634,81 @@
    "plan": {
     "lang": "en",
     "currency": "€",
-    "headline": "Sell 60 pre-paid flat whites at €2 (normal €2.50) in 30 days to office workers leaving this metro exit before 9am, using a sign at the kiosk, a pre-order page paid in BCH, and a handful of nearby office doors.",
+    "headline": "Sell pre-orders of a €2.50 flat white on our own site, check the permit, price and costs in week 1, and only open the kiosk at the metro exit if every check passes.",
     "goal": {
-     "metric": "Pre-paid flat white pre-orders paid in BCH on the website",
+     "metric": "Paid pre-orders of one flat white through the website with Bitcoin Cash",
      "target": 60,
      "unit": "pre-orders",
      "by_day": 30,
-     "why": "60 paid pre-orders at €2 shows commuters will commit to a coffee before they see the queue, and that the €2 launch price is enough to make them switch from their usual place. It is about two a day, which one person can serve.",
-     "how_counted": "Each pre-order is one BCH payment on the website. Count the payments in the wallet, one per coffee, and match each to a collected coffee on the day."
+     "why": "60 paid pre-orders at €2.50 show that commuters will pay in advance for the cup before we spend on a kiosk. It is a small number one person can reach, and it fits inside the 80-cup launch limit.",
+     "how_counted": "Count each confirmed BCH payment on the website that is one flat white at €2.50. One payment is one pre-order. Count by hand from the payment list."
     },
     "customer": {
-     "who": "Office workers who walk past this metro exit before 9am and already buy a takeaway coffee on the way in.",
+     "who": "Weekday commuters who walk through the exit between 7:30 and 9:30 and now buy coffee elsewhere or skip it.",
      "places": [
       {
-       "place": "The metro exit itself, 7:30 to 9:00 on weekdays, in the queue and on the pavement",
-       "when": "Weekdays before 9am",
+       "place": "The metro exit itself, during the morning rush",
+       "when": "Weekdays 7:30 to 9:30",
        "source": null
       },
       {
-       "place": "Office entrances and reception desks within a few minutes' walk of the exit",
-       "when": "Weekdays 8:00 to 9:00 and lunch",
-       "source": null
-      },
-      {
-       "place": "Barcelona Coffee Club on Meetup, a small coffee group",
-       "when": "Any day, post once in week 1",
+       "place": "Barcelona Coffee Meetup Group, listed on the Barcelona Metropolitan community page",
+       "when": "Whenever the group posts or meets",
        "source": 2
       },
       {
-       "place": "Business hub of Plaça de Francesc Macià, where kiosk-style coffee has been tried before",
-       "when": "Weekday mornings, one visit to watch the flow",
-       "source": 1
+       "place": "Barcelona Women's Network monthly calendar, which includes coffee mornings",
+       "when": "Monthly coffee mornings",
+       "source": 3
       }
      ]
     },
     "channels": [
      {
-      "name": "Kiosk sign and counter card",
+      "name": "Sign and hand-out at the exit",
       "role": "first sales",
-      "why": "We assume most buyers are people who already pass the exit every morning, so the sign is the cheapest way to reach them at the moment they decide.",
+      "why": "We assume commuters who pass the exit every morning are the people who will buy. They are already there, and a sign with the price and the wait costs nothing to test.",
       "source": null,
-      "weekly_hours": 12,
+      "weekly_hours": 6,
       "cost": 0,
-      "first_action": "Write on the kiosk board: 'Flat white €2 until 60 are sold. Normally €2.50. Wait: about 2 minutes.' Add a QR card to the pre-order page."
+      "first_action": "After the checks pass: stand at the metro exit from 7:30 to 9:30 with a hand-written sign showing €2.50 and a QR code to the pre-order page."
      },
      {
-      "name": "BCH pre-order page on own website",
+      "name": "Own website with BCH pre-order button",
       "role": "proof",
-      "why": "We assume commuters who pre-pay skip the queue and each payment is a clear count of real demand.",
+      "why": "We assume commuters will pay ahead if it is quick. Each payment is one cup we can count, so the site is the demand test.",
       "source": null,
       "weekly_hours": 2,
       "cost": 0,
-      "first_action": "Set up one page with one product, flat white at €2, pickup window 7:30 to 9:00, limit 60, and test a payment yourself."
+      "first_action": "Check the site is live, the button works, and the page states the price (€2.50), the 80-cup limit and the wait."
      },
      {
-      "name": "Office door visits",
+      "name": "Barcelona Coffee Meetup Group",
       "role": "awareness",
-      "why": "We assume small offices near the exit have people who buy coffee together and one friendly mention can bring several of them.",
-      "source": null,
-      "weekly_hours": 4,
+      "why": "The group says it brings people together so no one feels alone in the city, and the page lists 837 members, so coffee people gather here.",
+      "source": 2,
+      "weekly_hours": 1,
       "cost": 0,
-      "first_action": "Walk to five office receptions nearest the exit on day 2 and leave a small card with the price, the wait and the QR code."
+      "first_action": "Read the group rules, then message the organiser to ask if we may post one short line about the kiosk pre-order."
      },
      {
-      "name": "Regulars card",
+      "name": "Small A6 flyers at the exit",
       "role": "repeat",
-      "why": "We assume people who liked the coffee will come back if the next one is easy to get and the price is clear.",
+      "why": "We assume people who bought once will take a flyer with the pre-order link and pass it to a colleague. Printing is paid only after all checks pass.",
       "source": null,
-      "weekly_hours": 2,
-      "cost": 0,
-      "first_action": "From day 8, hand every buyer a card for a stamp on the 5th flat white at €2.50 normal price, with the pre-order QR on the back."
+      "weekly_hours": 1,
+      "cost": 45,
+      "first_action": "After the checks pass: order 500 A6 flyers and hand one to each buyer at the exit."
      }
     ],
     "rejected": [
      {
       "name": "Paid ads",
-      "why_not": "Only people passing the exit matter, and a small ad budget cannot target them. A sign at the exit reaches them for free."
+      "why_not": "With €100 or less and one person, ads reach people all over the city, not the people at one exit."
      },
      {
       "name": "TikTok",
-      "why_not": "It takes many hours for videos, and the buyers are on one street before 9am, not a wide audience."
+      "why_not": "Making videos takes hours we need at the exit, and the buyers we want are on one street at one time."
      }
     ],
     "budget": {
@@ -2475,225 +2718,231 @@
        "label": "No spend",
        "lines": [
         {
-         "channel": "Kiosk sign and counter card",
+         "channel": "Sign and hand-out at the exit",
          "amount": 0,
-         "for": "Handwritten board and cards"
+         "for": "Hand-written sign and our time"
         },
         {
-         "channel": "BCH pre-order page on own website",
+         "channel": "Own website with BCH pre-order button",
          "amount": 0,
-         "for": "Own page"
+         "for": "Site is already live"
         },
         {
-         "channel": "Office door visits",
+         "channel": "Barcelona Coffee Meetup Group",
          "amount": 0,
-         "for": "Walking, handing out cards"
+         "for": "One free post"
         }
        ]
       },
       {
        "amount": 100,
-       "label": "Small print run",
+       "label": "Light",
        "lines": [
         {
-         "channel": "Kiosk sign and counter card",
-         "amount": 30,
-         "for": "Printed price sign and QR cards"
-        },
-        {
-         "channel": "Office door visits",
+         "channel": "Small A6 flyers at the exit",
          "amount": 45,
-         "for": "Flyer print run for offices"
+         "for": "500 A6 colour flyers"
         },
         {
-         "channel": "Regulars card",
-         "amount": 15,
-         "for": "Stamp cards"
+         "channel": "Sign and hand-out at the exit",
+         "amount": 30,
+         "for": "Printed price sign and cups for tasting"
         }
        ]
       },
       {
        "amount": 500,
-       "label": "Wider reach",
+       "label": "Fuller",
        "lines": [
         {
-         "channel": "Kiosk sign and counter card",
-         "amount": 60,
-         "for": "Better sign and QR cards"
+         "channel": "Small A6 flyers at the exit",
+         "amount": 65,
+         "for": "1,000 A6 colour flyers"
         },
         {
-         "channel": "Office door visits",
-         "amount": 200,
-         "for": "Larger flyer print run plus one paid hand-out round"
+         "channel": "Sign and hand-out at the exit",
+         "amount": 300,
+         "for": "Sign, tasting cups and milk for free samples"
         },
         {
-         "channel": "Regulars card",
-         "amount": 40,
-         "for": "Stamp cards"
-        },
-        {
-         "channel": "Free coffee samples",
-         "amount": 150,
-         "for": "Tasting cups at the exit in weeks 2 and 3"
+         "channel": "Barcelona Coffee Meetup Group",
+         "amount": 75,
+         "for": "Coffee for a small meetup to meet the group"
         }
        ]
       }
      ],
      "reserve_pct": 12,
-     "reallocate_rule": "On day 22, check which source brought the most BCH payments. Move the unspent money and the reserve to that one and cut the one with the fewest. If none is clearly ahead, keep the budget on the kiosk sign."
+     "reallocate_rule": "On day 22, look at which channel gave the most paid pre-orders. Move the unspent money from the weakest channel to that one, and stop spending on any channel with no pre-orders."
     },
     "weeks": [
      {
       "n": 1,
-      "theme": "Prepare",
-      "aim": "Get the sign, the pre-order page and the first office cards ready.",
+      "theme": "Prepare: checks and pre-orders",
+      "aim": "Run the three checks and open pre-orders on our website. No printing, no opening, no spending.",
       "days": [
        {
         "day": 1,
-        "time": "07:30",
-        "channel": "Kiosk sign and counter card",
-        "action": "At the kiosk, write the board: flat white €2 until 60 are sold, normally €2.50, wait about 2 minutes. Time one real flat white and fix the wait on the sign.",
+        "time": "20:00",
+        "channel": "Own website with BCH pre-order button",
+        "action": "Open our website and pay for one test cup yourself with BCH. Check the page states the price (€2.50), the 80-cup limit and the wait.",
         "copy": null,
-        "hours": 3
+        "hours": 1.5
        },
        {
         "day": 2,
-        "time": "08:00",
-        "channel": "Office door visits",
-        "action": "Walk to the five office receptions nearest the exit. Leave a card with the price, the wait and the QR code. Ask the receptionist if you may leave it on the desk.",
-        "copy": "flyer",
-        "hours": 3
+        "time": "19:00",
+        "channel": "Personal messages",
+        "action": "Read the group rules, then message the organiser to ask if we may post one short line about the pre-order.",
+        "copy": "message",
+        "hours": 1
        },
        {
-        "day": 3,
-        "time": "20:00",
-        "channel": "BCH pre-order page on own website",
-        "action": "At home, set up one page with one product: flat white €2, pickup 7:30 to 9:00, limit 60. Pay once yourself in BCH to test it and check the payment shows in your wallet.",
+        "day": 4,
+        "time": "07:30",
+        "channel": "Sign and hand-out at the exit",
+        "action": "Check 1: Stand at the exit 7:30 to 9:30 with a hand counter and tally passers-by. Pass mark: 60 paid pre-orders by day 30, counted on day 30; today only note the count and pace.",
         "copy": null,
-        "hours": 2
+        "hours": 2.5
        },
        {
         "day": 5,
-        "time": "19:00",
-        "channel": "Kiosk sign and counter card",
-        "action": "Update the Google Business Profile with the kiosk description, then message friends and the shop next door about the opening.",
-        "copy": "profile",
-        "hours": 2
+        "time": "07:30",
+        "channel": "Sign and hand-out at the exit",
+        "action": "Repeat the passers-by tally at the exit 7:30 to 9:30 and show a hand-written sign with €2.50 and the pre-order address on our website.",
+        "copy": null,
+        "hours": 2.5
        }
       ]
      },
      {
       "n": 2,
       "theme": "Soft launch",
-      "aim": "Serve the first commuters, fix what is slow, and collect the first pre-orders.",
+      "aim": "Tell people we know and the coffee group about the pre-order, and keep counting.",
       "days": [
        {
         "day": 8,
         "time": "07:30",
-        "channel": "Kiosk sign and counter card",
-        "action": "Open at the metro exit. Show the board and the QR card on the counter. Tally every coffee on paper at the end of the shift.",
+        "channel": "Sign and hand-out at the exit",
+        "action": "If the quotes show Check 3 can pass, stand at the exit 7:30 to 9:30 with the sign (€2.50) and a QR code to the pre-order page. Tally passers-by and buyers.",
         "copy": "post-1",
-        "hours": 4
+        "hours": 2.5
        },
        {
         "day": 9,
-        "time": "08:00",
-        "channel": "Regulars card",
-        "action": "Hand every buyer a stamp card: the 5th flat white at the normal price gets a stamp, with the pre-order QR on the back.",
-        "copy": null,
-        "hours": 2
+        "time": "12:00",
+        "channel": "Barcelona Coffee Meetup Group",
+        "action": "If the organiser agrees, post one short line in the group about the pre-order.",
+        "copy": "post-2",
+        "hours": 0.5
        },
        {
         "day": 10,
-        "time": "08:15",
-        "channel": "Office door visits",
-        "action": "Visit five more office receptions near the exit. Write each one in your list with what you left.",
-        "copy": "flyer",
-        "hours": 3
+        "time": "19:00",
+        "channel": "Personal messages",
+        "action": "Send the personal message to friends and the shop next door with the pre-order address on our website.",
+        "copy": "message",
+        "hours": 1
        },
        {
         "day": 12,
-        "time": "19:00",
-        "channel": "BCH pre-order page on own website",
-        "action": "Message friends and the neighbour shop with the pre-order link. Ask them to tell one colleague who walks past the exit.",
-        "copy": "message",
-        "hours": 2
+        "time": "07:30",
+        "channel": "Sign and hand-out at the exit",
+        "action": "Stand at the exit 7:30 to 9:30 and tally who buys. Count the BCH payments so far.",
+        "copy": null,
+        "hours": 2.5
        }
       ]
      },
      {
       "n": 3,
       "theme": "Offer",
-      "aim": "Push the €2 flat white to commuters and offices, and email the waitlist.",
+      "aim": "Run the €2.50 offer and the two-price test.",
       "days": [
        {
         "day": 15,
         "time": "07:30",
-        "channel": "Kiosk sign and counter card",
-        "action": "At the exit, point the board at the queue. Post the offer in the Barcelona Coffee Club group on Meetup.",
-        "copy": "post-2",
-        "hours": 4
+        "channel": "Sign and hand-out at the exit",
+        "action": "Show two signs at the exit, €3 and €2.50, and tally which price each buyer picks.",
+        "copy": "post-3",
+        "hours": 2.5
        },
        {
         "day": 16,
-        "time": "07:00",
-        "channel": "BCH pre-order page on own website",
-        "action": "Send the email to everyone on the waitlist. Check page visits in the website stats.",
-        "copy": "email",
-        "hours": 2
-       },
-       {
-        "day": 18,
-        "time": "08:15",
-        "channel": "Office door visits",
-        "action": "Return to the offices you visited in week 1. Ask at reception whether anyone ordered, and leave fresh cards.",
-        "copy": "flyer",
-        "hours": 3
-       },
-       {
-        "day": 20,
-        "time": "19:00",
-        "channel": "Regulars card",
-        "action": "Count the stamp cards with two or more stamps. Note which sources brought the most payments.",
+        "time": "07:30",
+        "channel": "Sign and hand-out at the exit",
+        "action": "Repeat the two-price test at the exit and keep the tally by hand.",
         "copy": null,
-        "hours": 2
+        "hours": 2.5
+       },
+       {
+        "day": 17,
+        "time": "18:00",
+        "channel": "Small A6 flyers at the exit",
+        "action": "If Check 3 has passed, order 500 A6 flyers (€45) for pickup.",
+        "copy": "flyer",
+        "hours": 1
+       },
+       {
+        "day": 19,
+        "time": "12:00",
+        "channel": "Email to your list",
+        "action": "Send the email to everyone who left an address.",
+        "copy": "email",
+        "hours": 1.5
+       },
+       {
+        "day": 21,
+        "time": "07:30",
+        "channel": "Sign and hand-out at the exit",
+        "action": "Hand a flyer to each buyer at the exit and ask them to pass it to a colleague.",
+        "copy": "flyer",
+        "hours": 2.5
        }
       ]
      },
      {
       "n": 4,
       "theme": "Proof and last call",
-      "aim": "Count real results, tell people how many €2 coffees are left, and decide next steps.",
+      "aim": "Count results and decide.",
       "days": [
        {
         "day": 22,
         "time": "19:00",
-        "channel": "BCH pre-order page on own website",
-        "action": "Count BCH payments in the wallet. Move the budget to the source that brought the most payments, as the plan says.",
+        "channel": "Own website with BCH pre-order button",
+        "action": "Check which channel gave the most paid pre-orders. Move unspent money from the weakest to that one.",
         "copy": null,
-        "hours": 2
+        "hours": 1
        },
        {
         "day": 24,
-        "time": "07:30",
-        "channel": "Kiosk sign and counter card",
-        "action": "At the exit, change the board to show the true number of €2 coffees left. Post the same line online.",
-        "copy": "post-3",
-        "hours": 4
+        "time": "10:00",
+        "channel": "Barcelona Coffee Meetup Group",
+        "action": "Send the pitch to the Barcelona Metropolitan newsletter.",
+        "copy": "press",
+        "hours": 1
        },
        {
         "day": 27,
-        "time": "08:00",
-        "channel": "Office door visits",
-        "action": "Send a short pitch to a local newsletter or neighbourhood paper, then visit the offices that ordered most and thank them.",
-        "copy": "press",
-        "hours": 3
+        "time": "07:30",
+        "channel": "Sign and hand-out at the exit",
+        "action": "Last call at the exit: tell people the €2.50 offer ends soon and the limit is 80 cups.",
+        "copy": "post-3",
+        "hours": 2.5
        },
        {
         "day": 30,
         "time": "19:00",
-        "channel": "BCH pre-order page on own website",
-        "action": "Count total payments and repeat buyers from the stamp cards. Choose scale, adjust or stop using the plan's rules.",
+        "channel": "Own website with BCH pre-order button",
+        "action": "Check 2: Count BCH payments and the two-price tally. Pass mark: 60 paid pre-orders and at least 60% of buyers choosing €3. Then decide: if any check fails, stop and do not open the kiosk.",
+        "copy": null,
+        "hours": 2
+       },
+       {
+        "day": 30,
+        "time": "18:00",
+        "channel": "Own website with BCH pre-order button",
+        "action": "Check 3: Email the transit operator and the city council for written quotes on fees, permit and fit-out. Pass mark: fixed costs at or below €2,889 a month, startup capital at or below €23,400, no premises premium.",
         "copy": null,
         "hours": 2
        }
@@ -2702,131 +2951,151 @@
     ],
     "kpis": [
      {
-      "name": "Pre-orders paid",
+      "name": "Paid pre-orders",
       "target": "60 by day 30",
-      "how_to_count": "Count payments received in the wallet, one per flat white.",
+      "how_to_count": "Count each confirmed BCH payment for one flat white at €2.50.",
       "count_from": "bch payments"
      },
      {
-      "name": "Visits to the pre-order page",
-      "target": "300 by day 30",
-      "how_to_count": "Read page visits in the website stats each Sunday.",
+      "name": "Cups sold at the €3 price vs €2.50 price",
+      "target": "At least 60% of buyers choose the €3 option",
+      "how_to_count": "Tally buyers by price chosen during the two-price test.",
+      "count_from": "by hand"
+     },
+     {
+      "name": "Page visits to pre-order page",
+      "target": "At least 300 by day 30",
+      "how_to_count": "Read the visit count on the website.",
       "count_from": "website"
      },
      {
-      "name": "Coffees sold at the counter",
-      "target": "20 a day by day 30",
-      "how_to_count": "Tally marks on paper at the end of each shift.",
-      "count_from": "by hand"
-     },
-     {
-      "name": "Offices visited",
-      "target": "15 by day 14",
-      "how_to_count": "List each reception visited and what was left there.",
-      "count_from": "by hand"
-     },
-     {
-      "name": "Repeat buyers",
-      "target": "15 people buy a second coffee",
-      "how_to_count": "Count stamp cards with two or more stamps.",
+      "name": "People passing the exit in the test mornings",
+      "target": "Count on four weekday mornings",
+      "how_to_count": "Tally passers-by 7:30 to 9:30 with a hand counter.",
       "count_from": "by hand"
      }
     ],
     "copy": {
      "posts": [
       {
-       "channel": "Kiosk sign and counter card",
-       "hook": "Flat white €2. Wait: about 2 minutes.",
-       "body": "Sortida is open at this metro exit. Takeaway only. The flat white is €2 for the first 60, normally €2.50. Walk up, order, go to work. Pre-order on our website and pick it up between 7:30 and 9:00.",
-       "cta": "Scan the QR card and pre-order."
-      },
-      {
-       "channel": "Barcelona Coffee Club on Meetup",
-       "hook": "New takeaway coffee at a metro exit.",
-       "body": "I run Sortida, a small coffee kiosk at the metro exit. Flat white €2 for the first 60, normally €2.50. It is takeaway only and the wait is about 2 minutes. I would like to hear what you think of the coffee.",
+       "channel": "Sign and hand-out at the exit",
+       "hook": "Your coffee, one step out.",
+       "body": "A flat white, takeaway, at the metro exit. €2.50 for the first 80 cups, then €3. Card or app. Scan the code on our sign to pre-order on our website.",
        "cta": "Pre-order on our website."
       },
       {
-       "channel": "Kiosk sign and counter card",
-       "hook": "Your coffee, one step out.",
-       "body": "The €2 flat whites are going. The board at the kiosk shows how many are left today. After they are gone the flat white is €2.50. Pre-pay on our website and skip the wait.",
-       "cta": "Pre-order before 9am."
+       "channel": "Barcelona Coffee Meetup Group",
+       "hook": "A quick flat white for the morning walk.",
+       "body": "We are testing a small coffee kiosk at a metro exit. Pre-order one flat white for €2.50, limit 80 cups. Normal price €3.",
+       "cta": "Pre-order on our website."
+      },
+      {
+       "channel": "Own website with BCH pre-order button",
+       "hook": "Skipping coffee this morning?",
+       "body": "One flat white, takeaway: €2.50 for the first 80 cups, then €3. Pay ahead with Bitcoin Cash on our website, and pick it up on your way out.",
+       "cta": "Reserve your cup on our website."
       }
      ],
-     "message": "Hi! I'm opening Sortida, a coffee kiosk at the metro exit. Flat white €2 for the first 60, normally €2.50, about 2 minutes wait. Could you tell one colleague who walks past in the morning? You can pre-order on our website. Thanks!",
+     "message": "Hi! I'm testing a small coffee kiosk at a metro exit. You can pre-order a flat white for €2.50 (limit 80) on our website. Could you share it with someone who commutes?",
      "email": {
-      "subject": "Flat white €2 at the metro exit",
-      "body": "Hi,\n\nSortida is open at the metro exit. Takeaway only.\n\nThe flat white is €2 for the first 60 pre-orders, normally €2.50. The wait is about 2 minutes. You can pre-pay on our website in BCH and pick it up between 7:30 and 9:00.\n\nCome by on your way in.\n\nSortida\nYour coffee, one step out."
+      "subject": "Your flat white, €2.50 until the 80 are gone",
+      "body": "Hello,\n\nSortida is a small coffee kiosk plan for the metro exit. A flat white, takeaway, is €2.50 for the first 80 cups. Normal price is €3.\n\nYou can pre-order and pay with Bitcoin Cash on our website. We only open the kiosk if our checks pass, so your pre-order helps us decide.\n\nYour coffee, one step out.\n\nSortida"
      },
      "flyer": {
-      "headline": "Flat white €2. One step out.",
+      "headline": "Your coffee, one step out.",
       "lines": [
-       "Normally €2.50. €2 for the first 60.",
-       "Wait: about 2 minutes. Takeaway only.",
-       "Pre-order on our website. Pick up 7:30 to 9:00."
+       "Flat white, takeaway: €2.50 for the first 80 cups",
+       "Normal price €3",
+       "Pre-order on our website"
       ]
      },
-     "profile": "Sortida is a small takeaway coffee kiosk at a busy metro exit in Barcelona. We serve specialty flat whites for people on their way to work. Launch price: flat white €2 for the first 60 (normally €2.50). The wait is about 2 minutes. You can pre-order on our website and pick up between 7:30 and 9:00. Your coffee, one step out.",
-     "press": "Sortida is a new takeaway coffee kiosk at a Barcelona metro exit, serving flat whites for people on their way to work. For the first 60 coffees the price is €2 instead of €2.50, and the wait is about 2 minutes. I would be happy to talk to you or send a photo of the kiosk."
+     "profile": "Sortida is a small specialty coffee kiosk planned for a Barcelona metro exit. We serve flat whites for weekday commuters. Launch price is €2.50 for the first 80 cups, then €3. Pay by card or app. You can pre-order on our website. Your coffee, one step out.",
+     "press": "Sortida is a one-person coffee kiosk plan for a Barcelona metro exit, serving flat whites to commuters. We are taking pre-orders at €2.50 for the first 80 cups, then €3, to see if people want it. We would be glad to share details for your readers."
     },
     "local": [
      {
-      "fact": "News & Coffee ran newsstand-style kiosks on Passeig de Sant Joan and at Plaça de Francesc Macià per a 2021 review. Current status is not verified.",
-      "source": 1
-     },
-     {
-      "fact": "Three Marks sells a flat white at €2.50.",
-      "source": 12
-     },
-     {
-      "fact": "Sensorial and The Miners sell a flat white at €3.50.",
-      "source": 12
-     },
-     {
-      "fact": "The Barcelona Coffee Club group on Meetup lists 39 members.",
+      "fact": "Barcelona Coffee Meetup Group has 837 members, per the page.",
       "source": 2
+     },
+     {
+      "fact": "Barcelona Metropolitan sends a weekly English-language newsletter with curated events.",
+      "source": 4
+     },
+     {
+      "fact": "Barcelona Women's Network runs a monthly calendar that includes coffee mornings.",
+      "source": 3
+     },
+     {
+      "fact": "Syra Coffee sells a flat white at €3.90 and a cortado at €3.00.",
+      "source": 11
      }
     ],
-    "events": [],
+    "events": [
+     {
+      "name": "Fira de Santa Llúcia",
+      "date": "2026-11-27 (start; dates differ between sources)",
+      "where": "Avinguda de la Catedral, by the cathedral",
+      "source": 6
+     }
+    ],
     "assumptions": [
-     "The exit has enough commuters before 9am to sell about 20 coffees a day at the kiosk.",
-     "You can serve a flat white in about 2 minutes, so the wait written on the sign is true.",
-     "The €2 price still leaves a margin per cup. Check it against your milk and bean cost.",
-     "Your kiosk permit and location are settled before day 1.",
-     "Commuters will pay in BCH on a phone before they walk up, or you accept card or cash at the counter as well.",
-     "Cortal Printing lists 1,000 single-sided A5 flyers at €65, year not stated."
+     "The metro operator and city council allow a kiosk or a pop-up at this exit; we check this in Check 3.",
+     "Commuters will pay in advance online with BCH, or will pay by card at the exit; the founder should check how many do each.",
+     "The test mornings are typical weekdays and not holidays.",
+     "The €2.50 launch price is a short offer and the normal price of €3 is what must work later."
     ],
     "decision": {
-     "scale_if": "60 or more BCH pre-orders by day 30 and at least 15 people came back for a second coffee: raise the price toward €2.50 and add a second pickup window.",
-     "adjust_if": "30 to 59 pre-orders: keep the price, move effort to the channel with the most payments, and test the sign wording and pickup time.",
-     "stop_if": "Under 30 pre-orders and few counter sales despite daily presence: the exit is not working, so test another exit before spending more."
+     "scale_if": "60 or more paid pre-orders by day 30, at least 60% of buyers choose the €3 price, and all three checks passed: plan the kiosk opening.",
+     "adjust_if": "30 to 59 pre-orders, or fewer than 60% choose €3: change the sign, the hours or the offer and run the test again for two more weeks.",
+     "stop_if": "Any check fails, or fewer than 30 pre-orders by day 30: stop and do not open the kiosk."
+    },
+    "gate": {
+     "verdict": "pivot",
+     "reason": "€3 sits below Syra Coffee's €3.90 flat white and inside the €3–4.50 range that Barcelona Tourism gives for third-wave cafés. Three Marks lists a flat white at €2.50, so price pressure…",
+     "checks": [
+      {
+       "what": "Commuters at this exit will buy enough cups to cover fixed costs",
+       "passIf": "Sales of at least 1,411 cups a month, extrapolated from the test (estimate: using a pop-up with the same hours as the kiosk).",
+       "day": 4
+      },
+      {
+       "what": "Commuters will pay €3 instead of a cheaper bar or a €2.50 flat white",
+       "passIf": "At least 60% of buyers choose the €3 option at the €3 price (estimate: a threshold set by the founder, not from a source).",
+       "day": 30
+      },
+      {
+       "what": "Site, permit and fixed costs are known and fit the budget",
+       "passIf": "Total fixed costs at or below €€2,889 a month and startup capital at or below €€23,400, with no premises premium.",
+       "day": 8
+      }
+     ]
     }
    },
    "sources": [
     {
      "n": 1,
-     "url": "https://www.we-heart.com/2021/02/15/news-coffee-barcelona-newsstand-magazines-coffee/",
-     "title": "Offering a new lease of life to Barcelona's ailing newsstands, ..."
-    },
-    {
-     "n": 2,
-     "url": "https://www.meetup.com/lp/social-and-community/coffee-chats-barcelona/",
-     "title": "Coffee Chats Barcelona"
-    },
-    {
-     "n": 3,
      "url": "https://www.barcelona-metropolitan.com/living/community--friends/",
      "title": "Groups: Community, Friends and Families - (barcelona-metropolitan.com)"
     },
     {
+     "n": 2,
+     "url": "https://www.meetup.com/es-es/meetup-group-coffee-lovers/",
+     "title": "Barcelona Coffee Meetup Group"
+    },
+    {
+     "n": 3,
+     "url": "https://www.barcelona-metropolitan.com/living/community/a-community-that-builds-something-real/",
+     "title": "A Community That Builds Something Real - (barcelona-metropolitan.com)"
+    },
+    {
      "n": 4,
-     "url": "https://www.meetup.com/lp/social-and-community/community-groups-barcelona/",
-     "title": "Community Groups Barcelona"
+     "url": "https://www.barcelona-metropolitan.com/about",
+     "title": "About Us - (barcelona-metropolitan.com)"
     },
     {
      "n": 5,
-     "url": "https://www.idealista.com/en/news/lifestyle-in-spain/2025/09/12/859844-barcelona-like-a-local-local-neighbourhoods-real-eats-and-savvy-tips",
-     "title": "Barcelona like a local: local neighbourhoods, real eats, and tips ..."
+     "url": "https://www.meetup.com/lp/social-and-community/community-groups-barcelona/",
+     "title": "Community Groups Barcelona"
     },
     {
      "n": 6,
@@ -2835,43 +3104,299 @@
     },
     {
      "n": 7,
-     "url": "https://www.barcelona-tickets.com/travel-guide/best-time-to-visit/barcelona-in-december/",
-     "title": "Barcelona in December"
-    },
-    {
-     "n": 8,
-     "url": "https://www.barcelona-life.com/barcelona/christmas",
-     "title": "Christmas in Barcelona 2026 ~ Christmas Markets, Events & Traditions"
-    },
-    {
-     "n": 9,
      "url": "https://www.gaytravel4u.com/event/barcelona-christmas-markets/",
      "title": "Barcelona Christmas Markets 2026"
     },
     {
+     "n": 8,
+     "url": "https://www.barcelona-tickets.com/travel-guide/best-time-to-visit/barcelona-in-december/",
+     "title": "Barcelona in December"
+    },
+    {
+     "n": 9,
+     "url": "https://www.barcelona-life.com/barcelona/christmas",
+     "title": "Christmas in Barcelona 2026 ~ Christmas Markets, Events & Traditions"
+    },
+    {
      "n": 10,
-     "url": "https://www.barcelona.com/things-to-do-in-barcelona/what-to-do-in-barcelona-in-december",
-     "title": "What to do in Barcelona in December 2026"
+     "url": "https://www.aeropuertobarcelona-elprat.com/ingl/barcelona-congress.php",
+     "title": "Barcelona Trade show, conferences and exhibitions calendar"
     },
     {
      "n": 11,
-     "url": "https://portaldades.ajuntament.barcelona.cat/en/report/flaix-de-la-poblacio-de-barcelona-2026-en",
-     "title": "Barcelona population, 1 Jan 2026"
+     "url": "https://guidavera.com/spain/barcelona/best-specialty-coffee",
+     "title": "Best Specialty Coffee in Barcelona"
     },
     {
      "n": 12,
-     "url": "https://guidavera.com/spain/barcelona/best-specialty-coffee",
-     "title": "Three Marks flat white"
+     "url": "https://portaldades.ajuntament.barcelona.cat/en/report/flaix-de-la-poblacio-de-barcelona-2026-en",
+     "title": "Barcelona Datastore"
     }
    ],
    "warnings": [
-    "local fact without a valid source moved to assumptions",
-    "place \"The metro exit itself, 7:30 to 9:00 on weekdays, in the queue and on the pavement\": number without a source"
+    "check 3 moved from day 6 to day 30: checks stay in the report's order",
+    "day 1: the profile text dropped (it does not fit \"Own website with BCH pre-order button\")",
+    "day 2: channel \"Barcelona Coffee Meetup Group\" relabelled \"Personal messages\" (the task uses the message text)",
+    "day 10: channel \"Own website with BCH pre-order button\" relabelled \"Personal messages\" (the task uses the message text)",
+    "day 19: channel \"Own website with BCH pre-order button\" relabelled \"Email to your list\" (the task uses the email text)",
+    "budget tier 500: lines added up to 450, more than 440 after the 12% reserve; cut from the last line"
    ]
   }
  },
- "custom": null,
- "photos": [],
+ "custom": {
+  "html": "<style>:root{--roast:#2A1B14;--teal:#2F6F5E;--milk:#F6EFE4;--ink:#2A1B14;--milk-2:#EBE0CF;--teal-d:#245748;--teal-l:#8FC6B4;--muted:#5E4B40;--hair:#D6C8B3;--display:\"Fraunces\",Georgia,\"Times New Roman\",serif;--text:\"Instrument Sans\",system-ui,-apple-system,\"Segoe UI\",sans-serif;--sec:clamp(72px,10vw,136px);color-scheme:light}\n*,*::before,*::after{box-sizing:border-box}\nbody{margin:0;background:var(--milk);color:var(--ink);font:400 1.0625rem/1.6 var(--text)}\nimg{display:block;max-width:100%;height:auto}\nfigure{margin:0}\np{margin:0}\na{color:inherit}\na:focus-visible,button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--teal);outline-offset:3px}\n.wrap{max-width:1180px;margin:0 auto;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}\nh1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;letter-spacing:-.02em;font-variation-settings:\"opsz\" 144}\nh2{font-size:clamp(2.25rem,4.6vw,3.75rem);line-height:1.02}\nh3{font-size:1.5rem;line-height:1.15;font-variation-settings:\"opsz\" 48}\nem{font-style:italic;color:var(--teal)}\n.kicker{font:600 .75rem/1.3 var(--text);letter-spacing:.14em;text-transform:uppercase;color:var(--teal-d)}\n.lede{font-size:1.2rem;line-height:1.55;max-width:38ch;color:var(--muted)}\n.btn{display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:0 1.6rem;border-radius:4px;font:600 1rem/1 var(--text);text-decoration:none;border:1.5px solid transparent;transition:background-color .2s}\n.b1{background:var(--teal);color:var(--milk)}\n.b1:hover{background:var(--teal-d)}\n.b2{border-color:var(--roast);color:var(--roast)}\n.top{background:var(--milk);border-bottom:1px solid var(--hair)}\n.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:14px}\n.mark{font:500 1.6rem/1 var(--display);text-decoration:none;letter-spacing:-.02em}\n.top nav{display:flex;align-items:center;gap:24px;font-size:.95rem}\n.top nav a:not(.btn){text-decoration:none}\n.top .btn{min-height:44px;padding:0 1.1rem;font-size:.92rem}\n.hero-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);min-height:min(760px,100svh)}\n.hero-copy{display:flex;flex-direction:column;justify-content:center;gap:26px;padding:64px 48px 64px max(20px,calc((100vw - 1180px)/2 + 20px))}\n.hero h1{font-size:clamp(3rem,7vw,6.5rem);line-height:.94;letter-spacing:-.035em;font-weight:300}\n.hero h1 em{font-weight:300}\n.offer-line{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;padding-top:20px;border-top:1px solid var(--roast);max-width:440px}\n.price{font:400 3rem/1 var(--display);letter-spacing:-.03em;color:var(--teal-d)}\n.was{color:var(--muted)}\n.offer-line p{flex-basis:100%;font-size:.95rem;color:var(--muted)}\n.cta{display:flex;flex-wrap:wrap;gap:12px}\n.hero-photo{position:relative;min-height:420px}\n.hero-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 50%}\n.hero-tag{position:absolute;left:-32px;bottom:48px;width:230px;background:var(--milk);color:var(--ink);padding:16px 18px;border:1.5px solid var(--roast);border-radius:4px}\n.hero-tag b{display:block;font:italic 400 1.35rem/1.1 var(--display);margin-bottom:8px}\n.hero-tag div{display:flex;justify-content:space-between;gap:10px;font-size:.82rem;padding-top:6px;border-top:1px solid var(--hair)}\n.hero-tag dt{font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--teal-d)}\n.hero-tag dd{margin:0}\n.hero-tag dl{margin:0;display:grid;gap:6px}\n.menu{padding-block:var(--sec)}\n.menu-head{display:grid;gap:14px;margin-bottom:56px}\n.menu-head h2{max-width:14ch}\n.groups{display:grid;gap:56px}\n.grp{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(24px,5vw,72px);align-items:center}\n.grp:nth-child(even){grid-template-columns:minmax(0,7fr) minmax(0,5fr)}\n.grp:nth-child(even) figure{order:2}\n.grp img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:4px}\n.grp figcaption{margin-top:10px;font-size:.85rem;color:var(--muted)}\n.grp h3{font-size:1.9rem;padding-bottom:12px;border-bottom:1.5px solid var(--roast)}\n.lines{list-style:none;margin:0;padding:0}\n.lines li{display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:16px 0;border-bottom:1px solid var(--hair);flex-wrap:wrap}\n.lines .d{flex:1 1 0;min-width:0;display:grid;gap:2px}\n.lines b{font-weight:600}\n.lines span.s{font-size:.92rem;color:var(--muted)}\n.lines .num{font-weight:600;font-variant-numeric:tabular-nums}\n.lines .on{background:rgba(47,111,94,.1);padding-inline:12px;margin-inline:-12px;border-left:3px solid var(--teal);margin-left:-15px;padding-left:12px}\n.lines .tag{flex-basis:100%;font-size:.8rem;font-weight:600;color:var(--teal-d)}\n.fine{margin-top:32px;font-size:.85rem;color:var(--muted)}\n.order{background:var(--milk-2);padding-block:var(--sec)}\n.order-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(32px,6vw,96px);align-items:center}\n.order h2{margin-top:14px}\n.steps{list-style:none;margin:32px 0 0;padding:0;counter-reset:s}\n.steps li{counter-increment:s;display:grid;grid-template-columns:3.5rem minmax(0,1fr);gap:16px;padding:22px 0;border-top:1px solid var(--hair)}\n.steps li::before{content:counter(s);font:italic 300 2.4rem/1 var(--display);color:var(--teal-d)}\n.steps h3{margin-bottom:4px}\n.steps p{color:var(--muted)}\n.ticket{background:var(--milk);border:1.5px solid var(--roast);border-radius:4px;padding:clamp(24px,4vw,40px);display:grid;gap:18px}\n.ticket h3{font-size:1.9rem}\n.ticket .buy{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 16px}\n.ticket img{width:100%;aspect-ratio:3/2;object-fit:cover;border-radius:4px}\n.band{background:var(--roast);color:var(--milk);padding-block:var(--sec)}\n.band h2{max-width:18ch;margin-bottom:40px}\n.band h2 em{color:var(--teal-l)}\n.cols{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid rgba(246,239,228,.25)}\n.cols>div{padding:28px 32px 8px 0}\n.cols>div+div{padding-left:32px;border-left:1px solid rgba(246,239,228,.25)}\n.cols h3{margin-bottom:14px}\n.cols ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}\n.cols p{color:rgba(246,239,228,.75)}\n.mk{margin-top:28px;font-size:.85rem;color:rgba(246,239,228,.75)}\n.mk a{color:var(--teal-l)}\n.where{padding-block:var(--sec)}\n.where-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(32px,6vw,96px);align-items:center}\n.where h2{margin:14px 0 18px}\n.where img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:4px}\n.faq{background:var(--milk-2);padding-block:var(--sec)}\n.faq-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(32px,6vw,96px);align-items:start}\ndetails{border-top:1px solid var(--roast);padding:18px 0}\ndetails:last-child{border-bottom:1px solid var(--roast)}\nsummary{cursor:pointer;font:400 1.35rem/1.25 var(--display);list-style:none}\nsummary::-webkit-details-marker{display:none}\ndetails p{margin-top:10px;color:var(--muted);max-width:60ch}\n.join{padding-block:var(--sec)}\n.card{background:var(--teal);color:var(--milk);border-radius:4px;display:grid;grid-template-columns:1fr 1fr}\n.card h2{font-size:clamp(2.5rem,5.4vw,4.5rem)}\n.card h2 em{color:var(--milk)}\n.cc{padding:clamp(32px,5vw,64px);display:grid;gap:20px;align-content:center}\n.cc+.cc{border-left:1px solid rgba(246,239,228,.25)}\n.cc p{max-width:40ch}\n.join form{display:flex;flex-wrap:wrap;gap:10px}\n.join label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}\n.join input{flex:1 1 220px;min-height:52px;padding:0 18px;border-radius:4px;border:1.5px solid rgba(246,239,228,.6);background:transparent;color:var(--milk);font:inherit}\n.join input::placeholder{color:rgba(246,239,228,.8)}\n.join button{min-height:52px;padding:0 1.5rem;border-radius:4px;border:0;background:var(--milk);color:var(--roast);font:600 1rem/1 var(--text);cursor:pointer}\n.join .b1{background:var(--roast)}\nfooter{border-top:1px solid var(--hair);padding-block:40px;font-size:.92rem;color:var(--muted)}\nfooter .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px 24px}\nfooter nav{display:flex;gap:20px}\n@media (max-width:900px){.hero-grid{grid-template-columns:1fr;min-height:0}.hero-photo{order:-1;min-height:0;aspect-ratio:4/3}.hero-copy{padding:36px max(20px,env(safe-area-inset-left,0px)) 56px}.hero-tag{left:auto;right:12px;bottom:12px;width:190px;padding:12px 14px}.grp,.grp:nth-child(even),.order-grid,.where-grid,.faq-grid,.card{grid-template-columns:1fr}.grp:nth-child(even) figure{order:0}.cc+.cc{border-left:0;padding-top:0}}@media (max-width:560px){.top nav a:not(.btn){display:none}.btn{width:100%}.top .btn{width:auto}.cols{grid-template-columns:1fr}.cols>div,.cols>div+div{padding:24px 0 8px;border-left:0}.cols>div+div{border-top:1px solid rgba(246,239,228,.25)}.hero-tag{width:150px;padding:8px 10px}.hero-tag b{font-size:1.05rem;margin-bottom:4px}.hero-tag div{font-size:.72rem}}@media (prefers-reduced-motion:reduce){*{transition:none!important}}</style><header class=\"top\">\n<div class=\"wrap\">\n<a class=\"mark\" href=\"#top\">Sortida</a>\n<nav aria-label=\"Main\"><a href=\"#menu\">Menu</a><a href=\"#visit\">Visit</a><a href=\"#questions\">Questions</a><a class=\"btn b1\" href=\"#reserve\" data-ld=\"reserve\">Reserve</a></nav>\n</div>\n</header><main id=\"top\">\n<section class=\"hero\">\n<div class=\"hero-grid\">\n<div class=\"hero-copy\">\n<p class=\"kicker\">Opening soon · Barcelona metro exit</p>\n<h1>Your coffee, <em>one step out.</em></h1>\n<p class=\"lede\">A small coffee kiosk where the metro lets you out. A good flat white, made to take away, for the walk to work.</p>\n<div class=\"offer-line\"><span class=\"price num\">€2.50</span><span class=\"was\">normally <s>€3</s></span><p>Opening offer: one flat white, takeaway</p></div>\n<div class=\"cta\"><a class=\"btn b1\" href=\"#reserve\" data-ld=\"reserve\">Reserve with BCH · €2.50</a><a class=\"btn b2\" href=\"#join\">Not ready? Join the list</a></div>\n</div>\n<figure class=\"hero-photo\">\n<img src=\"ld-photo:p1\" alt=\"Latte with heart-shaped foam in a blue cup on a wooden table, with a cookie\" width=\"1200\" height=\"800\">\n<div class=\"hero-tag\" aria-hidden=\"true\"><b>Flat white</b><dl><div><dt>Milk</dt><dd>Steamed whole</dd></div><div><dt>Price</dt><dd class=\"num\">€3</dd></div></dl></div>\n</figure>\n</div>\n</section>\n\n<section class=\"menu\" id=\"menu\">\n<div class=\"wrap\">\n<div class=\"menu-head\"><p class=\"kicker\">Menu</p><h2>Short list. <em>Quick</em> hands.</h2></div>\n<div class=\"groups\">\n<div class=\"grp\">\n<figure><img src=\"ld-photo:p4\" alt=\"Small white cup of espresso on a saucer on a wooden table\" width=\"1200\" height=\"900\"><figcaption>Espresso</figcaption></figure>\n<div><h3>Coffee</h3>\n<ul class=\"lines\">\n<li><div class=\"d\"><b>Espresso</b><span class=\"s\">Single shot, short and strong</span></div><span class=\"num\">€1.80</span></li>\n<li><div class=\"d\"><b>Americano</b><span class=\"s\">Espresso with hot water</span></div><span class=\"num\">€2.20</span></li>\n</ul></div>\n</div>\n<div class=\"grp\">\n<figure><img src=\"ld-photo:p6\" alt=\"Overhead view of latte with leaf-pattern foam in a brown cup on wood\" width=\"1200\" height=\"800\"><figcaption>Latte</figcaption></figure>\n<div><h3>With milk</h3>\n<ul class=\"lines\">\n<li><div class=\"d\"><b>Flat white</b><span class=\"s\">Double espresso, steamed whole milk, takeaway</span></div><span class=\"num\">€3</span><span class=\"tag\">€2.50 opening offer</span></li>\n<li><div class=\"d\"><b>Cortado</b><span class=\"s\">Espresso with a little steamed milk</span></div><span class=\"num\">€2.60</span></li>\n<li><div class=\"d\"><b>Latte</b><span class=\"s\">Espresso with more steamed milk</span></div><span class=\"num\">€3.40</span></li>\n<li><div class=\"d\"><b>Cappuccino</b><span class=\"s\">Espresso, steamed milk, milk foam</span></div><span class=\"num\">€3.20</span></li>\n</ul></div>\n</div>\n<div class=\"grp\">\n<figure><img src=\"ld-photo:p2\" alt=\"Croissant, chocolate bar, steaming black coffee and sugar on a white board indoors\" width=\"1200\" height=\"900\"><figcaption>Croissant</figcaption></figure>\n<div><h3>Something to eat</h3>\n<ul class=\"lines\">\n<li><div class=\"d\"><b>Croissant</b><span class=\"s\">Plain butter croissant</span></div><span class=\"num\">€2.20</span></li>\n<li><div class=\"d\"><b>Slice of cake</b><span class=\"s\">A simple slice to go</span></div><span class=\"num\">€3.20</span></li>\n</ul></div>\n</div>\n</div>\n<p class=\"fine\">Opening menu · prices may change before we open</p>\n</div>\n</section>\n\n<section class=\"order\">\n<div class=\"wrap order-grid\">\n<div>\n<p class=\"kicker\">How it works</p>\n<h2>Reserve now. <em>Collect</em> on the way.</h2>\n<ol class=\"steps\">\n<li><div><h3>Reserve your flat white</h3><p>Pay from your phone and hold it at the opening price.</p></div></li>\n<li><div><h3>Come out of the metro</h3><p>The kiosk is right at the exit.</p></div></li>\n<li><div><h3>Pick up and go</h3><p>Your flat white is made for you, to take away.</p></div></li>\n</ol>\n</div>\n<div class=\"ticket\">\n<p class=\"kicker\">The opening offer</p>\n<h3>One flat white, takeaway</h3>\n<img src=\"ld-photo:p3\" alt=\"Takeaway coffee cup with cardboard sleeve on a wooden table indoors\" width=\"1200\" height=\"900\">\n<div class=\"buy\"><span class=\"price num\">€2.50</span><span class=\"was\">normally <s>€3</s></span></div>\n<a class=\"btn b1\" href=\"#reserve\" data-ld=\"reserve\">Reserve with BCH</a>\n</div>\n</div>\n</section>\n\n<section class=\"band\">\n<div class=\"wrap\">\n<h2>A quick coffee should be <em>good</em> too.</h2>\n<div class=\"cols\">\n<div><h3>What you want</h3><p>A quick, good flat white at €3, paid by card or app, on a walk you already make.</p></div>\n<div><h3>What Sortida does</h3><p>One small kiosk at the exit, a short menu and drinks made to go. The flat white is €3, and €2.50 while we open.</p></div>\n</div>\n<p class=\"mk\">For comparison in Barcelona: Syra Coffee flat white €3.90 and cortado €3.00. <a href=\"https://guidavera.com/spain/barcelona/best-specialty-coffee\" rel=\"noopener nofollow\" target=\"_blank\">Source: guidavera.com</a></p>\n</div>\n</section>\n\n<section class=\"where\" id=\"visit\">\n<div class=\"wrap where-grid\">\n<div>\n<p class=\"kicker\">Where and when</p>\n<h2>Opening soon in <em>Barcelona</em></h2>\n<p class=\"lede\">We are at a metro exit in the city. Reserve and we will tell you what you need for pickup.</p>\n</div>\n<figure><img src=\"ld-photo:p8\" alt=\"Aerial view of dense Barcelona city blocks with buildings and tree-lined streets\" width=\"1200\" height=\"900\"></figure>\n</div>\n</section>\n\n<section class=\"faq\" id=\"questions\">\n<div class=\"wrap faq-grid\">\n<h2>Good to <em>know</em></h2>\n<div>\n<details open><summary>Where is Sortida?</summary><p>We are opening soon at a metro exit in Barcelona. Reserve now and we will tell you everything you need for pickup.</p></details>\n<details><summary>How do I pay?</summary><p>You reserve and pay with Bitcoin Cash from your phone. Then you just collect your flat white at the kiosk.</p></details>\n<details><summary>Is it takeaway only?</summary><p>Yes. Sortida is a small kiosk made for people on their way to work, so every drink is made to go.</p></details>\n<details><summary>What do I get when I reserve?</summary><p>One flat white, takeaway, made by a barista at the kiosk and ready for you when you walk out of the metro.</p></details>\n<details><summary>Who is it for?</summary><p>Weekday commuters who want a quick, good coffee on the way, instead of buying elsewhere or skipping it.</p></details>\n</div>\n</div>\n</section>\n\n<section class=\"join\" id=\"join\">\n<div class=\"wrap\">\n<div class=\"card\">\n<div class=\"cc\"><h2>Hear when we <em>open</em></h2><a class=\"btn b1\" href=\"#reserve\" data-ld=\"reserve\">Reserve with BCH</a></div>\n<div class=\"cc\">\n<p>One email when we open. Nothing else.</p>\n<form data-ld=\"waitlist\"><label for=\"email\">Your email</label><input id=\"email\" type=\"email\" name=\"email\" required maxlength=\"160\" autocomplete=\"email\" placeholder=\"you@example.com\"><button type=\"submit\">Join the list</button></form>\n</div>\n</div>\n</div>\n</section>\n</main><footer>\n<div class=\"wrap\"><span>Sortida · Your coffee, one step out.</span><nav aria-label=\"Footer\"><a href=\"#menu\">Menu</a><a href=\"#visit\">Visit</a><a href=\"#questions\">Questions</a></nav></div>\n</footer>",
+  "version": 1,
+  "created_at": 1795032675254
+ },
+ "photos": [
+  {
+   "n": 1,
+   "role": "hero",
+   "mime": "image/webp",
+   "file": "sortida-1.webp",
+   "width": 1024,
+   "height": 683,
+   "hash": "fef6facac99185dcb3131b46701398ad03d538a0911704f905b695eac023d01b",
+   "meta": {
+    "n": 1,
+    "ref": "p1",
+    "id": "rawpixel:df4f69f2-7562-4277-b2b5-70d7065a8724",
+    "role": "hero",
+    "alt": "Latte with heart-shaped foam in a blue cup on a wooden table, with a cookie",
+    "title": "Free flat white coffee, latte",
+    "credit": "Rawpixel",
+    "license": "cc0",
+    "licenseVersion": "1.0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "sourceUrl": "https://www.rawpixel.com/image/5919178/image-public-domain-coffee-free",
+    "provider": "rawpixel",
+    "width": 1024,
+    "height": 683,
+    "mime": "image/webp",
+    "size": 239212,
+    "hash": "fef6facac99185dcb3131b46701398ad03d538a0911704f905b695eac023d01b",
+    "shows": "Latte with heart-shaped foam in a blue cup on a wooden table, with a cookie (checked by looking at the photo)"
+   },
+   "created_at": 1795032675254
+  },
+  {
+   "n": 2,
+   "role": "detail",
+   "mime": "image/jpeg",
+   "file": "sortida-2.jpg",
+   "width": 960,
+   "height": 690,
+   "hash": "69fd62fc0d4e6a407f4a7a2e541ff944cc2ba262f430938947962b9e06c64a0b",
+   "meta": {
+    "n": 2,
+    "ref": "p2",
+    "id": "stocksnap:6e72baa1-752b-4233-b208-bb50f8c55275",
+    "role": "detail",
+    "alt": "Croissant, chocolate bar, steaming black coffee and sugar on a white board indoors",
+    "title": "Croissant Coffee",
+    "creator": "PICSELI",
+    "creatorUrl": "https://stocksnap.io/author/805",
+    "credit": "PICSELI / StockSnap",
+    "license": "cc0",
+    "licenseVersion": "1.0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "sourceUrl": "https://stocksnap.io/photo/croissant-coffee-QJJJN8RWGX",
+    "provider": "stocksnap",
+    "width": 960,
+    "height": 690,
+    "mime": "image/jpeg",
+    "size": 85084,
+    "hash": "69fd62fc0d4e6a407f4a7a2e541ff944cc2ba262f430938947962b9e06c64a0b",
+    "shows": "Croissant, chocolate bar, steaming black coffee and sugar on a white board indoors (checked by looking at the photo)"
+   },
+   "created_at": 1795032675254
+  },
+  {
+   "n": 3,
+   "role": "detail",
+   "mime": "image/webp",
+   "file": "sortida-3.webp",
+   "width": 1024,
+   "height": 768,
+   "hash": "5a1900689b2d061761693527bdcff0110dccccd6d7e52e1c53f8cde2a13fc6c2",
+   "meta": {
+    "n": 3,
+    "ref": "p3",
+    "id": "rawpixel:24d9208e-5cb0-4506-9551-9349afb6f5fc",
+    "role": "detail",
+    "alt": "Takeaway coffee cup with cardboard sleeve on a wooden table indoors",
+    "title": "takeaway coffee mug protective heat",
+    "credit": "Rawpixel",
+    "license": "cc0",
+    "licenseVersion": "1.0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "sourceUrl": "https://www.rawpixel.com/image/3295706/free-photo-image-cafeteria-beverage-cafe",
+    "provider": "rawpixel",
+    "width": 1024,
+    "height": 768,
+    "mime": "image/webp",
+    "size": 263032,
+    "hash": "5a1900689b2d061761693527bdcff0110dccccd6d7e52e1c53f8cde2a13fc6c2",
+    "shows": "Takeaway coffee cup with cardboard sleeve on a wooden table indoors (checked by looking at the photo)"
+   },
+   "created_at": 1795032675254
+  },
+  {
+   "n": 4,
+   "role": "detail",
+   "mime": "image/jpeg",
+   "file": "sortida-4.jpg",
+   "width": 1536,
+   "height": 1152,
+   "hash": "345742490d6cd0d86c10308952a5981bb7da51faddbb331a7a71a412e1d9d511",
+   "meta": {
+    "n": 4,
+    "ref": "p4",
+    "id": "wordpress:6e105a95-2757-466c-821f-e53e32a4d2c3",
+    "role": "detail",
+    "alt": "Small white cup of espresso on a saucer on a wooden table",
+    "title": "A small white ceramic espresso cup filled with coffee sits on a matching saucer, placed on a wooden table. The photo is taken from above at ",
+    "creator": "Ludwig You",
+    "creatorUrl": "https://ludwig-you.fr/",
+    "credit": "Ludwig You / WordPress Photo Directory",
+    "license": "cc0",
+    "licenseVersion": "1.0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "sourceUrl": "https://wordpress.org/photos/photo/279694bfaa/",
+    "provider": "wordpress",
+    "width": 1536,
+    "height": 1152,
+    "mime": "image/jpeg",
+    "size": 195316,
+    "hash": "345742490d6cd0d86c10308952a5981bb7da51faddbb331a7a71a412e1d9d511",
+    "shows": "Small white cup of espresso on a saucer on a wooden table (checked by looking at the photo)"
+   },
+   "created_at": 1795032675254
+  },
+  {
+   "n": 5,
+   "role": "detail",
+   "mime": "image/webp",
+   "file": "sortida-5.webp",
+   "width": 1024,
+   "height": 683,
+   "hash": "b9cdd2f4eb4f41c150db5c748da4a21412a02ca80a6cc413ebbffe8d26ab8c4f",
+   "meta": {
+    "n": 5,
+    "ref": "p5",
+    "id": "rawpixel:bc37559c-3b78-46a0-90bb-a1b2c49b065e",
+    "role": "detail",
+    "alt": "Pour-over coffee being poured through a filter with a copper kettle indoors",
+    "title": "Free barista pouring coffee photo",
+    "credit": "Rawpixel",
+    "license": "cc0",
+    "licenseVersion": "1.0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "sourceUrl": "https://www.rawpixel.com/image/5926501/photo-image-public-domain-hands-person",
+    "provider": "rawpixel",
+    "width": 1024,
+    "height": 683,
+    "mime": "image/webp",
+    "size": 225138,
+    "hash": "b9cdd2f4eb4f41c150db5c748da4a21412a02ca80a6cc413ebbffe8d26ab8c4f",
+    "shows": "Pour-over coffee being poured through a filter with a copper kettle indoors (checked by looking at the photo)"
+   },
+   "created_at": 1795032675254
+  },
+  {
+   "n": 6,
+   "role": "detail",
+   "mime": "image/webp",
+   "file": "sortida-6.webp",
+   "width": 1024,
+   "height": 683,
+   "hash": "0facbd491293fee0db216e96ec0e42f9b6526c945c5fd0f889856d8da9b355d4",
+   "meta": {
+    "n": 6,
+    "ref": "p6",
+    "id": "rawpixel:0feb5ddc-4760-42bb-95f7-e3a3fa2890cd",
+    "role": "detail",
+    "alt": "Overhead view of latte with leaf-pattern foam in a brown cup on wood",
+    "title": "Free coffee latte art image",
+    "credit": "Rawpixel",
+    "license": "cc0",
+    "licenseVersion": "1.0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "sourceUrl": "https://www.rawpixel.com/image/5908079/image-public-domain-art-coffee",
+    "provider": "rawpixel",
+    "width": 1024,
+    "height": 683,
+    "mime": "image/webp",
+    "size": 256310,
+    "hash": "0facbd491293fee0db216e96ec0e42f9b6526c945c5fd0f889856d8da9b355d4",
+    "shows": "Overhead view of latte with leaf-pattern foam in a brown cup on wood (checked by looking at the photo)"
+   },
+   "created_at": 1795032675254
+  },
+  {
+   "n": 7,
+   "role": "people",
+   "mime": "image/jpeg",
+   "file": "sortida-7.jpg",
+   "width": 960,
+   "height": 640,
+   "hash": "264dcfd659555e6e23ddc26140745677736f2f52207f31645092d53db47494ef",
+   "meta": {
+    "n": 7,
+    "ref": "p7",
+    "id": "stocksnap:4802d604-beda-4c20-958a-0b1f42c67032",
+    "role": "people",
+    "alt": "Pour-over coffee being poured from a steel kettle into filters in a cafe",
+    "title": "Barista Pouring",
+    "creator": "Burst",
+    "creatorUrl": "https://burst.shopify.com",
+    "credit": "Burst / StockSnap",
+    "license": "cc0",
+    "licenseVersion": "1.0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "sourceUrl": "https://stocksnap.io/photo/barista-pouring-MD4L58LL1E",
+    "provider": "stocksnap",
+    "width": 960,
+    "height": 640,
+    "mime": "image/jpeg",
+    "size": 527433,
+    "hash": "264dcfd659555e6e23ddc26140745677736f2f52207f31645092d53db47494ef",
+    "shows": "Pour-over coffee being poured from a steel kettle into filters in a cafe (checked by looking at the photo)"
+   },
+   "created_at": 1795032675254
+  },
+  {
+   "n": 8,
+   "role": "place",
+   "mime": "image/jpeg",
+   "file": "sortida-8.jpg",
+   "width": 1280,
+   "height": 976,
+   "hash": "73ae45d3ed6e03e9603a73e5ca609adf822a307b9418f78af65b3e1b99ab53c1",
+   "meta": {
+    "n": 8,
+    "ref": "p8",
+    "id": "wikimedia:158276432",
+    "role": "place",
+    "alt": "Aerial view of dense Barcelona city blocks with buildings and tree-lined streets",
+    "title": "Plaça Sagrada Família, house 1 to 7 Barcelona, Spain 1",
+    "creator": "Reda Kerbush",
+    "credit": "\"Plaça Sagrada Família, house to Barcelona, Spain\" by Reda Kerbush",
+    "license": "by-sa",
+    "licenseVersion": "4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Pla%C3%A7a_Sagrada_Fam%C3%ADlia,_house_1_to_7_Barcelona,_Spain_1.jpg",
+    "provider": "wikimedia",
+    "width": 1280,
+    "height": 976,
+    "mime": "image/jpeg",
+    "size": 437866,
+    "hash": "73ae45d3ed6e03e9603a73e5ca609adf822a307b9418f78af65b3e1b99ab53c1",
+    "shows": "Aerial view of dense Barcelona city blocks with buildings and tree-lined streets (checked by looking at the photo)"
+   },
+   "created_at": 1795032675254
+  }
+ ],
  "escrow": {
   "stage": "validate",
   "network": "mainnet",
