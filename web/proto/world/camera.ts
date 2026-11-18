@@ -105,7 +105,8 @@ export function levelAngles(level: 0 | 1 | 2 | 3, aspect: number): { yaw: number
   // v8: one camera family (yaw 30–38°, FOV 24) so every level reads as "the same office, bigger"
   if (level === 1) return { yaw: D2R(portrait ? 56 : 34), pitch: D2R(portrait ? 46 : 40) };
   if (level === 2) return { yaw: D2R(portrait ? 44 : 34), pitch: D2R(portrait ? 50 : 34) };
-  return { yaw: D2R(portrait ? 44 : 36), pitch: D2R(portrait ? 46 : 38) };
+  // portrait campus: look along the row of plots so three columns fit a phone width
+  return { yaw: D2R(portrait ? 64 : 36), pitch: D2R(portrait ? 50 : 38) };
 }
 
 /** Room shots: a touch lower than the overview and turned slightly towards the room (parallax on room changes). */
