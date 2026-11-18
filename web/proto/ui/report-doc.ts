@@ -274,7 +274,7 @@ export function reportDocHtml(f: ProtoFlowV7): string {
     <article class="rd-paper">
       <header class="rd-cover">
         <div class="rd-brand">${ldMark(16, undefined, true)}<span>LaunchDesk · Validation report${date ? ` · ${esc(date)}` : ""}</span></div>
-        <h1>${esc(ex ? exampleName(ex) : p.title)}</h1>
+        <h1${isExample ? ` data-exn="${esc(p.id)}"` : ""}>${esc(ex ? exampleName(ex) : p.title)}</h1>
         <p class="rd-idea">“${esc(p.idea)}”</p>
         <div class="rd-score">
           <div><span class="eyebrow">Verdict</span><b class="rd-v" data-v="${r.verdict}" title="${esc(VERDICT_RULE_V7)}">${VERDICT[r.verdict]}</b></div>

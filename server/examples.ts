@@ -64,6 +64,8 @@ export type ExampleCard = {
   run: string;
   paid: string;
   kitNote: string;
+  /** The brand the example's launch kit chose ("Sortida"), so every surface names it the same from its first paint. */
+  brand: string | null;
   createdAt: number;
   verdict: { score: number; verdict: string } | null;
   sources: number;
@@ -186,6 +188,7 @@ function cardOf(x: ExampleSnapshot): ExampleCard {
     run: x.label.run,
     paid: x.label.paid,
     kitNote: x.label.kitNote,
+    brand: x.kit?.brand?.name?.trim() || null,
     createdAt: x.created_at,
     verdict: report && typeof report.score === "number" && typeof report.verdict === "string" ? { score: report.score, verdict: report.verdict } : null,
     sources,

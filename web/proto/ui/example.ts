@@ -13,6 +13,7 @@ export type ExampleCard = {
   run: string;
   paid: string;
   kitNote: string;
+  brand?: string | null;
   createdAt: number;
   verdict: { score: number; verdict: string } | null;
   sources: number;
@@ -36,24 +37,42 @@ export function exampleKit(id: string): Promise<ExampleKit | null> {
   }
   return k;
 }
-/** GET /api/examples once ([] when the server has none or is older than this page). Waits up to 700 ms for the
- *  examples' brand names too, so every surface usually names an example the same way from its first paint. */
+/** GET /api/examples once ([] when the server has none or is older than this page). The list carries each example's
+ *  brand name, so every surface names an example the same way from its first paint. An older server without it: the
+ *  names wait up to 700 ms for the kits, and a late one re-renders the named surfaces ("ld:example-names"). */
 export function examples(): Promise<ExampleCard[]> {
   return (list ??= fetch("/api/examples", { cache: "no-store" })
     .then((r) => (r.ok ? r.json() : { examples: [] }))
     .then(async (j: { examples?: ExampleCard[] }) => {
       const xs = Array.isArray(j.examples) ? j.examples : [];
-      const names = Promise.all(xs.map(async (x) => {
-        const name = (await exampleKit(x.id))?.kit?.brand?.name?.trim();
-        if (name) brands.set(x.id, name);
-      }));
-      // The brand names are worth a short wait (one name from the first paint), never a slow first paint: after
-      // 700 ms the list resolves with what is known, and the names fill in when their kits arrive.
-      await Promise.race([names, new Promise((r) => setTimeout(r, 700))]);
-      return (known = xs);
+      for (const x of xs) if (typeof x.brand === "string" && x.brand.trim()) brands.set(x.id, x.brand.trim());
+      const missing = xs.filter((x) => !brands.has(x.id));
+      if (missing.length) {
+        let late = false;
+        const names = Promise.all(missing.map(async (x) => {
+          const name = (await exampleKit(x.id))?.kit?.brand?.name?.trim();
+          if (name) brands.set(x.id, name);
+        })).then(() => { if (late) window.dispatchEvent(new CustomEvent("ld:example-names")); });
+        await Promise.race([names, new Promise((r) => setTimeout(r, 700))]);
+        late = true;
+      }
+      known = xs;
+      queueMicrotask(() => window.dispatchEvent(new CustomEvent("ld:example-names")));
+      return xs;
     })
     .catch(() => ((list = null), [])));
 }
+/** Anything rendered before the names were known carries data-exn="<example id>": put the one name in it. */
+function fillExampleNames(): void {
+  for (const el of document.querySelectorAll<HTMLElement>("[data-exn]")) {
+    const x = exampleOf(el.dataset.exn);
+    if (!x) continue;
+    const t = el.dataset.exnShort ? exampleShort(x) : exampleName(x);
+    if (el.textContent !== t) el.textContent = t;
+  }
+}
+if (typeof window !== "undefined") window.addEventListener("ld:example-names", fillExampleNames);
+
 /** The example's one display name: "Sortida · coffee kiosk in Barcelona" (brand · what it is), or its title alone. */
 export function exampleName(x: Pick<ExampleCard, "id" | "title">): string {
   const b = brands.get(x.id);
@@ -102,7 +121,7 @@ export function ribbonHtml(x: ExampleCard, at: "report" | "kit" | "proof", other
   const other = others.find((o) => o.id !== x.id);
   const v = x.verdict ? `${VERDICT[x.verdict.verdict] ?? x.verdict.verdict} ${x.verdict.score.toFixed(1)}/10` : "";
   return `<div class="ex-ribbon ex-strip" role="region" aria-label="Finished example">
-    <div class="ex-r-t"><span class="ex-r-tag"><span class="ex-r-long">Finished </span>example</span><b><span class="ex-r-nl">${esc(exampleName(x))}</span><span class="ex-r-ns">${esc(exampleShort(x))}</span></b>
+    <div class="ex-r-t"><span class="ex-r-tag"><span class="ex-r-long">Finished </span>example</span><b><span class="ex-r-nl" data-exn="${esc(x.id)}">${esc(exampleName(x))}</span><span class="ex-r-ns" data-exn="${esc(x.id)}" data-exn-short="1">${esc(exampleShort(x))}</span></b>
       <span class="ex-r-meta">${esc(x.paid)}${v ? ` · ${esc(v)}` : ""}${x.sources ? ` · ${x.sources} web pages cited` : ""}</span></div>
     <nav class="ex-r-nav" aria-label="This example">
       <button type="button" data-ex="report" aria-pressed="${at === "report"}">Report</button>

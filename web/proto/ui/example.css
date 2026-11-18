@@ -20,7 +20,7 @@
   background: color-mix(in srgb, var(--c-surface) 90%, transparent); border-top: 1px solid var(--c-line); border-bottom: 1px solid var(--c-line); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
 .ex-ribbon[hidden] { display: none; }
 .ex-r-t { display: flex; align-items: baseline; gap: 10px; min-width: 0; flex: 1 1 auto; white-space: nowrap; overflow: hidden; }
-.ex-r-t b { font-size: 14px; font-weight: 650; }
+.ex-r-t b { font-size: 14px; font-weight: 650; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .ex-r-tag { font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--c-money-ink, #06855F); }
 .ex-r-meta { font-size: 12.5px; color: var(--c-muted); overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .ex-r-nav { display: flex; gap: 4px; flex: none; }
