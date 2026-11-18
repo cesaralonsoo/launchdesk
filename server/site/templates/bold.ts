@@ -1,6 +1,6 @@
 // WP1 Website template "bold": dark page, glowing mesh hero, oversized grotesk, bento cards. Apps, SaaS, services.
 import type { Section } from "../spec.js";
-import { chrome, credit, esc, faqList, icon, mark, photoBand, photoCreditLine, photoImg, priceLine, reserveBtn, scarcity, sectionOf, sourceLink, waitlist, type RenderCtx } from "./shared.js";
+import { exampleNotice, menuList, chrome, credit, esc, faqList, icon, mark, photoBand, photoCreditLine, photoImg, priceLine, reserveBtn, scarcity, sectionOf, sourceLink, waitlist, type RenderCtx } from "./shared.js";
 
 export const fonts = { display: "Bricolage Grotesque", text: "Inter", href: "family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600;700" };
 export const mode = "dark" as const;
@@ -73,6 +73,8 @@ function section(c: RenderCtx, s: Section): string {
       return `<section class="sec" id="how"><div class="wrap"><p class="lbl">${esc(c.ui.howItWorks)}</p><h2 class="h2 rv">${esc(s.title)}</h2><div class="bento">${s.steps
         .map((st, i) => `<div class="card glass rv"><div style="display:flex;justify-content:space-between;align-items:flex-start"><span class="chip">${icon(st.icon, 24)}</span><span class="n">0${i + 1}</span></div><div><h3>${esc(st.title)}</h3><p>${esc(st.body)}</p></div></div>`)
         .join("")}</div></div></section>`;
+    case "menu":
+      return `<section class="sec" id="menu"><div class="wrap"><p class="lbl">${esc(s.title)}</p><h2 class="h2 rv">${esc(s.intro || s.title)}</h2>${menuList(c, s)}</div></section>`;
     case "menu-or-services":
       return `<section class="sec"><div class="wrap"><p class="lbl">${esc(s.title)}</p><h2 class="h2 rv">${esc(s.intro || s.title)}</h2><div class="grid3">${s.items
         .map((it) => `<div class="card glass rv"><span class="chip">${icon(it.icon, 24)}</span><h3>${esc(it.title)}</h3><p>${esc(it.body)}</p></div>`)
@@ -105,7 +107,7 @@ export function body(c: RenderCtx): string {
   const offer = sectionOf(s, "offer");
   const how = sectionOf(s, "how-it-works-for-customer");
   const hero = c.photos?.[0];
-  return `<header class="nav"><div class="wrap glass"><a class="brand" href="#top">${mark(c, 32)}<span>${esc(c.brand.name)}</span></a><nav>${how ? `<a href="#how">${esc(c.ui.howItWorks)}</a>` : ""}<a href="#offer">${esc(c.ui.offer)}</a><a href="#faq">${esc(c.ui.faq)}</a></nav>${reserveBtn(c, c.ui.reserve, "btn btn-p btn-sm")}</div></header>
+  return `${exampleNotice(c)}<header class="nav"><div class="wrap glass"><a class="brand" href="#top">${mark(c, 32)}<span>${esc(c.brand.name)}</span></a><nav>${sectionOf(s, "menu") ? `<a href="#menu">${esc(sectionOf(s, "menu")!.title)}</a>` : ""}${how ? `<a href="#how">${esc(c.ui.howItWorks)}</a>` : ""}<a href="#offer">${esc(c.ui.offer)}</a><a href="#faq">${esc(c.ui.faq)}</a></nav>${reserveBtn(c, c.ui.reserve, "btn btn-p btn-sm")}</div></header>
 <main id="top">
 <section class="hero" data-hero><div class="wrap"><div><span class="pill glass"><i>${icon("spark", 14, 2.2)}</i>${esc(s.hero.eyebrow)}</span><h1>${splitHead(s.hero.headline)}</h1><p class="sub">${esc(s.hero.sub)}</p>
 <div class="ctas">${reserveBtn(c, s.hero.cta)}<a class="btn btn-g" href="${how ? "#how" : "#offer"}">${esc(s.hero.secondary)}</a></div>${scarcity(c)}</div>

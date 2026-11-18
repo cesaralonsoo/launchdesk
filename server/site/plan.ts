@@ -8,7 +8,7 @@ import { config } from "../config.js";
 import { recordUsage, usdOf } from "../cost.js";
 import type { KitInput, LogoOption } from "../kit-contract.js";
 import { ICONS, MODEL_SITE_SCHEMA, type ModelSite, type SiteSpec } from "./spec.js";
-import { validateModelSite } from "./validate.js";
+import { priceGuide, validateModelSite } from "./validate.js";
 import { templateSite } from "../kit-templates.js";
 
 export const SITE_MODEL = process.env.MODEL_SITE || "claude-sonnet-5-5";
@@ -41,14 +41,24 @@ Rules:
 - The hero headline is the customer's outcome, max 8 words. Concrete and local: place, time, what they get.
 - Never use hype words: revolutionary, seamless, unlock, elevate, game-changer, cutting-edge, world-class.
 - Every claim must come from the digest or be something the founder controls (how it works, what is included).
-- Never invent numbers, reviews, testimonials, customer names, awards, years in business or press mentions.
-- Prices: do not write prices or discounts in any text; the page shows the founder's price itself.
+- Never invent numbers, reviews, testimonials, customer names, awards, years in business, press mentions, an address, a phone number or opening hours.
+- Prices: do not write prices or discounts in any text field; the page shows prices itself. Prices go ONLY in menu.groups[].items[].price.
 - Use the founder's offer as given (offer.what). No refund or money-back promises.
 - Stats: pick 0-3 indexes from digest.stats that help a buyer trust the offer; never restate a number not in the digest.
-- Payment is with Bitcoin Cash from the phone; when a FAQ asks how to pay, say that simply.
-- "local" is for a physical place or service area; leave all its fields empty for online products.
-- "hours" only if the digest says them, otherwise empty.
+- Payment: digest.payment says whether this page takes payment. If it is "Bitcoin Cash", a FAQ may say simply that you reserve and pay with Bitcoin Cash from your phone. If it is "none", never mention paying, Bitcoin Cash, BCH or reserving with money anywhere (steps, FAQ, buttons): people join the email list.
+- "local" is for a physical place or service area; leave all its fields empty for online products. For a place that is not open yet, say where in plain words ("Opening soon by the metro exit in Eixample") only from the idea; never a street address.
+- Never write opening hours, times of day (like 7:30 or 9:30), opening days, dates or how many items are available: the business is not open yet. Describe the customer's habits without clock times ("on your morning commute").
 - Order the sections for this business; keep offer and faq; drop local for online products.
+
+The menu (the price list), written like the real menu of this kind of business:
+- kind: "menu" for food and drink, "services" for priced services (grooming, repairs, dog walks), "classes" for sessions, "plans" for software subscriptions; an idea that is an app or software gets a price list only when priceGuide.market exists; "none" when nothing with a price fits (then leave items empty).
+- 3 to 12 lines (menu.items, each with its group name) in 1 to 4 groups named the way the trade does ("Coffee", "With milk", "Something to eat"; "Walks", "Extras"). The founder's offer item (offer.what) is one line, priced at priceGuide.offer.normal if it exists, else priceGuide.offer.price.
+- Every price is a plain number in priceGuide.currency, inside priceGuide.band, set the way this trade prices its own lines relative to the founder's price; lines of the same kind as the offer stay inside priceGuide.market's low-high range when it exists. Round like a real menu (2.20, 3.50, 12, 45). Never a price outside the band (the code drops it).
+- Every line is something a customer would really pay for on its own; never tiny add-ons (water, wipes, bags) invented to fill the list: fewer real lines beat filler.
+- Only things this business would plausibly sell on day one given the idea; no signature dishes with invented stories, no "award-winning", no origins or suppliers the digest does not name.
+- desc: one plain line saying what it is ("Double espresso, steamed whole milk", "30 minutes, one dog, on lead"). Oat or other options only as a plain fact, never a promise of sourcing.
+- photo: 1-3 English words a stock photo of that exact item would be tagged with ("flat white", "espresso", "croissant", "dog leash"), or "" for things photos cannot show.
+- photoQueries: concrete English search words for free stock photos of this business: hero (the product or the counter, wide), detail (close-ups of the actual products), people (someone doing the work). Never abstract words (solution, service, quality).
 
 Length guide: hero.sub 20-30 words, step bodies 10-20 words, faq answers 15-35 words, about 35-60 words.`;
 
@@ -65,9 +75,12 @@ export function siteDigest(input: KitInput) {
     pain: report.pain,
     offer: report.offer.free
       ? { what: report.offer.what, limit: null, free: true, note: "A free early-access list: nothing is sold yet. Buttons and FAQ say join the list (free), never reserve, pre-order or pay." }
-      : { what: report.offer.what, limit: report.offer.limit ?? null },
+      // no quantity: the limit comes from the analysis, not the founder, so it is never shown as scarcity
+      : { what: report.offer.what },
     stats: report.stats.map((s, i) => ({ i, value: s.value, label: s.label })),
     competitors: report.competitors.slice(0, 3),
+    payment: !report.offer.free && input.founderAddress && report.offer.price > 0 ? "Bitcoin Cash" : "none",
+    priceGuide: (({ software: _s, ...g }) => g)(priceGuide(input)),
   };
 }
 
@@ -88,7 +101,7 @@ export async function planSiteDetailed(input: KitInput, opts: { mock?: boolean; 
     msg = await getClient()
       .beta.messages.stream({
         model: SITE_MODEL,
-        max_tokens: 6000,
+        max_tokens: 8000,
         system: [{ type: "text", text: SITE_SYSTEM, cache_control: { type: "ephemeral" } }],
         messages: [{ role: "user", content: prompt }],
         output_config: { effort: "low", format: { type: "json_schema", schema: MODEL_SITE_SCHEMA } },

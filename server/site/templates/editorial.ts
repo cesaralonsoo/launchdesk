@@ -1,6 +1,6 @@
 // WP1 Website template "editorial": serif display, thin rules, big numerals, off-white. Cafés, bakeries, local services.
 import type { Section } from "../spec.js";
-import { chrome, credit, esc, faqList, icon, mark, photoBand, photoCreditLine, photoImg, priceLine, reserveBtn, scarcity, sectionOf, sourceLink, waitlist, type RenderCtx } from "./shared.js";
+import { exampleNotice, menuList, chrome, credit, esc, faqList, icon, mark, photoBand, photoCreditLine, photoImg, priceLine, reserveBtn, scarcity, sectionOf, sourceLink, waitlist, type RenderCtx } from "./shared.js";
 
 export const fonts = { display: "Instrument Serif", text: "Inter", href: "family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700" };
 export const mode = "light" as const;
@@ -71,6 +71,8 @@ function section(c: RenderCtx, s: Section, n: number): string {
       return `<section class="sec" id="how"><div class="wrap">${kick(n, c.ui.howItWorks)}<h2 class="h2 rv">${esc(s.title)}</h2><div class="steps">${s.steps
         .map((st, i) => `<div class="step rv"><div class="n">${i + 1}.</div><h3>${esc(st.title)}</h3><p>${esc(st.body)}</p></div>`)
         .join("")}</div></div></section>`;
+    case "menu":
+      return `<section class="sec" id="menu"><div class="wrap">${kick(n, s.title)}${s.intro ? `<h2 class="h2 rv">${esc(s.intro)}</h2>` : `<h2 class="h2 rv">${esc(s.title)}</h2>`}${menuList(c, s)}</div></section>`;
     case "menu-or-services":
       return `<section class="sec"><div class="wrap">${kick(n, s.title)}<h2 class="h2 rv">${esc(s.intro || s.title)}</h2><div class="menu">${s.items
         .map((it) => `<div class="item rv"><span class="ic">${icon(it.icon, 22)}</span><div><h3>${esc(it.title)}</h3><p>${esc(it.body)}</p></div></div>`)
@@ -98,7 +100,7 @@ export function body(c: RenderCtx): string {
   const ticket = c.price
     ? `<div class="ticket"><div><small>${esc(c.ui.offer)}</small><strong>${esc(offer?.item ?? "")}</strong></div><span class="tp">${esc(c.price)}</span></div>`
     : "";
-  return `<header class="nav"><div class="wrap"><a class="brand" href="#top">${mark(c, 34)}<span>${esc(c.brand.name)}</span></a><nav>${how ? `<a href="#how">${esc(c.ui.howItWorks)}</a>` : ""}<a href="#offer">${esc(c.ui.offer)}</a><a href="#faq">${esc(c.ui.faq)}</a></nav>${reserveBtn(c, c.ui.reserve, "btn btn-p btn-sm")}</div></header>
+  return `${exampleNotice(c)}<header class="nav"><div class="wrap"><a class="brand" href="#top">${mark(c, 34)}<span>${esc(c.brand.name)}</span></a><nav>${sectionOf(s, "menu") ? `<a href="#menu">${esc(sectionOf(s, "menu")!.title)}</a>` : ""}${how ? `<a href="#how">${esc(c.ui.howItWorks)}</a>` : ""}<a href="#offer">${esc(c.ui.offer)}</a><a href="#faq">${esc(c.ui.faq)}</a></nav>${reserveBtn(c, c.ui.reserve, "btn btn-p btn-sm")}</div></header>
 <main id="top">
 <section class="hero" data-hero><div class="wrap"><div><p class="eyebrow">${esc(s.hero.eyebrow)}</p><h1>${esc(s.hero.headline)}</h1><p class="sub">${esc(s.hero.sub)}</p>
 <div class="ctas">${reserveBtn(c, s.hero.cta)}<a class="btn btn-g" href="${how ? "#how" : "#offer"}">${esc(s.hero.secondary)}</a></div>${scarcity(c)}</div>

@@ -2,7 +2,8 @@
 // Rules: clamp every string, drop unknown icons/sections, stats only when they map to a sourced report stat,
 // prices and the payment address always come from code, never testimonials, no hype words.
 import type { KitBrand, KitInput } from "../kit-contract.js";
-import { DEFAULT_ORDER, ICONS, uiFor, type IconName, type ModelSite, type Section, type SectionKind, type SiteSpec, type Stat, type Step } from "./spec.js";
+import { DEFAULT_ORDER, ICONS, uiFor, type IconName, type MenuGroup, type MenuLabel, type ModelSite, type Section, type SectionKind, type SitePhotoQueries, type SiteSpec, type Stat, type Step } from "./spec.js";
+import { statKind } from "./stat-kind.js";
 
 // ---------- text ----------
 
@@ -53,6 +54,136 @@ const hostOf = (u: string) => {
   }
 };
 
+
+// ---------- the priced menu ----------
+
+/** Ideas sold as software or online subscriptions: a price list there is "plans", and only with sourced market prices. */
+const SOFTWARE = /\b(app|apps|saas|software|platform|plugin|extension|api|bot|newsletter|subscription|online tool|web tool)\b/i;
+
+export interface PriceGuide {
+  currency: string;
+  /** The founder's opening offer and its regular price (null when the idea sells nothing up front). */
+  offer: { what: string; price: number; normal: number | null } | null;
+  /** Prices other places charge, from the report's sourced numbers (same currency only). */
+  market: { low: number; high: number; examples: Array<{ value: string; label: string }> } | null;
+  /** Every menu price must sit inside this band (code drops the rest). */
+  band: { min: number; max: number } | null;
+  software: boolean;
+}
+
+/** "€3.90", "3,50 €", "€2.50–€3.90" → [3.9], [3.5], [2.5, 3.9]. Only when the value is in the given currency. */
+export function pricesIn(value: string, currency: string): number[] {
+  const sym = currencySymbol(currency);
+  const v = String(value ?? "");
+  const code = ({ "€": "EUR", $: "USD", "£": "GBP" } as Record<string, string>)[sym] ?? sym;
+  if (!v.includes(sym) && !new RegExp(`\\b${code}\\b`, "i").test(v)) return [];
+  if (sym === "$" && /(?:[A-Z]{1,2})\$/.test(v)) return []; // MX$, CA$ … are not dollars
+  return (v.match(/\d{1,5}(?:[.,]\d{1,2})?/g) ?? []).map((t) => Number(t.replace(",", "."))).filter((n) => n > 0 && n < 100_000);
+}
+
+/** The honest frame for menu prices: the founder's own price, the report's sourced market prices, and a band around them. */
+export function priceGuide(input: KitInput): PriceGuide {
+  const { brand, report } = input;
+  const currency = brand.currency || "$";
+  const offer = report.offer.free || !(report.offer.price > 0) ? null : { what: report.offer.what, price: report.offer.price, normal: report.offer.normal && report.offer.normal > report.offer.price ? report.offer.normal : null };
+  const examples: Array<{ value: string; label: string }> = [];
+  const nums: number[] = [];
+  for (const st of report.stats) {
+    if ((st.kind ?? statKind(st)) !== "price" || !/^https:\/\//.test(st.sourceUrl)) continue;
+    const ps = pricesIn(st.value, currency);
+    if (!ps.length) continue;
+    nums.push(...ps);
+    examples.push({ value: st.value, label: st.label });
+  }
+  const market = nums.length ? { low: Math.min(...nums), high: Math.max(...nums), examples: examples.slice(0, 6) } : null;
+  const anchors = [...(offer ? [offer.price, offer.normal ?? offer.price] : []), ...(market ? [market.low, market.high] : [])];
+  const band = anchors.length ? { min: round2(Math.min(...anchors) * 0.4), max: round2(Math.max(...anchors) * (market ? 2.5 : 3)) } : null;
+  return { currency, offer, market, band, software: SOFTWARE.test(input.idea) };
+}
+
+const round2 = (n: number) => Math.round(n * 100) / 100;
+/** Menu-style price: 1.73 → 1.70, 12.3 → 12.50, 143 → 143. */
+export function menuPrice(n: number): number {
+  if (!(n > 0)) return 0;
+  if (n < 10) return Math.round(n * 10) / 10;
+  if (n < 100) return Math.round(n * 2) / 2;
+  return Math.round(n);
+}
+
+const wordSet = (t: string) => new Set(String(t ?? "").normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length >= 3));
+
+/**
+ * The model's menu → a priced, honest menu section, or null. Rules: 1-4 groups, up to 12 lines (at least 3 kept), every
+ * price inside the guide's band (others dropped), menu-style rounding, the founder's offer is one line at its regular
+ * price (marked as the offer), software only as "plans" or "services" with sourced market prices.
+ */
+export function menuOf(raw: Partial<ModelSite["menu"]> | null | undefined, input: KitInput, issues: string[] = []): Extract<Section, { kind: "menu" }> | null {
+  const kind = String(raw?.kind ?? "none");
+  if (!raw || kind === "none") return null;
+  const label: MenuLabel = (["menu", "services", "classes", "plans"] as const).includes(kind as MenuLabel) ? (kind as MenuLabel) : "menu";
+  const g = priceGuide(input);
+  if (input.report.offer.free) { issues.push("menu dropped (free early-access list)"); return null; }
+  if (!g.band) { issues.push("menu dropped (no price to anchor it)"); return null; }
+  // an app that sells a service (dog walks booked in an app) may list services; either way only with sourced market prices
+  if (g.software && (!(label === "plans" || label === "services") || !g.market)) { issues.push("menu dropped (software without sourced market prices)"); return null; }
+  const groups: MenuGroup[] = [];
+  const seen = new Set<string>();
+  let total = 0;
+  // The model writes flat lines with a group name (a nested schema was too large for structured outputs).
+  const byGroup = new Map<string, Array<{ name?: unknown; desc?: unknown; price?: unknown; photo?: unknown }>>();
+  for (const it of list<{ group?: unknown; name?: unknown; desc?: unknown; price?: unknown; photo?: unknown }>(raw.items)) {
+    const gname = clean(it?.group, 30);
+    if (!byGroup.has(gname) && byGroup.size >= 4) continue;
+    byGroup.set(gname, [...(byGroup.get(gname) ?? []), it]);
+  }
+  for (const [gname, rows] of byGroup) {
+    const items: MenuGroup["items"] = [];
+    for (const it of rows) {
+      if (total >= 12) break;
+      const name = clean(it?.name, 40);
+      const key = name.toLowerCase();
+      const price = menuPrice(Number(it?.price));
+      if (!name || seen.has(key)) continue;
+      if (!(price >= g.band.min && price <= g.band.max)) { issues.push(`menu price ${it?.price} for "${name}" outside ${g.band.min}-${g.band.max}`); continue; }
+      seen.add(key);
+      items.push({ name, desc: clean(it?.desc, 90), price, ...(cleanPhotoWords(it?.photo) ? { photo: cleanPhotoWords(it?.photo) } : {}) });
+      total++;
+    }
+    if (items.length) groups.push({ name: gname, items });
+  }
+  // The founder's offer is on the menu at its regular price: the line that names it best, else added first.
+  if (g.offer) {
+    const want = wordSet(g.offer.what);
+    const regular = menuPrice(g.offer.normal ?? g.offer.price);
+    let best: { gi: number; ii: number; score: number } | null = null;
+    groups.forEach((gr, gi) => gr.items.forEach((it, ii) => {
+      const score = [...wordSet(it.name)].filter((w) => want.has(w)).length;
+      if (score > 0 && (!best || score > best.score)) best = { gi, ii, score };
+    }));
+    const hit = best as { gi: number; ii: number } | null;
+    if (hit) groups[hit.gi]!.items[hit.ii] = { ...groups[hit.gi]!.items[hit.ii]!, price: regular, offer: true };
+    else if (groups.length) { groups[0]!.items.unshift({ name: clean(g.offer.what, 40), desc: "", price: regular, offer: true }); total++; }
+  }
+  if (total < 3) { issues.push(`menu dropped (only ${total} lines kept)`); return null; }
+  const ui = uiFor((input.brand.lang || "en").slice(0, 5));
+  const fallbackTitle = { menu: "Menu", services: "Services & prices", classes: "Classes", plans: "Plans" }[label];
+  return { kind: "menu", label, title: clean(raw.title, 40) || fallbackTitle, intro: clean(raw.intro, 140), note: (label === "menu" ? ui.menuNote : ui.priceNote) ?? "", groups };
+}
+
+const cleanPhotoWords = (v: unknown) => String(v ?? "").normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z ]+/g, " ").replace(/\s+/g, " ").trim().split(" ").slice(0, 3).join(" ").slice(0, 30);
+
+/** Model photo searches → clean English words (max 3 words each), plus each menu line's photo words as details. */
+export function photoQueriesOf(raw: Partial<ModelSite["photoQueries"]> | null | undefined, menu: Extract<Section, { kind: "menu" }> | null): SitePhotoQueries | undefined {
+  const words = (v: unknown, max: number) => [...new Set((typeof v === "string" ? v.split(/[,;\n]/) : list<unknown>(v)).map(cleanPhotoWords).filter((q) => q.length >= 3))].slice(0, max);
+  // Menu lines round-robin across groups (a coffee, a milk drink, a pastry, then the rest), after the model's own
+  // photo searches, so the first few searches already cover every kind of thing sold.
+  const fromMenu: string[] = [];
+  const cols = menu ? menu.groups.map((g) => g.items.map((i) => i.photo ?? "").filter((q) => q.length >= 3)) : [];
+  for (let i = 0; cols.some((c) => i < c.length); i++) for (const c of cols) if (c[i]) fromMenu.push(c[i]!);
+  const q = { hero: words(raw?.hero, 3), detail: [...new Set([...words(raw?.detail, 6), ...fromMenu])].slice(0, 8), people: words(raw?.people, 2) };
+  return q.hero.length || q.detail.length || q.people.length ? q : undefined;
+}
+
 export interface Validated { spec: SiteSpec; issues: string[] }
 
 /** The model's flat output → a safe SiteSpec. Never throws; fills gaps from the digest. */
@@ -93,21 +224,33 @@ export function validateModelSite(raw: Partial<ModelSite> | null | undefined, in
     if (sourced.length === 3) break;
   }
 
-  const steps = list<Step>(r.how?.steps).map(step).filter((x) => x.title).slice(0, 3);
+  // A page that cannot take a Bitcoin Cash payment never says it can (no founder wallet, or a free list).
+  const canPay = !free && Boolean((input.founderAddress || "").trim()) && Number(report.offer.price) > 0;
+  const CLOCK = /\b\d{1,2}[:.]\d{2}\b|\b\d{1,2}\s?(?:am|pm|h)\b/i;
+  const lim = Number(report.offer.limit) > 0 ? String(report.offer.limit) : "";
+  const limitTalk = (t: string) => Boolean(lim) && new RegExp(`(^|[^\\d.,])${lim}([^\\d.,]|$)`).test(t) && /limit|only|first|available|left|reserve early|quedan|solo|primer/i.test(t);
+  const PAY_TALK = /bitcoin|\bbch\b|\bpay(?:ing|ment)?\b[^.]{0,40}\b(?:phone|wallet|reserv)|\bpaga[rs]?\b[^.]{0,40}\b(?:m[oó]vil|cartera|reserv)/i;
+  const steps = list<Step>(r.how?.steps).map(step).filter((x) => x.title).filter((x) => canPay || !/bitcoin|\bbch\b/i.test(`${x.title} ${x.body}`)).slice(0, 3);
   const services = list<Step>(r.services?.items).map(step).filter((x) => x.title).slice(0, 6);
   const faq = list<{ q: unknown; a: unknown }>(r.faq?.items)
     .map((x) => ({ q: clean(x?.q, 100), a: clean(x?.a, 280) }))
     .filter((x) => x.q && x.a)
+    .filter((x) => canPay || !PAY_TALK.test(`${x.q} ${x.a}`))
+    // not open yet: no clock times ("between 7:30 and 9:30" read as opening hours) and no stock count from the analysis
+    .filter((x) => !CLOCK.test(`${x.q} ${x.a}`) && !limitTalk(`${x.q} ${x.a}`))
     .slice(0, 6);
   const bullets = list<string>(r.offer?.bullets).map((b) => clean(b, 80)).filter(Boolean).slice(0, 4);
 
+  const menu = menuOf(r.menu, input, issues);
   const build: Record<SectionKind, Section | null> = {
+    menu,
     "how-it-works-for-customer": steps.length >= 2 ? { kind: "how-it-works-for-customer", title: clean(r.how?.title, 50) || ui.howItWorks, steps } : null,
-    "menu-or-services": services.length >= 2 ? { kind: "menu-or-services", title: clean(r.services?.title, 50), intro: clean(r.services?.intro, 160), items: services } : null,
+    // a priced menu says it better: the unpriced cards only when there is no menu
+    "menu-or-services": !menu && services.length >= 2 ? { kind: "menu-or-services", title: clean(r.services?.title, 50), intro: clean(r.services?.intro, 160), items: services } : null,
     "proof-stats": sourced.length ? { kind: "proof-stats", title: clean(r.proof?.title, 60), stats: sourced } : null,
     about: clean(r.about?.body, 10) ? { kind: "about", title: clean(r.about?.title, 60), body: clean(r.about?.body, 420) } : null,
     local: clean(r.local?.body, 10) || clean(r.local?.area, 10) ? { kind: "local", title: clean(r.local?.title, 50), body: clean(r.local?.body, 220), area: clean(r.local?.area, 80), hours: clean(r.local?.hours, 80) } : null,
-    offer: { kind: "offer", title: clean(r.offer?.title, 60) || ui.offer, item: clean(r.offer?.item, 90) || offerItem, bullets, note: clean(r.offer?.note, 140) },
+    offer: { kind: "offer", title: clean(r.offer?.title, 60) || ui.offer, item: clean(r.offer?.item, 90) || offerItem, bullets: bullets.filter((b) => !CLOCK.test(b) && !limitTalk(b)), note: limitTalk(clean(r.offer?.note, 140)) || CLOCK.test(clean(r.offer?.note, 140)) ? "" : clean(r.offer?.note, 140) },
     faq: faq.length ? { kind: "faq", title: clean(r.faq?.title, 50) || ui.faq, items: faq } : null,
   };
   if (!build["proof-stats"] && list(r.proof?.picks).length) issues.push("no sourced stats kept");
@@ -146,6 +289,8 @@ export function validateModelSite(raw: Partial<ModelSite> | null | undefined, in
         },
     ui,
   };
+  const pq = photoQueriesOf(r.photoQueries, menu);
+  if (pq) spec.photoQueries = pq;
   return { spec, issues };
 }
 

@@ -1,6 +1,6 @@
 // WP1 Website template "warm": soft tinted page, rounded cards, a blob hero with stickers. Food, pets, kids, wellness.
 import type { Section } from "../spec.js";
-import { chrome, credit, esc, faqList, icon, mark, photoBand, photoCreditLine, photoImg, priceLine, reserveBtn, scarcity, sectionOf, sourceLink, waitlist, type RenderCtx } from "./shared.js";
+import { exampleNotice, menuList, chrome, credit, esc, faqList, icon, mark, photoBand, photoCreditLine, photoImg, priceLine, reserveBtn, scarcity, sectionOf, sourceLink, waitlist, type RenderCtx } from "./shared.js";
 
 export const fonts = { display: "Fraunces", text: "DM Sans", href: "family=Fraunces:opsz,wght,SOFT@9..144,500..700,100&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700" };
 export const mode = "soft" as const;
@@ -74,6 +74,8 @@ function section(c: RenderCtx, s: Section, banded: boolean): string {
       return `${open("how")}<div class="wrap center"><p class="lbl">${icon("spark", 18)}${esc(c.ui.howItWorks)}</p><h2 class="h2 rv">${esc(s.title)}</h2><div class="steps" style="text-align:left;margin-top:64px">${s.steps
         .map((st, i) => `<div class="box step rv"><span class="n">${i + 1}</span><span class="ic">${icon(st.icon)}</span><h3>${esc(st.title)}</h3><p>${esc(st.body)}</p></div>`)
         .join("")}</div></div>${close}`;
+    case "menu":
+      return `${open("menu")}<div class="wrap"><div class="center"><p class="lbl">${icon("heart", 18)}${esc(s.title)}</p><h2 class="h2 rv">${esc(s.intro || s.title)}</h2></div>${menuList(c, s)}</div>${close}`;
     case "menu-or-services":
       return `${open()}<div class="wrap center"><p class="lbl">${icon("heart", 18)}${esc(s.title)}</p><h2 class="h2 rv">${esc(s.intro || s.title)}</h2><div class="cards" style="text-align:left">${s.items
         .map((it) => `<div class="box card rv"><span class="ic">${icon(it.icon)}</span><h3>${esc(it.title)}</h3><p>${esc(it.body)}</p></div>`)
@@ -98,7 +100,7 @@ export function body(c: RenderCtx): string {
   const how = sectionOf(s, "how-it-works-for-customer");
   const hero = c.photos?.[0];
   const stickers = (how?.steps ?? sectionOf(s, "menu-or-services")?.items ?? []).slice(0, 3);
-  return `<header class="nav"><div class="wrap"><a class="brand" href="#top">${mark(c, 38)}<span>${esc(c.brand.name)}</span></a><nav>${how ? `<a href="#how">${esc(c.ui.howItWorks)}</a>` : ""}<a href="#offer">${esc(c.ui.offer)}</a><a href="#faq">${esc(c.ui.faq)}</a></nav>${reserveBtn(c, c.ui.reserve, "btn btn-p btn-sm")}</div></header>
+  return `${exampleNotice(c)}<header class="nav"><div class="wrap"><a class="brand" href="#top">${mark(c, 38)}<span>${esc(c.brand.name)}</span></a><nav>${sectionOf(s, "menu") ? `<a href="#menu">${esc(sectionOf(s, "menu")!.title)}</a>` : ""}${how ? `<a href="#how">${esc(c.ui.howItWorks)}</a>` : ""}<a href="#offer">${esc(c.ui.offer)}</a><a href="#faq">${esc(c.ui.faq)}</a></nav>${reserveBtn(c, c.ui.reserve, "btn btn-p btn-sm")}</div></header>
 <main id="top">
 <section class="hero" data-hero><div class="wrap"><div><span class="tag">${icon("map-pin", 16)}${esc(s.hero.eyebrow)}</span><h1>${esc(s.hero.headline)}</h1><p class="sub">${esc(s.hero.sub)}</p>
 <div class="ctas">${reserveBtn(c, s.hero.cta)}<a class="btn btn-g" href="${how ? "#how" : "#offer"}">${esc(s.hero.secondary)}</a></div>${scarcity(c)}</div>
