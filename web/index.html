@@ -2,32 +2,301 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="theme-color" content="#E9ECF0" />
-    <meta name="description" content="Type an idea. A team picked for it researches it from your room, then your company grows as far as it really scales." />
+    <meta name="theme-color" content="#F6F4EF" />
+    <meta name="description" content="Check your business idea for 10¢ in Bitcoin Cash. An AI team researches it with real sources and gives you an honest score. Then launch it." />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>LaunchDesk</title>
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="LaunchDesk" />
-    <meta property="og:title" content="LaunchDesk" />
-    <meta property="og:description" content="Type an idea. A team picked for it researches it, then your company grows as far as it really scales. Paid in Bitcoin Cash." />
+    <meta property="og:title" content="LaunchDesk · Check your business idea. Then launch it." />
+    <meta property="og:description" content="An AI team researches your idea with real sources and gives you an honest score. Your 10¢ waits in a Bitcoin Cash contract until the report arrives." />
     <meta name="twitter:card" content="summary" />
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Cpath d='M7 0h1v2H6V0zM4 2h4v2H4zM2 4h6v2H2zM0 6h8v2H0z' fill='%230B0D12'/%3E%3Crect x='6' y='0' width='1' height='1' fill='%230AC18E'/%3E%3C/svg%3E" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" />
+    <script>
+      // The home (PLAN.md 2) is static HTML painted at 0 ms. Any other entry (a project link, the tour, a deep link,
+      // ?ui=0 captures) hides it before the first paint; ui/home.ts takes over from here.
+      (function () {
+        var q = new URLSearchParams(location.search), s = q.get("step");
+        var home = /^\/(index\.html|proto\.html)?$/.test(location.pathname) && q.get("demo") !== "1" && !q.get("project") &&
+          q.get("ui") !== "0" && (!s || s === "idea" || s === "bedroom");
+        document.documentElement.classList.add(home ? "home" : "nohome");
+      })();
+    </script>
     <style>
-      html, body { margin: 0; height: 100%; overflow: hidden; background: var(--c-bg, #e9ecf0); -webkit-font-smoothing: antialiased; }
+      html, body { margin: 0; height: 100%; overflow: hidden; background: var(--c-bg, #F6F4EF); -webkit-font-smoothing: antialiased; }
       #world { position: fixed; inset: 0; }
       #world canvas { display: block; width: 100%; height: 100%; }
+      html.nohome #ld-home { display: none; }
     </style>
+    <link rel="stylesheet" href="/proto/ui/home.css" />
   </head>
   <body>
-    <div id="banner"></div>
     <div id="world" aria-hidden="true"></div>
     <div id="ui"></div>
-    <script type="module">
-      import { mountBanner } from "/proto/banner/index.ts";
-      mountBanner(document.getElementById("banner"));
-    </script>
+
+    <div id="ld-home" class="ldh">
+      <header class="h-top">
+        <div class="h-top-l">
+          <a class="h-brand" href="/" aria-label="LaunchDesk home">
+            <svg width="24" height="24" viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true"><rect x="6" y="0" width="1" height="1" fill="#0AC18E"/><rect x="7" y="0" width="1" height="2" fill="#0B0D12"/><rect x="6" y="1" width="1" height="1" fill="#0B0D12"/><rect x="4" y="2" width="4" height="2" fill="#0B0D12"/><rect x="2" y="4" width="6" height="2" fill="#0B0D12"/><rect x="0" y="6" width="8" height="2" fill="#0B0D12"/></svg>
+            <b>LaunchDesk</b>
+          </a>
+          <a class="h-tag" href="#blaze">BLAZE 2026</a>
+        </div>
+        <nav class="h-nav" aria-label="Main">
+          <a href="#how">How it works</a>
+          <a href="#example">Finished example</a>
+          <a href="#ideas" data-h="ideas" hidden>My ideas</a>
+          <a class="h-ph" href="#example">Example</a>
+        </nav>
+      </header>
+
+      <section class="h-hero" aria-label="Check your idea">
+        <div class="h-stage" id="ldh-stage">
+          <div class="h-pins" aria-label="The three stages on the office floor"></div>
+          <a class="h-chip" href="/p/ex-coffee-bcn" data-h="open-example">
+            <span class="h-k h-x">Finished example</span><span class="h-x"><span class="h-long">real run on mainnet · </span><b data-h="ex-name">Sortida, Barcelona</b> <span class="h-arr" aria-hidden="true">→</span></span>
+            <span class="h-k h-y">Your idea</span><span class="h-y"><b>This will be yours</b></span>
+          </a>
+        </div>
+        <div class="h-legend" aria-hidden="true">
+          <span style="--c:var(--s1)"><i>1</i>Research <em>10¢</em></span>
+          <span style="--c:var(--s2)"><i>2</i>Launch kit <em>50¢</em></span>
+          <span style="--c:var(--s3)"><i>3</i>Offices <em>from 2¢</em></span>
+        </div>
+        <div class="h-copy">
+          <div class="h-eyebrow"><i></i>Live on Bitcoin Cash mainnet</div>
+          <h1 class="h-h1"><span>Check your business idea.</span><span class="h-l2">Then launch it.</span></h1>
+          <p class="h-sub"><span class="h-d">An AI team researches it with real sources and gives you an honest score. Your 10¢ waits in an on-chain contract until the report arrives. No report, it comes back to you.</span><span class="h-p">An AI team scores it with real sources. Your 10¢ waits in an on-chain contract until the report arrives.</span></p>
+          <form class="h-box" data-h="form" novalidate>
+            <div class="h-field">
+              <label class="h-sr" for="ldh-idea">Your business idea</label>
+              <textarea id="ldh-idea" name="idea" rows="2" maxlength="600" placeholder="e.g. A coffee kiosk at a Barcelona metro exit, €3 flat whites"></textarea>
+              <button type="button" class="h-try" data-h="try">Try an example</button>
+            </div>
+            <p class="h-err" role="alert" hidden></p>
+            <button class="h-cta" type="submit"><span class="h-cta-t">Check my idea</span> <span class="h-pr">10¢</span></button>
+          </form>
+          <div class="h-links">
+            <a href="/p/ex-coffee-bcn" data-h="open-example">See a finished company <span aria-hidden="true">→</span><small>free · no wallet</small></a>
+            <a class="h-tour" href="/?demo=1"><span aria-hidden="true">▶</span> 90-second tour</a>
+          </div>
+          <div class="h-strip" role="group" aria-label="The three stages">
+            <button type="button" class="h-cell" style="--c:var(--s1)" data-stage="1"><span class="h-n">1</span><b>Research <em>· 10¢</em></b><span class="h-cd">Score, verdict, sources</span></button>
+            <button type="button" class="h-cell" style="--c:var(--s2)" data-stage="2"><span class="h-n">2</span><b>Launch kit <em>· 50¢</em></b><span class="h-cd">Logo, live website, 30-day plan</span></button>
+            <button type="button" class="h-cell" style="--c:var(--s3)" data-stage="3"><span class="h-n">3</span><b>Offices <em>· from 2¢</em></b><span class="h-cd">Weekly work: posts, prices, replies</span></button>
+          </div>
+          <p class="h-note">Pay only for the next step. No account, no subscription.</p>
+        </div>
+        <a class="h-cue" href="#how">How it works <span aria-hidden="true">↓</span></a>
+      </section>
+
+      <main class="h-main">
+        <!-- S1 -->
+        <section class="h-s" id="how">
+          <div class="h-wrap">
+            <p class="h-kick">How it works</p>
+            <h2 class="h-h2">Three steps. Pay only for the next one.</h2>
+            <p class="h-lede">Most ideas should stop at step 1. That's the point: 10¢ to find out, not ten months.</p>
+            <div class="h-steps">
+              <article class="h-step" style="--c:var(--s1)">
+                <div class="h-step-h"><span class="h-n">1</span><b>Research</b><span class="h-price">10¢</span></div>
+                <p class="h-time">About 2 minutes</p>
+                <p>Three to five analysts picked for your idea read real sources: demand, competitors, prices, rules. You get a score out of 10 with the formula on show, and a Go, Test first or No-go.</p>
+                <div class="h-vis h-vis-rep"><img src="./public/home/shot-report.webp" width="696" height="290" loading="lazy" alt="Report header of the finished example: verdict Test first, score 5.5 out of 10, grows to one neighbourhood, paid on Bitcoin Cash"></div>
+                <p class="h-cap"><span class="h-src">Real report</span> · <span data-h="cap-report">Coffee kiosk, Barcelona · 5.5 Test first</span></p>
+              </article>
+              <article class="h-step" style="--c:var(--s2)">
+                <div class="h-step-h"><span class="h-n">2</span><b>Launch kit</b><span class="h-price">50¢</span></div>
+                <p class="h-time">About a minute</p>
+                <p>If it's worth it, the studio makes a name and logo to choose from, a live website at your own link, and a 30-day plan with one number to hit.</p>
+                <div class="h-vis h-kitvis">
+                  <div class="h-logo"><img src="./public/home/shot-logo.webp" width="264" height="150" alt="The chosen logo of the finished example"><span>Chosen logo<br>from the studio's options</span></div>
+                  <div class="h-browser"><div class="h-bar"><i></i><i></i><i></i><span data-h="site-url">/s/sortida</span></div><img src="./public/home/shot-site.webp" width="1100" height="621" loading="lazy" alt="The website the launch kit made for the finished example"></div>
+                </div>
+                <p class="h-cap"><span class="h-src">Real kit</span> · <a href="/s/sortida" data-h="site-link" target="_blank" rel="noopener">the site is online →</a></p>
+              </article>
+              <article class="h-step" style="--c:var(--s3)">
+                <div class="h-step-h"><span class="h-n">3</span><b>Offices</b><span class="h-price">from 2¢</span></div>
+                <p class="h-time">Per task, whenever you want</p>
+                <p>Four offices keep working: Marketing writes this week's posts, Research watches competitors, Money checks your prices, Customers drafts replies. You see the price before anything runs.</p>
+                <div class="h-vis"><ul class="h-tasks" data-h="tasks"></ul></div>
+                <p class="h-cap"><span class="h-badge">Prices quoted before you pay</span></p>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <!-- S2 -->
+        <section class="h-s" id="bch">
+          <div class="h-wrap">
+            <p class="h-kick"><i class="h-dot"></i>Bitcoin Cash escrow</p>
+            <h2 class="h-h2">Your 10¢ waits in a contract, not in our wallet.</h2>
+            <p class="h-lede">You pay into a CashScript contract on Bitcoin Cash. We can only take the money by writing your report's SHA-256 fingerprint on-chain. If no report comes, after 6 blocks (about an hour) you take it back yourself.</p>
+            <div class="h-bch">
+              <div class="h-flow">
+                <svg class="h-flow-h" viewBox="0 0 1000 200" role="img" aria-label="Locked, then delivered, then released; or a refund after 6 blocks">
+                  <defs>
+                    <marker id="ldh-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#0B0D12"/></marker>
+                    <marker id="ldh-ahg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#8A919C"/></marker>
+                  </defs>
+                  <g fill="none" stroke="#0B0D12" stroke-width="1.5">
+                    <path d="M262 30 H372" marker-end="url(#ldh-ah)"/>
+                    <path d="M592 30 H702" marker-end="url(#ldh-ah)"/>
+                    <path d="M20 46 V151 H180" stroke-dasharray="4 5" stroke="#8A919C" marker-end="url(#ldh-ahg)"/>
+                  </g>
+                  <g><circle cx="20" cy="30" r="12" fill="#0B0D12"/><text class="f-num" x="20" y="34" text-anchor="middle">1</text><text class="f-lbl" x="42" y="35">Locked</text><text class="f-txt" x="42" y="58">You pay 10¢ into the contract</text></g>
+                  <g><circle cx="400" cy="30" r="12" fill="#0B0D12"/><text class="f-num" x="400" y="34" text-anchor="middle">2</text><text class="f-lbl" x="422" y="35">Delivered</text><text class="f-txt" x="422" y="58">The report's fingerprint</text><text class="f-txt" x="422" y="76">goes on-chain</text></g>
+                  <g><circle cx="730" cy="30" r="12" fill="#0AC18E"/><text class="f-num" x="730" y="34" text-anchor="middle">3</text><text class="f-lbl" x="752" y="35">Released</text><text class="f-txt" x="752" y="58">Only with that fingerprint</text></g>
+                  <g><rect x="192" y="128" width="380" height="46" rx="10" fill="#F6F4EF"/><text class="f-lbl" x="208" y="157">Refund</text><text class="f-txt" x="268" y="156">No report after 6 blocks? It's yours again.</text></g>
+                </svg>
+                <svg class="h-flow-v" viewBox="0 0 340 330" role="img" aria-label="Locked, then delivered, then released; or a refund after 6 blocks">
+                  <defs>
+                    <marker id="ldh-av" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#0B0D12"/></marker>
+                    <marker id="ldh-avg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#8A919C"/></marker>
+                  </defs>
+                  <path d="M34 34 V92" stroke="#0B0D12" stroke-width="1.5" marker-end="url(#ldh-av)"/>
+                  <path d="M34 134 V192" stroke="#0B0D12" stroke-width="1.5" marker-end="url(#ldh-av)"/>
+                  <path d="M22 20 H6 V284 H50" fill="none" stroke="#8A919C" stroke-width="1.5" stroke-dasharray="4 5" marker-end="url(#ldh-avg)"/>
+                  <g><circle cx="34" cy="18" r="12" fill="#0B0D12"/><text class="f-num" x="34" y="22" text-anchor="middle">1</text><text class="f-lbl" x="56" y="16">Locked</text><text class="f-txt" x="56" y="36">You pay 10¢ into the contract</text></g>
+                  <g><circle cx="34" cy="118" r="12" fill="#0B0D12"/><text class="f-num" x="34" y="122" text-anchor="middle">2</text><text class="f-lbl" x="56" y="116">Delivered</text><text class="f-txt" x="56" y="136">The report's fingerprint goes on-chain</text></g>
+                  <g><circle cx="34" cy="218" r="12" fill="#0AC18E"/><text class="f-num" x="34" y="222" text-anchor="middle">3</text><text class="f-lbl" x="56" y="216">Released</text><text class="f-txt" x="56" y="236">Only with that fingerprint</text></g>
+                  <g><rect x="56" y="258" width="282" height="56" rx="10" fill="#F6F4EF"/><text class="f-lbl" x="70" y="281">Refund</text><text class="f-txt" x="70" y="301">No report after 6 blocks? It's yours again.</text></g>
+                </svg>
+              </div>
+              <div class="h-proof" data-h="proof">
+                <h3><i></i>This is the real payment of the example</h3>
+                <div class="h-row"><span class="h-rk" data-h="fund-k">Paid into the contract</span><code data-h="fund">…</code><a class="h-ext" data-h="fund-url" href="#" target="_blank" rel="noopener noreferrer" hidden>View ↗</a></div>
+                <div class="h-row"><span class="h-rk">Released on delivery</span><code data-h="rel">…</code><a class="h-ext" data-h="rel-url" href="#" target="_blank" rel="noopener noreferrer" hidden>View ↗</a></div>
+                <div class="h-row"><span class="h-rk">Report fingerprint (SHA-256)</span><code data-h="hash">…</code><span></span></div>
+                <div class="h-check">
+                  <button class="h-btn h-dark" type="button" data-h="check" disabled>Check it in your browser</button>
+                  <span class="h-match" data-h="match" role="status" aria-live="polite"></span>
+                </div>
+                <p class="h-fine">The 50¢ kit and office tasks are paid straight from your wallet, not held in a contract. LaunchDesk never holds your keys.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- S3 -->
+        <section class="h-s" id="grow">
+          <div class="h-wrap">
+            <p class="h-kick">Your company</p>
+            <h2 class="h-h2">Your company grows when something real happens.</h2>
+            <p class="h-lede">No points for clicking. Every room that lights up is a payment on-chain, a report delivered or a task finished.</p>
+            <div class="h-tiles">
+              <article class="h-tile" style="--c:var(--s1)">
+                <div class="h-img"><img src="./public/home/tile-research.webp" width="1000" height="676" loading="lazy" alt="The research rooms of the finished example, analysts at their desks"><span class="h-flag">Finished example</span></div>
+                <div class="h-bd"><b><i></i>Research</b><p>Your analysts move in.</p><div class="h-when"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="5" width="8" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M4 5V3.6a2 2 0 0 1 4 0V5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Opens when 10¢ is locked on Bitcoin Cash</div></div>
+              </article>
+              <article class="h-tile" style="--c:var(--s2)">
+                <div class="h-img"><img src="./public/home/tile-studio.webp" width="1000" height="676" loading="lazy" alt="The launch kit studio rooms of the finished example"><span class="h-flag">Finished example</span></div>
+                <div class="h-bd"><b><i></i>Launch kit</b><p>Logo, site and plan get made here.</p><div class="h-when"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="5" width="8" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M4 5V3.6a2 2 0 0 1 4 0V5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Opens when the kit is paid</div></div>
+              </article>
+              <article class="h-tile" style="--c:var(--s3)">
+                <div class="h-img">
+                  <svg viewBox="0 0 400 270" preserveAspectRatio="xMidYMid slice" width="100%" height="100%" role="img" aria-label="Illustration: a second floor with four office rooms above the first floor">
+                    <rect width="400" height="270" fill="#F1EEE8"/>
+                    <g transform="translate(0,6)">
+                      <polygon points="60,190 200,260 340,190 200,120" fill="#E6E0D6"/>
+                      <polygon points="60,190 200,260 200,268 60,198" fill="#D8D1C5"/><polygon points="200,260 340,190 340,198 200,268" fill="#CFC7BA"/>
+                      <line x1="80" y1="180" x2="80" y2="110" stroke="#C9C1B4" stroke-width="2"/><line x1="320" y1="180" x2="320" y2="110" stroke="#C9C1B4" stroke-width="2"/><line x1="200" y1="250" x2="200" y2="180" stroke="#C9C1B4" stroke-width="2"/>
+                      <polygon points="60,110 200,180 340,110 200,40" fill="#FBFAF7" stroke="#8C6BE8" stroke-width="1.6"/>
+                      <polygon points="60,110 200,180 200,186 60,116" fill="#E9E4F8"/><polygon points="200,180 340,110 340,116 200,186" fill="#DCD3F5"/>
+                      <g opacity=".95">
+                        <polygon points="95,110 130,127.5 165,110 130,92.5" fill="#F6D9BF"/>
+                        <polygon points="130,92.5 165,110 200,92.5 165,75" fill="#D3DEFB"/>
+                        <polygon points="165,127.5 200,145 235,127.5 200,110" fill="#CBEBDC"/>
+                        <polygon points="200,110 235,127.5 270,110 235,92.5" fill="#E3DAFA"/>
+                      </g>
+                      <polygon points="60,110 200,40 200,22 60,92" fill="#EFEBE3"/><polygon points="200,40 340,110 340,92 200,22" fill="#E8E3DA"/>
+                    </g>
+                  </svg>
+                  <span class="h-flag">Illustration</span></div>
+                <div class="h-bd"><b><i></i>Offices</b><p>A second floor for the weekly work.</p><div class="h-when"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="5" width="8" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M4 5V3.6a2 2 0 0 1 4 0V5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Opens when your first office task is done</div></div>
+              </article>
+              <article class="h-tile" style="--c:var(--s4)">
+                <div class="h-img">
+                  <svg viewBox="0 0 400 270" preserveAspectRatio="xMidYMid slice" width="100%" height="100%" role="img" aria-label="Illustration: a campus of small cut-open buildings, one per idea">
+                    <rect width="400" height="270" fill="#F1EEE8"/>
+                    <polygon points="30,160 200,245 370,160 200,75" fill="#E4EEE9"/>
+                    <path d="M115 202 L285 117" stroke="#D3E3DB" stroke-width="10"/>
+                    <g transform="translate(130,118)"><polygon points="-40,20 0,40 40,20 0,0" fill="#fff" stroke="#3A9D8F" stroke-width="1.4"/><polygon points="-40,20 0,40 0,46 -40,26" fill="#CFE5DF"/><polygon points="0,40 40,20 40,26 0,46" fill="#BFDCD4"/><polygon points="-30,15 0,30 0,12 -30,-3" fill="#F6D9BF"/><polygon points="0,30 30,15 30,-3 0,12" fill="#D3DEFB"/></g>
+                    <g transform="translate(250,148)"><polygon points="-40,20 0,40 40,20 0,0" fill="#fff" stroke="#3A9D8F" stroke-width="1.4"/><polygon points="-40,20 0,40 0,46 -40,26" fill="#CFE5DF"/><polygon points="0,40 40,20 40,26 0,46" fill="#BFDCD4"/><polygon points="-30,15 0,30 0,16 -30,1" fill="#E3DAFA"/></g>
+                    <g transform="translate(190,88)"><polygon points="-40,20 0,40 40,20 0,0" fill="none" stroke="#3A9D8F" stroke-width="1.4" stroke-dasharray="5 5"/></g>
+                    <g transform="translate(300,98)"><polygon points="-30,15 0,30 30,15 0,0" fill="none" stroke="#3A9D8F" stroke-width="1.4" stroke-dasharray="5 5"/></g>
+                  </svg>
+                  <span class="h-flag">Illustration</span></div>
+                <div class="h-bd"><b><i></i>Campus</b><p>Every idea gets its own building, cut open.</p><div class="h-when"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="5" width="8" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M4 5V3.6a2 2 0 0 1 4 0V5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Opens when a second idea gets its report</div></div>
+              </article>
+            </div>
+            <div class="h-badges" aria-label="Badges a company can earn">
+              <span><i></i>Money locked</span><span><i></i>Report delivered</span><span><i></i>CEO note</span><span><i></i>Kit paid</span><span><i></i>Site live</span><span><i></i>First office task</span><span><i></i>All four offices</span><span><i></i>Second idea</span>
+            </div>
+            <p class="h-grey">In your company a room lights only when its work was really delivered. Badges from payments link their transaction.</p>
+          </div>
+        </section>
+
+        <!-- S4 -->
+        <section class="h-s" id="example">
+          <div class="h-wrap">
+            <p class="h-kick">Finished example</p>
+            <h2 class="h-h2">Open a finished company. It's real and it's free.</h2>
+            <p class="h-lede">One idea, taken all the way: paid on mainnet, researched, launched.</p>
+            <div class="h-ex">
+              <div class="h-ex-l">
+                <div class="h-ex-top"><img src="./public/home/shot-mark.webp" width="132" height="132" alt=""><div><b data-h="ex-brand">Sortida</b><span data-h="ex-title">Coffee kiosk in Barcelona</span></div></div>
+                <div class="h-facts">
+                  <div><small>Verdict</small><strong class="h-tf" data-h="ex-verdict">Test first</strong></div>
+                  <div><small>Score</small><strong class="h-nm"><span data-h="ex-score">5.5</span><span class="h-of">/10</span></strong></div>
+                  <div><small>Sources</small><strong class="h-nm" data-h="ex-sources">10</strong></div>
+                </div>
+                <p class="h-paid"><i></i><span data-h="ex-paid">Paid $0.10 on BCH mainnet</span></p>
+                <div class="h-ex-btns">
+                  <a class="h-btn h-dark" href="/p/ex-coffee-bcn" data-h="open-example">Read the report</a>
+                  <a class="h-btn" href="/s/sortida" data-h="site-link" target="_blank" rel="noopener">Open the website</a>
+                  <a class="h-btn" href="#bch">Check the proof</a>
+                </div>
+                <a class="h-ex-tour" href="/?demo=1"><span aria-hidden="true">▶</span> Watch the 90-second tour (sample data)</a>
+              </div>
+              <div class="h-ex-r"><div class="h-browser"><div class="h-bar"><i></i><i></i><i></i><span data-h="site-url">/s/sortida</span></div><img src="./public/home/shot-site.webp" width="1100" height="621" loading="lazy" alt="The website the launch kit made for the finished example"></div></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- S5 -->
+        <section class="h-s" id="faq">
+          <div class="h-wrap">
+            <h2 class="h-h2 h-faq-h">Questions</h2>
+            <div class="h-faq">
+              <details><summary>Is the research real?</summary><p>On paid runs, yes: analysts read the web and cite every source. The tour and practice runs use sample data and say so.</p></details>
+              <details><summary>What if the verdict is No-go?</summary><p>You keep the report. A No-go for 10¢ is cheaper than finding out in six months. Try another idea.</p></details>
+              <details><summary>Why Bitcoin Cash?</summary><p>A 10¢ payment only works when the fee is a fraction of a cent, and the escrow is a contract anyone can check.</p></details>
+              <details><summary>Which wallet do I need?</summary><p>Any BCH wallet that scans a QR or supports WalletConnect. You can read the finished example without one.</p></details>
+            </div>
+          </div>
+        </section>
+
+        <!-- S6 -->
+        <section class="h-s h-start" id="start">
+          <div class="h-wrap">
+            <h2 class="h-h2">Your idea, checked for 10¢.</h2>
+            <form class="h-box" data-h="form2" novalidate>
+              <div class="h-field"><label class="h-sr" for="ldh-idea2">Your business idea</label><textarea id="ldh-idea2" name="idea" rows="2" maxlength="600" placeholder="e.g. A coffee kiosk at a Barcelona metro exit, €3 flat whites"></textarea></div>
+              <p class="h-err" role="alert" hidden></p>
+              <button class="h-cta" type="submit"><span class="h-cta-t">Check my idea</span> <span class="h-pr">10¢</span></button>
+            </form>
+          </div>
+        </section>
+      </main>
+
+      <footer class="h-foot" id="blaze"></footer>
+    </div>
+
     <script type="module" src="/proto/main.ts"></script>
   </body>
 </html>
