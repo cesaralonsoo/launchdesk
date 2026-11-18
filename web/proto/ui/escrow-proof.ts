@@ -199,3 +199,11 @@ export function startEscrowProof() {
   // a /p/<example> link opened directly: the example list may land after the report did
   void examples().then(onChange);
 }
+
+/** SHA-256 of the bytes at `url` (in this browser, crypto.subtle), compared with the fingerprint written on chain.
+ *  The home's "Check it in your browser" uses it on the finished example (GET /api/examples/:id/proof/report). */
+export async function checkReportHash(url: string, expected: string): Promise<{ ok: boolean; hex: string }> {
+  const bytes = await (await fetch(url, { cache: "no-store" })).arrayBuffer();
+  const hex = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))].map((b) => b.toString(16).padStart(2, "0")).join("");
+  return { ok: hex === expected.toLowerCase(), hex };
+}
