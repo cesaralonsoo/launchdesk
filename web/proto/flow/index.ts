@@ -18,6 +18,7 @@ import { PROJECTS_V7, SAMPLE_V7, mockSteer } from "../data";
 import type { Project } from "../../src/types";
 import { createLiveRun, postSteer, savedShells, shellProject, type LiveRun } from "../live/adapter";
 import { onChange as onSavedChange } from "../../src/app/projects";
+import { STEP_EVENT } from "../game/types";
 
 /** Validate 10 cents + Launch kit 50 cents (server config.priceCents; ui/steps.ts KIT_CENTS). */
 export const PAID_ALL = 10 + 50;
@@ -433,6 +434,7 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
       /* camera already on the founder / lobby */
     }
     emit(prev);
+    dispatchEvent(new CustomEvent(STEP_EVENT, { detail: { step, projectId: project.id, sample: demo || !live } }));
     if (moveAnimated) void playMove(tok, step, ask, true);
     else if (step === "boom" && animate && !demo) void wait(reduced ? 400 : 900).then(() => alive(tok) && enter({ step: "floor" }, true));
     if (step === "bedroom" && animate && !demo) void wait(T.intro).then(() => alive(tok) && enter({ step: "idea" }, true));

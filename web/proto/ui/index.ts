@@ -33,6 +33,9 @@ import type { AppConfig as AppConfigLike } from "../../src/types";
 import { exampleButtonHtml, exampleOf, examples, kitNoteShort, knownExamples, lockedHtml, mainExample, ribbonHtml } from "./example";
 import { startEscrowProof } from "./escrow-proof";
 import { ESCROW } from "../live/pay";
+import type { WorldV8 } from "../world/api-v8";
+import { mountHome } from "./home";
+import { mountHud } from "../game/hud";
 
 /** Short chip labels so the three sample ideas (server config.sampleIdeas) fit on one line; the full sentence still fills the box. */
 const CHIP_LABELS: [RegExp, string][] = [[/coffee kiosk/i, "Coffee kiosk · Barcelona"], [/dog-walking/i, "Dog-walking app · Madrid"], [/vintage road bikes/i, "Vintage bike shop · online"]];
@@ -43,7 +46,7 @@ export interface Ui {
   dispose(): void;
 }
 export interface UiDeps {
-  world: WorldV7;
+  world: WorldV7 & WorldV8;
   flow: ProtoFlowV7;
   demo: Demo | null;
   still?: boolean;
@@ -107,8 +110,13 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     <div class="wbub" data-on="0" aria-hidden="true"></div>
     <div class="panels"></div>
     <div class="overlay" data-open="0"><div class="scrim" data-act="close"></div><div class="ov-body"></div></div>
+    <div id="home"></div>
+    <div id="hud"></div>
   </div>`);
   host.appendChild(root);
+  // v8 seam (WP-0): the home (WP-A) and the HUD (WP-C) mount here; both stubs render nothing yet.
+  const unmountHome = mountHome(root.querySelector<HTMLElement>("#home")!, { world, flow });
+  const unmountHud = mountHud(root.querySelector<HTMLElement>("#hud")!, { world, flow });
   const $ = <T extends HTMLElement>(s: string) => root.querySelector<T>(s)!;
   const growEl = $(".grow"), panelsEl = $(".panels"), overlay = $(".overlay"), atag = $(".atag"), wtag = $(".wtag"), obG = $(".ob-g");
   const demoBar = $(".demo-bar");
@@ -972,6 +980,10 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
 
   return {
     openOffices: () => openOverlay(officesHtml(flow), "offices"),
-    dispose: () => root.remove(),
+    dispose: () => {
+      unmountHome();
+      unmountHud();
+      root.remove();
+    },
   };
 }

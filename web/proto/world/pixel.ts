@@ -118,7 +118,7 @@ export function createPixelPass(renderer: THREE.WebGLRenderer, opts: { mode: Pix
     const dpr = Math.min(2, devicePixelRatio || 1);
     cssPx = pixelCss(mode, cw);
     if (!cssPx) {
-      renderer.setPixelRatio(Math.min(opts.quality === "high" ? 2 : 1, dpr));
+      renderer.setPixelRatio(Math.min(opts.quality === "high" ? 2 : 1.5, dpr)); // v8: low (phones) capped at 1.5
       canvas.style.imageRendering = "";
     } else {
       // whole device pixels per art pixel → uniform, hard-edged upscale

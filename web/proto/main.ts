@@ -1,6 +1,6 @@
 // Prototype v7 entry (WS-EXP). Boot: params → fixed UI theme → world (it owns the day cycle; the scene alone changes
 // with the hour) → flow → ui → deep link / demo.
-import { DAY_TIMES, readParams, readParamsV7, type FlowStateV7, type FlowStepV7 } from "./contracts";
+import { DAY_TIMES, readParams, readParamsV7, type FlowStateV7, type FlowStepV7, type WorldV7 } from "./contracts";
 import { createFlow } from "./flow";
 import { ensureWorldV7 } from "./flow/compat";
 import { createDemo } from "./flow/demo";
@@ -8,6 +8,7 @@ import { THEMES, applyFixedUi } from "./themes";
 import { createUi } from "./ui";
 import { faviconHref, markFromParam, setMark } from "./ui/logo";
 import { createWorld } from "./world";
+import type { WorldV8 } from "./world/api-v8";
 
 const q = new URLSearchParams(location.search);
 const p = readParams();
@@ -26,7 +27,11 @@ const reduced = p.still || matchMedia("(prefers-reduced-motion: reduce)").matche
 const DEFAULT_START = 0.64;
 const DEFAULT_PERIOD = 1800;
 const fixedT = p.time ?? (p.still ? DAY_TIMES.day : null);
-const world = ensureWorldV7(createWorld(stage, { quality: p.quality, atmosphere: THEMES.graphite.atmosphere, level: 1, reducedMotion: reduced }));
+// v8: phones render at low quality (no shadows, no antialias, DPR capped at 1.5 in world/pixel.ts) unless ?quality= says.
+const phone = matchMedia("(pointer:coarse)").matches && innerWidth < 768;
+const quality = q.has("quality") ? p.quality : phone ? "low" : p.quality;
+// createWorld already returns the full v7 world (+ the v8 seam); ensureWorldV7 is a pass-through for it.
+const world = ensureWorldV7(createWorld(stage, { quality, atmosphere: THEMES.graphite.atmosphere, level: 1, reducedMotion: reduced })) as WorldV7 & WorldV8;
 if (typeof world.setClock === "function") {
   world.setClock(fixedT != null ? { mode: "fixed", t: fixedT } : { mode: "cycle", periodSec: p.cycle ?? DEFAULT_PERIOD, startAt: DEFAULT_START }, { animate: false });
 }

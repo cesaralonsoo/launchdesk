@@ -23,6 +23,7 @@ import { createOfficeModel } from "./office";
 import { DayClock, clockInfo, createDayCycle, type DayState } from "./daycycle";
 import { createPixelPass, readPixelMode, type PixelMode } from "./pixel";
 import { createSky } from "./sky";
+import type { WorldV8 } from "./api-v8";
 
 /** Additive extras on top of the frozen World contract (see CONTRACTS.md, "Changes by ws-b-levels"). */
 export interface WorldExtras {
@@ -56,7 +57,7 @@ export interface WorldExtras {
 
 /** v7 options (additive): `worldLevel` (initial, default `level` ?? 1) and `pixel` (default ?pixel= or 1). */
 export type WorldOptionsV7 = WorldOptions & { worldLevel?: WorldLevel; pixel?: PixelMode; /** dev: inject a room model (harness) */ createBedroom?: CreateBedroomModel };
-export type WorldX = WorldV7 & WorldExtras;
+export type WorldX = WorldV7 & WorldExtras & WorldV8;
 type Office = OfficeModel & Partial<OfficeModelV7>;
 
 /** Floor rooms → v6 office rooms (same 4 × 2 grid) — used only while the office has no v7 methods. */
@@ -1090,6 +1091,18 @@ export function createWorldX(host: HTMLElement, opts: WorldOptionsV7): WorldX {
       poseBoom(Math.max(0, Math.min(BOOM_MS, ms)), shotFor("overview", 0));
       sync();
     },
+    // ── v8 seam (WP-0): no-op stubs, implemented by WP-B. Signatures in ./api-v8.ts.
+    unlockWing: () => Promise.resolve(),
+    setRooms: () => {},
+    shotFor: () => {},
+    setOffices: () => {},
+    setCampus: () => {},
+    levelUp: () => Promise.resolve(),
+    setLobbyScreen: () => {},
+    setShowcase: () => {},
+    labelPoints: () => [],
+    onPick: () => () => {},
+    setPaused: () => {},
     dispose() {
       cancelAnimationFrame(raf);
       ro.disconnect();
