@@ -1,24 +1,31 @@
 // v7 · The experience state machine (WS-EXP). The only thing that drives the World.
 //
-//   bedroom → idea → pay1 → hire → evidence → report(score → scale → points → next) → [steer]* → floor (the
-//   Launch kit offer) → pay2 → live (one result screen: logo, website, 30-day plan) → end
-// (boom, build, building and district are kept for old deep links only; the main path never enters them.)
+//   idea → pay1 → hire → evidence → report → [steer]* → floor (the Launch kit offer) → pay2 → live (one result
+//   screen: logo, website, 30-day plan) → building (the offices floor) · district (the campus) · end (tour recap)
+// v8 (redesign PLAN.md 4, 6): every step from the idea to the live kit happens on floor 1 (no bedroom, no boom).
+// boom and build deep links open floor and live; building = world level 2 (offices), district = level 3 (campus).
+// The scalability cap gates nothing (it stays a line in the report). "bedroom" is only the blank moment while a
+// /p/:id link loads.
 //
 // One engine for three drivers: the user (next / actions), deep links (goto, snapped) and the judges' demo
 // (goto with animate, see flow/demo.ts). `enter(step, animate)` plays a step: hire pops analysts one by one, evidence
 // reveals findings one at a time, build runs each specialist. Every async sequence is cancelled by a new goto.
 // In demo mode (`auto = false`) the flow never moves to the next *step* by itself: the demo script does.
 import {
-  BUILD_TEAM, DEMO_SCRIPT, FLOW_STEPS_V7, STEER_LIMIT, STEP_LEVEL, hasBlocks, levelCapFor, scoreDisplay, worldProjectOf,
+  BUILD_TEAM, DEMO_SCRIPT, FLOW_STEPS_V7, STEER_LIMIT, STEP_ALIAS, STEP_LEVEL, hasBlocks, levelCapFor, scoreDisplay, worldProjectOf,
   type ActorId, type Analyst, type AnalystRole, type BuildDept, type CompanySign, type Finding, type FlowActionV7,
   type FlowStateV7, type FlowStepV7, type FlowV7, type IdeaReport, type ProjectV7, type ReportPage, type SteerResult,
   type WorldLevel, type WorldV7,
 } from "../contracts";
 import { PROJECTS_V7, SAMPLE_V7, mockSteer } from "../data";
 import type { Project } from "../../src/types";
-import { createLiveRun, postSteer, savedShells, shellProject, type LiveRun } from "../live/adapter";
+import { createLiveRun, createProject, postSteer, savedShells, shellProject, type LiveRun } from "../live/adapter";
 import { onChange as onSavedChange } from "../../src/app/projects";
 import { STEP_EVENT } from "../game/types";
+import type { WorldV8 } from "../world/api-v8";
+
+/** v8: the world is never capped by the scalability score (PLAN.md 5.1.5); levels open on real events only. */
+const WORLD_CAP: WorldLevel = 3;
 
 /** Validate 10 cents + Launch kit 50 cents (server config.priceCents; ui/steps.ts KIT_CENTS). */
 export const PAID_ALL = 10 + 50;
@@ -89,6 +96,14 @@ export interface ProtoFlowV7 extends FlowV7 {
   readonly calm: boolean;
   /** The UI tells the flow while progress notes are still queued, so the report waits (≤ 6 s) for the last ones. */
   setWorkHold(fn: (() => boolean) | null): void;
+  /** v8: the one way to start a real run from any idea box (home hero, the end card): POST /api/projects, then the
+   *  pay card. The same idea again before paying reuses its unpaid project. Rejects with a readable message. In the
+   *  tour it only plays the sample. `flow.next({ type: "submit-idea" })` calls this too (errors → submitError). */
+  submitIdea(idea: string): Promise<void>;
+  /** The last submitIdea error reached through flow.next (null after a new attempt). */
+  readonly submitError: string | null;
+  /** True while submitIdea waits for the server. */
+  readonly submitting: boolean;
 }
 
 const ORDER = FLOW_STEPS_V7;
@@ -241,9 +256,11 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
       world.setActorState(a.id, x, { instant: true });
     });
     const bi = s.builder ? BUILD_TEAM.indexOf(s.builder) : -1;
+    // a real project whose kit is paid (a finished example opened on its report, a reload): its studio is staffed
+    const kitPaid = !demo && !!live?.paid.build;
     for (const b of BUILD_TEAM) {
       let x: Parameters<WorldV7["setActorState"]>[1];
-      if (!after(st, "floor")) x = "absent";
+      if (!after(st, "floor")) x = kitPaid && st !== "idea" && st !== "bedroom" ? "idle" : "absent";
       else if (st === "floor" || (st === "pay2" && paid < PAID_ALL)) x = "asleep";
       else if (st === "pay2") x = "idle";
       else if (st === "build") {
@@ -253,14 +270,14 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
       world.setActorState(b, x, { instant: true });
     }
   }
+  /** v8: floor 1 at least (the bedroom is gone), never gated by the scalability cap. */
   function worldLevelFor(step: FlowStepV7): WorldLevel {
-    const want = STEP_LEVEL[step];
-    return (want <= 1 ? want : Math.min(want, Math.max(1, cap()))) as WorldLevel;
+    return Math.max(1, STEP_LEVEL[STEP_ALIAS[step] ?? step]) as WorldLevel;
   }
   function paintProject(level: WorldLevel) {
-    world.setLevelCap(cap());
+    world.setLevelCap(WORLD_CAP);
     world.setRoster(roster);
-    void world.setProject({ ...worldProjectOf(project), level, roster: [...roster], cap: cap(), capWhy: report?.scalability.why }, { animate: false });
+    void world.setProject({ ...worldProjectOf(project), level: Math.max(1, level) as WorldLevel, roster: [...roster], cap: WORLD_CAP, capWhy: report?.scalability.why }, { animate: false });
   }
 
   // ───────────────────────────── step players
@@ -373,23 +390,22 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
     moving = true;
     settled = false;
     ping();
-    if (level === 1 && from === 0) world.celebrate("level-up");
+    // v8: no celebrate("level-up") here; the level-up moment (card + camera) belongs to the game layer (game/levelup.ts)
     await world.setWorldLevel(level, { animate: true });
     if (!alive(tok)) return;
-    if (level > 1) world.celebrate("level-up");
     moving = false;
     settled = true;
     ping();
-    if (step === "boom" && !demo) {
-      await wait(900);
-      if (alive(tok)) enter({ step: "floor" }, true);
-    }
+    void step;
   }
 
   /** Plays (animate) or snaps (deep link) one step. */
-  function enter(s: Partial<FlowStateV7> & { step: FlowStepV7 }, animate: boolean) {
+  function enter(s0: Partial<FlowStateV7> & { step: FlowStepV7 }, animate: boolean) {
     cancel();
     const tok = run;
+    // v8: boom → floor, build → live (old deep links and old callers land on the step that replaced them)
+    const alias = STEP_ALIAS[s0.step];
+    const s: Partial<FlowStateV7> & { step: FlowStepV7 } = alias ? { step: alias } : s0;
     const step = s.step;
     const prev = state;
     if (live && !demo) {
@@ -414,16 +430,15 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
     const analyst = step === "evidence" ? (revealed > 0 ? findings[revealed - 1]!.analyst : s.analyst ?? roster[0]?.id) : undefined;
     state = { step, projectId: project.id, level, page, builder, phase, analyst, finding: step === "evidence" ? Math.max(0, revealed - 1) : undefined };
     settled = true;
-    if (level >= 1) reach(level);
-    if (step === "boom" || step === "floor") reach(1);
+    // progress per project is remembered only for this browser's own runs (never the tour or a sample world)
+    if (!demo && live && after(step, "floor")) reach(level);
+    if (unpaid && after(step, "hire")) unpaid = null; // paid: the same idea again is a new project
     // world
-    world.setLevelCap(cap());
+    world.setLevelCap(WORLD_CAP);
     world.setRoster(roster);
     world.setSign(signFor(step, builder, phase));
-    const moveAnimated = animate && !reduced && (step === "boom" || step === "building" || step === "district" || (step === "end" && world.worldLevel !== level));
-    // building/district above the cap: ask the world for the real level so it frames the ghost (+ padlock) of the
-    // next level; the flow state keeps the built (clamped) level.
-    const ask = (step === "building" || step === "district") && STEP_LEVEL[step] > level ? (STEP_LEVEL[step] as WorldLevel) : level;
+    const moveAnimated = animate && !reduced && world.worldLevel !== level && (step === "building" || step === "district" || step === "end" || world.worldLevel > 1);
+    const ask = level;
     if (!moveAnimated) void world.setWorldLevel(ask, { animate: false });
     paintActors(state);
     workStart = performance.now();
@@ -436,8 +451,6 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
     emit(prev);
     dispatchEvent(new CustomEvent(STEP_EVENT, { detail: { step, projectId: project.id, sample: demo || !live } }));
     if (moveAnimated) void playMove(tok, step, ask, true);
-    else if (step === "boom" && animate && !demo) void wait(reduced ? 400 : 900).then(() => alive(tok) && enter({ step: "floor" }, true));
-    if (step === "bedroom" && animate && !demo) void wait(T.intro).then(() => alive(tok) && enter({ step: "idea" }, true));
     if (step === "hire") void playHire(tok, animate);
     if (step === "evidence") void playEvidence(tok, animate);
     if (step === "build" && builder) void playBuild(tok, animate, builder);
@@ -459,11 +472,8 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
   }
 
   /** Where a project's world opens (switcher). */
+  /** v8: a sample world opens on its report (its floor lit behind it); never straight onto the offices or campus. */
   function homeStep(p: ProjectV7): Partial<FlowStateV7> & { step: FlowStepV7 } {
-    const l = Math.max(levels[p.id] ?? 0, p.level);
-    if (l >= 3) return { step: "district" };
-    if (l === 2) return { step: "building" };
-    if (l === 1) return { step: p.legacy && (levels[p.id] ?? 0) >= 2 ? "live" : "floor" };
     return p.v7.report ? { step: "report", page: "score" } : { step: "idea" };
   }
 
@@ -485,7 +495,7 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
     }
     steering = { ...steering, id: res.id, ack: res.ack, rerun: res.rerun };
     for (const id of res.rerun) world.setActorState(id, "working");
-    if (res.rerun[0]) void world.focusActor(res.rerun[0], { ms: 800 });
+    if (res.rerun[0]) (world as WorldV7 & Partial<WorldV8>).shotFor?.("wing:back");
     ping();
     r.kick();
     for (;;) {
@@ -500,7 +510,7 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
         findings = [...r.findings];
         revealed = findings.length;
         if (r.project.v7.report) report = r.project.v7.report;
-        world.setLevelCap(cap());
+        world.setLevelCap(WORLD_CAP);
         for (const id of res.rerun) world.setActorState(id, "done");
         for (const f of s.findings) world.pulse(f.analyst, f.kind);
         void world.focusActor("overview", { ms: 900 });
@@ -520,7 +530,8 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
     if (state.step !== "steer") set({ step: "steer", page: undefined });
     else ping();
     for (const id of res.rerun) world.setActorState(id, "working");
-    if (res.rerun[0]) void world.focusActor(res.rerun[0], { ms: 800 });
+    // the research wing re-checks (PLAN.md 4.1 steer: camera on the back row, not a close-up)
+    if (res.rerun[0]) (world as WorldV7 & Partial<WorldV8>).shotFor?.("wing:back");
     for (const a of res.hired) world.setActorState(a.id, "arriving");
     await wait(T.steerWork);
     if (!alive(tok)) return;
@@ -537,7 +548,7 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
     findings = [...findings];
     revealed = findings.length;
     if (res.report) report = res.report;
-    world.setLevelCap(cap());
+    world.setLevelCap(WORLD_CAP);
     for (const id of res.rerun) world.setActorState(id, "done");
     for (const f of res.findings) world.pulse(f.analyst, f.kind);
     void world.focusActor("overview", { ms: 900 });
@@ -546,7 +557,38 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
     ping();
   }
 
+  let submitError: string | null = null;
+  let submitting = false;
+  /** The project created for an idea, until it is paid (pay → Back → the same idea again reuses it). */
+  let unpaid: { idea: string; proj: ProjectV7 } | null = null;
+  async function submitIdea(raw: string): Promise<void> {
+    const idea = raw.trim();
+    if (demo) {
+      enter({ step: "pay1" }, true);
+      return;
+    }
+    if (idea.length < 15) throw new Error(idea ? "Tell us a bit more: one full sentence." : "Type your idea first.");
+    if (submitting) return;
+    submitError = null;
+    if (unpaid && unpaid.idea === idea) return attachLive(unpaid.proj, "new");
+    submitting = true;
+    ping();
+    try {
+      const proj = await createProject(idea);
+      unpaid = { idea, proj };
+      attachLive(proj, "new");
+    } catch (e) {
+      throw new Error((e as Error).message || "Could not start. Try again.");
+    } finally {
+      submitting = false;
+      ping();
+    }
+  }
+
   const flow: ProtoFlowV7 = {
+    get submitError() { return submitError; },
+    get submitting() { return submitting; },
+    submitIdea,
     get state() { return state; },
     get settled() { return settled; },
     get project() { return project; },
@@ -581,7 +623,7 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
     get chosenPath() { return committed[project.id] ?? null; },
     commitPath(i) {
       committed = { ...committed, [project.id]: i };
-      world.setLevelCap(cap());
+      world.setLevelCap(WORLD_CAP);
       const st = state.step;
       if (st === "building" || st === "district") enter({ step: st }, true);
       else ping();
@@ -631,7 +673,10 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
         case "bedroom":
           return enter({ step: "idea" }, true);
         case "idea":
-          if (a?.type === "submit-idea") return enter({ step: "pay1" }, true);
+          if (a?.type === "submit-idea") {
+            if (demo) return enter({ step: "pay1" }, true);
+            submitIdea(a.idea).catch((e: Error) => ((submitError = e.message), ping()));
+          }
           return;
         case "pay1":
           if (a?.type !== "approve-pay") return;
@@ -644,9 +689,12 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
             void wait(live ? 400 : 900).then(() => alive(tok) && enter({ step: "hire" }, true));
           }
           return;
+        // a stray action from the step before (the tour's pay press landing late) never skips a step
         case "hire":
+          if (a && a.type !== "next") return;
           return enter({ step: "evidence" }, true);
         case "evidence":
+          if (a && a.type !== "next") return;
           if (live && !report) return;
           return enter({ step: "report", page: "score" }, true);
         case "report": {
@@ -681,16 +729,22 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
           return nb ? enter({ step: "build", builder: nb, phase: "working" }, true) : enter({ step: "live" }, true);
         }
         case "live":
-          return; // the kit screen is the end of this path; "Your offices" opens from its footer
+          // a sample world goes on to its offices floor; a real kit opens its offices from the kit footer
+          if (!live) return enter({ step: "building" }, true);
+          return;
         case "building":
           return enter({ step: "district" }, true);
         case "district":
           return enter({ step: "end" }, true);
         case "end":
-          if (a?.type === "submit-idea" && !live) {
-            useProject(SAMPLE_V7);
-            paint0();
-            return enter({ step: "pay1" }, true);
+          if (a?.type === "submit-idea") {
+            if (demo) {
+              useProject(SAMPLE_V7);
+              paintFloor();
+              return enter({ step: "pay1" }, true);
+            }
+            detachLive();
+            submitIdea(a.idea).catch((e: Error) => ((submitError = e.message), ping()));
           }
           return;
       }
@@ -726,14 +780,14 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
       resnapRoster();
       if (!after(state.step, "hire")) roster.forEach((a) => world.setActorState(a.id, "absent", { instant: true }));
     }
-    world.setLevelCap(cap());
+    world.setLevelCap(WORLD_CAP);
     if (after(state.step, "build")) world.setSign(signFor(state.step, state.builder, state.phase));
     ping();
   }
   /** A live roster change (first poll, a steer hire): re-apply the whole project so the world snaps every new figure to
    *  the current level (a plain setRoster leaves new floor figures visible above the room at level 0). */
   function resnapRoster() {
-    void world.setProject({ ...worldProjectOf(project), level: world.worldLevel, roster: [...roster], cap: cap(), capWhy: report?.scalability.why }, { animate: false });
+    void world.setProject({ ...worldProjectOf(project), level: Math.max(1, world.worldLevel) as WorldLevel, roster: [...roster], cap: WORLD_CAP, capWhy: report?.scalability.why }, { animate: false });
   }
   /** Where a real project stands on the server. */
   function liveHome(r: LiveRun): Partial<FlowStateV7> & { step: FlowStepV7 } {
@@ -756,8 +810,8 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
       paid = 0;
       return enter({ step: "pay1" }, true);
     }
-    // open: snap the room while the first poll lands, then go where the project stands
-    paintProject(0);
+    // open: the floor waits (no panel) while the first poll lands, then go where the project stands
+    paintProject(1);
     enter({ step: "bedroom" }, false);
     const tok = run;
     void (async () => {
@@ -769,7 +823,7 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
         // not on this server (or gone): back to a fresh idea, never a pay card for a project that does not exist
         detachLive();
         useProject(SAMPLE_V7);
-        paint0();
+        paintFloor();
         return enter({ step: "idea" }, false);
       }
       useProject(r.project);
@@ -802,22 +856,24 @@ export function createFlow(worldIn: WorldV7, init?: Partial<FlowStateV7> & { ste
     }
     return enter({ step: "end" }, true);
   }
-  function paint0() {
-    void world.setWorldLevel(0, { animate: false });
+  function paintFloor() {
+    void world.setWorldLevel(1, { animate: false });
   }
 
   // boot
   if (init?.step) {
     const proj = PROJECTS_V7.find((x) => x.id === (init as { projectId?: string }).projectId);
     if (proj) useProject(proj);
-    enter(init, !opts.hold && !reduced && init.step !== "report");
-  } else enter({ step: "bedroom" }, true);
+    // ?step=bedroom (old links) opens the idea: the bedroom is never drawn
+    const first = init.step === "bedroom" ? { ...init, step: "idea" as const } : init;
+    enter(first, !opts.hold && !reduced && first.step !== "report");
+  } else enter({ step: "idea" }, false);
   return flow;
 }
 
 /** Demo rows → the state goto() needs. */
 export const demoState = (row: (typeof DEMO_SCRIPT)[number]): Partial<FlowStateV7> & { step: FlowStepV7 } => ({
-  // row 0 is "the room, the idea types itself": the idea surface over the room, so judges see the input first
+  // row 0 is "the idea types itself" over the floor; an old "bedroom" row means the same
   step: row.step === "bedroom" ? "idea" : row.step,
   page: row.page,
   builder: row.builder,

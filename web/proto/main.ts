@@ -23,29 +23,30 @@ const stage = document.getElementById("world")!;
 const uiHost = document.getElementById("ui")!;
 const reduced = p.still || matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-// The day: a fixed hour for screenshots (?time=), else late afternoon drifting slowly (30-minute day, ?cycle= faster).
+// v8 (PLAN.md 2.3): the clock is fixed at midday, no dusk, no cycle. ?time= still poses another hour and ?cycle=
+// still runs a day (screenshots, the world harness).
 const DEFAULT_START = 0.64;
-const DEFAULT_PERIOD = 1800;
-const fixedT = p.time ?? (p.still ? DAY_TIMES.day : null);
+const fixedT = p.time ?? (p.cycle ? null : DAY_TIMES.day);
 // v8: phones render at low quality (no shadows, no antialias, DPR capped at 1.5 in world/pixel.ts) unless ?quality= says.
 const phone = matchMedia("(pointer:coarse)").matches && innerWidth < 768;
 const quality = q.has("quality") ? p.quality : phone ? "low" : p.quality;
 // createWorld already returns the full v7 world (+ the v8 seam); ensureWorldV7 is a pass-through for it.
 const world = ensureWorldV7(createWorld(stage, { quality, atmosphere: THEMES.graphite.atmosphere, level: 1, reducedMotion: reduced })) as WorldV7 & WorldV8;
 if (typeof world.setClock === "function") {
-  world.setClock(fixedT != null ? { mode: "fixed", t: fixedT } : { mode: "cycle", periodSec: p.cycle ?? DEFAULT_PERIOD, startAt: DEFAULT_START }, { animate: false });
+  world.setClock(fixedT != null ? { mode: "fixed", t: fixedT } : { mode: "cycle", periodSec: p.cycle ?? 1800, startAt: DEFAULT_START }, { animate: false });
 }
 
 let init: (Partial<FlowStateV7> & { step: FlowStepV7 }) | undefined;
 if (p7.step) {
-  init = { step: p7.step, page: p7.page ?? undefined, builder: p7.builder ?? undefined, phase: p7.phase ?? undefined, projectId: p7.project ?? undefined };
+  // ?step=bedroom (old links): the idea, on the floor
+  init = { step: p7.step === "bedroom" ? "idea" : p7.step, page: p7.page ?? undefined, builder: p7.builder ?? undefined, phase: p7.phase ?? undefined, projectId: p7.project ?? undefined };
   if (p7.step === "evidence") {
     init.analyst = p7.analyst ?? undefined;
     init.finding = p7.n ?? undefined;
   }
 }
 
-const flow = createFlow(world, p7.demo ? { step: "bedroom" } : init, { hold: p.still, reduced, demo: p7.demo });
+const flow = createFlow(world, p7.demo ? { step: "idea" } : init, { hold: p.still, reduced, demo: p7.demo });
 // A real run lives at /p/:id (the server and dev middleware serve the app there): reload or share = reopen it.
 const pathId = /^\/p\/([A-Za-z0-9_-]{4,40})\/?$/.exec(location.pathname)?.[1] ?? null;
 const openId = p7.project ?? pathId;
