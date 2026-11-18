@@ -584,3 +584,33 @@ html.nohome .ui.v7 .chrome { background: var(--c-bg); }
 @media (max-width: 640px) {
   html.has-hud .v7 .db-meta, html.has-hud .db-meta { top: 56px !important; right: 12px; }
 }
+
+/* polish · the campus card: a compact "Your companies" list (side card on wide windows, sheet on phones) */
+.v7 .panel[data-key="campus"][data-pos="side"] { width: min(372px, 32vw); padding: 22px 22px 20px; }
+.v-campus { gap: 12px; }
+.v-campus .v-lede { margin: 2px 0 0; font-size: 14px; }
+.panel[data-pos="side"] .v-campus h2 { font-size: 24px; }
+.cp-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; max-height: min(46vh, 340px); overflow-y: auto; }
+.cp-list button { pointer-events: auto; width: 100%; display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; padding: 9px 10px; border: 0; border-radius: 12px; background: transparent; cursor: pointer; text-align: left; color: inherit; font: inherit; }
+.cp-list button:hover, .cp-list button[aria-current="true"] { background: var(--c-fill); }
+.cp-t { display: grid; gap: 3px; min-width: 0; }
+.cp-t b { font-weight: 600; font-size: 14.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cp-t > span { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--c-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cp-tag { flex: none; font-style: normal; font: 600 10.5px/1 var(--px); padding: 3px 6px; border-radius: 6px; background: var(--c-fill); color: var(--c-ink-2, #3b3f47); }
+.cp-tag[data-tag="sample"] { background: #FBF0DC; color: #8A5A00; }
+.cp-tag[data-tag="example"] { background: #E3F4EE; color: #05704F; }
+.cp-tag[data-tag="yours"] { background: #ECE8FB; color: #5B3FC4; }
+.cp-r { display: grid; justify-items: end; }
+.cp-r b { font-size: 16px; font-weight: 650; }
+.cp-r em { font-style: normal; font: 550 11px var(--px); color: var(--c-muted); white-space: nowrap; }
+.v-campus .rp-acts .btn { width: 100%; justify-content: center; }
+@media (max-width: 767px) {
+  /* phones: the list scrolls inside the sheet so "Check your next idea" stays on screen */
+  .panel[data-pos="sheet"] .v-campus { gap: 8px; }
+  .panel[data-pos="sheet"] .v-campus h2 { font-size: 22px; margin-top: 4px; }
+  .panel[data-pos="sheet"] .v-campus .v-lede { display: none; }
+  .panel[data-pos="sheet"] .cp-list { max-height: 26vh; }
+  .panel[data-pos="sheet"] .cp-list button { padding: 7px 8px; }
+}
+.v7 .panel[data-key="offices"][data-pos="side"] { width: min(440px, 36vw); padding: 24px 24px 22px; }
+.panel[data-pos="side"] .v-offices h2 { font-size: 26px; }

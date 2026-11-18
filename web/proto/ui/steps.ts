@@ -421,12 +421,39 @@ export function officesFloorHtml(f: ProtoFlowV7, brand: string): string {
 export function campusHtml(f: ProtoFlowV7): string {
   return `
   <section class="v-campus">
-    <header class="v-head" data-st><span class="eyebrow px-eb"><i class="st-dot" style="--c:#3A9D8F">4</i>Campus</span>
-      <h2 class="t-display">All your ideas</h2>
-      <p class="v-lede">Every idea gets its own building. Open one to go inside.</p></header>
-    <div data-st>${ideasList(f)}</div>
-    <footer class="rp-acts" data-st><button class="btn btn-primary" data-act="new" type="button"><span>Your next idea</span><span class="btn-price">10¢</span></button></footer>
+    <header class="v-head"><span class="eyebrow px-eb"><i class="st-dot" style="--c:#3A9D8F">4</i>Campus</span>
+      <h2 class="t-display">Your companies</h2>
+      <p class="v-lede">One building per idea. Open one to go inside.</p></header>
+    ${companiesList(f)}
+    <footer class="rp-acts"><button class="btn btn-primary" data-act="new" type="button"><span>Check your next idea</span><span class="btn-price">10¢</span></button></footer>
   </section>`;
+}
+
+/** The campus card's list (polish): every building on the plate, labelled Sample / Example / Yours, with its stage and
+ *  score. Compact: one line per company. No stagger (data-st): the card is never caught blank mid-fade. */
+function companiesList(f: ProtoFlowV7): string {
+  const verdictOf = (v: string | undefined) => (v ? ({ go: "Go", pivot: "Test first", "no-go": "No-go" } as Record<string, string>)[v] ?? v : "");
+  const finished = knownExamples();
+  type Row = { id: string; name: string; tag: "Sample" | "Example" | "Yours"; stage: string; score: number | null; verdict?: string; at?: "report" };
+  const rows: Row[] = [];
+  if (f.isSample(f.project.id))
+    rows.push({ id: f.project.id, name: f.project.title, tag: "Sample", stage: "Tour data · report + launch kit", score: f.report?.score ?? null, verdict: f.report?.verdict });
+  for (const x of finished) rows.push({ id: x.id, name: x.title, tag: "Example", stage: "Real run · report + launch kit", score: x.verdict?.score ?? null, verdict: x.verdict?.verdict, at: "report" });
+  const mine = f.mine.filter((p) => !finished.some((x) => x.id === p.id) && !/^ex-/.test(p.id)).map((m) => f.projects.find((x) => x.id === m.id) ?? m);
+  for (const p of mine) {
+    const sv = savedRuns.get(p.id);
+    const stage = { new: "Not paid yet", validating: "Research running", validated: "Report ready", building: "Launch kit in progress", live: "Launch kit ready" }[sv?.stage ?? "new"];
+    rows.push({ id: p.id, name: p.title, tag: "Yours", stage, score: p.v7.report?.score ?? sv?.score ?? null, verdict: p.v7.report?.verdict ?? sv?.verdict ?? undefined });
+  }
+  if (!rows.length) return `<p class="of-sub">Nothing here yet. Your first idea gets the first building.</p>`;
+  return `<ul class="cp-list">${rows
+    .map(
+      (r) => `<li><button type="button" data-act="switch" data-id="${esc(r.id)}"${r.at ? ` data-at="${r.at}"` : ""} aria-current="${r.id === f.project.id}">
+        <span class="cp-t"><b>${esc(r.name)}</b><span><em class="cp-tag" data-tag="${r.tag.toLowerCase()}">${r.tag}</em>${esc(r.stage)}</span></span>
+        <span class="cp-r">${r.score != null ? `<b class="num">${one(r.score)}</b><em>${esc(verdictOf(r.verdict))}</em>` : `<em>No score yet</em>`}</span>
+      </button></li>`,
+    )
+    .join("")}</ul>`;
 }
 
 /** v8 · The tour's last card (PLAN.md 5.6): what the visitor just saw, the price of each step, and their turn. */

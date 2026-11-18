@@ -202,17 +202,14 @@ export function createCampus(opts: { quality: "low" | "high"; env?: THREE.Textur
     },
     bounds: () => new THREE.Box3(new THREE.Vector3(-GX, -0.7, -GZ), new THREE.Vector3(GX, 6, GZ)),
     framePoints() {
-      // the occupied plots + one free plot, tight (never the whole plate when there is little on it)
-      // v8 fix: all six plots (43 x 25 m): a partial set framed the plots off three edges when the items sat elsewhere
-      const used = PLOTS.length;
+      // polish: the whole ground plate (its dark rim and the edge trees included), so no free plot is ever cut at the
+      // screen edge; fitShot adds the breathing margin
+      let top = 2.4; // edge trees
+      for (const it of items) top = Math.max(top, (plotOf.get(it.id)?.top ?? 0.3) + 1.2);
       const pts: THREE.Vector3[] = [];
-      for (let i = 0; i < used; i++) {
-        const p = PLOTS[i]!;
-        const top = plotOf.get(items[i]?.id ?? "")?.top ?? 0.3;
-        for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
-          pts.push(new THREE.Vector3(p.x + (sx * PLOT_W) / 2, -0.6, p.z + (sz * PLOT_D) / 2));
-          pts.push(new THREE.Vector3(p.x + (sx * PLOT_W) / 2, top + 1.2, p.z + (sz * PLOT_D) / 2));
-        }
+      for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+        pts.push(new THREE.Vector3(sx * (GX + 0.2), -0.95, sz * (GZ + 0.2)));
+        pts.push(new THREE.Vector3(sx * (GX - 0.5), top, sz * (GZ - 0.5)));
       }
       return pts;
     },

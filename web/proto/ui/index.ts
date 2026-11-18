@@ -81,6 +81,8 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     if (curKey === "live" && flow.live && exampleOf(flow.live.id)) render(true);
     // a report opened before the list arrived: its header now knows whether the example was paid
     if (curKey === "doc" && /^ex-/.test(flow.project.id)) render(true);
+    // the campus card drawn before the list arrived lists the finished examples too
+    if (curKey?.startsWith("campus")) render(true);
   });
   // "Proof on Bitcoin Cash" under a report: the examples' real proof always, a live run's when escrow is on.
   startEscrowProof();
@@ -234,6 +236,8 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     if ((key === "idea" || key === "end" || key === "recap") && sideHome()) return "side";
     // the Launch kit offer and its 50¢ card sit on the left, so the floor (front row) keeps the right half
     if ((key === "floor" || key === "pay2") && sideHome()) return "side";
+    // the campus and offices cards sit on the left, so the plate / the offices floor keep the rest of the window
+    if ((key.startsWith("campus") || key === "offices") && innerWidth >= 960) return "side";
     return "bottom"; // every surface rises from the bottom; the world is framed in the space above it
   }
   function build(key: string, s: FlowStateV7): string {
@@ -346,6 +350,9 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     // the tour's chapter row sits under the top bar: never frame the floor up under it
     const meta = root.querySelector<HTMLElement>(".db-meta");
     if (meta && meta.offsetParent) top = Math.max(top, Math.round(meta.getBoundingClientRect().bottom + 8));
+    // phones: the campus plate is wide, so its far corner would sit under the HUD pill: frame it below the pill
+    const phoneHud = isMobile() && curKey.startsWith("campus") ? root.querySelector<HTMLElement>(".hud.phone .hud-pill") : null;
+    if (phoneHud && phoneHud.offsetParent) top = Math.max(top, Math.round(phoneHud.getBoundingClientRect().bottom + 6));
     // bottom / centre cards on wide screens: the HUD card owns the top-right corner, keep the floor left of it
     const hudLeft = hud && !hudOpen && !isMobile() ? Math.round(hud.getBoundingClientRect().left) : 0;
     const right = hudLeft && hudLeft > innerWidth * 0.6 ? Math.round(innerWidth - hudLeft + 12) : 0;

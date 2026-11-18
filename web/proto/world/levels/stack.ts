@@ -1,7 +1,7 @@
 // WP-B (redesign) · World level 2 "Offices": the exploded stack. Floor 1 is the live office (untouched, y 0). Floor 2
 // sits 7.5 m above it: one roofless plate with the same footprint, a 0.25 m slab with a dark cut edge, walls on the back
 // and left only (the same language as office/shell.ts) and four rooms in a row: Marketing · Research · Money ·
-// Customers. All furniture is baked into one vertex-coloured mesh (+ one for the glowing screens); people are
+// Customers. All furniture is baked into one vertex-coloured mesh (+ one for the glowing screens and lamps); people are
 // instanced. Every room shows only what really happened (setOffices): off = dim, working = lit + someone typing,
 // done = lit + a paper pile per real result (max 5). Implements the old Tower interface so world/index.ts barely changes.
 import * as THREE from "three";
@@ -37,7 +37,7 @@ export interface Stack extends Tower {
 }
 
 const C = {
-  slabCut: "#353A45", floor: "#EEEAE3", wall: "#FAFAF8", wallCap: "#2E333D", partition: "#F4F2EE", oak: "#E6D3B5", oakDark: "#B98F62",
+  slabCut: "#353A45", floor: "#E6DCCB", wall: "#FAFAF8", wallCap: "#2E333D", partition: "#F4F2EE", oak: "#E6D3B5", oakDark: "#B98F62",
   metal: "#5A606B", chair: "#3B414C", pot: "#C9825B", leaf: "#4E9A5B", leafDark: "#3C7F49", white: "#FFFFFF", ink: "#2B2F38", gold: "#E2B23C",
   screenOff: "#262A32",
 };
@@ -48,57 +48,78 @@ function furnish(L: Lite, G: Lite, i: number, id: OfficeRoomId) {
   L.tag = i;
   G.tag = i;
   const y = PLATE_Y;
-  // floor tile + rug in the department colour
-  L.box(ROOM_W - 0.12, 0.02, ROOM_Z1 - ROOM_Z0 - 0.1, mixHex(tint, "#F3EFE8", 0.72), cx, y, ROOM_CZ);
-  L.box(2.8, 0.015, 1.9, mixHex(tint, "#FFFFFF", 0.38), cx + 0.7, y + 0.02, ROOM_CZ + 1.6);
+  // floor tile + rug in the department colour (strong enough to read as a room from the overview)
+  L.box(ROOM_W - 0.12, 0.02, ROOM_Z1 - ROOM_Z0 - 0.1, mixHex(tint, "#F3EFE8", 0.6), cx, y, ROOM_CZ);
+  L.box(3.0, 0.015, 2.1, mixHex(tint, "#FFFFFF", 0.3), cx + 1.15, y + 0.02, ROOM_CZ + 1.75);
   // accent band on the back wall + a wall board
-  L.box(ROOM_W - 0.2, 1.75, 0.03, mixHex(tint, "#FFFFFF", 0.45), cx, y, ROOM_Z0 + 0.02);
-  L.boxC(1.9, 0.95, 0.05, C.white, cx - 1.1, y + 1.12, ROOM_Z0 + 0.07);
-  for (let k = 0; k < 3; k++) L.boxC(0.32, 0.12 + k * 0.14, 0.02, tint, cx - 1.75 + k * 0.42, y + 0.78 + (0.12 + k * 0.14) / 2, ROOM_Z0 + 0.1);
-  L.boxC(0.75, 0.06, 0.02, mixHex(tint, C.ink, 0.3), cx - 0.55, y + 1.42, ROOM_Z0 + 0.1);
-  L.boxC(0.6, 0.06, 0.02, mixHex(tint, "#FFFFFF", 0.4), cx - 0.6, y + 1.3, ROOM_Z0 + 0.1);
-  // desk (facing the back wall) + chair + screen
-  const dx = cx + 0.9, dz = ROOM_Z0 + 1.35;
+  L.box(ROOM_W - 0.2, 1.75, 0.03, mixHex(tint, "#FFFFFF", 0.4), cx, y, ROOM_Z0 + 0.02);
+  L.boxC(1.9, 0.95, 0.05, C.white, cx - 1.1, y + 1.22, ROOM_Z0 + 0.07);
+  for (let k = 0; k < 3; k++) L.boxC(0.32, 0.12 + k * 0.14, 0.02, tint, cx - 1.75 + k * 0.42, y + 0.88 + (0.12 + k * 0.14) / 2, ROOM_Z0 + 0.1);
+  L.boxC(0.75, 0.06, 0.02, mixHex(tint, C.ink, 0.3), cx - 0.55, y + 1.52, ROOM_Z0 + 0.1);
+  L.boxC(0.6, 0.06, 0.02, mixHex(tint, "#FFFFFF", 0.4), cx - 0.6, y + 1.4, ROOM_Z0 + 0.1);
+  // a low cabinet under the board, with binders in the department colour on top
+  L.box(1.7, 0.62, 0.42, C.white, cx - 1.1, y, ROOM_Z0 + 0.32);
+  L.box(1.66, 0.02, 0.02, C.oakDark, cx - 1.1, y + 0.32, ROOM_Z0 + 0.54);
+  for (let k = 0; k < 4; k++) L.box(0.09, 0.28, 0.24, k % 2 ? tint : mixHex(tint, "#FFFFFF", 0.45), cx - 1.75 + k * 0.12, y + 0.62, ROOM_Z0 + 0.3);
+  L.ball(0.13, C.leaf, cx - 0.55, y + 0.78, ROOM_Z0 + 0.3, 0);
+  // desk (facing the back wall) + chair + screen + desk lamp (glows while the office works)
+  const dx = cx + 1.0, dz = ROOM_Z0 + 1.35;
   L.box(1.8, 0.06, 0.82, C.oak, dx, y + 0.7, dz);
   for (const sx of [-1, 1]) L.box(0.06, 0.7, 0.76, C.white, dx + sx * 0.86, y, dz);
   L.box(0.08, 0.36, 0.06, C.metal, dx, y + 0.76, dz - 0.25);
   G.boxC(0.92, 0.54, 0.04, mixHex(tint, "#FFFFFF", 0.35), dx, y + 1.25, dz - 0.27);
   L.boxC(0.98, 0.6, 0.03, C.ink, dx, y + 1.25, dz - 0.3);
   L.box(0.42, 0.03, 0.14, C.ink, dx - 0.1, y + 0.76, dz + 0.12);
+  L.cyl(0.02, 0.02, 0.42, C.metal, dx + 0.7, y + 0.76, dz - 0.2, 6);
+  G.add(new THREE.ConeGeometry(0.14, 0.14, 10, 1, true), "#FFE7B0", dx + 0.62, y + 1.2, dz - 0.2);
   L.box(0.5, 0.08, 0.5, C.chair, dx, y + 0.42, dz + 0.78);
   L.box(0.5, 0.5, 0.08, C.chair, dx, y + 0.5, dz + 1.03);
   L.cyl(0.03, 0.03, 0.42, C.metal, dx, y, dz + 0.78, 6);
   // plant in the corner
-  L.cyl(0.2, 0.16, 0.36, C.pot, cx + 2.45, y, ROOM_Z0 + 0.5, 10);
-  L.ball(0.36, C.leaf, cx + 2.45, y + 0.68, ROOM_Z0 + 0.5, 0);
-  L.ball(0.24, C.leafDark, cx + 2.3, y + 0.98, ROOM_Z0 + 0.62, 0);
-  // the department's one prop
+  L.cyl(0.2, 0.16, 0.36, C.pot, cx + 2.5, y, ROOM_Z0 + 0.5, 10);
+  L.ball(0.36, C.leaf, cx + 2.5, y + 0.68, ROOM_Z0 + 0.5, 0);
+  L.ball(0.24, C.leafDark, cx + 2.35, y + 0.98, ROOM_Z0 + 0.62, 0);
+  // the meeting table on the rug: where results land (one pile per result) and a second person works
+  const tx = cx + 1.15, tz = ROOM_CZ + 1.75;
+  L.box(1.7, 0.06, 0.9, C.oak, tx, y + 0.68, tz);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) L.box(0.05, 0.68, 0.05, C.metal, tx + sx * 0.78, y, tz + sz * 0.38);
+  for (const k of [-0.45, 0.45]) {
+    L.box(0.44, 0.07, 0.44, mixHex(tint, C.ink, 0.35), tx + k, y + 0.4, tz - 0.78);
+    L.box(0.44, 0.44, 0.07, mixHex(tint, C.ink, 0.35), tx + k, y + 0.44, tz - 1.0);
+    L.box(0.44, 0.07, 0.44, mixHex(tint, C.ink, 0.35), tx + k, y + 0.4, tz + 0.78);
+  }
+  L.cyl(0.05, 0.05, 0.12, C.white, tx + 0.65, y + 0.74, tz + 0.25, 8); // a mug
+  // a floor lamp at the front corner (its shade glows while the office works)
+  L.cyl(0.16, 0.18, 0.04, C.metal, cx + 2.6, y, ROOM_Z1 - 0.5, 10);
+  L.cyl(0.025, 0.025, 1.45, C.metal, cx + 2.6, y, ROOM_Z1 - 0.5, 6);
+  G.add(new THREE.CylinderGeometry(0.2, 0.27, 0.3, 12, 1, true), "#FFE7B0", cx + 2.6, y + 1.55, ROOM_Z1 - 0.5);
+  // the department's one prop (front left)
   if (id === "marketing") {
     // easel with this week's post + a megaphone on a stool
-    const ex = cx - 1.4, ez = ROOM_CZ + 1.5;
+    const ex = cx - 1.5, ez = ROOM_CZ + 1.4;
     for (const sx of [-1, 1]) L.add(new THREE.BoxGeometry(0.05, 1.5, 0.05), C.oakDark, ex + sx * 0.32, y + 0.72, ez, 0, -0.12);
     L.boxC(0.95, 1.1, 0.05, C.white, ex, y + 1.05, ez - 0.05, 0, -0.12);
     L.boxC(0.8, 0.5, 0.02, mixHex(tint, "#FFFFFF", 0.3), ex, y + 1.2, ez - 0.02, 0, -0.12);
     L.boxC(0.55, 0.07, 0.02, C.ink, ex - 0.08, y + 0.82, ez + 0.0, 0, -0.12);
-    L.cyl(0.2, 0.2, 0.45, C.white, cx - 0.2, y, ROOM_CZ + 2.3, 12);
-    L.add(new THREE.CylinderGeometry(0.06, 0.2, 0.38, 12), tint, cx - 0.2, y + 0.62, ROOM_CZ + 2.3, 0, Math.PI / 2);
+    L.cyl(0.2, 0.2, 0.45, C.white, cx - 2.2, y, ROOM_CZ + 2.6, 12);
+    L.add(new THREE.CylinderGeometry(0.06, 0.2, 0.38, 12), tint, cx - 2.2, y + 0.62, ROOM_CZ + 2.6, 0, Math.PI / 2);
   } else if (id === "research") {
     // bookshelf against the left partition + a reading lamp
-    const bx = cx - ROOM_W / 2 + 0.3, bz = ROOM_CZ + 0.6;
+    const bx = cx - ROOM_W / 2 + 0.3, bz = ROOM_CZ + 0.9;
     L.box(0.4, 1.7, 1.6, C.white, bx, y, bz);
     const books = [tint, "#E3893B", "#3A9D8F", mixHex(tint, "#FFFFFF", 0.4), C.ink, "#D45D5D"];
     for (let r = 0; r < 3; r++)
       for (let k = 0; k < 5; k++) L.box(0.3, 0.32 - ((k + r) % 3) * 0.05, 0.2, books[(k + r * 2) % books.length]!, bx + 0.02, y + 0.12 + r * 0.52, bz - 0.6 + k * 0.28);
-    L.ball(0.22, mixHex(tint, "#FFFFFF", 0.2), cx - 1.2, y + 0.98, ROOM_CZ + 2.2, 1);
-    L.cyl(0.05, 0.12, 0.76, C.oakDark, cx - 1.2, y, ROOM_CZ + 2.2, 8);
+    L.ball(0.22, mixHex(tint, "#FFFFFF", 0.2), cx - 1.6, y + 0.98, ROOM_CZ + 2.5, 1);
+    L.cyl(0.05, 0.12, 0.76, C.oakDark, cx - 1.6, y, ROOM_CZ + 2.5, 8);
   } else if (id === "money") {
     // coin stacks rising like a chart + a small safe
-    for (let k = 0; k < 4; k++) L.cyl(0.2, 0.2, 0.25 + k * 0.22, C.gold, cx - 2.0 + k * 0.5, y, ROOM_CZ + 2.1, 14);
-    L.box(0.85, 0.95, 0.8, C.ink, cx - 2.0, y, ROOM_CZ - 0.4);
-    L.boxC(0.3, 0.3, 0.02, mixHex(tint, "#FFFFFF", 0.4), cx - 2.0, y + 0.55, ROOM_CZ + 0.01);
+    for (let k = 0; k < 4; k++) L.cyl(0.2, 0.2, 0.25 + k * 0.22, C.gold, cx - 2.3 + k * 0.45, y, ROOM_CZ + 2.5, 14);
+    L.box(0.85, 0.95, 0.8, C.ink, cx - 2.2, y, ROOM_CZ + 0.4);
+    L.boxC(0.3, 0.3, 0.02, mixHex(tint, "#FFFFFF", 0.4), cx - 2.2, y + 0.55, ROOM_CZ + 0.81);
   } else {
     // a sofa for customers + a round coffee table with a speech-bubble card
-    const sx = cx - 1.2, sz = ROOM_CZ + 2.3;
+    const sx = cx - 1.7, sz = ROOM_CZ + 2.6;
     L.box(1.9, 0.42, 0.8, mixHex(tint, "#FFFFFF", 0.25), sx, y, sz);
     L.box(1.9, 0.55, 0.22, mixHex(tint, C.ink, 0.15), sx, y + 0.3, sz + 0.34);
     for (const k of [-1, 1]) L.box(0.22, 0.55, 0.8, mixHex(tint, C.ink, 0.15), sx + k * 0.9, y + 0.1, sz);
@@ -107,7 +128,15 @@ function furnish(L: Lite, G: Lite, i: number, id: OfficeRoomId) {
     L.boxC(0.5, 0.32, 0.04, C.white, sx + 0.05, y + 0.72, sz - 1.0);
     L.boxC(0.34, 0.05, 0.02, tint, sx + 0.05, y + 0.76, sz - 0.97);
   }
-  return { cx, seat: { x: dx, z: dz + 0.82 }, desk: { x: dx + 0.6, y: y + 0.76, z: dz + 0.16 } };
+  return {
+    cx,
+    seat: { x: dx, z: dz + 0.82 },
+    // the second chair at the table (back side, facing the camera) and the table top for the result piles
+    seat2: { x: tx - 0.45, z: tz - 0.82 },
+    table: { x: tx, y: y + 0.71, z: tz },
+    // the state marker floats over the floor lamp at the front corner (never over a face)
+    lamp: { x: cx + 2.6, z: ROOM_Z1 - 0.5 },
+  };
 }
 
 export function createStack(opts: { quality: "low" | "high"; env?: THREE.Texture | null }): Stack {
@@ -141,12 +170,16 @@ export function createStack(opts: { quality: "low" | "high"; env?: THREE.Texture
     L.ball(0.45, C.leaf, x, PLATE_Y + 0.8, HZ - 1.0, 0);
   }
   const seats: { x: number; z: number }[] = [];
-  const desks: { x: number; y: number; z: number }[] = [];
+  const seats2: { x: number; z: number }[] = [];
+  const tables: { x: number; y: number; z: number }[] = [];
+  const lamps: { x: number; z: number }[] = [];
   const centers: number[] = [];
   OFFICE_ROOMS.forEach((id, i) => {
     const f = furnish(L, G, i, id);
     seats.push(f.seat);
-    desks.push(f.desk);
+    seats2.push(f.seat2);
+    tables.push(f.table);
+    lamps.push(f.lamp);
     centers.push(f.cx);
   });
   const solid: LiteGeo = L.build();
@@ -158,11 +191,18 @@ export function createStack(opts: { quality: "low" | "high"; env?: THREE.Texture
   const glowMesh = new THREE.Mesh(glow.geo, glowMat);
   upper.add(solidMesh, glowMesh);
 
-  // people (one per office, seated at the desk) + result piles
-  const people = new People(4, false);
+  // people (two per office: the desk and the meeting table) + result piles + one floating state marker per office
+  const people = new People(8, false);
   upper.add(people.root);
-  const papers = new Papers(4 * 5);
+  const papers = new Papers(4 * 5 * 2);
   upper.add(papers.mesh);
+  const markGeo = new THREE.OctahedronGeometry(0.26, 0);
+  markGeo.scale(1, 1.35, 1);
+  const marks = new THREE.InstancedMesh(markGeo, new THREE.MeshBasicMaterial({ toneMapped: false }), 4);
+  marks.frustumCulled = false;
+  marks.count = 4;
+  upper.add(marks);
+  const _mm = new THREE.Matrix4(), _mq = new THREE.Quaternion(), _me = new THREE.Euler(), _ms = new THREE.Vector3(), _mp = new THREE.Vector3(), _mc = new THREE.Color();
 
   // ── columns down to floor 1 + a glass stair core beside the building (stretch with growth)
   const legs = new Lite();
@@ -198,8 +238,10 @@ export function createStack(opts: { quality: "low" | "high"; env?: THREE.Texture
   const state = new Map<OfficeRoomId, OfficeState>(OFFICE_ROOMS.map((id) => [id, { id, state: "off", results: 0 }]));
   let sample = false;
   let sweepT = -1;
-  const TINT: Record<OfficeState["state"], Tint> = { off: { k: 0.95, desat: 0.5 }, working: { k: 1.0, desat: 0 }, done: { k: 1.0, desat: 0 } };
-  const GLOW: Record<OfficeState["state"], Tint> = { off: { k: 0.22, desat: 1 }, working: { k: 1.08, desat: 0 }, done: { k: 0.82, desat: 0.1 } };
+  // off = lights out (darker and grey, still furnished) · working = full colour, screens and lamps on · done = colour,
+  // screens on, lamps low
+  const TINT: Record<OfficeState["state"], Tint> = { off: { k: 0.76, desat: 0.55 }, working: { k: 1.0, desat: 0 }, done: { k: 1.0, desat: 0 } };
+  const GLOW: Record<OfficeState["state"], Tint> = { off: { k: 0.2, desat: 1 }, working: { k: 1.12, desat: 0 }, done: { k: 0.8, desat: 0.1 } };
   function paint(lift: number[] = [0, 0, 0, 0]) {
     const s = sample ? 0.12 : 0;
     OFFICE_ROOMS.forEach((id, i) => {
@@ -212,12 +254,40 @@ export function createStack(opts: { quality: "low" | "high"; env?: THREE.Texture
   }
   function placePeople() {
     people.set(
-      OFFICE_ROOMS.map((id, i) => {
+      OFFICE_ROOMS.flatMap((id, i) => {
         const st = state.get(id)!.state;
-        return { x: seats[i]!.x, y: PLATE_Y + 0.05, z: seats[i]!.z, ry: Math.PI, shirt: OFFICE_TINT[id], skin: i + 1, working: st === "working", visible: st !== "off" };
+        const on = st !== "off";
+        return [
+          { x: seats[i]!.x, y: PLATE_Y + 0.05, z: seats[i]!.z, ry: Math.PI, shirt: OFFICE_TINT[id], skin: i + 1, working: st === "working", visible: on, scale: 1.25 },
+          { x: seats2[i]!.x, y: PLATE_Y + 0.05, z: seats2[i]!.z, ry: 0, shirt: mixHex(OFFICE_TINT[id], "#FFFFFF", 0.35), skin: i + 3, working: st === "working", visible: on, scale: 1.25 },
+        ];
       }),
     );
-    papers.set(OFFICE_ROOMS.map((id, i) => ({ ...desks[i]!, n: state.get(id)!.state === "off" ? 0 : Math.min(5, Math.max(0, state.get(id)!.results)) })));
+    // one pile per real result, side by side on the meeting table, so the count reads at a glance (max 5)
+    papers.set(
+      OFFICE_ROOMS.flatMap((id, i) => {
+        const n = state.get(id)!.state === "off" ? 0 : Math.min(5, Math.max(0, state.get(id)!.results));
+        const t = tables[i]!;
+        return Array.from({ length: n }, (_, k) => ({ x: t.x - 0.66 + k * 0.33, y: t.y, z: t.z + 0.12, n: 2 }));
+      }),
+    );
+    poseMarks(0);
+  }
+  /** The marker over each office's floor lamp: working = the office colour, spinning and bobbing · done = green, still ·
+   *  off = hidden. One instanced draw call. */
+  function poseMarks(t: number) {
+    OFFICE_ROOMS.forEach((id, i) => {
+      const st = state.get(id)!.state;
+      const working = st === "working";
+      _me.set(0, working ? t * 1.8 : Math.PI / 4, 0);
+      _mq.setFromEuler(_me);
+      const sc = st === "off" ? 1e-4 : 1;
+      _mm.compose(_mp.set(lamps[i]!.x, PLATE_Y + 2.25 + (working ? Math.sin(t * 2.4 + i) * 0.1 : 0), lamps[i]!.z), _mq, _ms.set(sc, sc, sc));
+      marks.setMatrixAt(i, _mm);
+      marks.setColorAt(i, _mc.set(st === "done" ? "#0AC18E" : OFFICE_TINT[id]));
+    });
+    marks.instanceMatrix.needsUpdate = true;
+    if (marks.instanceColor) marks.instanceColor.needsUpdate = true;
   }
   paint();
   placePeople();
@@ -250,6 +320,10 @@ export function createStack(opts: { quality: "low" | "high"; env?: THREE.Texture
     setBeacon() {},
     update(dt, t) {
       let busy = people.pose(t);
+      if ([...state.values()].some((r) => r.state === "working")) {
+        poseMarks(t);
+        busy = true;
+      }
       if (sweepT >= 0) {
         sweepT += dt;
         const lift = OFFICE_ROOMS.map((_, i) => {
@@ -301,6 +375,9 @@ export function createStack(opts: { quality: "low" | "high"; env?: THREE.Texture
       pickMat.dispose();
       people.dispose();
       papers.dispose();
+      markGeo.dispose();
+      (marks.material as THREE.Material).dispose();
+      marks.dispose();
     },
   };
 }

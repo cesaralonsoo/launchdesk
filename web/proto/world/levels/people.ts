@@ -1,9 +1,10 @@
 // WP-B (redesign) · Instanced mini people for the lite floors (offices floor, campus): one InstancedMesh for every
-// body and one for every head, per-instance colour, so any number of people costs 2 draw calls. Plus instanced paper
+// body and one for every head and one for the hair, per-instance colour, so any number of people costs 3 draw calls. Plus instanced paper
 // stacks (results on a desk). Animation is cheap: only "working" people move (a small typing bob), updated ≤ 30 Hz.
 import * as THREE from "three";
 
 const SKINS = ["#F1C7A5", "#D9A27E", "#B97A57", "#8D5A3E", "#F3D3B8"];
+const HAIRS = ["#2B2420", "#6B4A2E", "#C98E4B", "#1E1B1A", "#8C5A3C", "#3A2E28"];
 
 export type Person = { x: number; y: number; z: number; ry: number; shirt: string; skin?: number; working: boolean; visible: boolean; scale?: number };
 
@@ -11,6 +12,7 @@ export class People {
   readonly root = new THREE.Group();
   private bodies: THREE.InstancedMesh;
   private heads: THREE.InstancedMesh;
+  private hair: THREE.InstancedMesh;
   private list: Person[] = [];
   private m = new THREE.Matrix4();
   private q = new THREE.Quaternion();
@@ -29,7 +31,12 @@ export class People {
     const hmat = new THREE.MeshStandardMaterial({ roughness: 0.6 });
     this.bodies = new THREE.InstancedMesh(body, mat, cap);
     this.heads = new THREE.InstancedMesh(head, hmat, cap);
-    for (const im of [this.bodies, this.heads]) {
+    // a hair cap over the top and back of the head (same chibi read as the floor-1 cast), one more draw call
+    const hair = new THREE.SphereGeometry(0.235, 14, 8, 0, Math.PI * 2, 0, Math.PI * 0.5);
+    hair.rotateX(-0.35);
+    hair.translate(0, 1.19, -0.01);
+    this.hair = new THREE.InstancedMesh(hair, new THREE.MeshStandardMaterial({ roughness: 0.8 }), cap);
+    for (const im of [this.bodies, this.heads, this.hair]) {
       im.count = 0;
       im.frustumCulled = false;
       im.castShadow = shadows;
@@ -40,12 +47,13 @@ export class People {
   }
   set(list: Person[]) {
     this.list = list.slice(0, this.cap);
-    this.bodies.count = this.heads.count = this.list.length;
+    this.bodies.count = this.heads.count = this.hair.count = this.list.length;
     this.list.forEach((p, i) => {
       this.bodies.setColorAt(i, this.c.set(p.shirt));
       this.heads.setColorAt(i, this.c.set(SKINS[(p.skin ?? i) % SKINS.length]!));
+      this.hair.setColorAt(i, this.c.set(HAIRS[((p.skin ?? i) * 7 + 3) % HAIRS.length]!));
     });
-    for (const im of [this.bodies, this.heads]) if (im.instanceColor) im.instanceColor.needsUpdate = true;
+    for (const im of [this.bodies, this.heads, this.hair]) if (im.instanceColor) im.instanceColor.needsUpdate = true;
     this.pose(0, true);
   }
   get count() {
@@ -68,13 +76,15 @@ export class People {
       this.q.setFromEuler(this.e);
       this.m.compose(this.p.set(p.x, p.y + bob * sc, p.z), this.q, this.s.set(sc, sc, sc));
       this.heads.setMatrixAt(i, this.m);
+      this.hair.setMatrixAt(i, this.m);
     });
+    this.hair.instanceMatrix.needsUpdate = true;
     this.bodies.instanceMatrix.needsUpdate = true;
     this.heads.instanceMatrix.needsUpdate = true;
     return true;
   }
   dispose() {
-    for (const im of [this.bodies, this.heads]) {
+    for (const im of [this.bodies, this.heads, this.hair]) {
       im.geometry.dispose();
       (im.material as THREE.Material).dispose();
       im.dispose();
