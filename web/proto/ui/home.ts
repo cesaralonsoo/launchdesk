@@ -55,8 +55,7 @@ export function signWords(idea: string): string {
   while (words.length && STOP.test(words[0]!)) words.shift();
   const out: string[] = [];
   for (const w of words) {
-    if (out.length >= 3 || (out.length >= 2 && STOP.test(w))) break;
-    if (STOP.test(w)) continue;
+    if (out.length >= 3 || STOP.test(w)) break;
     out.push(w);
   }
   const s = out.join(" ");

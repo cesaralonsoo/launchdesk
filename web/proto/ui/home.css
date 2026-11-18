@@ -31,7 +31,6 @@ html.home.h-ready #world canvas { opacity: 1; }
 html.home .ui.v7 { z-index: 3; }
 /* the app's own surfaces wait while the home is up (the "My ideas" overlay still opens over it) */
 html.home .ui.v7 > :not(.overlay) { display: none !important; }
-html:not(.home) #ld-home { display: none; }
 
 /* ─── top bar ─── */
 .h-top { position: absolute; inset: 0 0 auto 0; height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 32px; z-index: 5; }
@@ -254,6 +253,7 @@ html:not(.home) #ld-home { display: none; }
   .h-h1 { font-size: 42px; line-height: 48px; }
   .h-sub { font-size: 16px; line-height: 25px; }
   .h-cell b { white-space: normal; }
+  .h-cell b em { display: block; }
   .h-steps { grid-template-columns: 1fr; }
   .h-tiles { grid-template-columns: 1fr 1fr; }
   .h-row { grid-template-columns: 220px 1fr auto; }
@@ -333,3 +333,6 @@ html:not(.home) #ld-home { display: none; }
   .ldh *, html.home #world canvas { transition: none !important; }
 }
 .h-field textarea::-webkit-scrollbar { display: none; }
+@media (min-width: 768px) and (max-height: 820px) {
+  .h-cue { display: none; }
+}
