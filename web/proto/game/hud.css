@@ -666,3 +666,10 @@ html.ld-campus .ui > :not(#hud):not(#home):not(header) {
 .hud-back .ic {
   flex: none;
 }
+
+/* phone campus: plots sit close together, so the pills carry the name only (the drawer and switcher have the scores) */
+@media (max-width: 767px) {
+  html.ld-campus .gp-pill { max-width: 46vw; }
+  html.ld-campus .gp-pill b { overflow: hidden; text-overflow: ellipsis; }
+  html.ld-campus .gp-pill span { display: none; }
+}

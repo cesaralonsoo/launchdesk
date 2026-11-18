@@ -191,7 +191,7 @@ export function computeGame(s: GameSnapshot): GameState {
     research: paid1,
     studio: paid2,
     offices: doneOffices.size > 0,
-    campus: reportedMine >= 2,
+    campus: !s.example && reportedMine >= 2, // the campus is the visitor's own ideas: a finished example never shows it lit
   };
   const roomsOf = (st: Stage): RoomInfo[] =>
     st === "research"
@@ -274,7 +274,7 @@ export function computeGame(s: GameSnapshot): GameState {
     {
       id: "second-idea",
       name: "Second idea",
-      earned: reportedMine >= 2,
+      earned: !s.example && reportedMine >= 2,
       line: reportedMine >= 2 ? "Two ideas, two buildings." : "Check a second idea for 10¢.",
     },
   ];

@@ -177,9 +177,9 @@ export function mountHud(host: HTMLElement, deps: HudDeps): () => void {
     if (lvl === 3 && campus) {
       const out: Pin[] = [];
       for (const r of saved.list().filter((x) => !/^ex-/.test(x.id)).slice(0, 4))
-        out.push({ id: r.id, html: pillHtml(r.id === g.projectId ? g.name : r.title, r.verdict === "no-go" ? "No-go · lesson learned" : r.score != null ? `${VERDICT_LABEL[r.verdict ?? "go"]} ${r.score.toFixed(1)}` : "No report yet") });
-      for (const x of store.examples) out.push({ id: x.id, html: pillHtml(`Example · ${x.title}`, x.verdict ? `${VERDICT_LABEL[x.verdict.verdict]} ${x.verdict.score.toFixed(1)}` : "real run") });
-      out.push({ id: "plot:new", html: pillHtml("Your next idea", "10¢") });
+        out.push({ id: `campus:${r.id}`, html: pillHtml(r.id === g.projectId ? g.name : r.title, r.verdict === "no-go" ? "No-go · lesson learned" : r.score != null ? `${VERDICT_LABEL[r.verdict ?? "go"]} ${r.score.toFixed(1)}` : "No report yet") });
+      for (const x of store.examples) out.push({ id: `campus:${x.id}`, html: pillHtml(`Example · ${x.title}`, x.verdict ? `${VERDICT_LABEL[x.verdict.verdict]} ${x.verdict.score.toFixed(1)}` : "real run") });
+      out.push({ id: "campus:next:0", html: pillHtml("Your next idea", "10¢") });
       return out;
     }
     return [];
@@ -255,7 +255,9 @@ export function mountHud(host: HTMLElement, deps: HudDeps): () => void {
     void world.setWorldLevel(b as 1 | 2, { animate: !reduced });
     render();
   }
-  function pick(id: string) {
+  function pick(raw: string) {
+    // world ids (WP-B): office:<id> · campus:<projectId> · campus:next[:<n>] (a free plot)
+    const id = /^campus:next(:\d+)?$/.test(raw) ? "plot:new" : raw.replace(/^campus:/, "");
     const office = /^office:(marketing|research|money|customers)$/.exec(id)?.[1] as OfficeId | undefined;
     if (office) {
       const d = currentOwner();
