@@ -1048,7 +1048,7 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     if (what === "proof") jumpToProof();
   });
   function jumpToProof() {
-    const jump = () => document.querySelector(".ep-panel")?.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "center" });
+    const jump = () => document.querySelector(".ep-panel")?.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "start" });
     if (flow.state.step !== "report") flow.goto({ step: "report", page: "score" });
     // the proof panel mounts itself under the report once it is on screen
     let n = 0;

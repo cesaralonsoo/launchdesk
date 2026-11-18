@@ -143,14 +143,14 @@ export function mountHud(host: HTMLElement, deps: HudDeps): () => void {
     root.classList.toggle("phone", phone);
     root.dataset.open = open ? "1" : "0";
     const head = `<div class="hud-top"><button type="button" class="hud-name" data-hud="menu" aria-expanded="${menu}" aria-haspopup="menu"><b>${esc(g.name)}</b>${chev()}</button>${tag(g)}</div>`;
-    const sum = `<button type="button" class="hud-sum" data-hud="drawer" aria-expanded="${open}"><span class="hud-stage"><b>${esc(g.stageName)}</b> · ${g.lit}/${g.total} rooms lit</span>${track(g)}</button>`;
+    const sum = `<button type="button" class="hud-sum" data-hud="drawer" aria-expanded="${open}"><span class="hud-stage" title="The lobby counts as one room"><b>${esc(g.stageName)}</b> · ${g.lit}/${g.total} rooms lit<span class="hud-lobby"> · lobby incl.</span></span>${track(g)}</button>`;
     const back = campus ? `<button type="button" class="hud-back" data-hud="campus-back">${I.back(14)}<span>Back to ${esc(g.name)}</span></button>` : "";
     let html: string;
     if (phone) {
       html = `
         <button type="button" class="hud-pill" data-hud="drawer" aria-expanded="${open}"><b>${esc(g.stageName)}</b><span>${g.lit}/${g.total}</span>${tagText(g) ? `<em>${tagText(g) === "Sample data" ? "Sample" : tagText(g)}</em>` : ""}<i aria-hidden="true">▸</i></button>
         ${back}
-        ${open ? `<div class="hud-scrim" data-hud="close"></div><div class="hud-sheet" role="dialog" aria-label="Your company">${head}${menu ? menuHtml(g) : ""}<div class="hud-sum hud-sum-static"><span class="hud-stage"><b>${esc(g.stageName)}</b> · ${g.lit}/${g.total} rooms lit</span>${track(g)}</div>${nextHtml(g)}${drawerHtml(g)}</div>` : ""}`;
+        ${open ? `<div class="hud-scrim" data-hud="close"></div><div class="hud-sheet" role="dialog" aria-label="Your company">${head}${menu ? menuHtml(g) : ""}<div class="hud-sum hud-sum-static"><span class="hud-stage" title="The lobby counts as one room"><b>${esc(g.stageName)}</b> · ${g.lit}/${g.total} rooms lit<span class="hud-lobby"> · lobby incl.</span></span>${track(g)}</div>${nextHtml(g)}${drawerHtml(g)}</div>` : ""}`;
     } else {
       html = `<div class="hud-card">${head}${menu ? menuHtml(g) : ""}${sum}${nextHtml(g)}${open ? `<div class="hud-drawer">${drawerHtml(g)}</div>` : ""}</div>${back}`;
     }

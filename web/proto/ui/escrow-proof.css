@@ -1,5 +1,5 @@
 /* "Proof on Bitcoin Cash" panel at the end of the live report (VITE_ESCROW=1) and of the finished example. Same tokens as ui/v7.css. */
-.ep-panel { margin: 32px 0 0; padding: 18px 20px; border: 1px solid var(--c-line); border-radius: 14px; background: var(--c-surface); display: grid; gap: 10px; font-size: 13.5px; color: var(--c-ink); min-width: 0; }
+.ep-panel { margin: 32px 0 0; padding: 18px 20px; border: 1px solid var(--c-line); border-radius: 14px; background: var(--c-surface); display: grid; gap: 10px; font-size: 13.5px; color: var(--c-ink); min-width: 0; scroll-margin-top: 64px; }
 .ep-panel h3 { margin: 0; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
 .ep-panel h3::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--c-positive); }
 .ep-panel[data-state="funded"] h3::before { background: var(--c-warning); }
