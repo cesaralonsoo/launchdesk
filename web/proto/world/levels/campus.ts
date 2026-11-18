@@ -203,7 +203,8 @@ export function createCampus(opts: { quality: "low" | "high"; env?: THREE.Textur
     bounds: () => new THREE.Box3(new THREE.Vector3(-GX, -0.7, -GZ), new THREE.Vector3(GX, 6, GZ)),
     framePoints() {
       // the occupied plots + one free plot, tight (never the whole plate when there is little on it)
-      const used = Math.min(PLOTS.length, Math.max(2, items.length + 1));
+      // v8 fix: all six plots (43 x 25 m): a partial set framed the plots off three edges when the items sat elsewhere
+      const used = PLOTS.length;
       const pts: THREE.Vector3[] = [];
       for (let i = 0; i < used; i++) {
         const p = PLOTS[i]!;

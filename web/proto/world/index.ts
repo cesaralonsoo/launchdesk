@@ -446,7 +446,7 @@ export function createWorldX(host: HTMLElement, opts: WorldOptionsV7): WorldX {
       return fitShot(b, ang.yaw, ang.pitch, w, h, insets, 0.12);
     }
     const ang = levelAngles(lv, aspect);
-    return fitShot(boxFor("overview", lv as Level | 0), ang.yaw, ang.pitch, w, h, insets, lv === 0 ? 0.1 : lv === 1 ? 0.06 : 0.04);
+    return fitShot(boxFor("overview", lv as Level | 0), ang.yaw, ang.pitch, w, h, insets, lv === 0 ? 0.1 : lv === 1 ? 0.06 : lv === 3 ? 0.09 : 0.04);
   }
 
   let pose = { dYaw: 0, dPitch: 0 };
@@ -706,10 +706,11 @@ export function createWorldX(host: HTMLElement, opts: WorldOptionsV7): WorldX {
   }
   /** The dashed offices plate: floor level only, never on a No-go, never while the real offices floor shows. */
   function paintPlate(animate = true) {
-    // a wing or room close-up hides it (its dashes would cut across the rooms); the overview and "plate" show it
+    // a wing or room close-up hides it (its dashes would cut across the rooms); the overview and "plate" show it.
+    // A close-up hides it at once, before the camera starts moving (a fading plate sliced across the push-in).
     const close = focusT !== "overview" && focusT !== "area:plate";
     const on = wl === 1 && !noGo && !close && growth.tower < 0.02 && growth.city < 0.5;
-    ghost.show(on ? "plate" : null, animate && !reduced);
+    ghost.show(on ? "plate" : null, animate && !reduced && !close);
   }
 
   // ── input: clicks on rooms / actors, pointer parallax
@@ -942,10 +943,12 @@ export function createWorldX(host: HTMLElement, opts: WorldOptionsV7): WorldX {
   function restoreMine() {
     applyRoster(mine.roster);
     actorStates.clear();
+    const blank = !mine.rooms.size; // no project yet (the home while typing): the founder alone in the lobby
     const def = (id: ActorId): ActorState => (id === "founder" ? "idle" : (BUILD_TEAM as readonly string[]).includes(id) ? "asleep" : "absent");
-    for (const id of ["founder", ...BUILD_TEAM, ...mine.roster.map((a) => a.id)] as ActorId[]) applyActor(id, mine.actors.get(id) ?? def(id), { instant: true });
+    for (const id of ["founder", ...BUILD_TEAM, ...mine.roster.map((a) => a.id)] as ActorId[]) applyActor(id, blank && id !== "founder" ? "absent" : mine.actors.get(id) ?? def(id), { instant: true });
     applySign(mine.sign ?? { kind: "draft", name: "Your idea", color: "#1E2229" });
-    applyRooms(mine.rooms, true);
+    // a company that does not exist yet (the home while typing): only the lobby is lit, every other room locked grey
+    applyRooms(mine.rooms.size ? mine.rooms : new Map(ALL_FLOOR.map((id) => [id, id === "lobby" ? "idle" : "locked"] as [FloorRoom, RoomState])), true);
     office.setScreen(mine.screen.img, mine.screen.line);
   }
   type Example = { roster: Analyst[]; sign: CompanySign; logo: HTMLCanvasElement | null; line: string };
@@ -1074,8 +1077,21 @@ export function createWorldX(host: HTMLElement, opts: WorldOptionsV7): WorldX {
     return null;
   }
   /** Camera presets (WorldV8.shotFor). Hovering a wing dims the other rows. */
-  function shotForArea(a: Area) {
+  function shotForArea(a: Area, o?: { soft?: boolean }) {
     const key = typeof a === "string" ? a : a.room.includes(":") ? a.room : `room:${a.room}`;
+    if (o?.soft && wl === 1 && (key === "wing:back" || key === "wing:front" || key === "plate")) {
+      // home hero: the overview framing (inside the insets), nudged 15% toward the area, the other rows dimmed
+      office.setDim(key === "wing:back" ? [...FRONT_ROW, "lobby"] : key === "wing:front" ? [...BACK_ROW, "lobby"] : ALL_FLOOR);
+      focusT = "overview";
+      paintPlate();
+      const base = shotOf("overview");
+      const c = areaBox(key)!.getCenter(new THREE.Vector3());
+      base.target.x += (c.x - base.target.x) * 0.15;
+      base.target.z += (c.z - base.target.z) * 0.15;
+      base.dist *= 0.985;
+      void go(base, { animate: true, ms: 600 });
+      return;
+    }
     if (key === "stack") {
       office.setDim(null);
       void setWorldLevel(2);

@@ -76,7 +76,8 @@ function dashes(boxes: THREE.Box3[], o: { dash: number; gap: number; thick: numb
   const V = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
   for (const b of boxes) {
     const { min: a, max: c } = b;
-    const ys = [a.y, c.y];
+    // v8 plate: only the top outline + corner posts (a second outline 0.25 m lower doubled every dash over the rooms)
+    const ys = o.posts ? [c.y] : [a.y, c.y];
     if (o.ringEvery) for (let y = (o.ringFrom ?? a.y) + o.ringEvery; y < c.y - 0.3; y += o.ringEvery) ys.push(y);
     for (const y of ys) {
       seg(V(a.x, y, a.z), V(c.x, y, a.z));
@@ -84,9 +85,9 @@ function dashes(boxes: THREE.Box3[], o: { dash: number; gap: number; thick: numb
       seg(V(a.x, y, a.z), V(a.x, y, c.z));
       seg(V(c.x, y, a.z), V(c.x, y, c.z));
     }
-    for (const x of [a.x, c.x]) for (const z of [a.z, c.z]) seg(V(x, a.y, z), V(x, c.y, z));
+    if (!o.posts) for (const x of [a.x, c.x]) for (const z of [a.z, c.z]) seg(V(x, a.y, z), V(x, c.y, z));
     // v8 plate: short dashed corner posts hanging under the slab (they point at the floor it will sit on)
-    if (o.posts) for (const x of [a.x, c.x]) for (const z of [a.z, c.z]) seg(V(x, a.y - o.posts, z), V(x, a.y, z));
+    if (o.posts) for (const x of [a.x, c.x]) for (const z of [a.z, c.z]) seg(V(x, c.y - o.posts, z), V(x, c.y, z));
   }
   return out;
 }
@@ -117,6 +118,9 @@ export function createGhost(src: { floor: () => THREE.Box3[]; tower: () => THREE
   const lockMat = new THREE.SpriteMaterial({ map: lockTex, transparent: true, opacity: 0, depthTest: false, sizeAttenuation: false, fog: false });
   const lock = new THREE.Sprite(lockMat);
   lock.renderOrder = 10;
+  // v8: no padlock anywhere (the plate is a promise with a price, not a wall; floor/tower/district ghosts are unused).
+  // Kept as an object so anchor() still has a position, but it is never drawn.
+  lock.visible = false;
   const ar = 18 / 16;
   lock.scale.set(0.034, 0.034 * ar, 1);
   root.add(lock);
@@ -206,7 +210,7 @@ export function createGhost(src: { floor: () => THREE.Box3[]; tower: () => THREE
       const breathe = opts.reduced || kind === "plate" ? 1 : 0.86 + 0.14 * Math.sin(t * 1.6);
       mat.opacity = (kind === "plate" ? 0.85 : 0.95) * k * breathe;
       fill.opacity = fillK * k * (1 - 0.55 * nightK);
-      lockMat.opacity = kind === "plate" ? 0 : k;
+      lockMat.opacity = 0;
       root.visible = k > 0.001;
       return k !== target;
     },

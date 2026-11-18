@@ -7,7 +7,9 @@ export type OfficeRoomId = "marketing" | "research" | "money" | "customers";
 export interface WorldV8 {
   unlockWing(w: Wing, o?: { animate?: boolean }): Promise<void>;
   setRooms(rooms: { id: string; state: RoomState }[]): void; // floor-1 lit states (game owns the truth)
-  shotFor(a: Area): void; // camera presets incl. phones
+  /** Camera presets incl. phones. `soft` (the home hero): stay at the overview framing, ease a little toward the
+   *  area and dim the rest, so the floor never slides under the copy column. */
+  shotFor(a: Area, o?: { soft?: boolean }): void;
   setOffices(rooms: { id: OfficeRoomId; state: "off" | "working" | "done"; results: number }[], o?: { sample?: boolean }): void;
   setCampus(items: { id: string; name: string; score?: number; verdict?: string; stage: 0 | 1 | 2 | 3; nogo?: boolean }[]): void;
   levelUp(to: "research" | "studio" | "offices" | "campus"): Promise<void>; // camera + geometry only; the card is UI

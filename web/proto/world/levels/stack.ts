@@ -198,7 +198,7 @@ export function createStack(opts: { quality: "low" | "high"; env?: THREE.Texture
   const state = new Map<OfficeRoomId, OfficeState>(OFFICE_ROOMS.map((id) => [id, { id, state: "off", results: 0 }]));
   let sample = false;
   let sweepT = -1;
-  const TINT: Record<OfficeState["state"], Tint> = { off: { k: 0.86, desat: 0.92 }, working: { k: 1.0, desat: 0 }, done: { k: 1.0, desat: 0 } };
+  const TINT: Record<OfficeState["state"], Tint> = { off: { k: 0.95, desat: 0.5 }, working: { k: 1.0, desat: 0 }, done: { k: 1.0, desat: 0 } };
   const GLOW: Record<OfficeState["state"], Tint> = { off: { k: 0.22, desat: 1 }, working: { k: 1.08, desat: 0 }, done: { k: 0.82, desat: 0.1 } };
   function paint(lift: number[] = [0, 0, 0, 0]) {
     const s = sample ? 0.12 : 0;
