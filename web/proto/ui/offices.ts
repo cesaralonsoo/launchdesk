@@ -20,6 +20,14 @@ export type OfficesOpts = {
   /** API origin ("" = same origin). */
   api?: string;
   onClose?: () => void;
+  /** v8: shown as a side card (desktop) / sheet (phone) over the offices floor in 3D, not a full-screen layer. */
+  overWorld?: boolean;
+  /** v8: open on this office (a room picked in 3D). */
+  focus?: OfficeId;
+  /** v8: every view the offices receive (open, poll, task paid, task done), for the game store. */
+  onView?: (v: OfficesView) => void;
+  /** v8: the owner looks at one office (or the whole floor): the camera follows. */
+  onFocus?: (o: OfficeId | null) => void;
 };
 
 const DEMOS = [
@@ -119,7 +127,7 @@ function mountTaskPay(slot: HTMLElement, d: TaskPayDeps): () => void {
 }
 
 /** Opens the offices layer (one at a time). Returns a handle to close it. */
-export function openOffices(o: OfficesOpts = {}): { close(): void } {
+export function openOffices(o: OfficesOpts = {}): { close(): void; focus(o: OfficeId): void } {
   openLayer?.close();
   const api = o.api ?? "";
   let view: OfficesView | null = null;
@@ -128,9 +136,11 @@ export function openOffices(o: OfficesOpts = {}): { close(): void } {
   let closed = false;
   let open = new Set<string>();
   let payDispose: (() => void) | null = null;
+  let focusRoom: OfficeId | null = o.focus ?? null;
+  const side = !!o.overWorld;
   const prevFocus = document.activeElement as HTMLElement | null;
 
-  const layer = el(`<div class="ofx" role="dialog" aria-modal="true" aria-label="Your offices">
+  const layer = el(`<div class="ofx${side ? " ofx-side" : ""}" role="dialog" aria-modal="${side ? "false" : "true"}" aria-label="Your offices">
     <div class="ofx-in">
       <header class="ofx-top">
         <div class="ofx-t"><span class="eyebrow" data-ofx-eyebrow>Your offices</span><h2 class="t-display" data-ofx-name>${esc(o.name || "Your offices")}</h2></div>
@@ -141,7 +151,7 @@ export function openOffices(o: OfficesOpts = {}): { close(): void } {
     <div class="ofx-sheet" data-ofx-sheet hidden></div>
   </div>`);
   document.body.appendChild(layer);
-  document.documentElement.classList.add("ofx-lock");
+  if (!side) document.documentElement.classList.add("ofx-lock");
   const main = layer.querySelector<HTMLElement>("[data-ofx-main]")!;
   const sheet = layer.querySelector<HTMLElement>("[data-ofx-sheet]")!;
   const setName = (n: string, eyebrow = "Your offices") => {
@@ -237,7 +247,7 @@ export function openOffices(o: OfficesOpts = {}): { close(): void } {
   const roomHtml = (r: OfficeDef, inbox: InboxItem[]) => {
     const working = inbox.filter((i) => i.office === r.id && i.status === "working").length;
     return `
-    <article class="ofr" style="--tint:${ROOM_TINT[r.id]}">
+    <article class="ofr${focusRoom === r.id ? " is-focus" : ""}" data-of-room="${r.id}" style="--tint:${ROOM_TINT[r.id]}">
       <header><span class="ofr-ic" aria-hidden="true">${ROOM_ICON[r.id](18)}</span><div><h3>${esc(r.name)}</h3><p>${esc(r.line)}</p></div>${working ? `<span class="ofr-busy"><i></i>Working</span>` : ""}</header>
       <ul>${r.tasks.map(taskBtn).join("")}</ul>
     </article>`;
@@ -296,10 +306,12 @@ export function openOffices(o: OfficesOpts = {}): { close(): void } {
       <dl>${rows.map(([k, x]) => `<div><dt>${esc(k!)}</dt><dd>${esc(x!)}</dd></div>`).join("")}</dl></details>`;
   };
 
+  let scrollToFocus = !!focusRoom;
   function paint() {
     if (closed || !view) return;
     const v = view;
-    setName(v.brain.name);
+    // a created project: the name its launch kit gave it (the brain keeps the working title)
+    setName(v.source === "report" && v.projectId === o.projectId && o.name ? o.name : v.brain.name);
     if (v.questions.length) {
       main.innerHTML = questionsHtml(v.questions);
       main.querySelector<HTMLInputElement>("input")?.focus({ preventScroll: true });
@@ -321,6 +333,11 @@ export function openOffices(o: OfficesOpts = {}): { close(): void } {
     main.querySelector<HTMLElement>("[data-ofx-brain]")!.innerHTML = brainHtml(v);
     const spent = v.inbox.reduce((t, i) => t + (i.status === "done" && !i.paid?.test ? i.usedCents ?? 0 : 0), 0);
     main.querySelector<HTMLElement>("[data-ofx-sum]")!.textContent = v.inbox.length ? `${v.inbox.length} task${v.inbox.length > 1 ? "s" : ""}${spent ? ` · ${cents(spent)} used` : ""}` : "";
+    o.onView?.(v);
+    if (scrollToFocus && focusRoom) {
+      scrollToFocus = false;
+      main.querySelector<HTMLElement>(`[data-of-room="${focusRoom}"]`)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
     schedule();
   }
   function schedule() {
@@ -464,6 +481,12 @@ export function openOffices(o: OfficesOpts = {}): { close(): void } {
       return void startFromProject();
     }
     if (t === sheet) return closeSheet();
+    // v8: tapping a room's header points the camera at it
+    const roomHead = t.closest<HTMLElement>(".ofr > header")?.parentElement?.dataset.ofRoom as OfficeId | undefined;
+    if (roomHead && side) {
+      handle.focus(roomHead);
+      return o.onFocus?.(roomHead);
+    }
     const demo = t.closest<HTMLElement>("[data-of-demo]")?.dataset.ofDemo;
     if (demo != null) {
       const d = DEMOS[Number(demo)]!;
@@ -506,11 +529,16 @@ export function openOffices(o: OfficesOpts = {}): { close(): void } {
       if (timer) clearTimeout(timer);
       closeSheet();
       document.removeEventListener("keydown", onKey);
-      document.documentElement.classList.remove("ofx-lock");
+      if (!side) document.documentElement.classList.remove("ofx-lock");
       layer.remove();
       openLayer = null;
       prevFocus?.focus?.({ preventScroll: true });
       o.onClose?.();
+    },
+    focus(r: OfficeId) {
+      focusRoom = r;
+      main.querySelectorAll<HTMLElement>("[data-of-room]").forEach((n) => n.classList.toggle("is-focus", n.dataset.ofRoom === r));
+      main.querySelector<HTMLElement>(`[data-of-room="${r}"]`)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
     },
   };
   openLayer = handle;

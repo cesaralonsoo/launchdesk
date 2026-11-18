@@ -8,6 +8,7 @@ import type { Kit, LogoOption, LogoResult, SiteTemplate } from "../../../server/
 import { el, esc } from "./dom";
 import { I } from "./icons";
 import { usd } from "./view";
+import { OFFICES_EVENT } from "../game/types";
 import "./kit-screen.css";
 
 export type KitPayload = { kit: Kit | null; slug: string | null; siteUrl: string | null; running: boolean };
@@ -213,7 +214,7 @@ async function view(path: string): Promise<Mod | null> {
   return load ? load().catch(() => null) : null;
 }
 type Picker = { update(result: LogoResult): void; destroy(): void };
-type PickerMount = (el: HTMLElement, props: { brand: Kit["brand"]; result: LogoResult; onChoose: (id: string) => Promise<void>; onMore?: () => Promise<LogoResult> }) => Picker;
+type PickerMount = (el: HTMLElement, props: { brand: Kit["brand"]; result: LogoResult; onChoose?: (id: string) => Promise<void>; onMore?: () => Promise<LogoResult> }) => Picker;
 type PlanMount = (el: HTMLElement, props: Record<string, unknown>) => void;
 
 // ───────────────────────────── mount + live polling
@@ -402,6 +403,9 @@ export function mountKitScreen(root: HTMLElement, o: KitScreenOpts): { stop(): v
       // a read-only example cannot open offices (the server refuses it): the button starts the visitor's own idea
       if (o.readOnly && o.onOwn) return o.onOwn();
       if (o.mock || o.readOnly) return o.onOffices?.(data.kit?.brand.name);
+      // v8: the game layer opens the offices floor over the 3D (level-up once); without it, the old full-screen layer
+      const ev = new CustomEvent(OFFICES_EVENT, { cancelable: true, detail: { projectId: o.projectId, ownerKey: o.ownerKey ?? null, name: data.kit?.brand.name } });
+      if (!api && !dispatchEvent(ev)) return;
       return void import("./offices").then((m) => m.openOffices({ projectId: o.projectId, ownerKey: o.ownerKey, api, name: data.kit?.brand.name }));
     }
     if (act === "copy") {

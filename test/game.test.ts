@@ -76,6 +76,7 @@ const badge = (g: ReturnType<typeof computeGame>, id: string) => g.badges.find((
   const g = computeGame(base({ project: proj({ paid: { validate: { txid: "dev-123" } } }) }));
   assert.equal(badge(g, "money-locked").earned, true);
   assert.equal(badge(g, "money-locked").proof?.href, undefined);
+  assert.equal(badge(g, "money-locked").line, "Practice run: no money moved.");
 }
 
 // ── escrow proof: funding + fingerprint from the proof, release tx linked
@@ -128,6 +129,14 @@ const badge = (g: ReturnType<typeof computeGame>, id: string) => g.badges.find((
   assert.equal(g.steersLeft, 2);
 }
 
+// ── kit paid, nothing delivered yet (the kit has not even started): "being made", still polling, rooms not lit
+{
+  const p = proj({ paid: { validate: { txid: "dev-1" }, build: { txid: "dev-2" } }, status: "done", roster: roster4, work: done(roster4), report: { score: 7, verdict: "go" } });
+  const g = computeGame(base({ project: p }));
+  assert.deepEqual([g.next.text, g.inFlight, g.lit], ["Your kit is being made", true, 5]);
+  assert.ok(floorRooms(g).filter((r) => ["nova", "dex", "launch"].includes(r.id)).every((r) => r.state === "idle"));
+}
+
 // ── kit: rooms light per real part; logo first, then site, then plan
 {
   const p = proj({ paid: { validate: { txid: "dev-1" }, build: { txid: TX("d") } }, status: "done", roster: roster4, work: done(roster4), report: { score: 7, verdict: "go" } });
@@ -140,13 +149,13 @@ const badge = (g: ReturnType<typeof computeGame>, id: string) => g.badges.find((
   const b = computeGame(base({ project: p, kit: { logo: "done", logoChosen: true, site: "done", siteUrl: "https://ld/s/pausa", plan: "done", planDone: true } }));
   assert.equal(b.lit, 8);
   assert.equal(badge(b, "site-live").proof?.href, "https://ld/s/pausa");
-  assert.deepEqual([b.next.text, b.next.price], ["Run your first office task", "from 2¢"]);
+  assert.deepEqual([b.next.text, b.next.price], ["Run an office task", "from 2¢"]);
   // offices
   const c = computeGame(base({ project: p, kit: { logo: "done", logoChosen: true, site: "done", siteUrl: "https://ld/s/pausa", plan: "done", planDone: true }, offices: { inbox: [{ office: "money", status: "done", txid: "test-1", test: true }] } }));
   assert.equal(c.stage, "offices");
   assert.equal(c.lit, 9);
   assert.equal(badge(c, "first-office-task").proof?.label, "Test run · nothing charged");
-  assert.deepEqual([c.next.text, c.next.price], ["Give the Marketing office a task", "from 9¢"]);
+  assert.deepEqual([c.next.text, c.next.price], ["Try the Marketing office", "from 9¢"]);
   assert.deepEqual(officeRooms(c, base({ offices: { inbox: [{ office: "money", status: "done" }] } })).find((r) => r.id === "money"), { id: "money", state: "done", results: 1 });
 }
 

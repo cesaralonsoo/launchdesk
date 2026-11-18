@@ -123,10 +123,10 @@ export const centsLabel = (c: number) => (c >= 100 ? `$${(c / 100).toFixed(2)}` 
 const one = (n: number) => (Math.round(n * 10) / 10).toFixed(1);
 
 function txProof(txid: string | null | undefined, label: string): Badge["proof"] {
-  if (isRealTxid(txid)) return { label, href: explorerTx(txid) };
-  if (txid) return { label: "Local test · no money moved" };
-  return undefined;
+  return isRealTxid(txid) ? { label, href: explorerTx(txid) } : undefined;
 }
+/** A payment badge's line: the real one, or the honest practice line when no money moved (dev-/test- ids). */
+const paidLine = (txid: string | null | undefined, real: string) => (isRealTxid(txid) ? real : "Practice run: no money moved.");
 
 /** The research rooms in use: one per analyst in roster order (max 4). Before the team is picked: all 4. */
 function researchRooms(s: GameSnapshot): Array<{ id: (typeof RESEARCH_ROOMS)[number]; analysts: string[] }> {
@@ -219,7 +219,7 @@ export function computeGame(s: GameSnapshot): GameState {
       id: "money-locked",
       name: "Money locked",
       earned: paid1,
-      line: paid1 ? (isRealTxid(fundingTxid) ? "10¢ in a Bitcoin Cash contract." : "Your 10¢ step is paid.") : "Lock 10¢ on Bitcoin Cash to start the research.",
+      line: paid1 ? paidLine(fundingTxid, s.proof?.fundingTxid ? "10¢ in a Bitcoin Cash contract." : "10¢ paid on Bitcoin Cash.") : "Lock 10¢ on Bitcoin Cash to start the research.",
       proof: txProof(fundingTxid, "Funding tx"),
     },
     nogo
@@ -247,7 +247,7 @@ export function computeGame(s: GameSnapshot): GameState {
       id: "kit-paid",
       name: "Kit paid",
       earned: paid2,
-      line: paid2 ? "The studio is yours." : "Get the launch kit for 50¢.",
+      line: paid2 ? (isRealTxid(p?.paid.build?.txid) ? "The studio is yours." : "The studio is yours. Practice run: no money moved.") : "Get the launch kit for 50¢.",
       proof: txProof(p?.paid.build?.txid, "Kit tx"),
     },
     {
@@ -279,21 +279,23 @@ export function computeGame(s: GameSnapshot): GameState {
   ];
 
   // ── the one next action, with its price
-  const kitBusy = !!k && [k.logo, k.site, k.plan].some((x) => x === "working" || x === "queued");
+  // the kit is "being made" from the 50¢ payment until every part is delivered (or failed): a missing part is not done
+  const kitSettled = !!k && [k.logo, k.site, k.plan].every((x) => x === "done" || x === "error");
+  const kitBusy = paid2 && !kitSettled;
   const minFrom = Math.min(...OFFICE_IDS.map((o) => s.officeFrom[o]));
   let next: NextStep;
   if (s.example) next = { text: "Check your own idea", price: "10¢", act: "new" };
   else if (!paid1) next = { text: "Check your idea", price: "10¢", act: "pay1" };
-  else if (!report) next = p?.status === "error" ? { text: "Your team hit a snag: open the report screen", price: "nothing charged twice", act: "wait" } : { text: "Your team is researching", price: "about 2 minutes", act: "wait" };
+  else if (!report) next = p?.status === "error" ? { text: "Your team hit a snag: open the report screen", price: "nothing charged twice", act: "wait" } : { text: "Your team is researching", price: "about 2 min", act: "wait" };
   else if (nogo && !paid2) next = { text: "Try another idea", price: "10¢", act: "new" };
   else if (!paid2) next = { text: "Get your launch kit", price: "50¢", act: "kit" };
   else if (k && k.logo === "done" && !k.logoChosen) next = { text: "Pick your logo", price: "included", act: "logo" };
-  else if (kitBusy || !k) next = { text: "Your kit is being made", price: "included", act: "wait" };
+  else if (kitBusy) next = { text: "Your kit is being made", price: "included", act: "wait" };
   else if (doneOffices.size === 0)
-    next = workingOffices.size ? { text: "Your first office task is running", price: "quoted before it ran", act: "offices" } : { text: "Run your first office task", price: `from ${centsLabel(minFrom)}`, act: "offices" };
+    next = workingOffices.size ? { text: "Your office is on it", price: "price quoted", act: "offices" } : { text: "Run an office task", price: `from ${centsLabel(minFrom)}`, act: "offices" };
   else if (doneOffices.size < 4) {
     const o = OFFICE_IDS.find((x) => !doneOffices.has(x))!;
-    next = { text: `Give the ${OFFICE_NAME[o]} office a task`, price: `from ${centsLabel(s.officeFrom[o])}`, act: "offices", office: o };
+    next = { text: `Try the ${OFFICE_NAME[o]} office`, price: `from ${centsLabel(s.officeFrom[o])}`, act: "offices", office: o };
   } else if (reportedMine < 2) next = { text: "Check a second idea", price: "10¢", act: "new" };
   else next = { text: "Walk through your campus", price: "free", act: "campus" };
 
