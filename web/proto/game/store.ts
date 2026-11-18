@@ -3,7 +3,7 @@
 // of world.setRooms / setOffices / setCampus / unlockWing / levelUp. It polls every 4 s only while something is in
 // flight. Samples (tour, practice runs) are computed from the flow's own sample data and never fetch or persist.
 import { FLOW_STEPS_V7, STEER_LIMIT, type FlowStepV7, type ProjectV7, type WorldV7 } from "../contracts";
-import type { ProtoFlowV7 } from "../flow";
+import { brandSign, type ProtoFlowV7 } from "../flow";
 import type { WorldV8 } from "../world/api-v8";
 import type { InboxItem, OfficesView } from "../../../server/offices/types";
 import type { Kit } from "../../../server/kit-contract";
@@ -120,7 +120,8 @@ export function createGameStore(world: World, flow: ProtoFlowV7): GameStore {
       projectId: p.id,
       sample: true,
       example: false,
-      name: p.sign.kind === "brand" ? p.sign.name : p.title,
+      // once the kit is paid the sample company carries its brand, as the kit card, the offices card and the site do
+      name: p.sign.kind === "brand" ? p.sign.name : (built && brandSign(p)?.name) || p.title,
       project: {
         paid: at(step) >= at("hire") ? { validate: { txid: "sample" }, ...(built ? { build: { txid: "sample" } } : {}) } : {},
         status: reported ? "done" : at(step) >= at("hire") ? "analysing" : null,

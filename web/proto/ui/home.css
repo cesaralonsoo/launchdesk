@@ -130,7 +130,19 @@ html.home .ui.v7 > :not(.overlay) { display: none !important; }
 .h-step > .h-time { font-size: 12.5px; color: var(--muted); margin: -6px 0 12px; }
 .h-vis { margin-top: auto; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); background: #fff; }
 .h-vis img { display: block; width: 100%; height: auto; }
-.h-vis-rep { padding: 14px 12px 12px; }
+.h-vis-rep { padding: 16px 16px 14px; display: grid; gap: 12px; }
+.h-rep-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.h-rep-s { font: 700 34px/1 var(--font-d); letter-spacing: -.03em; color: var(--ink); }
+.h-rep-s small { font-size: 14px; font-weight: 500; color: var(--muted); letter-spacing: 0; margin-left: 2px; }
+.h-rep-v { font: 650 13px/1 var(--font-t); color: var(--warn); background: #FBF1E2; padding: 6px 9px; border-radius: var(--r-pill); }
+.h-rep-f { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.h-rep-f li { display: grid; grid-template-columns: 104px 1fr 26px; align-items: center; gap: 10px; font-size: 12.5px; color: var(--ink-2); }
+.h-rep-f em { font-style: normal; color: var(--faint); font-size: 11px; }
+.h-rep-f i { height: 6px; border-radius: 3px; background: rgba(11, 13, 18, .08); overflow: hidden; }
+.h-rep-f b { display: block; height: 100%; border-radius: 3px; }
+.h-rep-f strong { font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+.h-rep-m { margin: 0; font: 500 11px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); }
+.h-rep-p { justify-self: start; font-size: 11.5px; font-weight: 500; color: #0B7A55; background: #E8F7F0; border: 1px solid #BFE8D6; padding: 4px 9px; border-radius: var(--r-pill); }
 .h-cap { font-size: 12px; color: var(--muted); margin: 10px 0 0; }
 .h-cap a { color: var(--ink-2); font-weight: 500; }
 .h-src { font-weight: 600; color: var(--ink-2); }

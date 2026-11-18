@@ -6,7 +6,7 @@ import {
   type Analyst, type AnalystRole, type BuildDept, type Finding, type FindingKind, type IdeaReport, type ReportPage,
   type ScalePath, type SteerChange, type SteerResult,
 } from "../contracts";
-import { REPORT_PAGES, type ProtoFlowV7 } from "../flow";
+import { brandSign, REPORT_PAGES, type ProtoFlowV7 } from "../flow";
 import { esc } from "./dom";
 import { I } from "./icons";
 import { ldMark } from "./logo";
@@ -437,7 +437,7 @@ function companiesList(f: ProtoFlowV7): string {
   type Row = { id: string; name: string; tag: "Sample" | "Example" | "Yours"; stage: string; score: number | null; verdict?: string; at?: "report" };
   const rows: Row[] = [];
   if (f.isSample(f.project.id))
-    rows.push({ id: f.project.id, name: f.project.title, tag: "Sample", stage: "Tour data · report + launch kit", score: f.report?.score ?? null, verdict: f.report?.verdict });
+    rows.push({ id: f.project.id, name: brandSign(f.project)?.name ?? f.project.title, tag: "Sample", stage: "Tour data · report + launch kit", score: f.report?.score ?? null, verdict: f.report?.verdict });
   for (const x of finished) rows.push({ id: x.id, name: x.title, tag: "Example", stage: "Real run · report + launch kit", score: x.verdict?.score ?? null, verdict: x.verdict?.verdict, at: "report" });
   const mine = f.mine.filter((p) => !finished.some((x) => x.id === p.id) && !/^ex-/.test(p.id)).map((m) => f.projects.find((x) => x.id === m.id) ?? m);
   for (const p of mine) {
