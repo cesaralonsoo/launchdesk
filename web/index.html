@@ -27,7 +27,14 @@
     </script>
     <style>
       html, body { margin: 0; height: 100%; overflow: hidden; background: var(--c-bg, #F6F4EF); -webkit-font-smoothing: antialiased; }
+      /* v8: one flat background on every route (the world's sky gradient is only for ?time= / ?cycle= captures) */
       #world { position: fixed; inset: 0; }
+      html:not(.sky) #world { background: #F6F4EF !important; }
+      html.nogl #world { display: flex; align-items: center; justify-content: center; }
+      html.nogl #world .nogl-still { width: min(92%, 980px); height: auto; max-height: 92%; object-fit: contain; }
+      html.home.nogl #world { justify-content: flex-end; padding-right: 2vw; box-sizing: border-box; }
+      html.home.nogl #world .nogl-still { width: min(54vw, 860px); }
+      @media (max-width: 767px) { html.home.nogl #world { justify-content: center; padding: 0 } html.home.nogl #world .nogl-still { width: 100%; } }
       #world canvas { display: block; width: 100%; height: 100%; }
       html.nohome #ld-home { display: none; }
     </style>
@@ -85,9 +92,9 @@
             <a class="h-tour" href="/?demo=1"><span aria-hidden="true">▶</span> 90-second tour</a>
           </div>
           <div class="h-strip" role="group" aria-label="The three stages">
-            <button type="button" class="h-cell" style="--c:var(--s1)" data-stage="1"><span class="h-n">1</span><b>Research <em>· 10¢</em></b><span class="h-cd">Score, verdict, sources</span></button>
-            <button type="button" class="h-cell" style="--c:var(--s2)" data-stage="2"><span class="h-n">2</span><b>Launch kit <em>· 50¢</em></b><span class="h-cd">Logo, live website, 30-day plan</span></button>
-            <button type="button" class="h-cell" style="--c:var(--s3)" data-stage="3"><span class="h-n">3</span><b>Offices <em>· from 2¢</em></b><span class="h-cd">Weekly work: posts, prices, replies</span></button>
+            <button type="button" class="h-cell" style="--c:var(--s1)" data-stage="1"><span class="h-n">1</span><b>Research <em><i class="h-mid">· </i>10¢</em></b><span class="h-cd">Score, verdict, sources</span></button>
+            <button type="button" class="h-cell" style="--c:var(--s2)" data-stage="2"><span class="h-n">2</span><b>Launch kit <em><i class="h-mid">· </i>50¢</em></b><span class="h-cd">Logo, live website, 30-day plan</span></button>
+            <button type="button" class="h-cell" style="--c:var(--s3)" data-stage="3"><span class="h-n">3</span><b>Offices <em><i class="h-mid">· </i>from 2¢</em></b><span class="h-cd">Weekly work: posts, prices, replies</span></button>
           </div>
           <p class="h-note">Pay only for the next step. No account, no subscription.</p>
         </div>
@@ -106,7 +113,7 @@
                 <div class="h-step-h"><span class="h-n">1</span><b>Research</b><span class="h-price">10¢</span></div>
                 <p class="h-time">About 2 minutes</p>
                 <p>Three to five analysts picked for your idea read real sources: demand, competitors, prices, rules. You get a score out of 10 with the formula on show, and a Go, Test first or No-go.</p>
-                <div class="h-vis h-vis-rep"><img src="./public/home/shot-report.webp" width="696" height="290" loading="lazy" alt="Report header of the finished example: verdict Test first, score 5.5 out of 10, grows to one neighbourhood, paid on Bitcoin Cash"></div>
+                <div class="h-vis h-vis-rep"><img src="./public/home/shot-report.webp" width="625" height="160" loading="lazy" alt="Report header of the finished example: verdict Test first, score 5.5 out of 10, grows to one neighbourhood, paid on Bitcoin Cash"></div>
                 <p class="h-cap"><span class="h-src">Real report</span> · <span data-h="cap-report">Coffee kiosk, Barcelona · 5.5 Test first</span></p>
               </article>
               <article class="h-step" style="--c:var(--s2)">
@@ -117,7 +124,7 @@
                   <div class="h-logo"><img src="./public/home/shot-logo.webp" width="264" height="150" alt="The chosen logo of the finished example"><span>Chosen logo<br>from the studio's options</span></div>
                   <div class="h-browser"><div class="h-bar"><i></i><i></i><i></i><span data-h="site-url">/s/sortida</span></div><img src="./public/home/shot-site.webp" width="1100" height="621" loading="lazy" alt="The website the launch kit made for the finished example"></div>
                 </div>
-                <p class="h-cap"><span class="h-src">Real kit</span> · <a href="/s/sortida" data-h="site-link" target="_blank" rel="noopener">the site is online →</a></p>
+                <p class="h-cap"><span class="h-src">Real kit</span> · from a second run (€2.50 version) · <a href="/s/sortida" data-h="site-link" target="_blank" rel="noopener">the site is online →</a></p>
               </article>
               <article class="h-step" style="--c:var(--s3)">
                 <div class="h-step-h"><span class="h-n">3</span><b>Offices</b><span class="h-price">from 2¢</span></div>
@@ -198,39 +205,11 @@
                 <div class="h-bd"><b><i></i>Launch kit</b><p>Logo, site and plan get made here.</p><div class="h-when"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="5" width="8" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M4 5V3.6a2 2 0 0 1 4 0V5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Opens when the kit is paid</div></div>
               </article>
               <article class="h-tile" style="--c:var(--s3)">
-                <div class="h-img">
-                  <svg viewBox="0 0 400 270" preserveAspectRatio="xMidYMid slice" width="100%" height="100%" role="img" aria-label="Illustration: a second floor with four office rooms above the first floor">
-                    <rect width="400" height="270" fill="#F1EEE8"/>
-                    <g transform="translate(0,6)">
-                      <polygon points="60,190 200,260 340,190 200,120" fill="#E6E0D6"/>
-                      <polygon points="60,190 200,260 200,268 60,198" fill="#D8D1C5"/><polygon points="200,260 340,190 340,198 200,268" fill="#CFC7BA"/>
-                      <line x1="80" y1="180" x2="80" y2="110" stroke="#C9C1B4" stroke-width="2"/><line x1="320" y1="180" x2="320" y2="110" stroke="#C9C1B4" stroke-width="2"/><line x1="200" y1="250" x2="200" y2="180" stroke="#C9C1B4" stroke-width="2"/>
-                      <polygon points="60,110 200,180 340,110 200,40" fill="#FBFAF7" stroke="#8C6BE8" stroke-width="1.6"/>
-                      <polygon points="60,110 200,180 200,186 60,116" fill="#E9E4F8"/><polygon points="200,180 340,110 340,116 200,186" fill="#DCD3F5"/>
-                      <g opacity=".95">
-                        <polygon points="95,110 130,127.5 165,110 130,92.5" fill="#F6D9BF"/>
-                        <polygon points="130,92.5 165,110 200,92.5 165,75" fill="#D3DEFB"/>
-                        <polygon points="165,127.5 200,145 235,127.5 200,110" fill="#CBEBDC"/>
-                        <polygon points="200,110 235,127.5 270,110 235,92.5" fill="#E3DAFA"/>
-                      </g>
-                      <polygon points="60,110 200,40 200,22 60,92" fill="#EFEBE3"/><polygon points="200,40 340,110 340,92 200,22" fill="#E8E3DA"/>
-                    </g>
-                  </svg>
-                  <span class="h-flag">Illustration</span></div>
+                <div class="h-img"><img src="./public/home/tile-offices.webp" width="1000" height="676" loading="lazy" alt="The offices floor above the first floor: Marketing, Research, Money and Customers, not yet working"><span class="h-flag">Sample</span></div>
                 <div class="h-bd"><b><i></i>Offices</b><p>A second floor for the weekly work.</p><div class="h-when"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="5" width="8" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M4 5V3.6a2 2 0 0 1 4 0V5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Opens when your first office task is done</div></div>
               </article>
               <article class="h-tile" style="--c:var(--s4)">
-                <div class="h-img">
-                  <svg viewBox="0 0 400 270" preserveAspectRatio="xMidYMid slice" width="100%" height="100%" role="img" aria-label="Illustration: a campus of small cut-open buildings, one per idea">
-                    <rect width="400" height="270" fill="#F1EEE8"/>
-                    <polygon points="30,160 200,245 370,160 200,75" fill="#E4EEE9"/>
-                    <path d="M115 202 L285 117" stroke="#D3E3DB" stroke-width="10"/>
-                    <g transform="translate(130,118)"><polygon points="-40,20 0,40 40,20 0,0" fill="#fff" stroke="#3A9D8F" stroke-width="1.4"/><polygon points="-40,20 0,40 0,46 -40,26" fill="#CFE5DF"/><polygon points="0,40 40,20 40,26 0,46" fill="#BFDCD4"/><polygon points="-30,15 0,30 0,12 -30,-3" fill="#F6D9BF"/><polygon points="0,30 30,15 30,-3 0,12" fill="#D3DEFB"/></g>
-                    <g transform="translate(250,148)"><polygon points="-40,20 0,40 40,20 0,0" fill="#fff" stroke="#3A9D8F" stroke-width="1.4"/><polygon points="-40,20 0,40 0,46 -40,26" fill="#CFE5DF"/><polygon points="0,40 40,20 40,26 0,46" fill="#BFDCD4"/><polygon points="-30,15 0,30 0,16 -30,1" fill="#E3DAFA"/></g>
-                    <g transform="translate(190,88)"><polygon points="-40,20 0,40 40,20 0,0" fill="none" stroke="#3A9D8F" stroke-width="1.4" stroke-dasharray="5 5"/></g>
-                    <g transform="translate(300,98)"><polygon points="-30,15 0,30 30,15 0,0" fill="none" stroke="#3A9D8F" stroke-width="1.4" stroke-dasharray="5 5"/></g>
-                  </svg>
-                  <span class="h-flag">Illustration</span></div>
+                <div class="h-img"><img src="./public/home/tile-campus.webp" width="1000" height="676" loading="lazy" alt="The campus: a sample building and the finished example side by side, free plots for your next ideas"><span class="h-flag">Sample</span></div>
                 <div class="h-bd"><b><i></i>Campus</b><p>Every idea gets its own building, cut open.</p><div class="h-when"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="5" width="8" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M4 5V3.6a2 2 0 0 1 4 0V5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Opens when a second idea gets its report</div></div>
               </article>
             </div>

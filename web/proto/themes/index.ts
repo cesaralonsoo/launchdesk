@@ -160,8 +160,8 @@ export function applyBase(root: HTMLElement = document.documentElement): void {
 /** v7 (contract f): the UI never follows the day cycle. Only the 3D scene changes with the hour; panels, text and the
  *  logo stay exactly the same at noon and at midnight. Glass fill ≥ 0.9 so a night sky never darkens a panel. */
 export const UI_TOKENS: Record<string, string> = {
-  "--c-bg": "#E9ECF0",
-  "--c-sky": "#E6EAF0",
+  "--c-bg": "#F6F4EF", // v8: one background everywhere (PLAN.md 2.3), the home's cream
+  "--c-sky": "#F6F4EF",
   "--c-glass": "rgba(255,255,255,0.95)",
   "--c-glass-strong": "rgba(255,255,255,0.985)",
   "--c-surface": "#FFFFFF",

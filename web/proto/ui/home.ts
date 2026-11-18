@@ -11,13 +11,12 @@
 import type { WorldV7 } from "../contracts";
 import type { ProtoFlowV7 } from "../flow";
 import type { WorldV8, Area } from "../world/api-v8";
-import type { ProjectV7 } from "../contracts";
 import { STEP_EVENT } from "../game/types";
 import { examples, mainExample, type ExampleCard } from "./example";
 import { checkReportHash } from "./escrow-proof";
 import { mountLabels, type LabelPoint } from "./labels";
 import { mountFooter } from "../banner";
-import { createProject, liveConfig } from "../live/adapter";
+import { liveConfig } from "../live/adapter";
 import { projects as savedProjects } from "../../src/app/projects";
 // the real task catalog the server charges from (plain data; the prices on the page are the prices you pay)
 import { OFFICES } from "../../../server/offices/catalog";
@@ -36,7 +35,6 @@ const VERDICT: Record<string, string> = { go: "Go", pivot: "Test first", "no-go"
 /** Same tints as the offices floor (ui/offices.ts ROOM_TINT). */
 const ROOM_TINT: Record<string, string> = { marketing: "#E8590C", research: "#1971C2", money: "#05875F", customers: "#7048E8" };
 const FALLBACK_SAMPLES = [
-  "A specialty coffee kiosk at a Barcelona metro exit, €3 flat whites for commuters",
   "A dog-walking app for busy Madrid professionals, €12 a walk",
   "An online shop for restored vintage road bikes, around €450 each",
 ];
@@ -171,7 +169,9 @@ export function mountHome(host: HTMLElement, deps: HomeDeps): () => void {
   /** Leaving is synchronous (the app measures its next card in a microtask right after ld:step); coming back waits a frame. */
   function sync() {
     const step = flow.state.step;
-    if (!HOME_STEPS.has(step)) armed = true;
+    // any step past the home arms it; so does landing on the idea step at "/" (a /p/<id> link that is not on this
+    // server falls back there: the visitor gets the real home, not the old fallback card)
+    if (!HOME_STEPS.has(step) || (step === "idea" && location.pathname === "/")) armed = true;
     const want = armed && HOME_STEPS.has(step);
     if (!want && active) {
       setActive(false);
@@ -211,7 +211,7 @@ export function mountHome(host: HTMLElement, deps: HomeDeps): () => void {
     focused = n;
     $$(".h-cell").forEach((c) => c.classList.toggle("on", c.dataset.stage === String(n)));
     labels.setActive(n ? `s${n}` : null);
-    if (active) world.shotFor(n ? AREA[n]! : "floor");
+    if (active) world.shotFor(n ? AREA[n]! : "floor", { soft: true });
   }
   const enter = (id: string) => focusStage(Number(id.slice(1)));
   const leave = () => focusStage(0);
@@ -222,6 +222,8 @@ export function mountHome(host: HTMLElement, deps: HomeDeps): () => void {
       { id: "s1", className: "h-p1", html: PIN(1, "Research", "10¢"), label: "Research, 10 cents: show it on the floor", onEnter: enter, onLeave: leave, onClick: (id) => tapStage(Number(id.slice(1))) },
       { id: "s2", className: "h-p2", html: PIN(2, "Launch kit", "50¢"), label: "Launch kit, 50 cents: show it on the floor", onEnter: enter, onLeave: leave, onClick: (id) => tapStage(Number(id.slice(1))) },
       { id: "s3", className: "h-p3", html: PIN(3, "Offices", "from 2¢"), label: "Offices, from 2 cents a task: show them", onEnter: enter, onLeave: leave, onClick: (id) => tapStage(Number(id.slice(1))) },
+      // "This will be yours": the first words of the typed idea, pinned to the lobby (the door sign is too small to read)
+      { id: "lobby", className: "h-plobby", html: `<span class="h-w"><b></b> <em>· Lobby</em></span>` },
     ],
   });
   offs.push(() => labels.dispose());
@@ -229,7 +231,7 @@ export function mountHome(host: HTMLElement, deps: HomeDeps): () => void {
   function points(): LabelPoint[] {
     let got: LabelPoint[] = [];
     try {
-      got = world.labelPoints().flatMap((p) => (PIN_OF[p.id] ? [{ ...p, id: PIN_OF[p.id]! }] : []));
+      got = world.labelPoints().flatMap((p) => (PIN_OF[p.id] ? [{ ...p, id: PIN_OF[p.id]! }] : p.id === "room:lobby" && mine ? [{ ...p, id: "lobby" }] : []));
     } catch {
       got = [];
     }
@@ -279,6 +281,8 @@ export function mountHome(host: HTMLElement, deps: HomeDeps): () => void {
     }
     clearTimeout(signTimer);
     // the door sign of "your" floor shows the first words of the idea (WP-B: setSign draft; the wall screen stays blank)
+    const lobby = pinsEl.querySelector<HTMLElement>('[data-id="lobby"] b');
+    if (lobby) lobby.textContent = mine ? signWords(ta.value) || "Your idea" : "";
     if (mine) signTimer = window.setTimeout(() => active && world.setSign({ kind: "draft", name: signWords(ta.value) || "Your idea", color: "#1E2229" }), 250);
   }
   on(ta, "input", onType);
@@ -295,7 +299,6 @@ export function mountHome(host: HTMLElement, deps: HomeDeps): () => void {
 
   // ─── submit (the same path as the old idea card: create the project, then the flow takes over at pay1) ────
   let busy = false;
-  let lastUnpaid: { idea: string; proj: ProjectV7 } | null = null;
   function setBusy(v: boolean) {
     busy = v;
     for (const f of forms) {
@@ -326,12 +329,9 @@ export function mountHome(host: HTMLElement, deps: HomeDeps): () => void {
     }
     clearError();
     setBusy(true);
-    if (lastUnpaid && lastUnpaid.idea === idea) return flow.startLive(lastUnpaid.proj, "new");
-    createProject(idea).then(
-      (proj) => {
-        lastUnpaid = { idea, proj };
-        flow.startLive(proj, "new");
-      },
+    // the flow owns project creation: it reuses an unpaid project for the same idea and forgets it once paid
+    flow.submitIdea(idea).then(
+      () => setBusy(false),
       (e: Error) => fail(form, e?.message || "Could not start. Try again."),
     );
   }
@@ -379,7 +379,8 @@ export function mountHome(host: HTMLElement, deps: HomeDeps): () => void {
   const footer = $("#blaze");
   if (footer) offs.push(mountFooter(footer));
   void liveConfig().then((c) => {
-    if (c?.sampleIdeas?.length) samples = c.sampleIdeas;
+    const notCoffee = (c?.sampleIdeas ?? []).filter((x) => !/coffee|caf[eé]/i.test(x));
+    if (notCoffee.length) samples = notCoffee;
     reframe();
   });
 

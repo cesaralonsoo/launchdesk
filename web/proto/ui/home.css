@@ -94,7 +94,10 @@ html.home .ui.v7 > :not(.overlay) { display: none !important; }
 .h-pins .h-p1 { --c: var(--s1); }
 .h-pins .h-p2 { --c: var(--s2); }
 .h-pins .h-p3 { --c: var(--s3); }
-.h-pins.focus .lbl:not(.on) { opacity: .35; }
+.h-pins.focus .lbl:not(.on) { opacity: .4; }
+.h-pins .h-plobby { padding: 0 12px; cursor: default; pointer-events: none; background: var(--ink); color: #fff; }
+.h-pins .h-plobby em { color: rgba(255, 255, 255, .62); }
+.h-pins .h-plobby b { font-weight: 600; }
 .h-chip { position: absolute; right: 24px; bottom: 32px; z-index: 4; display: inline-flex; align-items: center; gap: 10px; padding: 9px 14px 9px 10px; background: rgba(255, 255, 255, .92); border: 1px solid var(--line); border-radius: var(--r-pill); text-decoration: none; font-size: 13px; color: var(--ink-2); box-shadow: var(--shadow); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); pointer-events: auto; transition: opacity .3s; }
 .h-chip .h-k { font: 600 10.5px/1 var(--font-t); letter-spacing: .06em; text-transform: uppercase; color: var(--bch-ink); background: var(--bch-soft); padding: 5px 7px; border-radius: 6px; }
 .h-chip .h-k.h-y { color: var(--ink-2); background: var(--fill); }
@@ -273,6 +276,8 @@ html.home .ui.v7 > :not(.overlay) { display: none !important; }
   .h-pins .lbl { width: 26px; height: 26px; padding: 0; gap: 0; justify-content: center; background: transparent; box-shadow: none; }
   .h-pins .lbl i { width: 22px; height: 22px; line-height: 22px; font-size: 12px; box-shadow: 0 0 0 2px #fff, 0 2px 6px rgb(0 0 0 / .18); }
   .h-pins .lbl .h-w { display: none; }
+  .h-pins .h-plobby { width: auto; height: 24px; padding: 0 9px; background: var(--ink); font-size: 11px; }
+  .h-pins .h-plobby .h-w { display: inline; }
   .h-chip { right: 12px; bottom: 10px; font-size: 11.5px; padding: 6px 10px 6px 7px; gap: 7px; }
   .h-chip .h-k { font-size: 9.5px; padding: 4px 5px; }
   .h-chip .h-long { display: none; }
@@ -336,3 +341,6 @@ html.home .ui.v7 > :not(.overlay) { display: none !important; }
 @media (min-width: 768px) and (max-height: 820px) {
   .h-cue { display: none; }
 }
+/* fix round: the strip's price never starts its own line with a stray middle dot */
+.h-cell .h-mid { font-style: normal; }
+@media (max-width: 1100px) { .h-cell .h-mid { display: none; } }
