@@ -389,8 +389,15 @@ button.hud-next:hover .hud-next-t {
 }
 .hud-menu-f {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   margin-top: 8px;
+}
+.hud-menu-f .hud-btn {
+  min-width: 0;
+}
+.hud-menu-why {
+  margin: 6px 2px 0;
 }
 .hud-btn {
   flex: 1;
@@ -579,7 +586,9 @@ button.hud-next:hover .hud-next-t {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: 30;
+  /* under every panel (ui.css .panels z 2), the top bar, the example strip and the HUD: a label never covers text
+     and never takes a click meant for a panel */
+  z-index: 1;
 }
 .gp {
   position: absolute;
@@ -598,6 +607,10 @@ button.hud-next:hover .hud-next-t {
 }
 .gp[hidden] {
   display: none;
+}
+/* a label with nothing to open reads as a label, not a button */
+.gp[data-inert] {
+  cursor: default;
 }
 .gp-pill {
   height: 26px;
@@ -672,4 +685,22 @@ html.ld-campus .ui > :not(#hud):not(#home):not(header) {
   html.ld-campus .gp-pill { max-width: 46vw; }
   html.ld-campus .gp-pill b { overflow: hidden; text-overflow: ellipsis; }
   html.ld-campus .gp-pill span { display: none; }
+}
+
+/* reading a report, proof or kit (ui/index.ts sets html.ld-reading when the sheet is full or the page scrolled):
+   the HUD pill steps aside so it never sits on the text; it comes back at the top */
+.hud.phone .hud-pill {
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+html.ld-reading .hud.phone:not([data-open="1"]) .hud-pill {
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+}
+/* wider screens with a full-width report or kit: the HUD is the compact pill (hud.ts), under the example strip */
+@media (min-width: 768px) {
+  .hud.phone {
+    top: var(--hud-top, 76px);
+    left: 24px;
+  }
 }

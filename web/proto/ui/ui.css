@@ -97,7 +97,8 @@
 .proj-pill:hover { transform: translateY(-1px); }
 
 /* ───────────────────────────── panels: positions + spring motion */
-.panels { position: absolute; inset: 0; }
+/* panels sit over the 3D labels (game/pins.ts, z 1) and under the top bar (z 3), the example strip and the HUD */
+.panels { position: absolute; inset: 0; z-index: 2; }
 .panel {
   position: absolute; pointer-events: auto; border-radius: var(--r-lg); padding: 26px; max-height: calc(100vh - 100px); overflow: auto; scrollbar-width: none;
   opacity: 0; transform: translateY(26px) scale(0.975);

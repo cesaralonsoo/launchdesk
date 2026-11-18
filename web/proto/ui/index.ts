@@ -283,19 +283,38 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     curKey = key;
     curPanel = null;
     if (!key) {
+      paintWide(null, null);
+      paintReading();
       setInsets({ left: 0, right: 0, top: 0, bottom: 0 });
       return;
     }
     const pos = posFor(key);
+    paintWide(key, pos);
     const p = el(`<div class="panel ${pos === "doc" || pos === "card" ? "" : "glass"}" data-pos="${pos}" data-key="${key.split(":")[0]}">${pos === "sheet" ? `<button class="sheet-grip" type="button" data-act="sheet" aria-label="Expand"></button>` : ""}${build(key, s)}</div>`);
     stagger(p);
     panelsEl.appendChild(p);
     curPanel = p;
     countUp(p, 900);
     if (pos === "sheet") wireSheet(p);
+    p.addEventListener("scroll", paintReading, { passive: true });
+    paintReading();
     mount(p, key, s);
     requestAnimationFrame(() => requestAnimationFrame(() => p.classList.add("in")));
     queueMicrotask(() => measure());
+  }
+  /** A full-width report or kit (640–1099 px wide): the HUD becomes the compact pill (game/hud.ts reads this). */
+  function paintWide(key: string | null, pos: Pos | null) {
+    const wide = !!key && !isMobile() && (pos === "doc" || (key === "live" && pos === "bottom" && innerWidth < 1000));
+    const v = wide ? "1" : "0";
+    if (document.documentElement.dataset.ldWide !== v) document.documentElement.dataset.ldWide = v;
+  }
+  /** Reading: a phone sheet opened full height, or a full-width report / kit scrolled past its top. The HUD pill steps
+   *  aside (game/hud.css) so it never sits on the text. */
+  function paintReading() {
+    const p = curPanel;
+    const pos = p?.dataset.pos;
+    const on = !!p && ((pos === "sheet" && p.dataset.full === "1") || ((pos === "doc" || document.documentElement.dataset.ldWide === "1") && p.scrollTop > 24));
+    document.documentElement.classList.toggle("ld-reading", on);
   }
   /** Phones: a sheet opens at 55% of the screen; drag its grip (or scroll its content) up to read it full height, drag
    *  it down to see the 3D again. */
@@ -306,6 +325,7 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     curPanel.dataset.full = full ? "1" : "0";
     curPanel.querySelector(".sheet-grip")?.setAttribute("aria-label", full ? "Collapse" : "Expand");
     if (!full) curPanel.scrollTop = 0;
+    paintReading();
     measure();
   }
   function wireSheet(p: HTMLElement) {
@@ -351,7 +371,8 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     const meta = root.querySelector<HTMLElement>(".db-meta");
     if (meta && meta.offsetParent) top = Math.max(top, Math.round(meta.getBoundingClientRect().bottom + 8));
     // phones: the campus plate is wide, so its far corner would sit under the HUD pill: frame it below the pill
-    const phoneHud = isMobile() && curKey.startsWith("campus") ? root.querySelector<HTMLElement>(".hud.phone .hud-pill") : null;
+    // (every phone surface: the building and its numbered pins stay clear of the pill, not only the campus)
+    const phoneHud = isMobile() ? root.querySelector<HTMLElement>(".hud.phone .hud-pill") : null;
     if (phoneHud && phoneHud.offsetParent) top = Math.max(top, Math.round(phoneHud.getBoundingClientRect().bottom + 6));
     // bottom / centre cards on wide screens: the HUD card owns the top-right corner, keep the floor left of it
     const hudLeft = hud && !hudOpen && !isMobile() ? Math.round(hud.getBoundingClientRect().left) : 0;
@@ -1030,6 +1051,7 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
       if (ta && curKey === "idea") typedIdea = ta.value;
       render(true);
     }
+    if (curKey && curPanel) paintWide(curKey, curPanel.dataset.pos as Pos);
     measure();
     paintTags();
   });

@@ -9,6 +9,7 @@ import type { ProtoFlowV7 } from "../flow";
 import type { WorldV8 } from "../world/api-v8";
 import { projects as saved } from "../../src/app/projects";
 import { esc } from "../ui/dom";
+import { exampleName, exampleShort } from "../ui/example";
 import { I } from "../ui/icons";
 import { createLevelUps, STAGE_COLOR, STAGE_N } from "./levelup";
 import { createPins, pillHtml, type Pin } from "./pins";
@@ -39,6 +40,9 @@ export function mountHud(host: HTMLElement, deps: HudDeps): () => void {
   const { world, flow } = deps;
   const reduced = flow.reduced || matchMedia("(prefers-reduced-motion: reduce)").matches;
   const phoneMq = matchMedia("(max-width: 767px)");
+  /** The pill + sheet HUD: phones, and wider screens while a full-width report or kit is open (ui/index.ts sets
+   *  html[data-ld-wide="1"]), so the card never sits on the report's header or the kit's text. */
+  const compact = () => phoneMq.matches || document.documentElement.dataset.ldWide === "1";
   const store = createGameStore(world, flow);
   const root = document.createElement("div");
   root.className = "hud";
@@ -119,11 +123,12 @@ export function mountHud(host: HTMLElement, deps: HudDeps): () => void {
     return `<div class="hud-menu" role="menu">
       <p class="hud-menu-h">My ideas</p>
       ${mine.length ? `<ul>${mine.map((p) => row(p.id, p.id === g.projectId ? g.name : p.title, subOf(p.id), p.id === g.projectId)).join("")}</ul>` : `<p class="hud-note">Your ideas will live here.</p>`}
-      ${store.examples.length ? `<p class="hud-menu-h">Finished examples · real runs</p><ul>${store.examples.map((x) => row(x.id, x.title, x.verdict ? `${x.verdict.score.toFixed(1)} · ${VERDICT_LABEL[x.verdict.verdict]}` : "", x.id === g.projectId, true)).join("")}</ul>` : ""}
+      ${store.examples.length ? `<p class="hud-menu-h">Finished examples · real runs</p><ul>${store.examples.map((x) => row(x.id, exampleName(x), x.verdict ? `${x.verdict.score.toFixed(1)} · ${VERDICT_LABEL[x.verdict.verdict]}` : "", x.id === g.projectId, true)).join("")}</ul>` : ""}
       <div class="hud-menu-f">
         <button type="button" class="hud-btn" data-hud="new">${I.arrow(14)}<span>New idea · 10¢</span></button>
-        <button type="button" class="hud-btn" data-hud="campus"${campusOpen ? "" : " disabled"} title="${campusOpen ? "" : esc("Opens when a second idea gets its report")}">${I.district(14)}<span>Campus${campusOpen ? "" : " · after a 2nd idea"}</span></button>
+        <button type="button" class="hud-btn" data-hud="campus"${campusOpen ? "" : " disabled"} title="${campusOpen ? "" : esc("Opens when a second idea gets its report")}">${I.district(14)}<span>Campus</span></button>
       </div>
+      ${campusOpen ? "" : `<p class="hud-note hud-menu-why">Campus opens when a second idea gets its report.</p>`}
     </div>`;
   };
 
@@ -134,7 +139,7 @@ export function mountHud(host: HTMLElement, deps: HudDeps): () => void {
     root.hidden = !show;
     document.documentElement.classList.toggle("has-hud", show);
     if (!show || !g) return;
-    const phone = phoneMq.matches;
+    const phone = compact();
     root.classList.toggle("phone", phone);
     root.dataset.open = open ? "1" : "0";
     const head = `<div class="hud-top"><button type="button" class="hud-name" data-hud="menu" aria-expanded="${menu}" aria-haspopup="menu"><b>${esc(g.name)}</b>${chev()}</button>${tag(g)}</div>`;
@@ -172,19 +177,20 @@ export function mountHud(host: HTMLElement, deps: HudDeps): () => void {
         const n = store.snapshot?.offices?.inbox.filter((x) => x.office === o && x.status === "done").length ?? 0;
         const from = store.snapshot?.officeFrom[o] ?? 2;
         const sub = r.state === "done" ? `${n} result${n === 1 ? "" : "s"}` : r.state === "working" ? "working" : `from ${centsLabel(from)}`;
-        return phone ? { id: `office:${o}`, kind: "dot" as const, tone: ROOM_TINT[o], html: `${i + 1}` } : { id: `office:${o}`, html: pillHtml(OFFICE_NAME[o], sub, ROOM_TINT[o]) };
+        const label = `${OFFICE_NAME[o]}: show this office`;
+        return phone ? { id: `office:${o}`, kind: "dot" as const, tone: ROOM_TINT[o], html: `${i + 1}`, label } : { id: `office:${o}`, html: pillHtml(OFFICE_NAME[o], sub, ROOM_TINT[o]), label };
       });
     }
     // the finished example's floor names its stages, like the home (Research and Launch kit done, Offices with a price)
     if (lvl === 1 && g.example) {
       const st = (i: number) => g.stages[i]!;
       const sub = (i: number, price: string) => (st(i).unlocked ? `done · ${st(i).lit}/${st(i).total}` : price);
-      const defs: [string, string, string, string][] = [
-        ["wing:back", "Research", sub(0, "10¢"), "#4F7CF0"],
-        ["wing:front", "Launch kit", sub(1, "50¢"), "#E3893B"],
-        ["plate", "Offices", "from 2¢", "#8C6BE8"],
+      const defs: [string, string, string, string, string][] = [
+        ["wing:back", "Research", sub(0, "10¢"), "#4F7CF0", "Research: open the report"],
+        ["wing:front", "Launch kit", sub(1, "50¢"), "#E3893B", "Launch kit: open the kit"],
+        ["plate", "Offices", "from 2¢", "#8C6BE8", "Offices: run a task for your own business"],
       ];
-      return defs.map(([id, name, s2, c], i) => (phoneMq.matches ? { id, kind: "dot" as const, tone: c, html: `${i + 1}` } : { id, html: pillHtml(name, s2, c) }));
+      return defs.map(([id, name, s2, c, label], i) => (phoneMq.matches ? { id, kind: "dot" as const, tone: c, html: `${i + 1}`, label } : { id, html: pillHtml(name, s2, c), label }));
     }
     if (lvl === 3) {
       // phones: short names only (max 18 characters), so a pill never runs off the screen
@@ -194,7 +200,7 @@ export function mountHud(host: HTMLElement, deps: HudDeps): () => void {
       if (g.sample) out.push({ id: `campus:${g.projectId || "sample"}`, html: pill(`Sample · ${g.name}`, "tour data") });
       else for (const r of saved.list().filter((x) => !/^ex-/.test(x.id)).slice(0, 4))
         out.push({ id: `campus:${r.id}`, html: pill(r.id === g.projectId ? g.name : r.title, r.verdict === "no-go" ? "No-go · lesson learned" : r.score != null ? `${VERDICT_LABEL[r.verdict ?? "go"]} ${r.score.toFixed(1)}` : "No report yet") });
-      for (const x of store.examples) out.push({ id: `campus:${x.id}`, html: pill(`Example · ${x.title}`, x.verdict ? `${VERDICT_LABEL[x.verdict.verdict]} ${x.verdict.score.toFixed(1)}` : "real run") });
+      for (const x of store.examples) out.push({ id: `campus:${x.id}`, html: phoneMq.matches ? pillHtml(short(`Example · ${exampleShort(x)}`)) : pill(`Example · ${exampleName(x)}`, x.verdict ? `${VERDICT_LABEL[x.verdict.verdict]} ${x.verdict.score.toFixed(1)}` : "real run") });
       out.push({ id: "campus:next:0", html: pill("Your next idea", "10¢") });
       return out;
     }
@@ -250,6 +256,14 @@ export function mountHud(host: HTMLElement, deps: HudDeps): () => void {
     });
     render();
   }
+  /** Offices for the visitor's own business (the intake, then a task from 2¢): what "Run an office task" means when
+   *  the company on screen is a sample or a finished example. The tour pauses while it is open. */
+  async function openOwnOffices() {
+    const demo = (window as unknown as { __proto?: { demo?: { on: boolean; pause(p?: boolean): void } | null } }).__proto?.demo;
+    if (demo?.on) demo.pause(true);
+    const m = await import("../ui/offices");
+    m.openOffices({});
+  }
   function enterCampus() {
     if (campus) return;
     campus = { back: Math.max(1, world.worldLevel) };
@@ -278,7 +292,15 @@ export function mountHud(host: HTMLElement, deps: HudDeps): () => void {
     if (office) {
       const d = currentOwner();
       if (d && world.worldLevel === 2) void openOfficesFloor(d, office);
+      // a sample (the tour) has no offices of its own: the label brings that office into view
+      else if (world.worldLevel === 2) world.shotFor({ room: `office:${office}` });
       return;
+    }
+    // the finished example's floor: its stages open what they name
+    if (store.state?.example && !campus) {
+      if (id === "wing:back") return flow.goto({ step: "report", page: "score" });
+      if (id === "wing:front") return flow.goto({ step: "live" });
+      if (id === "plate") return void openOwnOffices();
     }
     if (!campus) return;
     if (id === "plot:new" || id.startsWith("plot:")) {
@@ -313,7 +335,7 @@ export function mountHud(host: HTMLElement, deps: HudDeps): () => void {
       menu = false;
     } else if (act === "menu") {
       menu = !menu;
-      if (phoneMq.matches) open = true;
+      if (compact()) open = true;
     } else if (act === "new") {
       menu = false;
       open = false;
@@ -327,6 +349,8 @@ export function mountHud(host: HTMLElement, deps: HudDeps): () => void {
       else if (g.next.act === "offices") {
         const d = currentOwner();
         if (d) void openOfficesFloor(d, g.next.office);
+        // the tour / a finished example: no offices of their own, so start the offices for your own business
+        else void openOwnOffices();
       }
     }
     render();
@@ -343,7 +367,7 @@ export function mountHud(host: HTMLElement, deps: HudDeps): () => void {
   // clicks outside close the switcher / drawer (desktop)
   const onDoc = (e: MouseEvent) => {
     // composedPath: the clicked node may already be gone (the HUD re-renders on its own click)
-    if ((!menu && !open) || e.composedPath().includes(root) || phoneMq.matches) return;
+    if ((!menu && !open) || e.composedPath().includes(root) || compact()) return;
     menu = false;
     open = false;
     render();
@@ -383,6 +407,8 @@ export function mountHud(host: HTMLElement, deps: HudDeps): () => void {
   addEventListener(OFFICES_EVENT, onOffices);
   const onMq = () => render();
   phoneMq.addEventListener("change", onMq);
+  const wideMo = new MutationObserver(onMq);
+  wideMo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-ld-wide"] });
   render();
 
   return () => {
@@ -393,6 +419,7 @@ export function mountHud(host: HTMLElement, deps: HudDeps): () => void {
     removeEventListener("keydown", onKey);
     document.removeEventListener("click", onDoc);
     phoneMq.removeEventListener("change", onMq);
+    wideMo.disconnect();
     officesLayer?.close();
     pins.dispose();
     store.dispose();
