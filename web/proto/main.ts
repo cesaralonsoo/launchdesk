@@ -9,6 +9,8 @@ import { createUi } from "./ui";
 import { faviconHref, markFromParam, setMark } from "./ui/logo";
 import { createWorld } from "./world";
 import type { WorldV8 } from "./world/api-v8";
+import { createStubWorld, webglOk } from "./world/stub";
+import floorStill from "../public/home/floor-example.webp";
 
 const q = new URLSearchParams(location.search);
 const p = readParams();
@@ -27,11 +29,31 @@ const reduced = p.still || matchMedia("(prefers-reduced-motion: reduce)").matche
 // still runs a day (screenshots, the world harness).
 const DEFAULT_START = 0.64;
 const fixedT = p.time ?? (p.cycle ? null : DAY_TIMES.day);
+if (p.time != null || p.cycle) document.documentElement.classList.add("sky"); // only then the world paints its own sky
 // v8: phones render at low quality (no shadows, no antialias, DPR capped at 1.5 in world/pixel.ts) unless ?quality= says.
 const phone = matchMedia("(pointer:coarse)").matches && innerWidth < 768;
 const quality = q.has("quality") ? p.quality : phone ? "low" : p.quality;
 // createWorld already returns the full v7 world (+ the v8 seam); ensureWorldV7 is a pass-through for it.
-const world = ensureWorldV7(createWorld(stage, { quality, atmosphere: THEMES.graphite.atmosphere, level: 1, reducedMotion: reduced })) as WorldV7 & WorldV8;
+// No WebGL (blocked, old GPU, lost context): a stub world that draws nothing, so the flow and the UI still mount, and
+// a still of the finished example's floor in the 3D slot (html.nogl, ui/v7.css).
+function fallbackWorld(why: unknown): WorldV7 & WorldV8 {
+  console.warn("[world] 3D unavailable, showing a still instead:", why);
+  stage.replaceChildren();
+  const img = document.createElement("img");
+  img.className = "nogl-still";
+  img.src = floorStill;
+  img.alt = "";
+  stage.appendChild(img);
+  document.documentElement.classList.add("nogl");
+  return createStubWorld();
+}
+let world: WorldV7 & WorldV8;
+try {
+  if (!webglOk()) throw new Error("no WebGL context");
+  world = ensureWorldV7(createWorld(stage, { quality, atmosphere: THEMES.graphite.atmosphere, level: 1, reducedMotion: reduced })) as WorldV7 & WorldV8;
+} catch (e) {
+  world = fallbackWorld(e);
+}
 if (typeof world.setClock === "function") {
   world.setClock(fixedT != null ? { mode: "fixed", t: fixedT } : { mode: "cycle", periodSec: p.cycle ?? 1800, startAt: DEFAULT_START }, { animate: false });
 }
