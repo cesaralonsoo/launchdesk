@@ -56,23 +56,21 @@ export function kitNoteShort(note: string | undefined): string | undefined {
   return `Kit from a second run${ver ? ` (${ver} version)` : " of this idea"}`;
 }
 
-/** The strip over an open example: what it is, and the three places a judge wants to see. */
+/** v8 (PLAN.md 6.5): a slim static strip under the top bar (44 px on phones), never over the report text: what it is,
+ *  and the three places a judge wants to see. The kit note ("Kit from a second run …") lives on the kit screen. */
 export function ribbonHtml(x: ExampleCard, at: "report" | "kit" | "proof", others: ExampleCard[]): string {
   const other = others.find((o) => o.id !== x.id);
   const v = x.verdict ? `${VERDICT[x.verdict.verdict] ?? x.verdict.verdict} ${x.verdict.score.toFixed(1)}/10` : "";
-  // one short line on the ribbon; the full reason behind an (i) tap
-  const kitShort = kitNoteShort(x.kitNote) ?? "";
-  return `<div class="ex-ribbon glass" role="region" aria-label="Finished example">
-    <div class="ex-r-t"><span class="ex-r-tag">Finished example</span><b>${esc(x.title)}</b>
-      <span class="ex-r-meta">${esc(x.run)} · ${esc(x.paid)}${v ? ` · ${esc(v)}` : ""}${x.sources ? ` · ${x.sources} web pages cited` : ""}</span></div>
-    <nav class="ex-r-nav">
+  return `<div class="ex-ribbon ex-strip" role="region" aria-label="Finished example">
+    <div class="ex-r-t"><span class="ex-r-tag"><span class="ex-r-long">Finished </span>example</span><b>${esc(x.title)}</b>
+      <span class="ex-r-meta">${esc(x.paid)}${v ? ` · ${esc(v)}` : ""}${x.sources ? ` · ${x.sources} web pages cited` : ""}</span></div>
+    <nav class="ex-r-nav" aria-label="This example">
       <button type="button" data-ex="report" aria-pressed="${at === "report"}">Report</button>
-      ${x.proof ? `<button type="button" data-ex="proof" aria-pressed="${at === "proof"}">Proof on Bitcoin Cash</button>` : ""}
-      <button type="button" data-ex="kit" aria-pressed="${at === "kit"}">Launch kit</button>
-      ${other ? `<button type="button" data-ex="other" data-id="${esc(other.id)}" title="${esc(other.title)}">Another example</button>` : ""}
-      <button type="button" class="ex-r-own" data-ex="own">Try your own idea</button>
+      ${x.proof ? `<button type="button" data-ex="proof" aria-pressed="${at === "proof"}">Proof<span class="ex-r-long"> on Bitcoin Cash</span></button>` : ""}
+      <button type="button" data-ex="kit" aria-pressed="${at === "kit"}"><span class="ex-r-l">Launch kit</span><span class="ex-r-s">Kit</span></button>
+      ${other ? `<button type="button" class="ex-r-other" data-ex="other" data-id="${esc(other.id)}" title="${esc(other.title)}">Another example</button>` : ""}
+      <button type="button" class="ex-r-own" data-ex="own"><span class="ex-r-l">Try your own idea</span><span class="ex-r-s">Your idea</span></button>
     </nav>
-    ${at === "kit" && kitShort ? `<details class="ex-r-note"><summary>${I.info(13)}<span>${esc(kitShort)}</span></summary><p>${esc(x.kitNote)}</p></details>` : ""}
   </div>`;
 }
 

@@ -2,9 +2,9 @@
 // Rules: one headline + one action per step; findings one at a time; the score only in the report and only built from
 // the factor bars; every number traces back to a finding, its source, or says "Estimate".
 import {
-  BLOCK_IDS, BLOCK_LIBRARY, BUILD_TEAM, LEVEL_META, ROLE_LIBRARY, ROOM_META, hasBlocks, scoreDisplay,
+  BLOCK_IDS, BLOCK_LIBRARY, BUILD_TEAM, ROLE_LIBRARY, ROOM_META, hasBlocks, scoreDisplay,
   type Analyst, type AnalystRole, type BuildDept, type Finding, type FindingKind, type IdeaReport, type ReportPage,
-  type ScalePath, type SteerChange, type SteerResult, type WorldLevel,
+  type ScalePath, type SteerChange, type SteerResult,
 } from "../contracts";
 import { REPORT_PAGES, type ProtoFlowV7 } from "../flow";
 import { esc } from "./dom";
@@ -14,8 +14,10 @@ import { badge, levelGlyph } from "./pixel";
 import { usd } from "./view";
 import { statusLine } from "../live/adapter";
 import { kitOfferHtml } from "./kit-screen";
-import { exampleButtonHtml, knownExamples, pausedHtml } from "./example";
+import { knownExamples, mainExample, pausedHtml } from "./example";
 import { fullSentences, leadLine, plainText, verdictWhy, VERDICT_RULE_V7 } from "../../../server/v7";
+import { OFFICES } from "../../../server/offices/catalog";
+import { projects as savedRuns } from "../../src/app/projects";
 
 /** WP4: the Launch kit price, in cents (server config.priceCents.build). */
 export const KIT_CENTS = 50;
@@ -46,20 +48,29 @@ export function kindTag(f: Finding): string {
 // ───────────────────────────── idea / end
 /** Escrow on (VITE_ESCROW=1, as on the public demo): the home line says where the payment waits. */
 const ESCROW_ON = (import.meta as unknown as { env?: Record<string, string | undefined> }).env?.VITE_ESCROW === "1";
-/** `paused`: the server takes no payments right now (GET /api/config paused:true): a calm notice instead of the price. */
+/** The stage vocabulary (redesign PLAN.md 1): number, name, price, what you get, its dot colour. */
+export const STAGES = [
+  { n: 1, name: "Research", price: "10¢", gets: "Score, verdict, sources", c: "#4F7CF0" },
+  { n: 2, name: "Launch kit", price: "50¢", gets: "Logo, live website, 30-day plan", c: "#E3893B" },
+  { n: 3, name: "Offices", price: "from 2¢", gets: "Weekly work: posts, prices, replies", c: "#8C6BE8" },
+] as const;
+/** The idea box when the home (ui/home.ts) is not mounted, and the "Your turn" card. Same copy as the home hero.
+ *  `paused`: the server takes no payments right now (GET /api/config paused:true): a calm notice instead of the price. */
 export function ideaHtml(placeholder: string, value: string, end = false, paused = false): string {
+  void placeholder;
   return `
   <form class="v-idea" autocomplete="off">
-    ${end ? `<div class="v-mark" data-st>${ldMark(40, undefined, true)}</div>` : ""}
-    <h1 class="t-display" data-st>${end ? "Your turn." : "Turn your idea into a company."}</h1>
-    ${end ? "" : `<p class="v-sub" data-st>An AI team checks it against real sources, scores it and builds it. ${ESCROW_ON ? `Pay in BCH: an on-chain contract refunds you if no report comes.` : "Pay in BCH."}</p>`}
+    <span class="v-eyebrow" data-st><i></i>Live on Bitcoin Cash mainnet</span>
+    <h1 class="t-display" data-st>${end ? "Your turn." : "Check your business idea. <span>Then launch it.</span>"}</h1>
+    <p class="v-sub" data-st>${ESCROW_ON ? "An AI team researches it with real sources and gives you an honest score. Your 10¢ waits in an on-chain contract until the report arrives." : "An AI team researches it with real sources and gives you an honest score. Paid in Bitcoin Cash."}</p>
     ${paused ? `<div data-st>${pausedHtml()}</div>` : `<div class="idea-field" data-st>
-      <textarea name="idea" rows="2" maxlength="280" placeholder="${esc(placeholder)}" aria-label="Your idea">${esc(value)}</textarea>
-      <button class="btn btn-primary btn-go" type="submit"><span>Validate</span><span class="btn-price">${usd(10)}</span></button>
+      <textarea name="idea" rows="2" maxlength="280" placeholder="e.g. A coffee kiosk at a Barcelona metro exit, €3 flat whites" aria-label="Your idea">${esc(value)}</textarea>
+      <button type="button" class="idea-try" data-act="try-idea">Try an example</button>
+      <button class="btn btn-primary btn-go" type="submit"><span>Check my idea</span><span class="btn-price">10¢</span></button>
     </div>`}
-    ${paused ? "" : `<div class="ex-slot" data-st>${exampleButtonHtml()}</div>`}
     <div class="v-alt" data-st>
-      <button type="button" class="v-link" data-act="tour">${I.replay(14)}<span>Watch the tour · 2 min</span></button>
+      <button type="button" class="v-link" data-act="example"><b>See a finished company</b>${I.arrow(13)}<em>free · no wallet</em></button>
+      <button type="button" class="v-link" data-act="tour"><span aria-hidden="true" class="v-play">▶</span><span>90-second tour</span></button>
     </div>
   </form>`;
 }
@@ -72,14 +83,14 @@ export function payHtml(f: ProtoFlowV7, stage: 1 | 2, customIdea: boolean): stri
   const line = stage === 1 ? `${f.roster.length} analysts picked for this idea` : "Your logo · your website · your 30-day plan";
   return `
   <section class="pay">
-    <header class="pay-top" data-st><span class="pay-merchant">${ldMark(18, undefined, true)}<b>LaunchDesk</b></span><span class="tag">Prototype · no payment</span></header>
+    <header class="pay-top" data-st><span class="pay-merchant">${ldMark(18, undefined, true)}<b>LaunchDesk</b></span><span class="tag tag-demo">Sample · no payment</span></header>
     <div class="pay-amount" data-st><b class="huge">${usd(cents)}</b><span>in Bitcoin Cash</span></div>
     <div class="pay-line" data-st><div class="pay-avs">${avs}</div><div><b>${title}</b><span>${esc(line)}</span></div></div>
     <button class="btn btn-primary btn-pay" data-act="approve" type="button" data-st${f.paidCents >= (stage === 1 ? 10 : 10 + KIT_CENTS) /* flow/index.ts PAID_ALL = validate + kit */ ? ' data-state="done"' : ""}>
       <span class="b-lbl">Approve</span><span class="spin" aria-hidden="true"></span>
       <span class="tick" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M5 12.5l4.5 4.5L19 7.5" pathLength="1"/></svg></span>
     </button>
-    ${stage === 1 && customIdea ? `<p class="pay-note" data-st>This prototype plays a sample run: ${esc(f.project.title)}.</p>` : `<p class="pay-foot" data-st>${stage === 1 ? "You get a report. Your launch kit is a second step." : "Paid from your wallet. LaunchDesk never holds your keys."}</p>`}
+    ${stage === 1 && customIdea ? `<p class="pay-note" data-st>This tour plays a sample run: ${esc(f.project.title)}.</p>` : `<p class="pay-foot" data-st>${stage === 1 ? `On mainnet this 10¢ waits in a CashScript contract until the report arrives. <a href="/p/${esc(mainExample()?.id ?? "ex-coffee-bcn")}">See a real one ${I.ext(11)}</a>` : "Paid from your wallet. LaunchDesk never holds your keys."}</p>`}
   </section>`;
 }
 
@@ -227,6 +238,25 @@ function reportFoot(page: ReportPage): string {
 export const meter = (score: number, cls = "") =>
   `<div class="meter ${cls}" style="--v:${score}" aria-hidden="true">${Array.from({ length: 10 }, (_, j) => `<i style="--j:${j};--f:${Math.max(0, Math.min(1, score - j))}"></i>`).join("")}</div>`;
 
+/** v8: the one report surface for samples and the tour (PLAN.md 5.6): the same header as a live run's report (score card,
+ *  factor bars, the formula), no pager. Strengths, scale and next steps stay one tap away (Full report). */
+export function reportOneHtml(f: ProtoFlowV7): string {
+  const r = f.report;
+  if (!r) return `<section class="v-rp"><p>No report yet.</p></section>`;
+  const canGrow = r.verdict !== "no-go";
+  return `<section class="v-rp" data-page="score">
+    <header class="rp-head" data-st>
+      <div><span class="eyebrow px-eb">${f.isSample(f.project.id) ? "Verdict · sample data" : "Your verdict"}</span><b class="rp-title">${esc(f.project.title)}</b></div>
+      ${f.demo ? "" : `<button class="btn btn-quiet rp-full" data-act="pack" type="button">${I.report(14)}<span>Full report</span></button>`}
+    </header>
+    ${scorePage(f, r)}
+    ${f.demo ? "" : `<div class="rp-acts" data-st>
+      ${canGrow ? `<button class="btn btn-primary btn-grow" data-act="grow" type="button"><span>Launch kit</span><span class="btn-price">50¢</span></button>` : `<button class="btn btn-primary" data-act="pivot" type="button"><span>Try another idea</span>${I.arrow(16)}</button>`}
+      <button class="btn btn-ghost" data-act="steer" type="button"><span>Tell your team</span><em class="rp-free">free</em></button>
+    </div>`}
+  </section>`;
+}
+
 export function reportPage(f: ProtoFlowV7, page: ReportPage, read = false): string {
   const r = f.report;
   if (!r) return `<section class="v-rp"><p>No report yet.</p></section>`;
@@ -265,10 +295,6 @@ function scorePage(f: ProtoFlowV7, r: IdeaReport): string {
   ${r.math ? `<p class="sc-math num" data-st>${esc(r.math)}</p>` : ""}`;
 }
 
-export function capTrack(cap: WorldLevel, reached: WorldLevel): string {
-  return `<ol class="cap-track">${([0, 1, 2, 3] as WorldLevel[]).map((l) => `<li data-s="${l > cap ? "ghost" : l <= reached ? "on" : "open"}" title="${l > cap ? "Unlocks when you choose a scale path" : LEVEL_META[l].name}">${levelGlyph(l, 22)}<span>${LEVEL_META[l].short}</span></li>`).join('<li class="ct-sep" aria-hidden="true"></li>')}</ol>`;
-}
-
 function scalePage(f: ProtoFlowV7, r: IdeaReport): string {
   const S = r.scalability;
   const best = scalePaths(r)[0];
@@ -296,15 +322,15 @@ function pointsPage(f: ProtoFlowV7, r: IdeaReport): string {
 }
 
 function nextPage(f: ProtoFlowV7, r: IdeaReport, read: boolean): string {
-  const canGrow = r.scalability.cap >= 1 && r.verdict !== "no-go";
+  const canGrow = r.verdict !== "no-go"; // v8: the scalability cap gates nothing
   return `
   <ol class="steps7" data-st>${r.nextSteps.map((s, i) => `<li><span class="n7">${i + 1}</span><span>${esc(s)}</span></li>`).join("")}</ol>
-  ${r.pivot ? `<div class="pivot" data-st><span class="eyebrow">${r.verdict === "pivot" ? "A change worth testing" : "Pivot to consider"}</span><p><b>${esc(plainText(r.pivot.idea).replace(/[.…]+$/, ""))}.</b> ${esc(plain(r.pivot.why))}</p></div>` : ""}
+  ${r.pivot ? `<div class="pivot" data-st><span class="eyebrow">A change worth testing</span><p><b>${esc(plainText(r.pivot.idea).replace(/[.…]+$/, ""))}.</b> ${esc(plain(r.pivot.why))}</p></div>` : ""}
   ${read ? "" : `<div class="rp-acts" data-st>
-    ${canGrow ? `<button class="btn btn-primary btn-grow" data-act="grow" type="button">${levelGlyph(1, 16)}<span>Grow into an office</span></button>` : `${r.verdict === "no-go" ? `<button class="btn btn-ghost" data-act="grow" type="button"><span>Build the launch kit anyway</span></button>` : ""}<button class="btn btn-primary" data-act="pivot" type="button"><span>Try another idea</span>${I.arrow(16)}</button>`}
+    ${canGrow ? `<button class="btn btn-primary btn-grow" data-act="grow" type="button"><span>Launch kit</span><span class="btn-price">50¢</span></button>` : `${r.verdict === "no-go" ? `<button class="btn btn-ghost" data-act="grow" type="button"><span>Build the launch kit anyway</span></button>` : ""}<button class="btn btn-primary" data-act="pivot" type="button"><span>Try another idea</span>${I.arrow(16)}</button>`}
     <button class="btn btn-ghost" data-act="steer" type="button"><span>Tell your team</span></button>
   </div>
-  ${canGrow ? "" : `<p class="rp-note" data-st>Not every idea should grow. That is a result too.</p>`}`}`;
+  ${canGrow ? "" : `<p class="rp-note" data-st>Not every idea should grow. A No-go for 10¢ is a result too.</p>`}`}`;
 }
 
 // ───────────────────────────── steer (CEO notes)
@@ -330,7 +356,7 @@ export function steerHtml(f: ProtoFlowV7, draft: string): string {
       <p class="steer-left">${left ? `${left} note${left > 1 ? "s" : ""} left on this stage · free` : "No notes left on this stage"}</p>
     </form>` : ""}
     ${s?.status === "done" ? `<footer class="rp-acts" data-st>
-      ${f.cap >= 1 && f.report?.verdict !== "no-go" ? `<button class="btn btn-primary btn-grow" data-act="grow" type="button">${levelGlyph(1, 16)}<span>Grow into an office</span></button>` : ""}
+      ${f.report?.verdict !== "no-go" ? `<button class="btn btn-primary btn-grow" data-act="grow" type="button"><span>Launch kit</span><span class="btn-price">50¢</span></button>` : ""}
       <button class="btn btn-ghost" data-act="report" type="button"><span>See the new report</span></button></footer>` : ""}
   </section>`;
 }
@@ -359,10 +385,6 @@ function diffChip(f: ProtoFlowV7, c: SteerChange): string {
 }
 
 // ───────────────────────────── growth moments
-/** WP4: the old "BOOM" moment is now the Launch kit offer (one clear card after the report). */
-export function boomHtml(): string {
-  return kitOfferHtml(KIT_CENTS);
-}
 /** WP4: after the report, one card that says what the Launch kit gives you and what it costs. */
 export function floorHtml(_f: ProtoFlowV7): string {
   return kitOfferHtml(KIT_CENTS);
@@ -374,54 +396,51 @@ export function analystTag(a: Analyst): string {
   return `<i style="background:${a.color}"></i><span>${esc(a.name)}</span>`;
 }
 
-/** WP4: no building / district levels in the founder's path. One calm "what's next" card instead. */
-export function levelHtml(_f: ProtoFlowV7, _l: 2 | 3, brand: string): string {
+/** v8 · Offices (world level 2, PLAN.md 4.2): the four offices of floor 2 with their real catalog prices. The rooms
+ *  light in 3D only when a real task is done (game/store.ts); this card says what each office does and what it costs. */
+export function officesFloorHtml(f: ProtoFlowV7, brand: string): string {
+  const sample = f.demo || !f.live;
+  const from = Math.min(...OFFICES.flatMap((o) => o.tasks.map((t) => t.cents)));
   return `
-  <section class="v-lvl">
-    <div class="lv-t" data-st><span class="eyebrow">What's next</span><h2 class="t-display">${esc(brand)} is ready to launch</h2>
-      <p>Your logo, your website and your 30-day plan are done. Your offices open tomorrow.</p></div>
-    <button class="btn btn-primary" data-act="next" type="button" data-st><span>Finish</span>${I.arrow(16)}</button>
+  <section class="v-offices">
+    <header class="v-head" data-st><span class="eyebrow px-eb"><i class="st-dot" style="--c:${STAGES[2].c}">3</i>Offices · from ${from}¢ a task${sample ? ` <em class="tag tag-demo">Sample</em>` : ""}</span>
+      <h2 class="t-display">${esc(brand)}'s offices</h2>
+      <p class="v-lede">Four offices keep working after the launch. You see the price before anything runs.</p></header>
+    <ul class="of-rooms" data-st>${OFFICES.map((o) => {
+      const min = Math.min(...o.tasks.map((t) => t.cents));
+      return `<li><b>${esc(o.name)}</b><span>${esc(o.tasks.map((t) => t.title).join(" · "))}</span><em class="num">${o.tasks.length > 1 ? "from " : ""}${min}¢</em></li>`;
+    }).join("")}</ul>
+    ${f.demo ? "" : `<footer class="rp-acts" data-st><button class="btn btn-primary" data-act="open-offices" type="button"><span>Open the offices</span>${I.arrow(16)}</button></footer>`}
   </section>`;
 }
-/** Old building / district card (kept for reference, no longer shown). */
-export function levelHtmlOld(f: ProtoFlowV7, l: 2 | 3, brand: string): string {
-  const cap = f.cap;
-  const S = f.report?.scalability;
-  if (cap >= l) {
-    return `
-    <section class="v-lvl">
-      <div class="lv-g" data-st>${levelGlyph(l, 30)}</div>
-      <div class="lv-t" data-st><span class="eyebrow px-eb">Level ${l} · ${LEVEL_META[l].name}</span>
-        <h2 class="t-display">${l === 2 ? `${esc(brand)} has a building` : "Your district"}</h2><p>${f.chosenPath != null && scalePaths(f.report)[f.chosenPath] ? `Scale path: ${esc(scalePaths(f.report)[f.chosenPath]!.label)}.` : l === 2 ? "Live, and ready to scale." : "Your company, at scale."}</p></div>
-      <button class="btn btn-primary" data-act="next" type="button" data-st><span>${l === 2 ? (cap >= 3 ? "Grow into a district" : "What's next") : "Finish"}</span>${I.arrow(16)}</button>
-    </section>`;
-  }
-  const name = LEVEL_META[l].short.toLowerCase();
-  // A path lifts the cap by one level. When even that does not reach `l`, say so honestly: where it stops, why, and
-  // what would make it scale. No fake district for a neighbourhood business.
-  const unlockable = f.chosenPath == null && f.report?.verdict !== "no-go" && Math.min(3, f.baseCap + 1) >= l;
-  if (!unlockable) {
-    const stop = LEVEL_META[Math.max(1, cap) as WorldLevel].name.replace(/^Your /, "");
-    return `
-  <section class="v-cap">
-    <header class="v-head" data-st><span class="eyebrow px-eb">${levelGlyph(l, 12)} ${LEVEL_META[l].name} · locked</span>
-      <h2 class="t-display">${esc(brand)} stops at the ${esc(stop.toLowerCase())}</h2>
-      <p class="sc-why">${S ? `Scalability ${one(S.score)}/10. A ${name} needs 7+. ${esc(S.why)}` : `A ${name} needs scalability 7+.`}</p></header>
-    ${S?.wouldScale.length ? `<div data-st><span class="eyebrow">What would make it scale</span><ol class="paths">${S.wouldScale.slice(0, 3).map((w) => `<li><div class="pa"><span class="pa-how">${esc(w)}</span></div></li>`).join("")}</ol></div>` : ""}
-    <footer class="rp-acts" data-st>
-      <button class="btn btn-ghost" data-act="ask-scale" type="button"><span>Ask your team</span></button>
-      <button class="btn btn-primary" data-act="next" type="button"><span>Finish</span>${I.arrow(16)}</button>
-    </footer>
-  </section>`;
-  }
+
+/** v8 · Campus (world level 3, PLAN.md 4.3): every idea of this browser, each a building; the finished examples are
+ *  labelled as examples. */
+export function campusHtml(f: ProtoFlowV7): string {
   return `
-  <section class="v-cap">
-    <header class="v-head" data-st><span class="eyebrow px-eb">${levelGlyph(l, 12)} Next · ${LEVEL_META[l].name}</span>
-      <h2 class="t-display">Choose how ${esc(brand)} scales</h2>
-      <p class="sc-why">${S ? `Scalability ${one(S.score)}/10 · ${esc(easeWord(S.score))}. ` : ""}Pick a path to grow into a ${name}.</p></header>
-    <div data-st>${pathList(f, true)}</div>
+  <section class="v-campus">
+    <header class="v-head" data-st><span class="eyebrow px-eb"><i class="st-dot" style="--c:#3A9D8F">4</i>Campus</span>
+      <h2 class="t-display">All your ideas</h2>
+      <p class="v-lede">Every idea gets its own building. Open one to go inside.</p></header>
+    <div data-st>${ideasList(f)}</div>
+    <footer class="rp-acts" data-st><button class="btn btn-primary" data-act="new" type="button"><span>Your next idea</span><span class="btn-price">10¢</span></button></footer>
+  </section>`;
+}
+
+/** v8 · The tour's last card (PLAN.md 5.6): what the visitor just saw, the price of each step, and their turn. */
+export function recapHtml(): string {
+  return `
+  <section class="v-recap">
+    <header class="v-head" data-st><span class="eyebrow px-eb">End of the tour · sample data</span><h2 class="t-display">Your turn.</h2></header>
+    <ol class="recap" data-st>
+      <li><i class="st-dot" style="--c:${STAGES[0].c}">1</i><span><b>A verdict</b>10¢, held in an escrow contract until the report arrives</span></li>
+      <li><i class="st-dot" style="--c:${STAGES[1].c}">2</i><span><b>A launch kit</b>50¢ for a logo, a live website and a 30-day plan</span></li>
+      <li><i class="st-dot" style="--c:${STAGES[2].c}">3</i><span><b>An office task</b>from 2¢, priced before it runs</span></li>
+    </ol>
     <footer class="rp-acts" data-st>
-      <button class="btn btn-ghost" data-act="ask-scale" type="button"><span>Ask your team</span></button>
+      <button class="btn btn-primary" data-act="new" type="button"><span>Check my idea</span><span class="btn-price">10¢</span></button>
+      <button class="btn btn-ghost" data-act="replay" type="button">${I.replay(15)}<span>Replay</span></button>
+      <button class="btn btn-quiet" data-act="example" type="button"><span>See a finished company</span>${I.arrow(14)}</button>
     </footer>
   </section>`;
 }
@@ -440,33 +459,36 @@ export function sourceHtml(fd: Finding, a: Analyst): string {
   </section>`;
 }
 
-export function officesHtml(f: ProtoFlowV7): string {
-  const row = (p: (typeof f.projects)[number], example: boolean) => {
-    const l = f.levelOf(p.id);
+/** "My ideas": this browser's runs, newest first, then the finished examples (real runs, labelled). */
+function ideasList(f: ProtoFlowV7): string {
+  const verdictOf = (v: string | undefined) => (v ? ({ go: "Go", pivot: "Test first", "no-go": "No-go" } as Record<string, string>)[v] ?? v : "");
+  const finished = knownExamples();
+  const mine = f.mine.filter((p) => !finished.some((x) => x.id === p.id) && !/^ex-/.test(p.id)).map((m) => f.projects.find((x) => x.id === m.id) ?? m);
+  const row = (p: (typeof f.projects)[number]) => {
     const r = p.v7.report;
-    const cur = p.id === f.project.id;
-    return `<li><button type="button" data-act="switch" data-id="${esc(p.id)}" aria-current="${cur}">
-        <span class="of-g">${levelGlyph(l, 22)}</span>
-        <span class="of-t"><b>${esc(p.title)}${example ? `<span class="of-tag">Sample data</span>` : ""}</b><span>${esc(!r && p.idea.trim() === p.title.trim() ? "No report yet" : p.idea)}</span></span>
-        <span class="of-r"><b class="num">${r ? one(r.score) : "–"}</b><em>${r ? "score" : ""}${r && scoreDisplay(r) !== "hero" ? " · provisional" : ""}</em></span>
+    // This browser's saved row knows the score and how far the run got, even before the run is opened again.
+    const sv = savedRuns.get(p.id);
+    const score = r?.score ?? sv?.score ?? null;
+    const verdict = r?.verdict ?? sv?.verdict ?? undefined;
+    const stage = { new: "Not paid yet", validating: "Research running", validated: "Report ready", building: "Launch kit in progress", live: "Launch kit ready" }[sv?.stage ?? "new"];
+    const sub = p.idea.trim() && p.idea.trim() !== p.title.trim() ? p.idea : stage;
+    return `<li><button type="button" data-act="switch" data-id="${esc(p.id)}" aria-current="${p.id === f.project.id}">
+        <span class="of-t"><b>${esc(p.title)}</b><span>${esc(sub)}</span></span>
+        <span class="of-r">${score != null ? `<b class="num">${one(score)}</b><em>${esc(verdictOf(verdict ?? undefined))}</em>` : `<em>${esc(stage)}</em>`}</span>
       </button></li>`;
   };
-  const finished = knownExamples();
-  const mine = f.projects.filter((p) => !f.isSample(p.id) && !finished.some((x) => x.id === p.id));
-  const samples = f.projects.filter((p) => f.isSample(p.id));
+  return `${mine.length ? `<ul class="of-list">${mine.map(row).join("")}</ul>` : `<p class="of-sub">Nothing yet. Your first idea will be here.</p>`}
+    ${finished.length ? `<p class="of-sec">Finished examples · real runs</p>
+    <ul class="of-list">${finished.map((x) => `<li><button type="button" data-act="switch" data-id="${esc(x.id)}" data-at="report">
+        <span class="of-t"><b>${esc(x.title)}<span class="of-tag">Example</span></b><span>${esc(x.run)} · ${esc(x.paid)}</span></span>
+        <span class="of-r">${x.verdict ? `<b class="num">${one(x.verdict.score)}</b><em>${esc(verdictOf(x.verdict.verdict))}</em>` : ""}</span>
+      </button></li>`).join("")}</ul>` : ""}`;
+}
+export function officesHtml(f: ProtoFlowV7): string {
   return `
   <section class="offices">
-    <header class="of-head"><h2 class="t-display">Your offices</h2><button class="btn btn-ghost btn-icon ov-x" data-act="close" type="button" aria-label="Close">${I.close(16)}</button></header>
-    <p class="of-sub">One office per idea.</p>
-    ${mine.length ? `<ul class="of-list">${mine.map((p) => row(p, false)).join("")}</ul>` : `<p class="of-sub">Your ideas will live here. Nothing yet.</p>`}
-    ${finished.length ? `<p class="of-sec">Finished examples (real runs)</p>
-    <ul class="of-list">${finished.map((x) => `<li><button type="button" data-act="switch" data-id="${esc(x.id)}" data-at="report">
-        <span class="of-g">${levelGlyph(3, 22)}</span>
-        <span class="of-t"><b>${esc(x.title)}<span class="of-tag">Example</span></b><span>${esc(x.run)} · ${esc(x.paid)}</span></span>
-        <span class="of-r"><b class="num">${x.verdict ? one(x.verdict.score) : "–"}</b><em>${x.verdict ? "score" : ""}</em></span>
-      </button></li>`).join("")}</ul>` : ""}
-    ${samples.length ? `<p class="of-sec">Practice runs (sample data, not real research)</p>
-    <ul class="of-list">${samples.map((p) => row(p, true)).join("")}</ul>` : ""}
+    <header class="of-head"><h2 class="t-display">My ideas</h2><button class="btn btn-ghost btn-icon ov-x" data-act="close" type="button" aria-label="Close">${I.close(16)}</button></header>
+    ${ideasList(f)}
     <button class="btn btn-primary of-new" data-act="new" type="button"><span>New idea</span>${I.arrow(16)}</button>
   </section>`;
 }
@@ -481,7 +503,7 @@ export function noBuildHtml(b: BuildDept | null): string {
   <section class="v-lvl">
     <div class="lv-g" data-st>${b ? builderBadge(b, 30) : levelGlyph(1, 30)}</div>
     <div class="lv-t" data-st><span class="eyebrow px-eb">${b ? BUILD_ROLE[b] : "Launch kit"}</span><h2 class="t-display">No launch kit in this example</h2>
-      <p>This example stops at the report. The coffee kiosk shows a full launch kit.</p></div>
+      <p>This sample stops at the report. The finished example shows a full launch kit.</p></div>
     <button class="btn btn-primary" data-act="next" type="button" data-st><span>Next</span>${I.arrow(16)}</button>
   </section>`;
 }

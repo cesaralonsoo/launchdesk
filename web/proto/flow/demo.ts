@@ -1,6 +1,8 @@
-// v7 · ?demo=1 — the judges' path (WS-EXP). DEMO_SCRIPT (contracts.ts) is the timeline; this plays it on the flow:
-// at each row's second the flow enters that step (animated) and holds until the next row. The flow never advances
-// a step by itself in demo mode; the UI only performs the "self-typing" bits (idea, pay press, CEO note).
+// v7 · ?demo=1 — the judges' tour (WS-EXP; v8 PLAN.md 5.6). DEMO_SCRIPT (contracts.ts) is the timeline; this plays
+// it on the flow: at each row's second the flow enters that step (animated) and holds until the next row. The flow
+// never advances a step by itself in demo mode; the UI only performs the "self-typing" bits (idea, pay press, CEO note).
+// v8: the clock is wall-clock time (a slow GPU or a 4x CPU throttle never stretches the 90 s), so a beat that is
+// still busy when its slot ends is simply cut and the next one starts.
 // Space pauses, → skips to the next row, ← goes back one, Esc exits to the normal flow. &t=<s> seeks.
 import { DEMO_LENGTH_S, DEMO_SCRIPT } from "../contracts";
 import { demoState, type ProtoFlowV7 } from ".";
@@ -16,9 +18,9 @@ export interface Demo {
   onTick(cb: () => void): () => void;
 }
 
-/** The chapters drawn on the thin bar (start second, label). */
+/** The chapters drawn on the thin bar (start second, label): the stage vocabulary (PLAN.md 1, 5.6). */
 export const DEMO_CHAPTERS: Array<[number, string]> = [
-  [0, "Idea"], [10, "Team"], [18, "Evidence"], [46, "Report"], [64, "You, CEO"], [72, "Boom"], [78, "Build"], [96, "Grow"], [109, "Your turn"],
+  [0, "Idea"], [6, "Research"], [14, "Evidence"], [32, "Verdict"], [42, "CEO note"], [52, "Launch kit"], [62, "Live"], [70, "Offices"], [82, "Your turn"],
 ];
 
 export function createDemo(flow: ProtoFlowV7, startAt = 0): Demo {
@@ -31,10 +33,11 @@ export function createDemo(flow: ProtoFlowV7, startAt = 0): Demo {
   flow.setDemo(true);
   // compress the evidence stream to the script's slot (~10 findings at 2.6 s, whatever the sample holds)
   const evRow = DEMO_SCRIPT.findIndex((r) => r.step === "evidence");
-  const evSlot = (DEMO_SCRIPT[evRow + 1]!.at - DEMO_SCRIPT[evRow]!.at) * 1000 - 2600;
+  const evSlot = (DEMO_SCRIPT[evRow + 1]!.at - DEMO_SCRIPT[evRow]!.at) * 1000 - 1500;
   const n = Math.max(1, flow.findings.length);
   const analysts = Math.max(1, flow.roster.length);
-  flow.setTiming({ findingEvery: Math.min(2600, Math.max(1500, (evSlot - analysts * 500) / n)), analystGap: 500, hireEvery: 1400, hireTail: 600, buildWork: 1700, steerWork: 2400, reportTail: 600 });
+  // every finding fits its slot (a long sample reveals faster rather than being cut)
+  flow.setTiming({ findingEvery: Math.min(2400, Math.max(700, (evSlot - analysts * 400) / n)), analystGap: 400, hireEvery: 900, hireTail: 400, buildWork: 1700, steerWork: 2400, reportTail: 400 });
 
   const rowAt = (s: number) => {
     let i = 0;
@@ -46,10 +49,11 @@ export function createDemo(flow: ProtoFlowV7, startAt = 0): Demo {
     flow.goto(demoState(DEMO_SCRIPT[i]!), { animate: true });
     cbs.forEach((cb) => cb());
   };
-  const loop = (now: number) => {
+  const advance = (now: number) => {
     if (!on) return;
-    // clamp: a slow frame (or the world still loading) never jumps the story forward
-    const dt = Math.min(0.1, (now - last) / 1000);
+    // wall clock: slow frames do not slow the tour. Only a long gap (a background tab, a debugger) is clamped, so
+    // coming back never skips whole chapters.
+    const dt = Math.min(1, (now - last) / 1000);
     last = now;
     if (!paused && document.documentElement.dataset.ready === "1") {
       t = Math.min(DEMO_LENGTH_S, t + dt);
@@ -58,6 +62,10 @@ export function createDemo(flow: ProtoFlowV7, startAt = 0): Demo {
       if (t >= DEMO_LENGTH_S) paused = true;
     }
     cbs.forEach((cb) => cb());
+  };
+  const loop = (now: number) => {
+    if (!on) return;
+    advance(now);
     requestAnimationFrame(loop);
   };
   const key = (e: KeyboardEvent) => {
@@ -97,5 +105,7 @@ export function createDemo(flow: ProtoFlowV7, startAt = 0): Demo {
   };
   play(rowAt(t));
   requestAnimationFrame((n0) => { last = n0; requestAnimationFrame(loop); });
+  // rAF can be throttled to a few frames a second on a weak GPU: a timer keeps the clock honest in between
+  const tick = window.setInterval(() => (on ? advance(performance.now()) : clearInterval(tick)), 250);
   return demo;
 }

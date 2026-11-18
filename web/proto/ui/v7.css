@@ -420,3 +420,132 @@
   .v7 .panel[data-pos="side"] .ex-home { padding: 10px 12px; }
   .v7 .panel[data-pos="side"] .v-alt { margin-top: -6px; }
 }
+
+/* ═════════════════════════════ v8 redesign (PLAN.md 2.3, 4.1, 5.6, 6) ═════════════════════════════
+   One accent (BCH green) for BCH / done; stage dots in muted tints; radii 14 / 999; one shadow. The top bar is plain
+   (no glass pills), the home links sit on the right, the tour bar and the example strip sit under it. */
+.ui.v7 {
+  --chrome-h: 64px;
+  --s1: #4F7CF0; --s2: #E3893B; --s3: #8C6BE8; --s4: #3A9D8F;
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.06), 0 8px 24px rgb(0 0 0 / 0.06);
+  --r-card: 14px;
+}
+@media (max-width: 640px) { .ui.v7 { --chrome-h: 52px; } }
+
+/* top bar */
+.v7 .chrome { height: var(--chrome-h); padding: 0 32px; grid-template-columns: 1fr auto; gap: 12px; }
+.v7 .chrome::before { display: none; }
+.v7 .wordmark { background: none; border: 0; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; height: auto; padding: 0; border-radius: 0; pointer-events: auto; text-decoration: none; }
+.v7 .blaze-tag { pointer-events: auto; font: 600 10.5px/1 var(--font-text); letter-spacing: 0.06em; color: var(--c-muted); border: 1px solid color-mix(in srgb, var(--c-ink) 14%, transparent); border-radius: 999px; padding: 5px 8px; text-decoration: none; margin-left: 4px; white-space: nowrap; }
+.v7 .blaze-tag:hover { color: var(--c-ink); }
+.v7 .chrome-l { gap: 10px; }
+.v7 .chrome-l .back-btn { margin-left: 6px; }
+.v7 .chrome-r { gap: 4px; }
+.v7 .nav-a { pointer-events: auto; border: 0; background: transparent; font: 500 14px/1 var(--font-text); color: color-mix(in srgb, var(--c-ink) 86%, transparent); text-decoration: none; padding: 9px 12px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
+.v7 .nav-a:hover { background: var(--c-fill); color: var(--c-ink); }
+.v7 .nav-a .na-s { display: none; }
+.ui.v7[data-home="0"] .blaze-tag { display: none; }
+@media (max-width: 640px) {
+  .v7 .chrome { padding: 0 16px; }
+  .v7 .ld-word { font-size: 17px; }
+  .v7 .nav-a { font-size: 13.5px; padding: 8px 10px; }
+  .v7 .nav-a[data-act="how"] { display: none; }
+  .v7 .nav-a .na-l { display: none; }
+  .v7 .nav-a .na-s { display: inline; }
+  .v7 .blaze-tag { padding: 4px 6px; font-size: 10px; }
+  .ui.v7:has(.back-btn:not([hidden])) .ld-word { display: none; }
+}
+
+/* the tour bar: chapters under the top bar, one honest tag */
+.v7 .demo-bar { top: var(--chrome-h); }
+.v7 .db-meta { top: 12px; }
+.db-tag { font: 600 10.5px/1 var(--font-text); letter-spacing: 0.04em; text-transform: uppercase; color: var(--c-warning, #A15C00); }
+
+/* stage dots (1 Research · 2 Launch kit · 3 Offices · 4 Campus) */
+.st-dot { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--c); color: #fff; font: 600 10.5px/1 var(--font-num); font-style: normal; flex: none; }
+.v-lede { color: var(--c-muted); font-size: 14.5px; margin-top: 6px !important; max-width: 52ch; }
+
+/* the fallback idea card (the home hero is ui/home.ts) and the tour's idea card: same copy, same hierarchy */
+.v-idea .v-eyebrow { display: inline-flex; align-items: center; gap: 8px; font: 600 12px/1 var(--font-text); letter-spacing: 0.07em; text-transform: uppercase; color: color-mix(in srgb, var(--c-ink) 82%, transparent); }
+.v-idea .v-eyebrow i { width: 7px; height: 7px; border-radius: 50%; background: var(--c-money); }
+.v-idea h1 { font-weight: 700; letter-spacing: -0.03em; line-height: 1.04; }
+.v-idea h1 span { display: block; color: color-mix(in srgb, var(--c-ink) 62%, transparent); }
+.v-idea .idea-field { flex-direction: column; align-items: stretch; gap: 8px; padding: 8px; border-radius: var(--r-card); background: var(--c-surface); box-shadow: var(--shadow-1); }
+.v-idea .idea-field textarea { min-height: 52px; padding: 6px 8px 18px; font-size: 16px; }
+.v-idea .idea-try { pointer-events: auto; position: absolute; right: 16px; top: 54px; border: 0; background: none; font: 500 12.5px/1 var(--font-text); color: var(--c-muted); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: color-mix(in srgb, var(--c-ink) 22%, transparent); cursor: pointer; }
+.v-idea .idea-try:hover { color: var(--c-ink); }
+.v-idea .btn-go { width: 100%; height: 52px; border-radius: 10px; font-size: 16px; }
+.v-alt .v-link b { font-weight: 600; }
+.v-alt .v-link em { font-style: normal; font-weight: 400; font-size: 12.5px; color: var(--c-muted); margin-left: 4px; }
+.v-alt .v-play { font-size: 10px; }
+
+/* report: one surface; "Tell your team" is a real button with its price (free) */
+.rp-full { height: 34px; font-size: 13px; }
+.rp-free { font-style: normal; font-size: 12px; font-weight: 600; color: var(--c-money-ink, #06855F); margin-left: 2px; }
+.v7 .panel[data-pos="bottom"][data-key="report1"] { width: min(620px, calc(100vw - 32px)); }
+
+/* offices (world level 2) · campus (level 3) · tour recap */
+.v7 .panel[data-pos="bottom"]:is([data-key="offices"], [data-key="campus"], [data-key="recap"]) { width: min(560px, calc(100vw - 32px)); }
+/* Tall bottom cards (the launch kit) stop under the top bar instead of sliding under the Back button. */
+.v7 .panel[data-pos="bottom"] { max-height: calc(100vh - var(--ld-banner-h, 0px) - var(--chrome-h) - 28px); }
+.v-offices, .v-campus, .v-recap { display: grid; gap: 16px; }
+.v-offices h2, .v-campus h2, .v-recap h2 { font-size: 26px; margin-top: 8px; }
+.of-rooms { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--c-line); }
+.of-rooms li { display: grid; grid-template-columns: 96px 1fr auto; gap: 12px; align-items: baseline; padding: 10px 0; border-bottom: 1px solid var(--c-line); font-size: 13.5px; }
+.of-rooms li span { color: var(--c-muted); }
+.of-rooms li em { font-style: normal; font-weight: 600; }
+.tag.tag-demo, .tag-demo { color: var(--c-warning, #A15C00); border-color: color-mix(in srgb, var(--c-warning, #A15C00) 35%, transparent); font-style: normal; text-transform: none; letter-spacing: 0; }
+.recap { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.recap li { display: flex; gap: 12px; align-items: flex-start; font-size: 14px; color: var(--c-muted); }
+.recap li b { display: block; color: var(--c-ink); font-weight: 650; }
+.recap .st-dot { margin-top: 2px; }
+.of-list .of-t b { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; }
+/* My ideas rows: title + line on the left, score on the right; nothing is cut off on a phone. */
+.v7 .of-list button { grid-template-columns: minmax(0, 1fr) auto; align-items: start; }
+.v7 .of-t > span { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.v7 .of-t b .of-tag { overflow: visible; white-space: nowrap; flex: none; text-overflow: clip; }
+.v7 .of-r { padding-top: 1px; text-align: right; }
+
+/* phones: every step panel is a sheet at 55% of the screen; its grip (or scrolling it) opens it full height */
+.v7 .panel[data-pos="sheet"] { max-height: 55vh; max-height: 55dvh; transition: opacity 360ms var(--ease), transform var(--t-in) var(--spring), max-height 420ms var(--ease); overscroll-behavior: contain; }
+.v7 .panel[data-pos="sheet"][data-full="1"] { max-height: calc(100vh - var(--chrome-h) - 6px); max-height: calc(100dvh - var(--ex-top, var(--chrome-h)) - 6px); }
+.v7 .panel[data-pos="sheet"]::before { display: none; }
+.sheet-grip { pointer-events: auto; display: block; position: sticky; top: -20px; z-index: 2; width: 100%; height: 26px; margin: -20px 0 2px; border: 0; background: transparent; cursor: grab; touch-action: none; }
+.sheet-grip::after { content: ""; display: block; width: 40px; height: 4px; border-radius: 9px; margin: 9px auto 0; background: color-mix(in srgb, var(--c-ink) 22%, transparent); }
+.v7 .panel[data-pos="sheet"][data-key="live"] { top: auto; max-height: 55dvh; }
+.v7 .panel[data-pos="sheet"][data-key="live"][data-full="1"] { top: auto; max-height: calc(100dvh - var(--ex-top, var(--chrome-h)) - 6px); }
+
+/* the written report: a side card on wide windows (the floor stays lit on the right), a sheet on phones */
+.v7 .panel[data-pos="card"] { left: 24px; top: calc(var(--ex-top, var(--chrome-h)) + 12px); bottom: 16px; width: min(700px, 52vw); max-height: none; padding: 0; border-radius: var(--r-card); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin;
+  background: var(--c-surface); box-shadow: var(--shadow-1), 0 0 0 1px var(--c-line); transform: translateX(-24px); }
+.v7 .panel[data-pos="card"].in { transform: none; }
+.v7 .panel[data-pos="card"] .rdoc { max-width: none; padding: 0; }
+.v7 .panel[data-pos="card"] .rd-bar { position: sticky; top: 0; z-index: 2; padding: 12px 20px; background: color-mix(in srgb, var(--c-surface) 94%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid var(--c-line); }
+.v7 .panel[data-pos="card"] .rd-paper { box-shadow: none; border-radius: 0; padding: 36px 40px 32px; }
+.v7 .panel[data-pos="card"] .rd-decide { margin: 0 16px 16px; box-shadow: none; background: var(--c-fill); }
+.v7 .panel[data-pos="card"] .rd-score { gap: 0; }
+.v7 .panel[data-pos="doc"] { padding-top: calc(var(--ex-top, var(--chrome-h)) + 24px); -webkit-mask-image: none; mask-image: none; }
+.v7 .panel[data-pos="sheet"][data-key="doc"] { padding: 20px 0 0; background: var(--c-surface); }
+.v7 .panel[data-pos="sheet"][data-key="doc"] .rdoc { padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+.v7 .panel[data-pos="sheet"][data-key="doc"] .rd-paper { box-shadow: none; margin: 0; padding: 8px 18px 24px; border-radius: 0; }
+.v7 .panel[data-pos="sheet"][data-key="doc"] .rd-bar { padding: 0 16px 8px; }
+.v7 .panel[data-pos="sheet"][data-key="doc"] .rd-decide { margin: 0 12px; background: var(--c-fill); box-shadow: none; }
+.v7 .panel[data-pos="sheet"][data-key="doc"] .rd-cover h1 { margin-top: 10px; }
+
+/* "Tell your team": promoted on the report (it is the CEO loop, and it is free) */
+.rd-ceo { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 18px; padding: 12px 14px; border-radius: 12px; background: var(--c-fill); font-size: 13.5px; }
+.rd-ceo span { color: var(--c-muted); }
+.rd-ceo b { color: var(--c-ink); font-weight: 650; }
+.rd-ceo .btn { height: 36px; flex: none; }
+@media (max-width: 640px) { .rd-ceo { flex-direction: column; align-items: stretch; } .rd-ceo .btn { justify-content: center; } }
+.ui[data-example="1"] .rd-ceo { display: none; }
+.ui[data-example="1"] .panel[data-pos="bottom"] { max-height: calc(100vh - var(--ex-top) - 40px); }
+@media (max-width: 640px) {
+  .v7 .panel[data-pos="sheet"][data-key="doc"] .rd-bar-t { font-size: 12px; }
+  .v7 .panel[data-pos="sheet"][data-key="doc"] .rd-pdf { height: 34px; padding: 0 12px; font-size: 13px; background: var(--c-fill); color: var(--c-ink); box-shadow: none; }
+}
+/* the tour types the idea itself: no example link, no other ways out of the card */
+.ui.v7[data-demo="1"] .v-idea .idea-try, .ui.v7[data-demo="1"] .v-idea .v-alt { display: none; }
+
+/* Text cards are solid: the 3D world never shows through a paragraph (busy scenes like the street made sheet text hard to read). */
+.v7 .panel.glass:is([data-pos="sheet"], [data-pos="bottom"], [data-pos="card"], [data-pos="side"]) { background: var(--c-surface); backdrop-filter: none; -webkit-backdrop-filter: none; }

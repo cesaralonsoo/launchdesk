@@ -1,21 +1,24 @@
-// v7 · Every DOM surface (WS-EXP). One surface at a time over the world: the chrome (logo · growth track · your
-// offices), one panel for the current step, a floating name tag on whoever works, and overlays (source, offices,
-// report, site). Reads the flow; only calls flow.next / goto / peek. Fixed light theme: nothing here listens to the clock.
+// v7 · Every DOM surface (WS-EXP). One surface at a time over the world: the chrome (wordmark · BLAZE tag · Back on
+// the left; How it works · Finished example · My ideas on the right), one panel for the current step, a floating name
+// tag on whoever works, and overlays (source, my ideas, report, site). Reads the flow; only calls flow.next / goto /
+// peek / submitIdea. Fixed light theme: nothing here listens to the clock.
+// v8 (redesign PLAN.md): the home hero is ui/home.ts in the #home slot (this file only draws a fallback idea card
+// while that slot is empty), the progress HUD is game/hud.ts in #hud. No growth track, no "Your offices" pill, no
+// "Sample data" pill on the home. Phones: every step panel is a sheet that opens at 55% of the screen height and is
+// dragged (or scrolled) up, so the 3D keeps at least 40% of the screen.
 import "./ui.css";
 import "./v7.css";
 import "./report-doc.css";
-import { DEMO_LENGTH_S, LEVEL_META, type FlowStateV7, type Insets, type ProjectV7, type WorldLevel, type WorldV7 } from "../contracts";
+import { DEMO_LENGTH_S, type FlowStateV7, type Insets, type WorldV7 } from "../contracts";
 import { REPORT_PAGES, type ProtoFlowV7 } from "../flow";
 import { DEMO_CHAPTERS, type Demo } from "../flow/demo";
 import type { Project } from "../../src/types";
-import { resultCard } from "./cards";
 import { countUp, el, esc, isMobile, reducedMotion, stagger } from "./dom";
 import { ldLogo } from "./logo";
 import { livePanel, siteOverlay } from "./moments";
-import { levelGlyph } from "./pixel";
 import {
-  noBuildHtml,
-  analystTag, boomHtml, evidenceFoot, evidenceHtml, evWait, findingCard, floorHtml, hireHtml, ideaHtml, levelHtml, officesHtml,
+  noBuildHtml, campusHtml, officesFloorHtml, recapHtml, reportOneHtml,
+  analystTag, evidenceFoot, evidenceHtml, evWait, findingCard, hireHtml, ideaHtml, officesHtml,
   payHtml, reportPage, reportReader, sourceHtml, steerHtml, steerSuggestions, who, workTag,
 } from "./steps";
 import { ensureBrandFonts, makeView, type View } from "./view";
@@ -26,20 +29,17 @@ import { livePayHtml, mountPay } from "../live/pay";
 import { ldMark } from "./logo";
 import { badge } from "./pixel";
 import { builderBadge, KIT_CENTS } from "./steps";
-import { kitOfferHtml, mountKitScreen, officesTeaserHtml } from "./kit-screen";
+import { kitOfferHtml, mountKitScreen } from "./kit-screen";
 import { projects as savedProjects } from "../../src/app/projects";
 import { BUILD_TEAM } from "../contracts";
 import type { AppConfig as AppConfigLike } from "../../src/types";
-import { exampleButtonHtml, exampleOf, examples, kitNoteShort, knownExamples, lockedHtml, mainExample, ribbonHtml } from "./example";
+import { exampleOf, examples, kitNoteShort, knownExamples, lockedHtml, mainExample, ribbonHtml } from "./example";
 import { startEscrowProof } from "./escrow-proof";
 import { ESCROW } from "../live/pay";
 import type { WorldV8 } from "../world/api-v8";
 import { mountHome } from "./home";
 import { mountHud } from "../game/hud";
 
-/** Short chip labels so the three sample ideas (server config.sampleIdeas) fit on one line; the full sentence still fills the box. */
-const CHIP_LABELS: [RegExp, string][] = [[/coffee kiosk/i, "Coffee kiosk · Barcelona"], [/dog-walking/i, "Dog-walking app · Madrid"], [/vintage road bikes/i, "Vintage bike shop · online"]];
-const chipLabel = (idea: string) => CHIP_LABELS.find(([re]) => re.test(idea))?.[1] ?? idea.split(",")[0]!;
 
 export interface Ui {
   openOffices(): void;
@@ -52,7 +52,7 @@ export interface UiDeps {
   still?: boolean;
 }
 
-type Pos = "center" | "bottom" | "sheet" | "boom" | "doc" | "side";
+type Pos = "center" | "bottom" | "sheet" | "boom" | "doc" | "side" | "card";
 const DEMO_IDEA_FALLBACK = "A specialty coffee kiosk at a metro exit";
 
 export function createUi(host: HTMLElement, deps: UiDeps): Ui {
@@ -67,15 +67,15 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     cfg = c;
     document.documentElement.dataset.ldPaused = paused() ? "1" : "0"; // example.css hides every pay button (offices too)
     paintMode();
-    if (curKey === "idea" || curKey === "end" || (paused() && (curKey === "pay1" || curKey === "pay2" || curKey === "floor"))) render(true);
+    // A pay panel drawn before the config arrived does not know about sample mode or the price yet: draw it again.
+    if (curKey === "idea" || curKey === "end" || curKey === "pay1" || curKey === "pay2" || curKey === "floor") render(true);
   });
   /** GET /api/config paused:true (the server takes no payments right now): no pay buttons, the example instead. */
   const paused = () => !!(cfg as (AppConfigLike & { paused?: boolean }) | null)?.paused;
   // The finished examples (real runs seeded by the server): the home button names the main one once it is known.
   void examples().then(() => {
-    const slot = curPanel?.querySelector<HTMLElement>(".ex-slot");
-    if (slot) slot.innerHTML = exampleButtonHtml();
     paintMode();
+    paintChrome();
     paintExample();
     // opened straight on /p/ex-… (or reloaded there): the kit mounted before the list arrived, so it was not read-only
     if (curKey === "live" && flow.live && exampleOf(flow.live.id)) render(true);
@@ -94,17 +94,14 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     return view;
   };
   let typedIdea = "";
-  /** The project created for the idea on the pay card, until it is paid (Back + resubmit reuses it). */
-  let lastUnpaid: { idea: string; proj: ProjectV7 } | null = null;
   let steerDraft = "";
 
   const root = el(`<div class="ui v7">
     <header class="chrome">
-      <div class="chrome-l"><a class="wordmark" href="/" aria-label="LaunchDesk, start over">${ldLogo(24)}</a><button class="back-btn glass" type="button" data-act="back" hidden title="Back (Esc)" aria-label="Back"><span class="bb-i">${I.back(15)}</span><span class="bb-t">Back</span></button></div>
-      <ol class="grow" aria-label="Growth"></ol>
-      <div class="chrome-r"><span class="live-tag" hidden></span><button class="offices-btn glass" type="button" data-act="offices" aria-label="Your offices"><span class="ob-g"></span><span class="ob-t">Your offices</span></button></div>
+      <div class="chrome-l"><a class="wordmark" href="/" aria-label="LaunchDesk, start over">${ldLogo(24)}</a><a class="blaze-tag" href="/#blaze" data-act="blaze">BLAZE 2026</a><button class="back-btn glass" type="button" data-act="back" hidden title="Back (Esc)" aria-label="Back"><span class="bb-i">${I.back(15)}</span><span class="bb-t">Back</span></button></div>
+      <nav class="chrome-r" aria-label="Main"><span class="live-tag" hidden></span><a class="nav-a" href="/#how" data-act="how" data-on-home>How it works</a><button class="nav-a" type="button" data-act="example" data-on-home><span class="na-l">Finished example</span><span class="na-s">Example</span></button><button class="nav-a" type="button" data-act="offices" hidden>My ideas</button></nav>
     </header>
-    <div class="demo-bar" hidden><div class="db-track"></div><div class="db-meta"><span class="db-ch"></span><span class="db-keys"><kbd>Space</kbd> pause <kbd>→</kbd> skip <kbd>Esc</kbd> exit</span></div></div>
+    <div class="demo-bar" hidden><div class="db-track"></div><div class="db-meta"><span class="db-ch"></span><span class="db-tag">Sample tour</span><span class="db-keys"><kbd>Space</kbd> pause <kbd>→</kbd> skip <kbd>Esc</kbd> exit</span></div></div>
     <div class="atag" data-on="0"></div>
     <div class="wtag glass" data-on="0"></div>
     <div class="wbub" data-on="0" aria-hidden="true"></div>
@@ -118,42 +115,48 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
   const unmountHome = mountHome(root.querySelector<HTMLElement>("#home")!, { world, flow });
   const unmountHud = mountHud(root.querySelector<HTMLElement>("#hud")!, { world, flow });
   const $ = <T extends HTMLElement>(s: string) => root.querySelector<T>(s)!;
-  const growEl = $(".grow"), panelsEl = $(".panels"), overlay = $(".overlay"), atag = $(".atag"), wtag = $(".wtag"), obG = $(".ob-g");
+  const panelsEl = $(".panels"), overlay = $(".overlay"), atag = $(".atag"), wtag = $(".wtag");
+  const homeSlot = $("#home");
+  /** The home hero (ui/home.ts) owns the idea step once it renders something (or marks the slot data-owns="idea"). */
+  const homeOwned = () => homeSlot.dataset.owns === "idea" || homeSlot.childElementCount > 0;
   const demoBar = $(".demo-bar");
   const modeTag = $(".live-tag");
-  /** The honest label: a real run on a sample-data server, or a sample world shown as an example. */
+  /** The honest label, inside the app only (never on the home): a real run on a sample-data server, or a sample world.
+   *  The tour says "Sample tour" on its own bar; a finished example has its strip. */
   function paintMode() {
     const st = flow.state.step;
     let k = "", t = "";
-    if (demo) k = "";
+    if (demo || st === "idea" || st === "bedroom") k = "";
     else if (flow.live) {
-      if (exampleOf(flow.live.id)) (k = "example"), (t = "Example · real run");
-      else if (cfg?.mockAi) (k = "demo"), (t = "Sample data");
-    } else if (st === "idea" || st === "end" || st === "bedroom") {
-      if (cfg?.mockAi) (k = "demo"), (t = "Sample data");
-    } else if (flow.isSample(flow.project.id)) (k = "demo"), (t = "Sample data · not real research");
+      if (!exampleOf(flow.live.id) && cfg?.mockAi) (k = "demo"), (t = "Sample data");
+    } else if (flow.isSample(flow.project.id)) (k = "demo"), (t = "Sample data");
     modeTag.hidden = !k;
     if (k && (modeTag.dataset.k !== k || modeTag.dataset.t !== t)) {
       modeTag.dataset.k = k;
       modeTag.dataset.t = t;
-      modeTag.title = t;
-      // Phones get the short word so the tag never pushes "Your offices" off-screen.
-      modeTag.innerHTML = `<i></i><span class="lt-l">${t}</span><span class="lt-s">${k === "demo" ? "Sample" : k === "example" ? "Example" : t}</span>`;
+      modeTag.title = k === "demo" ? "Sample data: not real research, nothing is charged" : t;
+      modeTag.innerHTML = `<i></i><span class="lt-l">${t}</span><span class="lt-s">Sample</span>`;
     }
   }
 
-  // ────────────────────────────── chrome: the growth track (room → floor → building → district)
-  let growKey = "";
-  function paintGrow() {
-    const cur = world.worldLevel as WorldLevel;
-    const cap = flow.cap;
-    const key = `${cur}:${cap}`;
-    if (key === growKey) return;
-    growKey = key;
-    growEl.innerHTML = ([0, 1, 2, 3] as WorldLevel[])
-      .map((l) => `<li data-s="${l === cur ? "now" : l < cur ? "done" : l > cap ? "ghost" : "next"}" title="${LEVEL_META[l].name}${l > cap ? " · beyond this idea's reach" : ""}">${levelGlyph(l, 16)}<span>${LEVEL_META[l].short}</span></li>`)
-      .join("");
-    obG.innerHTML = I.grid(14); // a plain "your projects" mark, not a game level
+  // ────────────────────────────── chrome: the home links, "My ideas" once this browser has one
+  const myIdeas = $<HTMLButtonElement>("[data-act=offices]");
+  function paintChrome() {
+    const home = flow.state.step === "idea" && !demo;
+    root.dataset.home = home ? "1" : "0";
+    root.querySelectorAll<HTMLElement>("[data-on-home]").forEach((x) => (x.hidden = !home));
+    const finished = knownExamples();
+    myIdeas.hidden = demo != null || !flow.mine.some((p) => !finished.some((x) => x.id === p.id) && !/^ex-/.test(p.id));
+  }
+  /** Scroll the home to one of its sections (WP-A's #how / #blaze); from inside the app, go home first. */
+  function toSection(id: string) {
+    const go = () => document.getElementById(id)?.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "start" });
+    if (flow.state.step === "idea" && !demo) return go();
+    demo?.exit();
+    closeOverlay();
+    typedIdea = "";
+    flow.next({ type: "new-project" });
+    setTimeout(go, 120);
   }
 
   // ────────────────────────────── demo bar
@@ -180,7 +183,7 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
         segs[i]!.style.transform = `scaleX(${Math.max(0, Math.min(1, (demo!.t - at) / (end - at)))})`;
       });
       const c = [...DEMO_CHAPTERS].reverse().find(([at]) => at <= demo!.t);
-      ch.textContent = `${demo.paused ? "Paused · " : ""}${c?.[1] ?? ""}`;
+      ch.textContent = `${demo.paused && demo.t < DEMO_LENGTH_S ? "Paused · " : ""}${c?.[1] ?? ""}`;
     });
   }
 
@@ -190,13 +193,15 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
   let insets: Insets = { left: 0, right: 0, top: 0, bottom: 0 };
 
   function keyFor(s: FlowStateV7): string | null {
-    if (flow.moving && s.step !== "boom") return null;
+    if (flow.moving) return null;
     switch (s.step) {
       case "bedroom":
         return null;
       case "idea":
+        // the home hero owns this step (the tour keeps its own card: the idea types itself in it)
+        return homeOwned() && !demo ? null : "idea";
       case "end":
-        return s.step;
+        return demo ? "recap" : "end";
       case "pay1":
       case "pay2":
         return s.step;
@@ -205,29 +210,28 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
       case "evidence":
         return flow.calm ? "work" : "evidence";
       case "report":
-        return docMode(flow.project, flow.report) ? "doc" : `report:${s.page ?? "score"}`;
+        // one report surface: the written report for real runs, the score card for samples and the tour
+        return docMode(flow.project, flow.report) ? "doc" : demo || (s.page ?? "score") === "score" ? "report1" : `report:${s.page}`;
       case "steer":
         return `steer:${flow.steers.length}:${flow.steering?.status ?? "none"}`;
-      case "boom":
-        return flow.moving ? "boom" : null;
       case "floor":
         return "floor";
-      case "build":
-        return s.phase === "result" ? `build:${s.builder}` : null;
       case "building":
+        return "offices";
       case "district":
-        return `${s.step}:${flow.cap}:${flow.chosenPath ?? "-"}`;
+        return `campus:${flow.mine.length}`;
       default:
         return s.step;
     }
   }
   const sideHome = () => innerWidth >= 960 && innerWidth / innerHeight >= 1.25;
+  /** Wide windows read the written report as a side card, with the company's floor lit on the right. */
+  const sideDoc = () => innerWidth >= 1100;
   function posFor(key: string): Pos {
-    if (key === "boom") return "boom";
-    if (key === "doc") return "doc";
     if (isMobile()) return "sheet";
+    if (key === "doc") return sideDoc() ? "card" : "doc";
     // Home on a wide window: the idea card sits on the left and the office fills the rest, full height.
-    if ((key === "idea" || key === "end") && sideHome()) return "side";
+    if ((key === "idea" || key === "end" || key === "recap") && sideHome()) return "side";
     return "bottom"; // every surface rises from the bottom; the world is framed in the space above it
   }
   function build(key: string, s: FlowStateV7): string {
@@ -247,16 +251,16 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     if (key === "evidence") return evidenceHtml(flow, s.finding ?? 0);
     if (key === "work") return workHtml(flow);
     if (key === "doc") return reportDocHtml(flow);
+    if (key === "report1") return reportOneHtml(flow);
     if (key.startsWith("report:")) return reportPage(flow, s.page ?? "score");
     if (key.startsWith("steer")) return steerHtml(flow, steerDraft);
-    if (key === "boom") return boomHtml();
     if (key === "floor") return kitOfferHtml(cfg?.prices.build ?? KIT_CENTS);
-    if (key.startsWith("build:")) return v ? resultCard(v, s.builder!) : s.phase === "result" ? noBuildHtml(s.builder ?? null) : "";
+    if (key === "recap") return recapHtml();
     // A real project (also on a demo-mode server): the one Launch kit screen, filled in live from the server.
     if (key === "live" && flow.live) return `<div class="kit-root"></div>`;
     if (key === "live") return v ? livePanel(v, flow.report) : noBuildHtml(null);
-    if (key.startsWith("building")) return levelHtml(flow, 2, v?.name ?? flow.project.title);
-    if (key.startsWith("district")) return levelHtml(flow, 3, v?.name ?? flow.project.title);
+    if (key === "offices") return officesFloorHtml(flow, v?.name ?? flow.project.title);
+    if (key.startsWith("campus")) return campusHtml(flow);
     return "";
   }
   let disposePanel: (() => void) | null = null;
@@ -277,25 +281,66 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
       return;
     }
     const pos = posFor(key);
-    const p = el(`<div class="panel ${pos === "boom" || pos === "doc" ? "" : "glass"}" data-pos="${pos}" data-key="${key.split(":")[0]}">${build(key, s)}</div>`);
+    const p = el(`<div class="panel ${pos === "doc" || pos === "card" ? "" : "glass"}" data-pos="${pos}" data-key="${key.split(":")[0]}">${pos === "sheet" ? `<button class="sheet-grip" type="button" data-act="sheet" aria-label="Expand"></button>` : ""}${build(key, s)}</div>`);
     stagger(p);
     panelsEl.appendChild(p);
     curPanel = p;
     countUp(p, 900);
+    if (pos === "sheet") wireSheet(p);
     mount(p, key, s);
     requestAnimationFrame(() => requestAnimationFrame(() => p.classList.add("in")));
     queueMicrotask(() => measure());
   }
+  /** Phones: a sheet opens at 55% of the screen; drag its grip (or scroll its content) up to read it full height, drag
+   *  it down to see the 3D again. */
+  function toggleSheet(on?: boolean) {
+    if (!curPanel || curPanel.dataset.pos !== "sheet") return;
+    const full = on ?? curPanel.dataset.full !== "1";
+    if ((curPanel.dataset.full === "1") === full) return;
+    curPanel.dataset.full = full ? "1" : "0";
+    curPanel.querySelector(".sheet-grip")?.setAttribute("aria-label", full ? "Collapse" : "Expand");
+    if (!full) curPanel.scrollTop = 0;
+    measure();
+  }
+  function wireSheet(p: HTMLElement) {
+    const grip = p.querySelector<HTMLElement>(".sheet-grip");
+    let y0 = 0, dragging = false, moved = false;
+    grip?.addEventListener("pointerdown", (e) => {
+      dragging = true;
+      moved = false;
+      y0 = e.clientY;
+      grip.setPointerCapture(e.pointerId);
+    });
+    grip?.addEventListener("pointermove", (e) => {
+      if (!dragging) return;
+      const dy = e.clientY - y0;
+      if (Math.abs(dy) > 8) moved = true;
+      if (dy < -36) toggleSheet(true), (dragging = false);
+      else if (dy > 36) toggleSheet(false), (dragging = false);
+    });
+    grip?.addEventListener("pointerup", () => (dragging = false));
+    // a tap on the grip toggles (the click handler); a drag already did its job
+    grip?.addEventListener("click", (e) => moved && (e.stopPropagation(), (moved = false)), true);
+    p.addEventListener("scroll", () => p.dataset.full !== "1" && p.scrollTop > 24 && toggleSheet(true), { passive: true });
+  }
+  /** Frames the world in the space the panel leaves. The panels are position:fixed, so page scroll (the home) never
+   *  moves them; with no panel (the home hero owns the idea step) this leaves the insets to the home. */
   function measure() {
     if (!curPanel || !curKey) return;
     const pos = curPanel.dataset.pos as Pos;
     const r = curPanel.getBoundingClientRect();
-    if (pos === "side") setInsets({ left: Math.round(r.right + 8), right: 0, top: 64, bottom: 0 });
-    else if (pos === "bottom" || pos === "sheet" || pos === "center") setInsets({ left: 0, right: 0, top: isMobile() ? 56 : 64, bottom: Math.round(innerHeight - r.top + 12) });
+    // under the top bar, and under the example strip when one is shown
+    const top = (isMobile() ? 52 : 64) + (root.dataset.example === "1" ? (innerWidth <= 760 ? 44 : 48) : 0);
+    if (pos === "side" || pos === "card") setInsets({ left: Math.round(r.right + 8), right: 0, top, bottom: 0 });
+    else if (pos === "sheet") {
+      // an expanded sheet covers the world: keep framing for the collapsed height, the 3D comes back on collapse
+      const h = curPanel.dataset.full === "1" ? Math.round(innerHeight * 0.55) : Math.round(innerHeight - r.top);
+      setInsets({ left: 0, right: 0, top, bottom: Math.min(Math.round(innerHeight * 0.6), h + 8) });
+    } else if (pos === "bottom" || pos === "center") setInsets({ left: 0, right: 0, top, bottom: Math.round(innerHeight - r.top + 12) });
     else setInsets({ left: 0, right: 0, top: 0, bottom: 0 });
   }
   function setInsets(i: Insets) {
-    if (Math.abs(i.bottom - insets.bottom) < 8 && Math.abs(i.top - insets.top) < 8) return;
+    if (Math.abs(i.bottom - insets.bottom) < 8 && Math.abs(i.top - insets.top) < 8 && Math.abs(i.left - insets.left) < 8) return;
     insets = i;
     world.setInsets(i);
   }
@@ -350,7 +395,8 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
           ownerKey: savedProjects.ownerKey(id),
           readOnly: !demo && !!exampleOf(id),
           note: !demo ? kitNoteShort(exampleOf(id)?.kitNote) : undefined,
-          onOffices: (name) => openOverlay(officesTeaserHtml(name || "your business"), "offices"),
+          // a sample server or a read-only kit: the offices layer opens on its own sample entry (labelled there)
+          onOffices: (name) => void import("./offices").then((m) => m.openOffices({ name })),
           onOwn: () => ((typedIdea = ""), flow.next({ type: "new-project" })),
         });
         // the panels fill in over time: keep the world framed above the sheet
@@ -390,37 +436,17 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
       const form = p.querySelector<HTMLFormElement>("form")!;
       const ta = form.querySelector<HTMLTextAreaElement>("textarea")!;
       const go = form.querySelector<HTMLButtonElement>("button[type=submit]")!;
-      let sending = false;
-      // The sample sentences are one click away from the start (a judge never has to type to see a run).
-      const chipsHtml = () =>
-        cfg?.sampleIdeas.length ? `<div class="idea-chips"><span class="ic-try">Try:</span>${cfg.sampleIdeas.map((x) => `<button type="button" data-idea="${esc(x)}" title="${esc(x)}">${esc(chipLabel(x))}</button>`).join("")}</div>` : "";
-      // a chip only fills the box: the visitor still presses Validate (no project or payment card from a stray click)
-      const wireChips = () => form.querySelectorAll<HTMLButtonElement>("[data-idea]").forEach((b) => b.addEventListener("click", () => ((ta.value = b.dataset.idea!), ta.dispatchEvent(new Event("input", { bubbles: true })), ta.focus())));
       const fail = (msg: string) => {
-        sending = false;
         go.disabled = false;
         form.querySelector(".idea-err")?.remove();
-        form.querySelector(".idea-chips")?.remove();
-        (form.querySelector(".ex-slot") ?? form.querySelector(".idea-field"))!.insertAdjacentHTML("afterend", `<p class="idea-err" role="alert">${esc(msg)}</p>${cfg?.mockAi ? chipsHtml() : ""}`);
-        wireChips();
+        form.querySelector(".idea-field")!.insertAdjacentHTML("afterend", `<p class="idea-err" role="alert">${esc(msg)}</p>`);
         measure();
       };
       const submit = () => {
-        // An empty box runs the idea shown as the placeholder instead of an error.
-        if (!ta.value.trim() && !demo && key === "idea") ta.value = ta.placeholder;
         typedIdea = ta.value;
         if (demo) return flow.next({ type: "submit-idea", idea: ta.value });
-        const idea = ta.value.trim();
-        if (idea.length < 15) return fail(idea ? "Tell us a bit more: one full sentence." : "Type your idea first.");
-        if (sending) return;
-        // pay → Back → submit the same idea again: reuse the unpaid project instead of piling up a new one each time
-        if (lastUnpaid && lastUnpaid.idea === idea) return flow.startLive(lastUnpaid.proj, "new");
-        sending = true;
         go.disabled = true;
-        createProject(idea).then(
-          (proj) => ((lastUnpaid = { idea, proj }), flow.startLive(proj, "new")),
-          (e: Error) => fail(e.message || "Could not start. Try again."),
-        );
+        flow.submitIdea(ta.value).then(() => (go.disabled = false), (e: Error) => fail(e.message));
       };
       form.addEventListener("submit", (e) => (e.preventDefault(), submit()));
       ta.addEventListener("keydown", (e) => {
@@ -429,16 +455,19 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
           submit();
         }
       });
-      if (!demo && cfg?.sampleIdeas.length) {
-        // the finished example stays right under the idea box; the sample sentences follow it
-        (form.querySelector(".ex-slot") ?? form.querySelector(".idea-field"))!.insertAdjacentHTML("afterend", chipsHtml());
-        wireChips();
-      }
+      // "Try an example": fills the box with the next sample sentence (the visitor still presses the button)
+      let tryI = 0;
+      form.querySelector<HTMLButtonElement>("[data-act=try-idea]")?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const ideas = cfg?.sampleIdeas ?? [];
+        if (!ideas.length) return;
+        ta.value = ideas[tryI++ % ideas.length]!;
+        ta.dispatchEvent(new Event("input", { bubbles: true }));
+        ta.focus();
+      });
       if (demo && key === "idea") typeInto(ta, flow.project.idea || DEMO_IDEA_FALLBACK, 3600);
       else if (!isMobile() && !deps.still) setTimeout(() => ta.focus({ preventScroll: true }), 400);
     }
-    if (demo && (key.startsWith("district") || key.startsWith("building")) && flow.cap < (key.startsWith("district") ? 3 : 2))
-      setTimeout(() => demo && p.isConnected && p.querySelector<HTMLButtonElement>("[data-act=path]")?.click(), 1200);
     if ((key === "pay1" || key === "pay2") && demo) setTimeout(() => p.querySelector<HTMLButtonElement>("[data-act=approve]")?.click(), 1500);
     if (key.startsWith("steer")) {
       const form = p.querySelector<HTMLFormElement>(".steer-f");
@@ -544,21 +573,19 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
         return () => goHome(true); // a real run keeps working on the server; it waits in Your offices
       case "report": {
         const i = REPORT_PAGES.indexOf(s.page ?? "score");
-        if (!doc && i > 0) return () => flow.goto({ step: "report", page: REPORT_PAGES[i - 1]! });
+        if (!doc && i > 0) return () => flow.goto({ step: "report", page: "score" });
         return () => goHome(true);
       }
       case "steer":
-        return () => flow.goto({ step: "report", page: doc ? "score" : "next" });
-      case "boom":
+        return () => flow.goto({ step: "report", page: "score" });
       case "floor":
       case "pay2":
-      case "build":
       case "live":
-        return flow.report ? () => flow.goto({ step: "report", page: doc ? "score" : "next" }) : () => goHome(true);
+        return flow.report ? () => flow.goto({ step: "report", page: "score" }) : () => goHome(true);
       case "building":
-        return () => flow.goto({ step: flow.project.legacy ? "live" : "floor" });
+        return () => flow.goto({ step: flow.live?.paid.build || (!flow.live && flow.project.legacy) ? "live" : "report", page: "score" });
       case "district":
-        return () => flow.goto({ step: "building" });
+        return () => goHome();
       case "end":
         return () => goHome();
       default:
@@ -756,9 +783,10 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     if (act === "approve") {
       if (t.dataset.state) return;
       t.dataset.state = "busy";
+      const at = flow.state.step;
       setTimeout(() => {
         t.dataset.state = "done";
-        flow.next({ type: "approve-pay" });
+        if (flow.state.step === at) flow.next({ type: "approve-pay" });
       }, reducedMotion() ? 0 : 650);
       return;
     }
@@ -775,9 +803,21 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
       const page = act === "page" ? (t.dataset.page as (typeof REPORT_PAGES)[number]) : REPORT_PAGES[Math.max(0, i - 1)]!;
       return flow.goto({ step: "report", page });
     }
+    // a finished example's kit is already made: "See the launch kit" opens it, never the 50¢ offer (PLAN.md 6.5)
+    if (act === "grow" && flow.live && exampleOf(flow.live.id)) return flow.goto({ step: "live" });
+    if (act === "steer" && flow.live && exampleOf(flow.live.id)) return; // read-only: the strip offers "Try your own idea"
     if (act === "grow") return flow.next({ type: "decide", choice: "grow" });
     if (act === "pivot") return flow.next({ type: "decide", choice: "pivot" });
     if (act === "steer") return flow.goto({ step: "steer" });
+    if (act === "sheet") return toggleSheet();
+    if (act === "how" || act === "blaze") {
+      e.preventDefault();
+      return toSection(act);
+    }
+    if (act === "open-offices") {
+      const id = flow.live?.id;
+      return void import("./offices").then((m) => (id && !exampleOf(id) ? m.openOffices({ projectId: id, ownerKey: savedProjects.ownerKey(id), name: getView()?.name }) : m.openOffices({ name: getView()?.name })));
+    }
     if (act === "ask-scale") {
       steerDraft = "What would make it scale?";
       return flow.goto({ step: "steer" });
@@ -808,7 +848,7 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
       typedIdea = "";
       return flow.next({ type: "new-project" });
     }
-    if (act === "replay" || act === "tour") return void (location.href = "?demo=1");
+    if (act === "replay" || act === "tour") return void (location.href = "/?demo=1");
     if (act === "example") {
       closeOverlay();
       // The real finished example (server seed): open it on its report. No payment, no wallet.
@@ -822,9 +862,6 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
       return;
     }
     if (act === "see-proof") return jumpToProof();
-    if (act === "grow" && flow.live && exampleOf(flow.live.id)) return flow.goto({ step: "live" }); // the example's kit is already made
-    if (act === "steer" && flow.live && exampleOf(flow.live.id)) return; // read-only: the ribbon offers "Try your own idea"
-    if (act === "path") return flow.commitPath(Number(t.dataset.i));
     if (act === "site") {
       const slug = flow.live?.siteSlug;
       if (slug) return void open(`/s/${encodeURIComponent(slug)}`, "_blank", "noopener");
@@ -840,22 +877,14 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     if (demo || overlay.dataset.open === "1") return;
     if ((e.target as HTMLElement)?.closest?.("textarea, input")) return;
     const s = flow.state;
-    if (e.key === "ArrowRight" || e.key === "Enter") {
-      if (s.step === "report" && s.page !== "next") return flow.next({ type: "next" });
-      if (s.step === "evidence" || s.step === "floor" || s.step === "live" || s.step === "building" || (s.step === "build" && s.phase === "result")) return flow.next({ type: "next" });
-    }
-    if (e.key === "ArrowLeft" && s.step === "report") {
-      const i = REPORT_PAGES.indexOf(s.page ?? "score");
-      if (i > 0) flow.goto({ step: "report", page: REPORT_PAGES[i - 1]! });
-    }
+    if ((e.key === "ArrowRight" || e.key === "Enter") && (s.step === "evidence" || s.step === "floor")) return flow.next({ type: "next" });
   });
 
   // ────────────────────────────── render loop (flow events)
   function render(force = false) {
     const s = flow.state;
-    if (lastUnpaid && !["idea", "pay1", "bedroom"].includes(s.step)) lastUnpaid = null;
     root.dataset.step = s.step;
-    paintGrow();
+    paintChrome();
     paintMode();
     if (force) curKey = null;
     show(keyFor(s), s);
@@ -975,8 +1004,9 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     paintTags();
   });
   render();
-  // the growth track follows the world's level while it animates (boom, pull-backs)
-  setInterval(paintGrow, 250);
+  // the home (ui/home.ts) may take the idea step after this first paint: drop the fallback card then
+  const homeMo = typeof MutationObserver === "function" ? new MutationObserver(() => curKey === "idea" && homeOwned() && !demo && render(true)) : null;
+  homeMo?.observe(homeSlot, { childList: true, attributes: true, attributeFilter: ["data-owns"] });
 
   return {
     openOffices: () => openOverlay(officesHtml(flow), "offices"),

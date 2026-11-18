@@ -305,19 +305,22 @@ export const READY_ATTR = "data-ready";
 
 // ───────────────────────────────────────────────────────────── a) world levels
 
-/** 0 Bedroom (the founder alone, validation) · 1 Floor (the office) · 2 Building · 3 District. */
+/** v8 (redesign PLAN.md section 1): 1 Floor (lobby, research wing, launch kit) · 2 Offices (the second floor, seen from
+ *  inside) · 3 Campus (one building per idea). 0 (the old bedroom) is never entered: every path starts on the floor. */
 export type WorldLevel = 0 | 1 | 2 | 3;
 export const WORLD_LEVELS: readonly WorldLevel[] = [0, 1, 2, 3];
+/** The stage vocabulary (PLAN.md section 1), used verbatim by the HUD, tour chapters and panels. */
 export const LEVEL_META: Record<WorldLevel, { name: string; short: string; unlock: string }> = {
-  0: { name: "Your room", short: "Room", unlock: "Every idea starts here" },
-  1: { name: "Your office", short: "Floor", unlock: "A report worth building" },
-  2: { name: "Your building", short: "Building", unlock: "Live, and it can scale" },
-  3: { name: "Your district", short: "District", unlock: "Only ideas that scale" },
+  0: { name: "Lobby", short: "Lobby", unlock: "Your idea on the door sign" },
+  1: { name: "Research and Launch kit", short: "Floor", unlock: "10¢ locked on Bitcoin Cash" },
+  2: { name: "Offices", short: "Offices", unlock: "Your first office task is done" },
+  3: { name: "Campus", short: "Campus", unlock: "A second idea gets its report" },
 };
-/** Transition style the world uses between two levels. 0→1 is the "boom"; every other move is a continuous camera pull/push. */
+/** Transition style the world uses between two levels. v8: no boom; every move is a continuous camera pull/push
+ *  (level 0 is never entered, so "switch" only covers old callers). */
 export const levelTransition = (from: WorldLevel, to: WorldLevel): "boom" | "pull" | "push" | "switch" =>
-  from === 0 && to === 1 ? "boom" : from === 0 || to === 0 ? "switch" : to > from ? "pull" : "push";
-/** Boom 0→1 total duration (ms, speed 1). Pull-backs keep the v6 timings (1→2 3.0 s, 2→3 3.2 s). */
+  from === 0 || to === 0 ? "switch" : to > from ? "pull" : "push";
+/** Boom 0→1 total duration (ms). v8: the boom is out of every path; kept for world/boom.ts until the cleanup commit. */
 export const BOOM_MS = 2600;
 
 // ───────────────────────────────────────────────────────────── b) dynamic roster
@@ -763,9 +766,13 @@ export type FlowStepV7 =
   | "district" // level 3 (if cap = 3; else the ghost + "what would make it scale")
   | "end"; // demo end card
 export const FLOW_STEPS_V7: readonly FlowStepV7[] = ["bedroom", "idea", "pay1", "hire", "evidence", "report", "steer", "boom", "floor", "pay2", "build", "live", "building", "district", "end"];
+/** v8: everything up to the live kit happens on floor 1 (the bedroom is gone); building = the offices floor (wl 2),
+ *  district = the campus (wl 3). "bedroom" is only the blank moment while a /p/:id link loads. */
 export const STEP_LEVEL: Record<FlowStepV7, WorldLevel> = {
-  bedroom: 0, idea: 0, pay1: 0, hire: 0, evidence: 0, report: 0, steer: 0, boom: 1, floor: 1, pay2: 1, build: 1, live: 1, building: 2, district: 3, end: 3,
+  bedroom: 1, idea: 1, pay1: 1, hire: 1, evidence: 1, report: 1, steer: 1, boom: 1, floor: 1, pay2: 1, build: 1, live: 1, building: 2, district: 3, end: 1,
 };
+/** v8: old steps that left the main path, and the step their deep links open now (PLAN.md 6.3). */
+export const STEP_ALIAS: Partial<Record<FlowStepV7, FlowStepV7>> = { boom: "floor", build: "live" };
 export type ReportPage = "score" | "scale" | "points" | "next";
 export interface FlowStateV7 {
   step: FlowStepV7;
@@ -796,23 +803,22 @@ export interface FlowV7 {
   onChange(cb: (s: FlowStateV7, prev: FlowStateV7) => void): () => void;
 }
 
-/** ?demo=1 — the judges' path (~110 s, auto-advance, Space pause, → skip, Esc exits to the normal flow).
- *  `at` = seconds from start; each row holds until the next. Sample: Pausa (cap 2 → the district shows as a ghost). */
+/** ?demo=1 — the judges' tour (PLAN.md 5.6): 90 s of wall-clock time on the SAMPLE project. `at` = seconds from the
+ *  start; each row holds until the next, whatever the frame rate (a beat never stalls the clock). */
 export const DEMO_SCRIPT: ReadonlyArray<{ at: number; step: FlowStepV7; show: string; analyst?: AnalystRole; page?: ReportPage; builder?: BuildDept }> = [
-  { at: 0, step: "bedroom", show: "Room at night-to-dawn, founder at the laptop; idea types itself" },
-  { at: 6, step: "pay1", show: "$0.10 in BCH, approves itself after 1.5 s" },
-  { at: 10, step: "hire", show: "3–5 analysts pop in, one every 1.6 s, name + mission" },
-  { at: 18, step: "evidence", show: "~10 findings, one every 2.6 s, source chip on each; counter Evidence n · m sourced" },
-  { at: 46, step: "report", page: "score", show: "Score builds from the factor bars; verdict line" },
-  { at: 53, step: "report", page: "scale", show: "Scalability 0–10 + cap: how far this world can grow" },
-  { at: 59, step: "report", page: "points", show: "3 strengths · 3 weak points" },
-  { at: 64, step: "steer", show: "Note types itself, 2 analysts re-run, diff chips" },
-  { at: 72, step: "floor", show: "The office floor; the Launch kit offer: logo, website and 30-day plan" },
-  { at: 78, step: "pay2", show: "$0.50, approves itself" },
-  { at: 82, step: "live", show: "One result screen: logo options, the live website, the 30-day plan" },
-  { at: 96, step: "end", show: "Your turn: type your idea" },
+  { at: 0, step: "idea", show: "The floor of a new company; the idea types itself" },
+  { at: 6, step: "pay1", show: "10¢ into the escrow (sample: no payment in the tour)" },
+  { at: 9, step: "hire", show: "The research wing fills: analysts arrive, name + mission" },
+  { at: 14, step: "evidence", show: "Findings one at a time, each with its source" },
+  { at: 32, step: "report", page: "score", show: "The verdict: score from the factor bars, the formula on show" },
+  { at: 42, step: "steer", show: "A CEO note types itself; two analysts re-check; the score moves" },
+  { at: 52, step: "floor", show: "The Launch kit offer over the front row" },
+  { at: 56, step: "pay2", show: "50¢, approves itself" },
+  { at: 62, step: "live", show: "Logo, live website, 30-day plan" },
+  { at: 70, step: "building", show: "The offices floor: four offices, a price before every task" },
+  { at: 82, step: "end", show: "Recap: what you saw, and your turn" },
 ];
-export const DEMO_LENGTH_S = 112;
+export const DEMO_LENGTH_S = 90;
 
 export interface ProtoParamsV7 {
   step: FlowStepV7 | null;
