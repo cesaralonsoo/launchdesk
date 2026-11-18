@@ -417,6 +417,7 @@ button.hud-next:hover .hud-next-t {
 /* back from the campus, toast */
 .hud-back {
   display: inline-flex;
+  max-width: 100%;
   align-items: center;
   gap: 6px;
   margin-top: 8px;
@@ -651,8 +652,17 @@ button.hud-next:hover .hud-next-t {
 
 /* the offices floor is open over the 3D (game/hud.ts → ui/offices.ts side card): the step panel steps aside so the
    floor shows; the header and the HUD stay */
-html.ld-offices .ui > :not(#hud):not(#home):not(header) {
+html.ld-offices .ui > :not(#hud):not(#home):not(header),
+html.ld-campus .ui > :not(#hud):not(#home):not(header) {
   opacity: 0 !important;
   pointer-events: none !important;
   transition: opacity 240ms ease !important;
+}
+.hud-back span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hud-back .ic {
+  flex: none;
 }

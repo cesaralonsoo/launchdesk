@@ -127,6 +127,7 @@ export function mountHud(host: HTMLElement, deps: HudDeps): () => void {
     </div>`;
   };
 
+  let lastHtml = "";
   function render() {
     const g = store.state;
     const show = !!g && store.visible;
@@ -139,13 +140,23 @@ export function mountHud(host: HTMLElement, deps: HudDeps): () => void {
     const head = `<div class="hud-top"><button type="button" class="hud-name" data-hud="menu" aria-expanded="${menu}" aria-haspopup="menu"><b>${esc(g.name)}</b>${chev()}</button>${tag(g)}</div>`;
     const sum = `<button type="button" class="hud-sum" data-hud="drawer" aria-expanded="${open}"><span class="hud-stage"><b>${esc(g.stageName)}</b> · ${g.lit}/${g.total} rooms lit</span>${track(g)}</button>`;
     const back = campus ? `<button type="button" class="hud-back" data-hud="campus-back">${I.back(14)}<span>Back to ${esc(g.name)}</span></button>` : "";
+    let html: string;
     if (phone) {
-      main.innerHTML = `
+      html = `
         <button type="button" class="hud-pill" data-hud="drawer" aria-expanded="${open}"><b>${esc(g.stageName)}</b><span>${g.lit}/${g.total}</span>${tagText(g) ? `<em>${tagText(g) === "Sample data" ? "Sample" : tagText(g)}</em>` : ""}<i aria-hidden="true">▸</i></button>
         ${back}
         ${open ? `<div class="hud-scrim" data-hud="close"></div><div class="hud-sheet" role="dialog" aria-label="Your company">${head}${menu ? menuHtml(g) : ""}<div class="hud-sum hud-sum-static"><span class="hud-stage"><b>${esc(g.stageName)}</b> · ${g.lit}/${g.total} rooms lit</span>${track(g)}</div>${nextHtml(g)}${drawerHtml(g)}</div>` : ""}`;
     } else {
-      main.innerHTML = `<div class="hud-card">${head}${menu ? menuHtml(g) : ""}${sum}${nextHtml(g)}${open ? `<div class="hud-drawer">${drawerHtml(g)}</div>` : ""}</div>${back}`;
+      html = `<div class="hud-card">${head}${menu ? menuHtml(g) : ""}${sum}${nextHtml(g)}${open ? `<div class="hud-drawer">${drawerHtml(g)}</div>` : ""}</div>${back}`;
+    }
+    // the flow changes many times a second while it animates: touch the DOM only when the HUD really changed
+    // (a replaced button would swallow a click that lands between mousedown and mouseup)
+    if (html !== lastHtml) {
+      lastHtml = html;
+      const scroll = main.querySelector(".hud-card, .hud-sheet")?.scrollTop ?? 0;
+      main.innerHTML = html;
+      const sc = main.querySelector(".hud-card, .hud-sheet");
+      if (sc) sc.scrollTop = scroll;
     }
     pins.set(pinsFor(g));
   }
@@ -229,6 +240,7 @@ export function mountHud(host: HTMLElement, deps: HudDeps): () => void {
     officesLayer?.close();
     open = false;
     menu = false;
+    document.documentElement.classList.add("ld-campus");
     void world.setWorldLevel(3, { animate: !reduced });
     world.shotFor("campus");
     render();
@@ -237,6 +249,7 @@ export function mountHud(host: HTMLElement, deps: HudDeps): () => void {
     if (!campus) return;
     const b = campus.back;
     campus = null;
+    document.documentElement.classList.remove("ld-campus");
     void world.setWorldLevel(b as 1 | 2, { animate: !reduced });
     render();
   }
@@ -364,6 +377,6 @@ export function mountHud(host: HTMLElement, deps: HudDeps): () => void {
     pins.dispose();
     store.dispose();
     root.remove();
-    document.documentElement.classList.remove("has-hud");
+    document.documentElement.classList.remove("has-hud", "ld-campus", "ld-offices");
   };
 }

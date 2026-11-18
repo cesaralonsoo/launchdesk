@@ -207,7 +207,8 @@ export function computeGame(s: GameSnapshot): GameState {
       ? { id, name: STAGE_NAME[id], unlocked: unlocked.campus, lit: unlocked.campus ? 1 : 0, total: 1, rule: STAGE_RULE[id] }
       : { id, name: STAGE_NAME[id], unlocked: unlocked[id], lit: rs.filter((r) => r.state === "done").length, total: rs.length, rule: STAGE_RULE[id] };
   });
-  const stage = [...STAGES].reverse().find((x) => unlocked[x]) ?? null;
+  // the company's own stage (campus belongs to the browser, not to one company: it shows on the track and in the drawer)
+  const stage = [...STAGES].reverse().find((x) => x !== "campus" && unlocked[x]) ?? null;
 
   // ── badges (each one only from its server field)
   const fundingTxid = s.proof?.fundingTxid ?? p?.paid.validate?.txid ?? null;
