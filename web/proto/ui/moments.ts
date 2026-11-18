@@ -125,7 +125,7 @@ export function verdictPanel(v: View): string {
     ${canBuild ? `<p class="v-buy" data-st><span class="v-buy-avs">${BUYS.map(([d]) => avatar(d, 20)).join("")}</span><span>${BUYS.map(([, t]) => t).join(" · ")}</span></p>` : ""}
     <div class="v-actions" data-st>
       ${canBuild ? `<button class="btn btn-primary btn-build" data-act="build" type="button"><span>Build it</span><span class="btn-price">${usd(v.cents.build)}</span></button>` : ""}
-      ${L.verdict === "pivot" ? `<button class="btn btn-ghost" data-act="pivot" type="button">Pivot</button>` : ""}
+      ${L.verdict === "pivot" ? `<button class="btn btn-ghost" data-act="pivot" type="button">Try another idea</button>` : ""}
       <button class="btn btn-quiet" data-act="stop" type="button">Stop here</button>
     </div>
   </section>`;
@@ -147,7 +147,8 @@ export function levelUpPanel(v: View): string {
 export function livePanel(v: View, r7?: { score: number; verdict: string; nextSteps: string[] } | null): string {
   const S = v.sam, L = v.leo, M = v.memo;
   const days = r7?.nextSteps.length ? r7.nextSteps.slice(0, 3) : M?.next_7_days ?? v.weeks[0]?.slice(0, 3).map((t) => t.task) ?? [];
-  const V7: Record<string, string> = { go: "Go", pivot: "Pivot", "no-go": "No-go" };
+  // the verdict words of the report (one vocabulary everywhere): an uncertain idea is something to test
+  const V7: Record<string, string> = { go: "Go", pivot: "Test first", "no-go": "No-go" };
   return `
   <section class="biz">
     <div class="biz-site" data-st>${v.dex ? sitePreview(v, false, true) : ""}</div>
@@ -163,7 +164,7 @@ export function livePanel(v: View, r7?: { score: number; verdict: string; nextSt
       <div class="biz-act" data-st>
         <button class="btn btn-primary" data-act="site" type="button"><span>Visit your site</span>${I.ext(14)}</button>
         <button class="btn btn-ghost" data-act="pack" type="button">${I.report(16)}<span>Full report</span></button>
-        <button class="btn btn-quiet nl" data-act="continue" type="button" aria-label="See it grow"><span>Grow</span>${I.arrow(14)}</button>
+        <button class="btn btn-quiet nl" data-act="next" type="button"><span>Offices · from 2¢</span>${I.arrow(14)}</button>
       </div>
     </div>
   </section>`;

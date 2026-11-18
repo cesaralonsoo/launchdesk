@@ -242,7 +242,7 @@ export function reportDocHtml(f: ProtoFlowV7): string {
   const byId = new Map(p.v7.work.flatMap((w) => w.findings).map((x) => [x.id, x]));
   const hero = scoreDisplay(r) === "hero";
   const S = r.scalability;
-  const canGrow = S.cap >= 1 && r.verdict !== "no-go";
+  const canGrow = r.verdict !== "no-go"; // v8: the scalability cap gates nothing
   const date = fmtDate(p.createdAt);
   const summary = blocks
     .filter((b) => b.status === "done" && b.takeaway)
@@ -286,6 +286,7 @@ export function reportDocHtml(f: ProtoFlowV7): string {
         <p class="rd-line">${tx(lead)}</p>
         ${reasons.length ? `<ul class="rd-why">${reasons.map((x) => `<li>${tx(x)}</li>`).join("")}</ul>` : ""}
         ${r.verdict === "pivot" && unknowns.length ? `<p class="rd-line">Not known yet, so test these before you commit savings (they lower the confidence, not the score):</p><ul class="rd-why">${unknowns.map((x) => `<li>${tx(x)}</li>`).join("")}</ul>` : ""}
+        ${isExample ? "" : `<div class="rd-ceo no-print"><span><b>You're the CEO.</b> Disagree with something? Tell your team what to re-check. ${f.steersLeft} of 3 notes left · free.</span><button class="btn btn-ghost" data-act="steer" type="button"${f.steersLeft ? "" : " disabled"}><span>Tell your team</span></button></div>`}
         <p class="rd-meta"><span class="num">${r.evidence.total}</span> pieces of evidence · <span class="num">${r.evidence.sourced}</span> backed by ${pages ? `<span class="num">${pages}</span> web page${pages === 1 ? "" : "s"}` : "a web source"} · ${esc(r.confidence)} confidence${hero ? "" : " · the score is provisional until at least 6 findings, 3 of them sourced"}</p>
       </header>
 
@@ -317,11 +318,11 @@ export function reportDocHtml(f: ProtoFlowV7): string {
     </article>
 
     <footer class="rd-decide no-print">
-      <div><b>What next?</b><span>${isExample ? "This founder's launch kit is already made: logo, website and a 30-day plan." : canGrow ? `Happy with what you read? Your next step is a plan: brand, site and a launch month.${pv ? ` A change worth testing first: ${esc(pv.idea)}.` : ""}` : `This idea should not grow as it stands. ${pv ? `A better version to try: <b>${esc(pv.idea)}.</b> ${esc(pv.why)}` : "Try another idea, or tell your team what to re-check."} You can still build the launch kit to see it.`}</span></div>
+      <div><b>What next?</b><span>${isExample ? "This founder's launch kit is already made: logo, website and a 30-day plan." : canGrow ? `Happy with what you read? The next step is the launch kit: a logo, a live website and a 30-day plan.${pv ? ` A change worth testing first: ${esc(pv.idea)}.` : ""}` : `This idea should not grow as it stands. ${pv ? `A better version to try: <b>${esc(pv.idea)}.</b> ${esc(pv.why)}` : "Try another idea, or tell your team what to re-check."} You can still build the launch kit to see it.`}</span></div>
       <div class="rd-btns">
         <button class="btn btn-ghost" data-act="back" type="button">${I.back(15)}<span>Back</span></button>
         <button class="btn btn-ghost" data-act="steer" type="button"><span>Tell your team</span></button>
-        ${isExample ? `<button class="btn btn-primary" data-act="grow" type="button"><span>See the launch kit</span>${I.arrow(16)}</button>` : canGrow ? `<button class="btn btn-primary" data-act="grow" type="button"><span>Continue: make the plan</span>${I.arrow(16)}</button>` : `<button class="btn btn-ghost" data-act="grow" type="button"><span>Build the launch kit anyway</span></button><button class="btn btn-primary" data-act="pivot" type="button"><span>Try another idea</span>${I.arrow(16)}</button>`}
+        ${isExample ? `<button class="btn btn-primary" data-act="grow" type="button"><span>See the launch kit</span>${I.arrow(16)}</button>` : canGrow ? `<button class="btn btn-primary" data-act="grow" type="button"><span>Launch kit</span><span class="btn-price">50¢</span></button>` : `<button class="btn btn-ghost" data-act="grow" type="button"><span>Build the launch kit anyway</span></button><button class="btn btn-primary" data-act="pivot" type="button"><span>Try another idea</span>${I.arrow(16)}</button>`}
       </div>
     </footer>
   </div>`;

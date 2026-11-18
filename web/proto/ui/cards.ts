@@ -178,7 +178,7 @@ function leo(v: View): { tabs: Array<[string, string]>; body: string } {
     ${kill.length ? `<div class="kill"><span class="lbl">Stop if</span><ul>${kill.map((k) => `<li>${I.close(13)}<span>${esc(k.replace(/^Stop if /i, "").replace(/^./, (c) => c.toUpperCase()))}</span></li>`).join("")}</ul></div>` : ""}
     <ul class="risks">${L.risks.map((r) => `<li data-sev="${r.severity}"><span class="sev"><i></i>${sev[r.severity]}</span><b>${esc(r.risk)}</b><em>${esc(r.mitigation)}</em></li>`).join("")}</ul>
     <div class="callout"><span class="lbl">Cheapest next step</span><p>${esc(L.next_step)}</p></div>
-    ${L.pivot ? `<div class="callout"><span class="lbl">Pivot</span><p><b>${esc(L.pivot.idea)}</b> ${esc(L.pivot.why)}</p></div>` : ""}`;
+    ${L.pivot ? `<div class="callout"><span class="lbl">A change worth testing</span><p><b>${esc(L.pivot.idea)}</b> ${esc(L.pivot.why)}</p></div>` : ""}`;
   const iv = L.interviews;
   const talk = iv.questions.length ? `
     <div class="iv-top"><div><span class="lbl">Talk to</span><p>${esc(iv.who)}</p></div><div class="iv-n"><b class="mid">${num(iv.target)}</b><span>people</span></div></div>
