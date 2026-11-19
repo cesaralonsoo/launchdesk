@@ -116,7 +116,7 @@ async function check(id: string, out: HTMLElement) {
     const hex = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))].map((b) => b.toString(16).padStart(2, "0")).join("");
     const ok = hex === status?.reportHash;
     out.dataset.ok = ok ? "yes" : "no";
-    out.textContent = ok ? "Match: this is exactly the report that was recorded." : "No match. The report data differs from the record.";
+    out.textContent = ok ? "Match: the report data hashes to the fingerprint above. Open the release transaction to find it in its OP_RETURN." : "No match: the report data does not hash to the fingerprint above.";
   } catch {
     out.textContent = "Couldn't check right now. Try again in a moment.";
   }
@@ -200,8 +200,8 @@ export function startEscrowProof() {
   void examples().then(onChange);
 }
 
-/** SHA-256 of the bytes at `url` (in this browser, crypto.subtle), compared with the fingerprint written on chain.
- *  The home's "Check it in your browser" uses it on the finished example (GET /api/examples/:id/proof/report). */
+/** SHA-256 of the bytes at `url` (in this browser, crypto.subtle), compared with `expected`: the fingerprint our server
+ *  reports for the example (the one in the release tx's OP_RETURN; the explorer link lets anyone confirm that). The home's "Check it in your browser" uses it on the finished example (GET /api/examples/:id/proof/report). */
 export async function checkReportHash(url: string, expected: string): Promise<{ ok: boolean; hex: string }> {
   const bytes = await (await fetch(url, { cache: "no-store" })).arrayBuffer();
   const hex = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))].map((b) => b.toString(16).padStart(2, "0")).join("");

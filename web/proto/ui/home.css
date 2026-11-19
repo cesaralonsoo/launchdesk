@@ -208,7 +208,7 @@ html.home .ui.v7 > :not(.overlay) { display: none !important; }
 .h-btn.h-dark:hover { background: #22262F; }
 .h-btn[disabled] { opacity: .5; cursor: default; }
 .h-match { display: none; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--bch-ink); background: var(--bch-soft); padding: 9px 12px; border-radius: 10px; }
-.h-match.on { display: inline-flex; }
+.h-match.on { display: inline-block; max-width: 100%; line-height: 1.5; overflow-wrap: anywhere; }
 .h-match[data-ok="no"] { color: #B42318; background: rgba(180, 35, 24, .08); }
 .h-match[data-ok="wait"] { color: var(--muted); background: var(--fill); }
 .h-match code { font: 500 12px ui-monospace, Menlo, monospace; }

@@ -121,7 +121,7 @@ export function mountPay(root: HTMLElement, d: PayDeps): () => void {
     if (disposed || busy) return;
     // GET /api/config paused:true: the server takes no payments right now. Never show a way to pay.
     if ((d.config as (AppConfig & { paused?: boolean }) | null)?.paused)
-      return set(`<div class="pl-err pl-paused" role="status"><b>New runs are paused for a little while.</b><span>Nothing can be paid right now, so nothing will be charged.</span></div><button class="btn btn-primary btn-pay" type="button" data-act="example"><span class="b-lbl">See a finished example</span></button>`);
+      return set(`<div class="pl-err pl-paused" role="status"><b>New runs are paused for a little while.</b><span>Nothing can be paid right now, so nothing will be charged.</span></div><button class="btn btn-primary btn-pay" type="button" data-act="example"><span class="b-lbl">See a finished company</span></button>`);
     if (mock) return set(`${btn("dev", d.stage === "validate" ? "Start the sample run" : "Start the sample build")}`);
     const s = walletState();
     if (s === "ready")

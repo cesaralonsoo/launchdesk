@@ -15,7 +15,7 @@ import { usd } from "./view";
 import { statusLine } from "../live/adapter";
 import { kitOfferHtml } from "./kit-screen";
 import { exampleName, knownExamples, mainExample, pausedHtml } from "./example";
-import { fullSentences, leadLine, plainText, verdictWhy, VERDICT_RULE_V7 } from "../../../server/v7";
+import { estimateBasis, fullSentences, leadLine, plainText, verdictWhy, VERDICT_RULE_V7 } from "../../../server/v7";
 import { OFFICES } from "../../../server/offices/catalog";
 import { projects as savedRuns } from "../../src/app/projects";
 import { centsOf, launchNoteHtml, priceHtml, priceText } from "../prices";
@@ -39,7 +39,8 @@ const one = (n: number) => (Math.round(n * 10) / 10).toFixed(1);
 /** Kind badge + text + the proof: the source domain (tap for the page) or "Estimate · basis". */
 export function proof(f: Finding): string {
   if (f.source) return `<button class="src" type="button" data-act="source" data-f="${esc(f.id)}" title="${esc(f.source.title)}"><i></i><span>${esc(f.source.domain)}</span>${I.ext(12)}</button>`;
-  return `<span class="estm" title="An estimate, not a measured fact"><b>Estimate</b>${f.basis ? ` · ${esc(f.basis)}` : ""}</span>`;
+  const basis = estimateBasis(f.text, f.basis);
+  return `<span class="estm" title="An estimate, not a measured fact"><b>Estimate</b>${basis ? ` · ${esc(basis)}` : ""}</span>`;
 }
 export function kindTag(f: Finding): string {
   const k = f.kind === "competitor" && f.competitor && !f.competitor.named ? "Competitor type" : KIND_LABEL[f.kind];
@@ -496,7 +497,7 @@ export function sourceHtml(fd: Finding, a: Analyst): string {
     <p class="so-text">${esc(fd.text)}</p>
     ${s ? `<div class="so-src"><span class="eyebrow">Source</span><b>${esc(s.title)}</b><span class="so-url">${esc(s.url)}</span><span class="so-acc">Read on ${esc(s.accessed)}</span>
       <a class="btn btn-primary" href="${esc(s.url)}" target="_blank" rel="noopener noreferrer"><span>Open the page</span>${I.ext(14)}</a></div>`
-    : `<div class="so-src est"><span class="eyebrow">Estimate</span><b>No web source for this one.</b><span>${esc(fd.basis ?? "A desk estimate from the analyst.")}</span></div>`}
+    : `<div class="so-src est"><span class="eyebrow">Estimate</span><b>No web source for this one.</b><span>${esc(estimateBasis(fd.text, fd.basis) ?? "A desk estimate from the analyst.")}</span></div>`}
   </section>`;
 }
 

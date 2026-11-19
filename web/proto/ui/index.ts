@@ -815,7 +815,7 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
   }
   world.onCameraChange(paintTags);
 
-  /** "Download PDF": the browser's print dialog with the report's own print stylesheet (report-doc.css @media print). */
+  /** "Print / Save as PDF": the browser's print dialog with the report's own print stylesheet (report-doc.css @media print). */
   function printReport() {
     const t = document.title;
     document.title = `${flow.project.title} · LaunchDesk report`;

@@ -460,6 +460,7 @@ export function mountHome(host: HTMLElement, deps: HomeDeps): () => void {
     const out = $("[data-h=match]")!;
     btn.disabled = false;
     const hash = p.reportHash;
+    const relTx = p.releaseTxid ?? null, relUrl = p.releaseUrl ?? null;
     on(btn, "click", async () => {
       btn.disabled = true;
       out.dataset.ok = "wait";
@@ -468,9 +469,16 @@ export function mountHome(host: HTMLElement, deps: HomeDeps): () => void {
       try {
         const r = await checkReportHash(`/api/examples/${encodeURIComponent(x.id)}/proof/report`, hash);
         out.dataset.ok = r.ok ? "yes" : "no";
+        // what is checked: these bytes hash to the fingerprint shown above. That the same fingerprint sits in the release
+        // tx's OP_RETURN is for the reader to see on the explorer (the link), not claimed by this check.
+        const tx = relTx
+          ? relUrl
+            ? ` Open tx <a href="${esc(relUrl)}" target="_blank" rel="noopener noreferrer">${esc(short(relTx))} ↗</a> to see it in the OP_RETURN.`
+            : ` Tx <code>${esc(short(relTx))}</code> holds it in its OP_RETURN.`
+          : "";
         out.innerHTML = r.ok
-          ? `Match ✓ <code title="${esc(r.hex)}">${esc(short(r.hex))}</code>`
-          : `No match: this report differs from the one on chain`;
+          ? `<span>Match ✓ These report bytes hash to <code title="${esc(r.hex)}">${esc(short(r.hex))}</code>, the fingerprint shown above.${tx}</span>`
+          : `<span>No match: these report bytes do not hash to the fingerprint shown above.</span>`;
       } catch {
         out.dataset.ok = "no";
         out.textContent = "Couldn't check right now. Try again in a moment.";

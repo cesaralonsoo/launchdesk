@@ -103,7 +103,7 @@ export function exampleButtonHtml(): string {
     : "A real run: the report, the website and the payment proof";
   return `<button type="button" class="ex-home" data-act="example">
       <span class="ex-home-i">${I.report(18)}</span>
-      <span class="ex-home-t"><b>See a finished example</b><span class="ex-home-s">${esc(sub)}</span></span>
+      <span class="ex-home-t"><b>See a finished company</b><span class="ex-home-s">${esc(sub)}</span></span>
       <span class="ex-home-free">Free · no wallet</span>${I.arrow(14)}
     </button>`;
 }
@@ -138,7 +138,7 @@ export function pausedHtml(): string {
   return `<div class="ex-paused" role="status">
     <b>New runs are paused for a little while.</b>
     <span>Nothing can be paid right now, so nothing will be charged. The finished example shows everything a run makes.</span>
-    <button type="button" class="btn btn-primary ex-paused-go" data-act="example"><span>See a finished example</span></button>
+    <button type="button" class="btn btn-primary ex-paused-go" data-act="example"><span>See a finished company</span></button>
   </div>`;
 }
 

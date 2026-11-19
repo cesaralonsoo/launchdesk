@@ -10,7 +10,7 @@ import {
 } from "../contracts";
 import type { ProtoFlowV7 } from "../flow";
 import { statusLine } from "../live/adapter";
-import { fullSentences, leadLine, plainText, reasonsAfterLead, unitPlural, verdictWhy, VERDICT_RULE_V7 } from "../../../server/v7";
+import { estimateBasis, fullSentences, leadLine, plainText, reasonsAfterLead, unitPlural, verdictWhy, VERDICT_RULE_V7 } from "../../../server/v7";
 import { esc } from "./dom";
 import { exampleName, exampleOf, knownExamples } from "./example";
 import { I } from "./icons";
@@ -156,7 +156,7 @@ function evidenceItem(b: ReportBlock, fd: Finding): string {
   const n = sourceNumber(b, fd);
   const v = fd.impact ?? 0;
   const mark = v ? `<span class="rd-imp" data-v="${v > 0 ? "up" : "down"}" title="${v > 0 ? "Counts for the idea" : "Counts against the idea"}">${v > 0 ? "+" : "−"}</span>` : `<span class="rd-imp" data-v="0" title="Context">·</span>`;
-  const proof = fd.source ? srcLink(fd.source, n) : estimate(fd.basis);
+  const proof = fd.source ? srcLink(fd.source, n) : estimate(estimateBasis(fd.text, fd.basis));
   return `<li class="rd-item">${mark}<p>${tx(fd.text)} ${proof}</p></li>`;
 }
 function keyNumber(b: ReportBlock, k: KeyNumber): string {
@@ -270,7 +270,7 @@ export function reportDocHtml(f: ProtoFlowV7): string {
   <div class="rdoc">
     <div class="rd-bar no-print">
       <span class="rd-bar-t">${ex?.proof ? "Finished example: a real paid report" : isExample ? (ex || knownExamples().length ? "Finished example: a real AI run (test mode, not paid)" : "Finished example") : "Your report is ready. Read it, then decide at the end."}</span>
-      <button class="btn btn-primary rd-pdf" data-act="pdf" type="button">${I.pack(15)}<span>Download PDF</span></button>
+      <button class="btn btn-primary rd-pdf" data-act="pdf" type="button">${I.pack(15)}<span>Print / Save as PDF</span></button>
     </div>
     <article class="rd-paper">
       <header class="rd-cover">
