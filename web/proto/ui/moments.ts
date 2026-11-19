@@ -6,6 +6,7 @@ import { esc } from "./dom";
 import { I, avatar } from "./icons";
 import { ldMark } from "./logo";
 import { VERDICT_LABEL, money, usd, type View } from "./view";
+import { priceHtml } from "../prices";
 
 // ───────────────────────────── idea: logo, one question, one field, one price
 export function ideaPanel(idea: string, past = 0): string {
@@ -164,7 +165,7 @@ export function livePanel(v: View, r7?: { score: number; verdict: string; nextSt
       <div class="biz-act" data-st>
         <button class="btn btn-primary" data-act="site" type="button"><span>Visit your site</span>${I.ext(14)}</button>
         <button class="btn btn-ghost" data-act="pack" type="button">${I.report(16)}<span>Full report</span></button>
-        <button class="btn btn-quiet nl" data-act="next" type="button"><span>Offices · from 2¢</span>${I.arrow(14)}</button>
+        <button class="btn btn-quiet nl" data-act="next" type="button"><span>Offices · ${priceHtml("offices")}</span>${I.arrow(14)}</button>
       </div>
     </div>
   </section>`;

@@ -17,6 +17,7 @@ import { centsLabel, OFFICE_IDS, OFFICE_NAME, STAGE_NAME, VERDICT_LABEL, type Ga
 import { createGameStore } from "./store";
 import { OFFICES_EVENT, type OfficeId, type OfficesOpenDetail, type Stage } from "./types";
 import "./hud.css";
+import { priceHtml, priceText } from "../prices";
 
 export interface HudDeps {
   world: WorldV7 & WorldV8;
@@ -125,7 +126,7 @@ export function mountHud(host: HTMLElement, deps: HudDeps): () => void {
       ${mine.length ? `<ul>${mine.map((p) => row(p.id, p.id === g.projectId ? g.name : p.title, subOf(p.id), p.id === g.projectId)).join("")}</ul>` : `<p class="hud-note">Your ideas will live here.</p>`}
       ${store.examples.length ? `<p class="hud-menu-h">Finished examples · real runs</p><ul>${store.examples.map((x) => row(x.id, exampleName(x), x.verdict ? `${x.verdict.score.toFixed(1)} · ${VERDICT_LABEL[x.verdict.verdict]}` : "", x.id === g.projectId, true)).join("")}</ul>` : ""}
       <div class="hud-menu-f">
-        <button type="button" class="hud-btn" data-hud="new">${I.arrow(14)}<span>New idea · 10¢</span></button>
+        <button type="button" class="hud-btn" data-hud="new">${I.arrow(14)}<span>New idea · ${priceHtml("validate")}</span></button>
         <button type="button" class="hud-btn" data-hud="campus"${campusOpen ? "" : " disabled"} title="${campusOpen ? "" : esc("Opens when a second idea gets its report")}">${I.district(14)}<span>Campus</span></button>
       </div>
       ${campusOpen ? "" : `<p class="hud-note hud-menu-why">Campus opens when a second idea gets its report.</p>`}
@@ -186,9 +187,9 @@ export function mountHud(host: HTMLElement, deps: HudDeps): () => void {
       const st = (i: number) => g.stages[i]!;
       const sub = (i: number, price: string) => (st(i).unlocked ? `done · ${st(i).lit}/${st(i).total}` : price);
       const defs: [string, string, string, string, string][] = [
-        ["wing:back", "Research", sub(0, "10¢"), "#4F7CF0", "Research: open the report"],
-        ["wing:front", "Launch kit", sub(1, "50¢"), "#E3893B", "Launch kit: open the kit"],
-        ["plate", "Offices", "from 2¢", "#8C6BE8", "Offices: run a task for your own business"],
+        ["wing:back", "Research", sub(0, priceText("validate")), "#4F7CF0", "Research: open the report"],
+        ["wing:front", "Launch kit", sub(1, priceText("build")), "#E3893B", "Launch kit: open the kit"],
+        ["plate", "Offices", priceText("offices"), "#8C6BE8", "Offices: run a task for your own business"],
       ];
       return defs.map(([id, name, s2, c, label], i) => (phoneMq.matches ? { id, kind: "dot" as const, tone: c, html: `${i + 1}`, label } : { id, html: pillHtml(name, s2, c), label }));
     }
@@ -201,7 +202,7 @@ export function mountHud(host: HTMLElement, deps: HudDeps): () => void {
       else for (const r of saved.list().filter((x) => !/^ex-/.test(x.id)).slice(0, 4))
         out.push({ id: `campus:${r.id}`, html: pill(r.id === g.projectId ? g.name : r.title, r.verdict === "no-go" ? "No-go · lesson learned" : r.score != null ? `${VERDICT_LABEL[r.verdict ?? "go"]} ${r.score.toFixed(1)}` : "No report yet") });
       for (const x of store.examples) out.push({ id: `campus:${x.id}`, html: phoneMq.matches ? pillHtml(short(`Example · ${exampleShort(x)}`)) : pill(`Example · ${exampleName(x)}`, x.verdict ? `${VERDICT_LABEL[x.verdict.verdict]} ${x.verdict.score.toFixed(1)}` : "real run") });
-      out.push({ id: "campus:next:0", html: pill("Your next idea", "10¢") });
+      out.push({ id: "campus:next:0", html: pill("Your next idea", priceText("validate")) });
       return out;
     }
     return [];

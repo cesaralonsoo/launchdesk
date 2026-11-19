@@ -9,6 +9,7 @@
 //   WS-EXP     web/proto.html, main.ts, ui/**, themes/**, flow/** → FlowV7, UI
 //   WS-INTEL   server/**, test/**, web/proto/data/**           → ProjectV7 samples, ResultsV7 on the server
 import type * as THREE from "three";
+import { priceText } from "./prices";
 
 // ───────────────────────────────────────────────────────────── departments
 
@@ -312,7 +313,7 @@ export const WORLD_LEVELS: readonly WorldLevel[] = [0, 1, 2, 3];
 /** The stage vocabulary (PLAN.md section 1), used verbatim by the HUD, tour chapters and panels. */
 export const LEVEL_META: Record<WorldLevel, { name: string; short: string; unlock: string }> = {
   0: { name: "Lobby", short: "Lobby", unlock: "Your idea on the door sign" },
-  1: { name: "Research and Launch kit", short: "Floor", unlock: "10¢ locked on Bitcoin Cash" },
+  1: { name: "Research and Launch kit", short: "Floor", get unlock() { return `${priceText("validate")} locked on Bitcoin Cash`; } },
   2: { name: "Offices", short: "Offices", unlock: "Your first office task is done" },
   3: { name: "Campus", short: "Campus", unlock: "A second idea gets its report" },
 };
@@ -807,13 +808,13 @@ export interface FlowV7 {
  *  start; each row holds until the next, whatever the frame rate (a beat never stalls the clock). */
 export const DEMO_SCRIPT: ReadonlyArray<{ at: number; step: FlowStepV7; show: string; analyst?: AnalystRole; page?: ReportPage; builder?: BuildDept }> = [
   { at: 0, step: "idea", show: "The floor of a new company; the idea types itself" },
-  { at: 6, step: "pay1", show: "10¢ into the escrow (sample: no payment in the tour)" },
+  { at: 6, step: "pay1", get show() { return `${priceText("validate")} into the escrow (sample: no payment in the tour)`; } },
   { at: 9, step: "hire", show: "The research wing fills: analysts arrive, name + mission" },
   { at: 14, step: "evidence", show: "Findings one at a time, each with its source" },
   { at: 32, step: "report", page: "score", show: "The verdict: score from the factor bars, the formula on show" },
   { at: 42, step: "steer", show: "A CEO note types itself; two analysts re-check; the score moves" },
   { at: 52, step: "floor", show: "The Launch kit offer over the front row" },
-  { at: 56, step: "pay2", show: "50¢, approves itself" },
+  { at: 56, step: "pay2", get show() { return `${priceText("build")}, approves itself`; } },
   { at: 62, step: "live", show: "Logo, live website, 30-day plan" },
   { at: 70, step: "building", show: "The offices floor: four offices, a price before every task" },
   { at: 82, step: "end", show: "Recap: what you saw, and your turn" },

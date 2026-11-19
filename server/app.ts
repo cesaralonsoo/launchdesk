@@ -19,6 +19,7 @@ import { bchUsdCached, bchUsdOrZero, centsToSats } from "./price.js";
 import { kitRoutes } from "./kit-routes.js";
 import { exampleRoutes } from "./examples.js";
 import { officeRoutes } from "./offices/routes.js";
+import { TASKS as OFFICE_TASKS } from "./offices/catalog.js";
 import { siteRowFor } from "./kit.js";
 import { siteNotFoundHtml, siteRoutes } from "./site/routes.js";
 import { getSite } from "./site/db.js";
@@ -156,6 +157,8 @@ app.get("/api/config", async (c) =>
   c.json({
     ...(await brakeView()),
     prices: config.priceCents,
+    // The cheapest office task today ("from 2¢" in the UI), from the same catalog the quotes use.
+    officesFromCents: Math.min(...Object.values(OFFICE_TASKS).map((t) => t.cents)),
     merchantAddress: config.merchantAddress,
     mockAi: config.mockAi,
     devSkipPayment: config.devSkipPayment,
@@ -649,10 +652,31 @@ app.get("/r/:shareId", async (c, next) => {
   );
 });
 
-// Built app (production). /s/:slug and /r/:id are answered above with classic.html; /proto.html is served as a
-// file (alias of the v7 app); every other client route (/, /p/:id, …) falls back to the v7 index.html.
-app.use("/*", serveStatic({ root: "./dist/web" }));
-app.get("/*", (c, next) => {
+/** Prices as the UI shows them (web/proto/prices.ts fmtCents): 10 → "10¢", 150 → "$1.50". */
+const fmtCents = (c: number) => (c < 100 ? `${c}¢` : `$${(c / 100).toFixed(c % 100 ? 2 : 0)}`);
+/**
+ * The home page with today's prices already in it (no flash of the defaults): every data-price span gets the
+ * configured price (PRICE_VALIDATE_CENTS / PRICE_BUILD_CENTS, the offices catalog), and so do the link-preview meta
+ * tags, which name the report price. The browser re-applies the same values from /api/config.
+ */
+export function withPrices(html: string): string {
+  const text: Record<string, string> = {
+    validate: fmtCents(config.priceCents.validate),
+    build: fmtCents(config.priceCents.build),
+    offices: `from ${fmtCents(Math.min(...Object.values(OFFICE_TASKS).map((t) => t.cents)))}`,
+  };
+  return html
+    .replace(/(<(span|tspan) data-price="(validate|build|offices)">)[^<]*(<\/\2>)/g, (_m, open: string, _t: string, k: string, close: string) => open + text[k] + close)
+    .replace(/(<meta\s+(?:name|property)="(?:description|og:description|twitter:description)"\s+content=")([^"]*)(")/gi, (_m, a: string, body: string, b: string) => a + body.replace(/\b10¢/g, text.validate!) + b);
+}
+const servePricedIndex = (c: Context, next: () => Promise<void>) => {
   const html = readHtml("index.html");
-  return html ? c.html(html) : next();
-});
+  return html ? c.html(withPrices(html)) : next();
+};
+
+// Built app (production). /s/:slug and /r/:id are answered above with classic.html; /proto.html is served as a
+// file (alias of the v7 app); every other client route (/, /p/:id, …) falls back to the v7 index.html, with prices.
+app.get("/", servePricedIndex);
+app.get("/index.html", servePricedIndex);
+app.use("/*", serveStatic({ root: "./dist/web" }));
+app.get("/*", servePricedIndex);

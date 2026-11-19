@@ -18,8 +18,9 @@ import { exampleName, knownExamples, mainExample, pausedHtml } from "./example";
 import { fullSentences, leadLine, plainText, verdictWhy, VERDICT_RULE_V7 } from "../../../server/v7";
 import { OFFICES } from "../../../server/offices/catalog";
 import { projects as savedRuns } from "../../src/app/projects";
+import { centsOf, priceHtml, priceText } from "../prices";
 
-/** WP4: the Launch kit price, in cents (server config.priceCents.build). */
+/** The 90-second tour's own accounting of the kit (flow/index.ts PAID_ALL). Shown prices come from ../prices. */
 export const KIT_CENTS = 50;
 
 export const KIND_LABEL: Record<FindingKind, string> = { fact: "Fact", number: "Number", competitor: "Competitor", risk: "Risk", strength: "Strength", estimate: "Estimate" };
@@ -50,9 +51,9 @@ export function kindTag(f: Finding): string {
 const ESCROW_ON = (import.meta as unknown as { env?: Record<string, string | undefined> }).env?.VITE_ESCROW === "1";
 /** The stage vocabulary (redesign PLAN.md 1): number, name, price, what you get, its dot colour. */
 export const STAGES = [
-  { n: 1, name: "Research", price: "10¢", gets: "Score, verdict, sources", c: "#4F7CF0" },
-  { n: 2, name: "Launch kit", price: "50¢", gets: "Logo, live website, 30-day plan", c: "#E3893B" },
-  { n: 3, name: "Offices", price: "from 2¢", gets: "Weekly work: posts, prices, replies", c: "#8C6BE8" },
+  { n: 1, name: "Research", get price() { return priceText("validate"); }, gets: "Score, verdict, sources", c: "#4F7CF0" },
+  { n: 2, name: "Launch kit", get price() { return priceText("build"); }, gets: "Logo, live website, 30-day plan", c: "#E3893B" },
+  { n: 3, name: "Offices", get price() { return priceText("offices"); }, gets: "Weekly work: posts, prices, replies", c: "#8C6BE8" },
 ] as const;
 /** The idea box when the home (ui/home.ts) is not mounted, and the "Your turn" card. Same copy as the home hero.
  *  `paused`: the server takes no payments right now (GET /api/config paused:true): a calm notice instead of the price. */
@@ -62,11 +63,11 @@ export function ideaHtml(placeholder: string, value: string, end = false, paused
   <form class="v-idea" autocomplete="off">
     <span class="v-eyebrow" data-st><i></i>Live on Bitcoin Cash mainnet</span>
     <h1 class="t-display" data-st>${end ? "Your turn." : "Check your business idea. <span>Then launch it.</span>"}</h1>
-    <p class="v-sub" data-st>${ESCROW_ON ? "An AI team researches it with real sources and gives you an honest score. Your 10¢ waits in an on-chain contract until the report arrives." : "An AI team researches it with real sources and gives you an honest score. Paid in Bitcoin Cash."}</p>
+    <p class="v-sub" data-st>${ESCROW_ON ? `An AI team researches it with real sources and gives you an honest score. Your ${priceHtml("validate")} waits in an on-chain contract until the report arrives.` : "An AI team researches it with real sources and gives you an honest score. Paid in Bitcoin Cash."}</p>
     ${paused ? `<div data-st>${pausedHtml()}</div>` : `<div class="idea-field" data-st>
       <textarea name="idea" rows="2" maxlength="280" placeholder="e.g. A coffee kiosk at a Barcelona metro exit, €3 flat whites" aria-label="Your idea">${esc(value)}</textarea>
       <button type="button" class="idea-try" data-act="try-idea">Try an example</button>
-      <button class="btn btn-primary btn-go" type="submit"><span>Check my idea</span><span class="btn-price">10¢</span></button>
+      <button class="btn btn-primary btn-go" type="submit"><span>Check my idea</span><span class="btn-price">${priceHtml("validate")}</span></button>
     </div>`}
     <div class="v-alt" data-st>
       <button type="button" class="v-link" data-act="example"><b>See a finished company</b>${I.arrow(13)}<em>free · no wallet</em></button>
@@ -77,7 +78,7 @@ export function ideaHtml(placeholder: string, value: string, end = false, paused
 
 // ───────────────────────────── pay
 export function payHtml(f: ProtoFlowV7, stage: 1 | 2, customIdea: boolean): string {
-  const cents = stage === 1 ? 10 : KIT_CENTS;
+  const cents = stage === 1 ? centsOf("validate") : centsOf("build");
   const avs = stage === 1 ? f.roster.map((a) => badge(a.name, a.color, 26)).join("") : BUILD_TEAM.map((b) => builderBadge(b, 26)).join("");
   const title = stage === 1 ? "Research" : "Launch kit";
   const line = stage === 1 ? `${f.roster.length} analysts picked for this idea` : "Your logo · your website · your 30-day plan";
@@ -90,7 +91,7 @@ export function payHtml(f: ProtoFlowV7, stage: 1 | 2, customIdea: boolean): stri
       <span class="b-lbl">Approve</span><span class="spin" aria-hidden="true"></span>
       <span class="tick" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M5 12.5l4.5 4.5L19 7.5" pathLength="1"/></svg></span>
     </button>
-    ${stage === 1 && customIdea ? `<p class="pay-note" data-st>This tour plays a sample run: ${esc(f.project.title)}.</p>` : `<p class="pay-foot" data-st>${stage === 1 ? `On mainnet this 10¢ waits in a CashScript contract until the report arrives. <a href="/p/${esc(mainExample()?.id ?? "ex-coffee-bcn")}">See a real one ${I.ext(11)}</a>` : "Paid from your wallet. LaunchDesk never holds your keys."}</p>`}
+    ${stage === 1 && customIdea ? `<p class="pay-note" data-st>This tour plays a sample run: ${esc(f.project.title)}.</p>` : `<p class="pay-foot" data-st>${stage === 1 ? `On mainnet this ${priceHtml("validate")} waits in a CashScript contract until the report arrives. <a href="/p/${esc(mainExample()?.id ?? "ex-coffee-bcn")}">See a real one ${I.ext(11)}</a>` : "Paid from your wallet. LaunchDesk never holds your keys."}</p>`}
   </section>`;
 }
 
@@ -259,7 +260,7 @@ export function reportOneHtml(f: ProtoFlowV7): string {
     </header>
     ${scorePage(f, r)}
     ${f.demo ? "" : `<div class="rp-acts" data-st>
-      ${canGrow ? `<button class="btn btn-primary btn-grow" data-act="grow" type="button"><span>Launch kit</span><span class="btn-price">50¢</span></button>` : `<button class="btn btn-primary" data-act="pivot" type="button"><span>Try another idea</span>${I.arrow(16)}</button>`}
+      ${canGrow ? `<button class="btn btn-primary btn-grow" data-act="grow" type="button"><span>Launch kit</span><span class="btn-price">${priceHtml("build")}</span></button>` : `<button class="btn btn-primary" data-act="pivot" type="button"><span>Try another idea</span>${I.arrow(16)}</button>`}
       <button class="btn btn-ghost" data-act="steer" type="button"><span>Tell your team</span><em class="rp-free">free</em></button>
     </div>`}
   </section>`;
@@ -335,10 +336,10 @@ function nextPage(f: ProtoFlowV7, r: IdeaReport, read: boolean): string {
   <ol class="steps7" data-st>${r.nextSteps.map((s, i) => `<li><span class="n7">${i + 1}</span><span>${esc(s)}</span></li>`).join("")}</ol>
   ${r.pivot ? `<div class="pivot" data-st><span class="eyebrow">A change worth testing</span><p><b>${esc(plainText(r.pivot.idea).replace(/[.…]+$/, ""))}.</b> ${esc(plain(r.pivot.why))}</p></div>` : ""}
   ${read ? "" : `<div class="rp-acts" data-st>
-    ${canGrow ? `<button class="btn btn-primary btn-grow" data-act="grow" type="button"><span>Launch kit</span><span class="btn-price">50¢</span></button>` : `${r.verdict === "no-go" ? `<button class="btn btn-ghost" data-act="grow" type="button"><span>Build the launch kit anyway</span></button>` : ""}<button class="btn btn-primary" data-act="pivot" type="button"><span>Try another idea</span>${I.arrow(16)}</button>`}
+    ${canGrow ? `<button class="btn btn-primary btn-grow" data-act="grow" type="button"><span>Launch kit</span><span class="btn-price">${priceHtml("build")}</span></button>` : `${r.verdict === "no-go" ? `<button class="btn btn-ghost" data-act="grow" type="button"><span>Build the launch kit anyway</span></button>` : ""}<button class="btn btn-primary" data-act="pivot" type="button"><span>Try another idea</span>${I.arrow(16)}</button>`}
     <button class="btn btn-ghost" data-act="steer" type="button"><span>Tell your team</span></button>
   </div>
-  ${canGrow ? "" : `<p class="rp-note" data-st>Not every idea should grow. A No-go for 10¢ is a result too.</p>`}`}`;
+  ${canGrow ? "" : `<p class="rp-note" data-st>Not every idea should grow. A No-go for ${priceHtml("validate")} is a result too.</p>`}`}`;
 }
 
 // ───────────────────────────── steer (CEO notes)
@@ -364,7 +365,7 @@ export function steerHtml(f: ProtoFlowV7, draft: string): string {
       <p class="steer-left">${left ? `${left} note${left > 1 ? "s" : ""} left on this stage · free` : "No notes left on this stage"}</p>
     </form>` : ""}
     ${s?.status === "done" ? `<footer class="rp-acts" data-st>
-      ${f.report?.verdict !== "no-go" ? `<button class="btn btn-primary btn-grow" data-act="grow" type="button"><span>Launch kit</span><span class="btn-price">50¢</span></button>` : ""}
+      ${f.report?.verdict !== "no-go" ? `<button class="btn btn-primary btn-grow" data-act="grow" type="button"><span>Launch kit</span><span class="btn-price">${priceHtml("build")}</span></button>` : ""}
       <button class="btn btn-ghost" data-act="report" type="button"><span>See the new report</span></button></footer>` : ""}
   </section>`;
 }
@@ -395,7 +396,7 @@ function diffChip(f: ProtoFlowV7, c: SteerChange): string {
 // ───────────────────────────── growth moments
 /** WP4: after the report, one card that says what the Launch kit gives you and what it costs. */
 export function floorHtml(_f: ProtoFlowV7): string {
-  return kitOfferHtml(KIT_CENTS);
+  return kitOfferHtml(centsOf("build"));
 }
 export function workTag(b: BuildDept): string {
   return `${builderBadge(b, 30)}<span class="wt-t"><b>${ROOM_META[b].name} <em>${BUILD_ROLE[b]}</em></b><span>${BUILD_DOING[b]}<span class="dots"><i></i><i></i><i></i></span></span></span>`;
@@ -419,7 +420,7 @@ export function officesFloorHtml(f: ProtoFlowV7, brand: string): string {
       return `<li><b>${esc(o.name)}</b><span>${esc(o.tasks.map((t) => t.title).join(" · "))}</span><em class="num">${o.tasks.length > 1 ? "from " : ""}${min}¢</em></li>`;
     }).join("")}</ul>
     ${f.demo ? "" : sample
-      ? `<footer class="rp-acts" data-st><button class="btn btn-primary" data-act="new" type="button"><span>Check your own idea</span><span class="btn-price">10¢</span></button></footer>`
+      ? `<footer class="rp-acts" data-st><button class="btn btn-primary" data-act="new" type="button"><span>Check your own idea</span><span class="btn-price">${priceHtml("validate")}</span></button></footer>`
       : `<footer class="rp-acts" data-st><button class="btn btn-primary" data-act="open-offices" type="button"><span>Open the offices</span>${I.arrow(16)}</button></footer>`}
   </section>`;
 }
@@ -433,7 +434,7 @@ export function campusHtml(f: ProtoFlowV7): string {
       <h2 class="t-display">Your companies</h2>
       <p class="v-lede">One building per idea. Open one to go inside.</p></header>
     ${companiesList(f)}
-    <footer class="rp-acts"><button class="btn btn-primary" data-act="new" type="button"><span>Check your next idea</span><span class="btn-price">10¢</span></button></footer>
+    <footer class="rp-acts"><button class="btn btn-primary" data-act="new" type="button"><span>Check your next idea</span><span class="btn-price">${priceHtml("validate")}</span></button></footer>
   </section>`;
 }
 
@@ -470,12 +471,12 @@ export function recapHtml(): string {
   <section class="v-recap">
     <header class="v-head" data-st><span class="eyebrow px-eb">End of the tour · sample data</span><h2 class="t-display">Your turn.</h2></header>
     <ol class="recap" data-st>
-      <li><i class="st-dot" style="--c:${STAGES[0].c}">1</i><span><b>A verdict</b>10¢, held in an escrow contract until the report arrives</span></li>
-      <li><i class="st-dot" style="--c:${STAGES[1].c}">2</i><span><b>A launch kit</b>50¢ for a logo, a live website and a 30-day plan</span></li>
-      <li><i class="st-dot" style="--c:${STAGES[2].c}">3</i><span><b>An office task</b>from 2¢, priced before it runs</span></li>
+      <li><i class="st-dot" style="--c:${STAGES[0].c}">1</i><span><b>A verdict</b>${priceHtml("validate")}, held in an escrow contract until the report arrives</span></li>
+      <li><i class="st-dot" style="--c:${STAGES[1].c}">2</i><span><b>A launch kit</b>${priceHtml("build")} for a logo, a live website and a 30-day plan</span></li>
+      <li><i class="st-dot" style="--c:${STAGES[2].c}">3</i><span><b>An office task</b>${priceHtml("offices")}, priced before it runs</span></li>
     </ol>
     <footer class="rp-acts" data-st>
-      <button class="btn btn-primary" data-act="new" type="button"><span>Check my idea</span><span class="btn-price">10¢</span></button>
+      <button class="btn btn-primary" data-act="new" type="button"><span>Check my idea</span><span class="btn-price">${priceHtml("validate")}</span></button>
       <button class="btn btn-ghost" data-act="replay" type="button">${I.replay(15)}<span>Replay</span></button>
       <button class="btn btn-quiet" data-act="example" type="button"><span>See a finished company</span>${I.arrow(14)}</button>
     </footer>

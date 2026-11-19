@@ -232,7 +232,9 @@ export type Quote = {
 };
 
 export type AppConfig = {
-  prices: Record<Stage, number>; // cents
+  prices: Record<Stage, number>; // cents (env PRICE_VALIDATE_CENTS / PRICE_BUILD_CENTS)
+  /** The cheapest office task, in cents (the "from 2¢" line). */
+  officesFromCents?: number;
   merchantAddress: string;
   mockAi: boolean;
   devSkipPayment: boolean;

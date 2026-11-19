@@ -28,7 +28,8 @@ import { createProject, liveConfig } from "../live/adapter";
 import { livePayHtml, mountPay } from "../live/pay";
 import { ldMark } from "./logo";
 import { badge } from "./pixel";
-import { builderBadge, KIT_CENTS } from "./steps";
+import { builderBadge } from "./steps";
+import { centsOf } from "../prices";
 import { kitOfferHtml, mountKitScreen } from "./kit-screen";
 import { projects as savedProjects } from "../../src/app/projects";
 import { BUILD_TEAM } from "../contracts";
@@ -265,7 +266,7 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     if ((key === "pay1" || key === "pay2") && flow.live && !demo) {
       const st = key === "pay1" ? 1 : 2;
       const avs = st === 1 ? (flow.roster.length ? flow.roster.map((a) => badge(a.name, a.color, 26)).join("") : "") : BUILD_TEAM.filter((b) => b !== "pip").map((b) => builderBadge(b, 26)).join("");
-      return livePayHtml(st === 1 ? "validate" : "build", cfg?.prices[st === 1 ? "validate" : "build"] ?? (st === 1 ? 10 : KIT_CENTS), avs,
+      return livePayHtml(st === 1 ? "validate" : "build", cfg?.prices[st === 1 ? "validate" : "build"] ?? centsOf(st === 1 ? "validate" : "build"), avs,
         st === 1 ? "Research" : "Launch kit", st === 1 ? "A research team picked for this idea" : "Your logo · your website · your 30-day plan",
         !!cfg?.mockAi, ldMark(18, undefined, true));
     }
@@ -278,7 +279,7 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     if (key === "report1") return reportOneHtml(flow);
     if (key.startsWith("report:")) return reportPage(flow, s.page ?? "score");
     if (key.startsWith("steer")) return steerHtml(flow, steerDraft);
-    if (key === "floor") return kitOfferHtml(cfg?.prices.build ?? KIT_CENTS, !!cfg?.mockAi || flow.isSample(flow.project.id));
+    if (key === "floor") return kitOfferHtml(cfg?.prices.build ?? centsOf("build"), !!cfg?.mockAi || flow.isSample(flow.project.id));
     if (key === "recap") return recapHtml();
     // A real project (also on a demo-mode server): the one Launch kit screen, filled in live from the server.
     if (key === "live" && flow.live) return `<div class="kit-root"></div>`;
@@ -1028,7 +1029,7 @@ export function createUi(host: HTMLElement, deps: UiDeps): Ui {
     const pay = flow.live?.paid.validate;
     const real = !!pay && !pay.txid.startsWith("dev-") && pay.sats > 0;
     const on = ESCROW && !demo && !!flow.live && !exampleOf(flow.live.id) && real && !flow.live.phase1Done && (s.step === "hire" || s.step === "evidence");
-    const html = on ? lockedHtml(pay!.cents || cfg?.prices.validate || 10) : "";
+    const html = on ? lockedHtml(pay!.cents || cfg?.prices.validate || centsOf("validate")) : "";
     if (lockEl.dataset.on !== (on ? "1" : "0")) {
       lockEl.dataset.on = on ? "1" : "0";
       lockEl.innerHTML = html;

@@ -16,6 +16,7 @@ import { exampleName, exampleOf, knownExamples } from "./example";
 import { I } from "./icons";
 import { ldMark } from "./logo";
 import { badge } from "./pixel";
+import { priceHtml } from "../prices";
 
 const one = (n: number) => (Math.round(n * 10) / 10).toFixed(1);
 // display words; the enum stays "pivot": an uncertain idea is something to test, not a failure
@@ -322,7 +323,7 @@ export function reportDocHtml(f: ProtoFlowV7): string {
       <div class="rd-btns">
         <button class="btn btn-ghost" data-act="back" type="button">${I.back(15)}<span>Back</span></button>
         ${isExample ? "" : `<button class="btn btn-ghost" data-act="steer" type="button"><span>Tell your team</span></button>`}
-        ${isExample ? `<button class="btn btn-primary" data-act="grow" type="button"><span>See the launch kit</span>${I.arrow(16)}</button>` : canGrow ? `<button class="btn btn-primary" data-act="grow" type="button"><span>Launch kit</span><span class="btn-price">50¢</span></button>` : `<button class="btn btn-ghost" data-act="grow" type="button"><span>Build the launch kit anyway</span></button><button class="btn btn-primary" data-act="pivot" type="button"><span>Try another idea</span>${I.arrow(16)}</button>`}
+        ${isExample ? `<button class="btn btn-primary" data-act="grow" type="button"><span>See the launch kit</span>${I.arrow(16)}</button>` : canGrow ? `<button class="btn btn-primary" data-act="grow" type="button"><span>Launch kit</span><span class="btn-price">${priceHtml("build")}</span></button>` : `<button class="btn btn-ghost" data-act="grow" type="button"><span>Build the launch kit anyway</span></button><button class="btn btn-primary" data-act="pivot" type="button"><span>Try another idea</span>${I.arrow(16)}</button>`}
       </div>
     </footer>
   </div>`;

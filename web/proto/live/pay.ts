@@ -9,6 +9,7 @@ import type { AppConfig, Quote, Stage } from "../../src/types";
 import { cancelPairing, newPairing, onWallet, pair, payWithWallet, receiveAddress, resume, walletName, walletState } from "../../src/wallet";
 import { esc } from "../ui/dom";
 import { ownerKey } from "../../src/app/projects";
+import { centsOf } from "../prices";
 
 /**
  * VITE_ESCROW=1 (default off): "Pay only if it delivers". The wallet pays a per-order safe address (a Bitcoin Cash
@@ -89,7 +90,7 @@ export function livePayHtml(stage: Stage, cents: number, avatars: string, title:
 export function mountPay(root: HTMLElement, d: PayDeps): () => void {
   const slot = root.querySelector<HTMLElement>(".pl-slot")!;
   const satsEl = root.querySelector<HTMLElement>(".pl-sats")!;
-  const cents = d.config?.prices[d.stage] ?? (d.stage === "validate" ? 10 : 50);
+  const cents = d.config?.prices[d.stage] ?? centsOf(d.stage);
   const mock = !!d.config?.mockAi;
   const devOk = !mock && !!d.config?.devSkipPayment;
   let quote: Quote | null = null;

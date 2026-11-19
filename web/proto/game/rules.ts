@@ -3,6 +3,7 @@
 // the 8 badges and the one "Next:" action. A field that is missing means "not yet": nothing is ever guessed.
 // localStorage never feeds this file; it only remembers which level-up moments were already shown (game/levelup.ts).
 import type { FloorRoomId, Milestone, OfficeId, RoomId, Stage } from "./types";
+import { fmtCents, priceText } from "../prices";
 
 export type Verdict = "go" | "pivot" | "no-go";
 export type JobStatus = "queued" | "working" | "done" | "error";
@@ -104,8 +105,8 @@ export interface GameState {
 export const STAGES: readonly Stage[] = ["research", "studio", "offices", "campus"];
 export const STAGE_NAME: Record<Stage, string> = { research: "Research", studio: "Launch kit", offices: "Offices", campus: "Campus" };
 export const STAGE_RULE: Record<Stage, string> = {
-  research: "Opens when your 10¢ is locked on Bitcoin Cash",
-  studio: "Opens when the 50¢ kit is paid",
+  get research() { return `Opens when your ${priceText("validate")} is locked on Bitcoin Cash`; },
+  get studio() { return `Opens when the ${priceText("build")} kit is paid`; },
   offices: "Opens when your first office task is done",
   campus: "Opens when a second idea gets its report",
 };
@@ -119,7 +120,9 @@ const STUDIO_ROOMS = ["nova", "dex", "launch"] as const;
 export const isRealTxid = (t: string | null | undefined): t is string => !!t && /^[0-9a-f]{64}$/i.test(t);
 export const explorerTx = (txid: string) => `https://blockchair.com/bitcoin-cash/transaction/${encodeURIComponent(txid)}`;
 export const shortHash = (h: string) => `${h.slice(0, 4)}…${h.slice(-2)}`;
-export const centsLabel = (c: number) => (c >= 100 ? `$${(c / 100).toFixed(2)}` : `${c}¢`);
+export const centsLabel = fmtCents;
+/** The report price as shown (server config, see ../prices). */
+const V = () => priceText("validate");
 const one = (n: number) => (Math.round(n * 10) / 10).toFixed(1);
 
 function txProof(txid: string | null | undefined, label: string): Badge["proof"] {
@@ -220,7 +223,7 @@ export function computeGame(s: GameSnapshot): GameState {
       id: "money-locked",
       name: "Money locked",
       earned: paid1,
-      line: paid1 ? paidLine(fundingTxid, s.proof?.fundingTxid ? "10¢ in a Bitcoin Cash contract." : "10¢ paid on Bitcoin Cash.") : "Lock 10¢ on Bitcoin Cash to start the research.",
+      line: paid1 ? paidLine(fundingTxid, s.proof?.fundingTxid ? `${V()} in a Bitcoin Cash contract.` : `${V()} paid on Bitcoin Cash.`) : `Lock ${V()} on Bitcoin Cash to start the research.`,
       proof: txProof(fundingTxid, "Funding tx"),
     },
     nogo
@@ -235,7 +238,7 @@ export function computeGame(s: GameSnapshot): GameState {
           id: "report-delivered",
           name: "Report delivered",
           earned: !!report,
-          line: report ? (s.proof?.reportHash ? `Fingerprint on-chain: ${shortHash(s.proof.reportHash)}` : "Your report is in.") : "Your report arrives about 2 minutes after the 10¢.",
+          line: report ? (s.proof?.reportHash ? `Fingerprint on-chain: ${shortHash(s.proof.reportHash)}` : "Your report is in.") : `Your report arrives about 2 minutes after the ${V()}.`,
           proof: report ? txProof(s.proof?.releaseTxid, "Release tx") : undefined,
         },
     {
@@ -248,7 +251,7 @@ export function computeGame(s: GameSnapshot): GameState {
       id: "kit-paid",
       name: "Kit paid",
       earned: paid2,
-      line: paid2 ? (isRealTxid(p?.paid.build?.txid) ? "The studio is yours." : s.example ? "Kit from a second run; its payment is not in this record." : "The studio is yours. Practice run: no money moved.") : "Get the launch kit for 50¢.",
+      line: paid2 ? (isRealTxid(p?.paid.build?.txid) ? "The studio is yours." : s.example ? "Kit from a second run; its payment is not in this record." : "The studio is yours. Practice run: no money moved.") : `Get the launch kit for ${priceText("build")}.`,
       proof: txProof(p?.paid.build?.txid, "Kit tx"),
     },
     {
@@ -262,7 +265,7 @@ export function computeGame(s: GameSnapshot): GameState {
       id: "first-office-task",
       name: "First office task",
       earned: !!firstTask,
-      line: firstTask ? "Your offices did their first job." : "Run any office task, from 2¢.",
+      line: firstTask ? "Your offices did their first job." : `Run any office task, ${priceText("offices")}.`,
       proof: firstTask ? (firstTask.test ? { label: "Test run · nothing charged" } : txProof(firstTask.txid, "Task tx")) : undefined,
     },
     {
@@ -275,7 +278,7 @@ export function computeGame(s: GameSnapshot): GameState {
       id: "second-idea",
       name: "Second idea",
       earned: !s.example && reportedMine >= 2,
-      line: reportedMine >= 2 ? "Two ideas, two buildings." : "Check a second idea for 10¢.",
+      line: reportedMine >= 2 ? "Two ideas, two buildings." : `Check a second idea for ${V()}.`,
     },
   ];
 
@@ -285,11 +288,11 @@ export function computeGame(s: GameSnapshot): GameState {
   const kitBusy = paid2 && !kitSettled;
   const minFrom = Math.min(...OFFICE_IDS.map((o) => s.officeFrom[o]));
   let next: NextStep;
-  if (s.example) next = { text: "Check your own idea", price: "10¢", act: "new" };
-  else if (!paid1) next = { text: "Check your idea", price: "10¢", act: "pay1" };
+  if (s.example) next = { text: "Check your own idea", price: V(), act: "new" };
+  else if (!paid1) next = { text: "Check your idea", price: V(), act: "pay1" };
   else if (!report) next = p?.status === "error" ? { text: "Your team hit a snag: open the report screen", price: "nothing charged twice", act: "wait" } : { text: "Your team is researching", price: s.sample ? "sample run" : "~2 min", act: "wait" };
-  else if (nogo && !paid2) next = { text: "Try another idea", price: "10¢", act: "new" };
-  else if (!paid2) next = { text: "Get your launch kit", price: "50¢", act: "kit" };
+  else if (nogo && !paid2) next = { text: "Try another idea", price: V(), act: "new" };
+  else if (!paid2) next = { text: "Get your launch kit", price: priceText("build"), act: "kit" };
   else if (k && k.logo === "done" && !k.logoChosen) next = { text: "Pick your logo", price: "included", act: "logo" };
   else if (kitBusy) next = { text: "Your kit is being made", price: "included", act: "wait" };
   else if (doneOffices.size === 0)
@@ -297,7 +300,7 @@ export function computeGame(s: GameSnapshot): GameState {
   else if (doneOffices.size < 4) {
     const o = OFFICE_IDS.find((x) => !doneOffices.has(x))!;
     next = { text: `Try the ${OFFICE_NAME[o]} office`, price: `from ${centsLabel(s.officeFrom[o])}`, act: "offices", office: o };
-  } else if (reportedMine < 2) next = { text: "Check a second idea", price: "10¢", act: "new" };
+  } else if (reportedMine < 2) next = { text: "Check a second idea", price: V(), act: "new" };
   else next = { text: "Walk through your campus", price: "free", act: "campus" };
 
   const steerBusy = (p?.steers ?? []).some((x) => x.status === "working");

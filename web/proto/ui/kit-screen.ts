@@ -10,6 +10,7 @@ import { I } from "./icons";
 import { usd } from "./view";
 import { OFFICES_EVENT } from "../game/types";
 import "./kit-screen.css";
+import { priceText } from "../prices";
 
 export type KitPayload = { kit: Kit | null; slug: string | null; siteUrl: string | null; running: boolean };
 export type KitScreenOpts = {
@@ -225,7 +226,7 @@ export function mountKitScreen(root: HTMLElement, o: KitScreenOpts): { stop(): v
   } else if (o.mock) {
     // a practice run has no real offices to open: the button says what it does
     const btn = node.querySelector<HTMLElement>('[data-kit-act="offices"] span');
-    if (btn) btn.textContent = "Check a real idea · 10¢";
+    if (btn) btn.textContent = `Check a real idea · ${priceText("validate")}`;
   }
   // design thumbnails: the 375 px preview is scaled to the card's real width (no empty strip beside it)
   const fitThumbs = () =>

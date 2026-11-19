@@ -347,3 +347,49 @@ test.after(() => {
   stub.close();
   globalThis.fetch = realFetch;
 });
+
+// ---- prices come from config (env PRICE_VALIDATE_CENTS / PRICE_BUILD_CENTS), never from UI copy --------------------
+test("prices: /api/config carries the stage prices and the cheapest office task", async () => {
+  const r = await app.request("http://example.test/api/config");
+  const c = (await r.json()) as { prices: { validate: number; build: number }; officesFromCents: number };
+  assert.deepEqual(c.prices, config.priceCents);
+  const { TASKS } = await import("../server/offices/catalog.js");
+  assert.equal(c.officesFromCents, Math.min(...Object.values(TASKS).map((t) => t.cents)));
+});
+
+test("prices: the home page is served with the configured prices in every data-price span and the meta text", async () => {
+  const { withPrices } = await import("../server/app.js");
+  const { readFileSync } = await import("node:fs");
+  const src = readFileSync(new URL("../web/index.html", import.meta.url), "utf8");
+  const before = { ...config.priceCents };
+  config.priceCents.validate = 20;
+  config.priceCents.build = 150;
+  try {
+    const out = withPrices(src);
+    const spans = [...out.matchAll(/<(?:span|tspan) data-price="(\w+)">([^<]*)</g)].map((m) => `${m[1]}=${m[2]}`);
+    assert.ok(spans.length >= 15, `found ${spans.length} price spans`);
+    assert.ok(spans.every((x) => ["validate=20¢", "build=$1.50", "offices=from 2¢"].includes(x)), spans.join(", "));
+    assert.match(out, /<meta name="description" content="Check your business idea for 20¢/);
+    // no price left outside a data-price span in the page body
+    const body = out.slice(out.indexOf("<body"));
+    const loose = body.replace(/<(span|tspan) data-price="\w+">[^<]*<\/\1>/g, "").match(/\b(10|50)¢|from 2¢/g);
+    assert.equal(loose, null, "every body price is a data-price span");
+  } finally {
+    Object.assign(config.priceCents, before);
+  }
+});
+
+test("prices: the proto UI formats whatever the server sends", async () => {
+  const p = await import("../web/proto/prices.ts");
+  assert.equal(p.priceText("validate"), "10¢");
+  assert.equal(p.priceText("offices"), "from 2¢");
+  p.setPrices({ prices: { validate: 25, build: 120 }, officesFromCents: 3 });
+  assert.equal(p.priceText("validate"), "25¢");
+  assert.equal(p.priceText("build"), "$1.20");
+  assert.equal(p.priceText("offices"), "from 3¢");
+  assert.equal(p.priceWords("build"), "1.20 dollars");
+  assert.match(p.priceHtml("validate"), /^<span data-price="validate">25¢<\/span>$/);
+  p.setPrices({ prices: { validate: 0, build: Number.NaN } }); // nonsense is ignored
+  assert.equal(p.centsOf("validate"), 25);
+  p.setPrices({ prices: { validate: 10, build: 50 }, officesFromCents: 2 });
+});

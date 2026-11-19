@@ -20,6 +20,7 @@ import { liveConfig } from "../live/adapter";
 import { projects as savedProjects } from "../../src/app/projects";
 // the real task catalog the server charges from (plain data; the prices on the page are the prices you pay)
 import { OFFICES } from "../../../server/offices/catalog";
+import { priceHtml, priceWords } from "../prices";
 
 export interface HomeDeps {
   world: WorldV7 & WorldV8;
@@ -222,9 +223,9 @@ export function mountHome(host: HTMLElement, deps: HomeDeps): () => void {
     hz: 30,
     points,
     defs: [
-      { id: "s1", className: "h-p1", html: PIN(1, "Research", "10¢"), label: "Research, 10 cents: show it on the floor", onEnter: enter, onLeave: leave, onClick: (id) => tapStage(Number(id.slice(1))) },
-      { id: "s2", className: "h-p2", html: PIN(2, "Launch kit", "50¢"), label: "Launch kit, 50 cents: show it on the floor", onEnter: enter, onLeave: leave, onClick: (id) => tapStage(Number(id.slice(1))) },
-      { id: "s3", className: "h-p3", html: PIN(3, "Offices", "from 2¢"), label: "Offices, from 2 cents a task: show them", onEnter: enter, onLeave: leave, onClick: (id) => tapStage(Number(id.slice(1))) },
+      { id: "s1", className: "h-p1", html: PIN(1, "Research", priceHtml("validate")), label: `Research, ${priceWords("validate")}: show it on the floor`, onEnter: enter, onLeave: leave, onClick: (id) => tapStage(Number(id.slice(1))) },
+      { id: "s2", className: "h-p2", html: PIN(2, "Launch kit", priceHtml("build")), label: `Launch kit, ${priceWords("build")}: show it on the floor`, onEnter: enter, onLeave: leave, onClick: (id) => tapStage(Number(id.slice(1))) },
+      { id: "s3", className: "h-p3", html: PIN(3, "Offices", priceHtml("offices")), label: `Offices, ${priceWords("offices")}: show them`, onEnter: enter, onLeave: leave, onClick: (id) => tapStage(Number(id.slice(1))) },
       // "This will be yours": the first words of the typed idea, pinned to the lobby (the door sign is too small to read)
       { id: "lobby", className: "h-plobby", html: `<span class="h-w"><b></b> <em>· Lobby</em></span>` },
     ],

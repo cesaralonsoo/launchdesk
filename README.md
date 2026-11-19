@@ -159,6 +159,8 @@ Set in `render.yaml` (change them in Render's Environment tab if needed):
 | `PAUSE` | unset | Set to `1` to pause new paid runs at once. Sample runs and the finished examples keep working |
 | `TRUST_PROXY_HOPS` | `2` in production | How many proxy hops (Render's edge) to skip in `X-Forwarded-For` when finding the visitor for rate limits |
 | `TRUST_PROXY_SKIP_PRIVATE` | on in production | Drop private (internal) addresses from `X-Forwarded-For` first |
+| `PRICE_VALIDATE_CENTS`, `PRICE_BUILD_CENTS` | `10`, `50` | The report and Launch kit prices, in US cents. Every quote and every price on the home page and in the app follow them (the page gets them from the server and `/api/config`); office task prices come from `server/offices/catalog.ts` |
+| `RATE_LIMIT_RUN` | `10` | Per visitor: run or retry starts allowed per 10 minutes. Each paid step runs at most 3 times in all (first run plus retries) |
 
 To check a production build locally:
 

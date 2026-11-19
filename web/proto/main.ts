@@ -11,6 +11,12 @@ import { createWorld } from "./world";
 import type { WorldV8 } from "./world/api-v8";
 import { createStubWorld, webglOk } from "./world/stub";
 import floorStill from "../public/home/floor-example.webp";
+import { liveConfig } from "./live/adapter";
+import { loadPrices } from "./prices";
+
+// Every shown price follows the server (GET /api/config: PRICE_VALIDATE_CENTS / PRICE_BUILD_CENTS, the offices
+// catalog). The static home in index.html carries data-price spans; they are rewritten once the config answers.
+void loadPrices(liveConfig());
 
 const q = new URLSearchParams(location.search);
 const p = readParams();
