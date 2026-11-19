@@ -89,6 +89,8 @@ export function holdCheckedPayment(txHex: string, tag: string, c: CheckedPayment
  * - it carries an OP_RETURN with exactly `tag`.
  */
 export function checkPaymentTx(txHex: string, minSats: number, tag: string): CheckedPayment {
+  // Defence in depth: a 0 (or NaN) price would accept any transaction with the tag, even one paying nothing.
+  if (!(Number.isFinite(minSats) && minSats > 0)) throw new Error("Prices are unavailable, try again in a minute. Nothing was charged.");
   // ESCROW=1: the escrow middleware already checked this exact transaction against the order's contract address.
   const pre = preChecked.get(txHex.toLowerCase());
   if (pre && pre.tag === tag && pre.paidSats >= minSats) return { txid: pre.txid, paidSats: pre.paidSats };
@@ -153,7 +155,15 @@ type VerboseTx = {
  * which has no OP_RETURN tag: the unique 1–999 sat suffix of the quote is the match). Looks at the
  * mempool and the last confirmed entries only. Returns null when nothing matches yet.
  */
-export async function findQrPayment(sats: number, since: number): Promise<{ txid: string; sats: number } | null> {
+export async function findQrPayment(
+  sats: number,
+  since: number,
+  /**
+   * When this server first saw a transaction to the merchant (app.ts records every candidate the first time it is
+   * listed). A match must be first seen at or after `since`: a payment that existed before the quote is someone else's.
+   */
+  firstSeen: (txid: string) => Promise<number> = async () => Date.now(),
+): Promise<{ txid: string; sats: number } | null> {
   const lock = cashAddressToLockingBytecode(config.merchantAddress);
   if (typeof lock === "string") throw new Error("Server misconfigured: MERCHANT_ADDRESS");
   const merchantHex = binToHex(lock.bytecode);
@@ -167,11 +177,14 @@ export async function findQrPayment(sats: number, since: number): Promise<{ txid
   for (const txid of candidates) {
     if (seen.has(txid)) continue;
     seen.add(txid);
+    if ((await firstSeen(txid)) < since) continue;
     const tx = await electrum<VerboseTx>("blockchain.transaction.get", [txid, true]).catch(() => null);
     if (!tx) continue;
     const t = tx.blocktime ?? tx.time;
     // Confirmed long before the quote existed: not this payment.
     if (t && t * 1000 < since - 10 * 60_000) continue;
+    // A tagged payment (OP_RETURN "LD1:…") belongs to a wallet order or an office task, never to a plain QR.
+    if (tx.vout.some((o) => (o.scriptPubKey?.hex ?? "").startsWith("6a") && (o.scriptPubKey?.hex ?? "").includes(LD1_HEX))) continue;
     const paid = tx.vout
       .filter((o) => o.scriptPubKey?.hex === merchantHex)
       .reduce((n, o) => n + Math.round(Number(o.value) * 1e8), 0);
@@ -179,6 +192,8 @@ export async function findQrPayment(sats: number, since: number): Promise<{ txid
   }
   return null;
 }
+
+const LD1_HEX = Buffer.from("LD1:", "utf8").toString("hex");
 
 /** Electrum script hash: sha256 of the locking script, byte-reversed. */
 function sha256Rev(script: Uint8Array): Uint8Array {

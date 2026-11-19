@@ -9,7 +9,7 @@ import { costScope, endCost } from "./cost.js";
 import { leoFromV7, memoFromV7 } from "./v7-bridge.js";
 import { config } from "./config.js";
 import { loadV7, runV7 } from "./jobs-v7.js";
-import { exec, getProject, getProjectRow, stageDone } from "./db.js";
+import { exec, getProject, getProjectRow, paidFor, stageDone } from "./db.js";
 import { DEFAULT_FONTS, DEFAULT_WORDMARK, fmtMoney, STAGE_DEPTS, type DexDesign, type NovaBrand, type PipLive, type Project, type RaeLaunch, type Stage, type WorkDept } from "./types.js";
 
 const active = new Map<string, Promise<void>>();
@@ -48,8 +48,9 @@ export const isRunning = (projectId: string, stage: Stage) => active.has(`${proj
 async function prepare(projectId: string, stage: Stage, reset: boolean) {
   const project = await getProject(projectId);
   if (!project) throw new Error("Project not found");
-  // Never run AI without a recorded payment.
+  // Never run AI without a recorded payment, nor after that payment was refunded.
   if (!project.payments[stage]) throw new Error("stage not paid");
+  if (!paidFor(project, stage)) throw new Error("stage refunded");
   if (stage === "build" && !stageDone(project, "validate")) throw new Error("validate stage not finished");
   const now = Date.now();
   for (const dept of STAGE_DEPTS[stage]) {

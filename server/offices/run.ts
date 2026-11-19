@@ -110,31 +110,10 @@ export async function runTask(task: TaskId, b: Brain, input = "", scopeId = "off
   return runReal(task, b, input, scopeId);
 }
 
-/** "Bring a project": up to 3 follow-up questions for what is missing. Mock: deterministic. Real: one Haiku call. */
-export async function followUps(b: Brain, deps: RunDeps = defaultRunDeps()): Promise<FollowUp[]> {
-  const base = mockQuestions(b);
-  if (deps.mock || !base.length) return base;
-  try {
-    const msg = await ai().messages.create({
-      model: HAIKU,
-      max_tokens: 500,
-      system: systemFor(b),
-      messages: [
-        {
-          role: "user",
-          content: `The owner just told us about their business (above). We still miss: ${base.map((q) => q.id).join(", ")}. Rewrite one short, friendly question for each missing item, specific to this business, with a short example answer as the hint. JSON only: {"questions":[{"id": one of ${JSON.stringify(base.map((q) => q.id))}, "question": string, "hint": string}]}`,
-        },
-      ],
-    });
-    recordUsage("office:followups", msg.model, msg.usage);
-    const t = textOf(msg);
-    const v = JSON.parse(t.slice(t.indexOf("{"), t.lastIndexOf("}") + 1)) as { questions?: Array<Partial<FollowUp>> };
-    const out = base.map((q) => {
-      const r = v.questions?.find((x) => x.id === q.id);
-      return r?.question ? { id: q.id, question: String(r.question).slice(0, 140), hint: String(r.hint ?? q.hint).slice(0, 140) } : q;
-    });
-    return out.slice(0, 3);
-  } catch {
-    return base; // the plain questions are always good enough
-  }
+/**
+ * "Bring a project": up to 3 follow-up questions for what is missing. Always the plain, deterministic questions:
+ * /bring is free, and AI only ever runs inside a task that was paid for (no model call here, mock or real).
+ */
+export async function followUps(b: Brain, _deps: RunDeps = defaultRunDeps()): Promise<FollowUp[]> {
+  return mockQuestions(b).slice(0, 3);
 }

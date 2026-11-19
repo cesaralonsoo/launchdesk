@@ -15,7 +15,7 @@ import { binToHex, hexToBin } from "@bitauth/libauth";
 import type { Network, NetworkProvider, SpendableUtxo } from "cashscript";
 import { broadcast, electrum, paymentTag } from "../chain.js";
 import { config } from "../config.js";
-import { exec } from "../db.js";
+import { exec, markPaymentRefunded } from "../db.js";
 import {
   DEFAULT_TIMEOUT_BLOCKS,
   buildRefund,
@@ -140,10 +140,13 @@ export async function escrowVerifyPayment(projectId: string, stage: string, txHe
   if (!r) throw new Error("Get a price quote first");
   const f = checkFunding(txHex, escrowOf(r), minSats, String(r.ref));
   if (r.status !== "quoted" && r.funding_txid !== f.txid) throw new Error("This order was already paid.");
+  // Coins the stray sweep is sending (or sent) back never fund an order: no AI for money that is being returned.
+  if (await isStray(f.txid)) throw new Error("This payment is being sent back to your wallet (it arrived outside its order). Nothing was charged.");
   return { txid: f.txid, paidSats: f.sats, vout: f.vout };
 }
 /** Records the funding output (idempotent for the same tx). */
 export async function escrowMarkFunded(projectId: string, stage: string, f: { txid: string; vout: number; sats: number }) {
+  if (await isStray(f.txid)) return;
   const r = await getRow(projectId, stage);
   if (!r || (r.status !== "quoted" && r.funding_txid !== f.txid)) return;
   if (r.status === "quoted") await setRow(projectId, stage, { status: "funded", funding_txid: f.txid, funding_vout: f.vout, sats: f.sats, funded_at: Date.now() });
@@ -196,7 +199,10 @@ export async function depthOf(r: Row): Promise<number | null> {
 export async function escrowRefund(projectId: string, stage: string): Promise<{ txid?: string; waitBlocks?: number; error?: string }> {
   const r = await getRow(projectId, stage);
   if (!r || !r.funding_txid) return { error: "Nothing to refund." };
-  if (r.refund_txid) return { txid: String(r.refund_txid) };
+  if (r.refund_txid) {
+    await markPaymentRefunded(projectId, stage); // idempotent: repairs a crash between the two writes
+    return { txid: String(r.refund_txid) };
+  }
   if (r.release_txid) return { error: "Your report was delivered, so the payment was released." };
   try {
     const depth = await depthOf(r);
@@ -206,6 +212,8 @@ export async function escrowRefund(projectId: string, stage: string): Promise<{ 
     const tx = buildRefund(escrowOf(r), fundingOf(r));
     await send(tx.hex, tx.txid);
     await setRow(projectId, stage, { status: "refunded", refund_txid: tx.txid, note: null });
+    // The money went back: this stage buys no more AI (run, retry, steer and job preparation all check this).
+    await markPaymentRefunded(projectId, stage);
     return { txid: tx.txid };
   } catch (e) {
     return { error: (e as Error).message };
@@ -221,6 +229,82 @@ export async function escrowRefundSweep(): Promise<number> {
     if (Date.now() - Number(r.funded_at) < Number(r.timeout_blocks) * 10 * 60_000) continue;
     const out = await escrowRefund(String(r.project_id), String(r.stage));
     if (out.txid) n++;
+  }
+  return n;
+}
+
+// ---- stray coins ---------------------------------------------------------------------------------------------------
+// Money sent to an order's contract address outside its recorded funding outpoint: a second payment, an underpayment
+// (below the price, so never "funded"), or a payment made after the quote went stale. Nothing ran for it, so once it
+// is `timeout_blocks` deep it goes back through the contract's own keyless refund() path, which can only pay the
+// order's refund address (the wallet that asked for the quote). No key is used and the contract is unchanged.
+let straysReady: Promise<unknown> | null = null;
+const straysTable = () =>
+  (straysReady ??= exec(`CREATE TABLE IF NOT EXISTS escrow_strays (
+    txid TEXT NOT NULL, vout INTEGER NOT NULL, project_id TEXT NOT NULL, stage TEXT NOT NULL, sats INTEGER NOT NULL,
+    refund_txid TEXT, note TEXT, at INTEGER NOT NULL, PRIMARY KEY (txid, vout))`));
+/** True when `txid` is (or was) being returned by the stray sweep. */
+async function isStray(txid: string): Promise<boolean> {
+  await straysTable();
+  return (await exec("SELECT 1 FROM escrow_strays WHERE txid = ?", [txid])).rows.length > 0;
+}
+/** How long after its last change an order's address is still watched for strays. */
+const STRAY_WATCH_MS = 7 * 24 * 60 * 60_000;
+/** The minimum a refund output may carry (BCH dust limit). */
+const DUST_SATS = 546;
+
+/**
+ * Refunds every stray UTXO at a known order address once it is deep enough. `activeSince`: quoted orders changed
+ * after this are still being watched for funding (watch.ts), so their coins at or above the price are left to it.
+ * Returns the number of refunds broadcast. Never throws for one coin (its note says why it waits).
+ */
+export async function escrowStraySweep(activeSince = Date.now() - 3 * 60 * 60_000): Promise<number> {
+  await table();
+  await straysTable();
+  const rows = (await exec("SELECT * FROM escrow_orders WHERE updated_at > ? OR status IN ('quoted', 'funded')", [Date.now() - STRAY_WATCH_MS])).rows as Row[];
+  let n = 0;
+  for (const r of rows) {
+    const id = String(r.project_id);
+    const stage = String(r.stage);
+    try {
+      const list = await electrum<Array<{ tx_hash: string; tx_pos: number; value: number; height: number }>>("blockchain.scripthash.listunspent", [
+        binToHex(sha256(hexToBin(String(r.locking_hex))).reverse()),
+      ]);
+      if (!list.length) continue;
+      const tip = (await electrum<{ height: number }>("blockchain.headers.subscribe", [])).height;
+      const q = await exec("SELECT sats FROM quotes WHERE project_id = ? AND stage = ?", [id, stage]);
+      const price = Math.floor(Number(q.rows[0]?.sats ?? 0) * 0.99);
+      for (const u of list) {
+        const now = (await getRow(id, stage)) ?? r;
+        if (now.funding_txid === u.tx_hash && Number(now.funding_vout) === u.tx_pos) continue; // the order's own coin
+        if (now.status === "quoted" && Number(now.updated_at) >= activeSince && price > 0 && u.value >= price) continue; // may still fund it
+        const paidRow = await exec("SELECT 1 FROM payments WHERE txid = ?", [u.tx_hash]);
+        if (paidRow.rows.length) continue; // recorded as a payment: never treated as stray
+        const depth = u.height > 0 ? tip - u.height + 1 : 0;
+        if (depth < Number(now.timeout_blocks)) continue;
+        const known = (await exec("SELECT refund_txid FROM escrow_strays WHERE txid = ? AND vout = ?", [u.tx_hash, u.tx_pos])).rows[0];
+        if (known?.refund_txid) continue;
+        // Claim the coin first: from here no /pay or watcher can make it fund an order.
+        await exec("INSERT OR IGNORE INTO escrow_strays (txid, vout, project_id, stage, sats, at) VALUES (?, ?, ?, ?, ?, ?)", [u.tx_hash, u.tx_pos, id, stage, u.value, Date.now()]);
+        const again = await getRow(id, stage);
+        if (again?.funding_txid === u.tx_hash && Number(again.funding_vout) === u.tx_pos) {
+          await exec("DELETE FROM escrow_strays WHERE txid = ? AND vout = ? AND refund_txid IS NULL", [u.tx_hash, u.tx_pos]); // lost a race to /pay
+          continue;
+        }
+        try {
+          const tx = buildRefund(escrowOf(now), { txid: u.tx_hash, vout: u.tx_pos, sats: u.value });
+          if (u.value - tx.fee < DUST_SATS) throw new Error("too small to send back (dust)");
+          await send(tx.hex, tx.txid);
+          await exec("UPDATE escrow_strays SET refund_txid = ?, note = NULL WHERE txid = ? AND vout = ?", [tx.txid, u.tx_hash, u.tx_pos]);
+          console.log(`[escrow] stray ${u.tx_hash}:${u.tx_pos} (${u.value} sats) at ${id} ${stage} refunded: ${tx.txid}`);
+          n++;
+        } catch (e) {
+          await exec("UPDATE escrow_strays SET note = ? WHERE txid = ? AND vout = ?", [`refund: ${(e as Error).message}`.slice(0, 300), u.tx_hash, u.tx_pos]);
+        }
+      }
+    } catch (e) {
+      console.warn("[escrow] stray sweep", id, stage, (e as Error).message);
+    }
   }
   return n;
 }

@@ -41,6 +41,7 @@ const { migrate, exec } = await import("../server/db.js");
 const { config } = await import("../server/config.js");
 const { installEscrow } = await import("../server/escrow/install.js");
 const { escrowTick } = await import("../server/escrow/watch.js");
+const { escrowStraySweep } = await import("../server/escrow/service.js");
 await migrate();
 
 // ---- a fake Fulcrum on top of the mock network ------------------------------------------------------------------------
@@ -228,8 +229,13 @@ test("refund: no report in time -> the coins go back to the customer's wallet", 
   assert.equal(tx.outputs.length, 1);
   const lock = (await mock.getUtxos(CUSTOMER)).find((u) => u.txid === r.json.txid);
   assert.ok(lock && Number(lock.satoshis) >= q.json.sats - 2000);
-  // A report finishing after the refund is never released.
-  await runToDone(id, ownerKey);
+  // Refunded: the payment is marked so, and the team can no longer be started on it (no AI for returned money).
+  const pr = await exec("SELECT refunded_at FROM payments WHERE project_id = ? AND stage = 'validate'", [id]);
+  assert.ok(Number(pr.rows[0]?.refunded_at) > 0, "the payment row is marked refunded");
+  const run = await call("POST", `/api/projects/${id}/run`, { stage: "validate" }, ownerKey);
+  assert.equal(run.status, 402, JSON.stringify(run.json));
+  assert.match(run.json.error, /refunded/);
+  assert.equal((await call("GET", `/api/projects/${id}`)).json.payments.validate.refunded, true);
   assert.equal((await escrowTick()).released, 0);
 });
 
@@ -278,4 +284,67 @@ test("re-quote by a non-owner: refused, the owner's contract address and refund 
   // the owner's signed payment to the first address is still accepted
   const paid = await realMoney(() => call("POST", `/api/projects/${id}/pay`, { stage: "validate", txHex: walletPays(q.json.address, q.json.sats, chain.paymentTag(id, "validate")) }, ownerKey))();
   assert.equal(paid.status, 200);
+});
+
+const customerCoins = async () => (await mock.getUtxos(CUSTOMER)).map((u) => `${u.txid}:${Number(u.satoshis)}`);
+
+test("strays: an underpayment at an order address goes back after the timeout and never funds the order", async () => {
+  const { id, ownerKey } = await newProject();
+  const tag = chain.paymentTag(id, "validate");
+  const q = await realMoney(() => call("POST", `/api/projects/${id}/quote`, { stage: "validate", refundAddress: CUSTOMER }, ownerKey))();
+  const under = walletPays(q.json.address, q.json.sats - 3_000, tag); // below the price: never "funded"
+  const underTxid = await mock.sendRawTransaction(under);
+  heights.set(underTxid, 0);
+  assert.equal((await escrowTick()).funded, 0);
+  assert.equal(await escrowStraySweep(), 0, "not deep enough yet");
+  mine(6);
+  const before = await customerCoins();
+  assert.equal(await escrowStraySweep(), 1);
+  const back = (await customerCoins()).filter((c) => !before.includes(c));
+  assert.equal(back.length, 1, "one refund output to the order's refund address");
+  assert.ok(Number(back[0]!.split(":")[1]) >= q.json.sats - 3_000 - 2_000);
+  assert.equal(await escrowStraySweep(), 0, "idempotent");
+  // The returned coins can never be turned into a paid order afterwards.
+  const pay = await realMoney(() => call("POST", `/api/projects/${id}/pay`, { stage: "validate", txHex: under }, ownerKey))();
+  assert.equal(pay.status, 400);
+  const paid = await exec("SELECT 1 FROM payments WHERE project_id = ?", [id]);
+  assert.equal(paid.rows.length, 0);
+  assert.equal((await call("GET", `/api/escrow/${id}/validate`)).json.state, "quoted");
+});
+
+test("strays: a second payment to a funded order goes back; the order's own coin stays", async () => {
+  const { id, ownerKey } = await newProject();
+  const tag = chain.paymentTag(id, "validate");
+  const q = await realMoney(() => call("POST", `/api/projects/${id}/quote`, { stage: "validate", refundAddress: CUSTOMER }, ownerKey))();
+  const paid = await realMoney(() => call("POST", `/api/projects/${id}/pay`, { stage: "validate", txHex: walletPays(q.json.address, q.json.sats, tag) }, ownerKey))();
+  assert.equal(paid.status, 200);
+  const second = await mock.sendRawTransaction(walletPays(q.json.address, q.json.sats, tag));
+  heights.set(second, 0);
+  mine(6);
+  assert.equal(await escrowStraySweep(), 1, "only the extra coin");
+  const st = (await call("GET", `/api/escrow/${id}/validate`)).json;
+  assert.equal(st.state, "funded", "the order itself is untouched (its own refund/release path decides)");
+  assert.equal(st.fundingTxid, paid.json.payments.validate.txid);
+  const row = await exec("SELECT txid, refund_txid FROM escrow_strays WHERE project_id = ?", [id]);
+  assert.equal(String(row.rows[0]!.txid), second);
+  assert.ok(row.rows[0]!.refund_txid);
+});
+
+test("strays: a full payment to a stale quote is returned, and /pay can no longer turn it into a run", async () => {
+  const { id, ownerKey } = await newProject();
+  const tag = chain.paymentTag(id, "validate");
+  const q = await realMoney(() => call("POST", `/api/projects/${id}/quote`, { stage: "validate", refundAddress: CUSTOMER }, ownerKey))();
+  await exec("UPDATE escrow_orders SET updated_at = ? WHERE project_id = ?", [Date.now() - 4 * 60 * 60_000, id]); // nobody watches it any more
+  const late = walletPays(q.json.address, q.json.sats, tag);
+  const lateTxid = await mock.sendRawTransaction(late);
+  heights.set(lateTxid, 0);
+  assert.equal((await escrowTick()).funded, 0, "a stale quote is not funded by the watcher");
+  mine(6);
+  await escrowStraySweep();
+  const row = await exec("SELECT refund_txid FROM escrow_strays WHERE txid = ?", [lateTxid]);
+  assert.ok(row.rows[0]?.refund_txid, "sent back");
+  const pay = await realMoney(() => call("POST", `/api/projects/${id}/pay`, { stage: "validate", txHex: late }, ownerKey))();
+  assert.equal(pay.status, 400);
+  assert.match(pay.json.error, /sent back/);
+  assert.equal((await exec("SELECT 1 FROM payments WHERE project_id = ?", [id])).rows.length, 0, "no payment, so no run");
 });

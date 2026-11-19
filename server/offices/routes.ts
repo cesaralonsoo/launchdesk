@@ -22,6 +22,8 @@ import * as store from "./store.js";
 import type { OfficesView, TaskQuote } from "./types.js";
 
 const QUOTE_MS = 15 * 60_000;
+/** Below this an output is dust on BCH: no real payment is ever smaller. */
+const DUST_SATS = 546;
 const STUCK_MS = 10 * 60_000;
 
 /** Honest wording: a test run cost nothing; a real payment for a failed run is owed back. */
@@ -161,6 +163,8 @@ export function officeRoutes(deps: OfficeDeps = defaultOfficeDeps()) {
     const input = def.input && typeof b.input === "string" ? b.input.replace(/\r/g, "").trim().slice(0, 4000) : "";
     // Sample servers never fetch a price (no network needed); real ones ask for the live BCH price.
     const rate = deps.run.mock ? bchUsdCached() : await bchUsdOrZero();
+    // A real server never quotes 0 sats: without a live price there is no price (a 0-sat quote would buy AI for free).
+    if (!deps.run.mock && !(rate > 0)) throw new OfficeError(503, "Prices are unavailable, try again in a minute.");
     const sats = rate > 0 ? Math.ceil((def.cents / 100 / rate) * 1e8) : 0;
     const id = newId(12);
     const expiresAt = Date.now() + QUOTE_MS;
@@ -196,14 +200,17 @@ export function officeRoutes(deps: OfficeDeps = defaultOfficeDeps()) {
       if (!config.merchantAddress) throw new OfficeError(503, "Payments are not set up yet.");
       if (config.production && !merchantOnMainnet()) throw new OfficeError(503, "Payments are switched off on this server.");
       if (t.expiresAt < Date.now() - 5 * 60_000) throw new OfficeError(400, "The price expired. Pick the task again for a fresh price.");
+      // A quote made while the price feed was down (0 sats) never buys a run.
+      if (!(t.sats > 0)) throw new OfficeError(400, "This price is not valid. Pick the task again for a fresh price.");
       const txHex = typeof b.txHex === "string" ? b.txHex : "";
       if (!txHex) throw new OfficeError(400, "No signed payment was sent. Approve it in your wallet and try again.");
       let checked;
       try {
-        checked = checkPaymentTx(txHex, Math.floor(t.sats * 0.99), `LD1:${s.id}:${t.id}`);
+        checked = checkPaymentTx(txHex, Math.max(DUST_SATS, Math.floor(t.sats * 0.99)), `LD1:${s.id}:${t.id}`);
       } catch (e) {
         throw new OfficeError(400, (e as Error).message);
       }
+      if (checked.paidSats < DUST_SATS) throw new OfficeError(400, "Payment too small. Nothing was charged.");
       if (await store.txidUsed(checked.txid)) throw new OfficeError(409, "This payment was already used.");
       try {
         await broadcast(txHex, checked.txid);

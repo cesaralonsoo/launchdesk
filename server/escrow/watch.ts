@@ -5,15 +5,16 @@
 //                is written on chain. Never when the run failed (the refund is the safety net), and never once the
 //                refund has unlocked (the customer was promised their money back after the timeout).
 //   3. refund:   a paid order that was not released before its timeout is sent back to the customer's wallet.
+//   4. strays:   (every 5 min) coins at an order address outside its funding outpoint go back once they are deep enough.
 // Nothing in here throws into the server: every failure is written to escrow_orders.note and retried next tick.
 import { binToHex, hexToBin } from "@bitauth/libauth";
 import { electrum } from "../chain.js";
 import { config } from "../config.js";
-import { exec, getProject, stageDone } from "../db.js";
+import { claimStageRun, exec, getProject, paidFor, stageDone } from "../db.js";
 import { prepareStage, startStage, isRunning } from "../jobs.js";
 import type { Project, Stage } from "../types.js";
 import { sha256 } from "./contract.js";
-import { depthOf, escrowMarkFunded, escrowRefund, escrowRefundSweep, escrowRelease, getRow, setRow, table, type Row } from "./service.js";
+import { depthOf, escrowMarkFunded, escrowRefund, escrowRefundSweep, escrowRelease, escrowStraySweep, getRow, setRow, table, type Row } from "./service.js";
 
 /** Only the $0.10 validate run is escrowed; the build stage keeps the direct payment. */
 export const ESCROW_STAGES: readonly Stage[] = ["validate"];
@@ -49,7 +50,7 @@ async function watchFunding(r: Row): Promise<boolean> {
       u.tx_hash, id, stage, u.value, config.priceCents[stage], Date.now(),
     ]);
     const p = await getProject(id);
-    if (p?.payments[stage] && !stageDone(p, stage) && !isRunning(id, stage)) {
+    if (p && paidFor(p, stage) && !stageDone(p, stage) && !isRunning(id, stage) && (await claimStageRun(id, stage))) {
       await prepareStage(id, stage);
       void startStage(id, stage);
     }
@@ -74,6 +75,10 @@ async function watchRelease(r: Row): Promise<"released" | "refunded" | null> {
 }
 
 export type TickResult = { funded: number; released: number; refunded: number };
+
+/** Stray coins (see service.ts escrowStraySweep) are looked for every few minutes, not every tick. */
+const STRAY_EVERY_MS = 5 * 60_000;
+let lastStray = 0;
 
 let ticking = false;
 export async function escrowTick(): Promise<TickResult> {
@@ -103,6 +108,10 @@ export async function escrowTick(): Promise<TickResult> {
       }
     }
     out.refunded += await escrowRefundSweep().catch(() => 0);
+    if (Date.now() - lastStray >= STRAY_EVERY_MS) {
+      lastStray = Date.now();
+      await escrowStraySweep(since).catch((e) => console.warn("[escrow] strays", (e as Error).message));
+    }
   } finally {
     ticking = false;
   }

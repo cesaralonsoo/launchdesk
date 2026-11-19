@@ -133,8 +133,10 @@ the `OP_RETURN` is `6a 03 4c4431 20 8447cc7290ece01c91673ef4eb8137c9332581040af7
 
 - Your refund goes to the address your wallet gave when you asked for the price. It must be a standard `q…` (P2PKH)
   address.
-- Coins sent to the contract outside the app, or a second payment to the same order, are not released by our server.
-  They can still only go to us with a fingerprint, or back to you after the timeout.
+- Coins sent to the contract outside the app, a second payment to the same order, or a payment below the price are
+  never released by our server and never start a run. Once such a coin is 6 blocks deep, the watcher sends it back
+  through the same keyless refund (to the refund address of that order) within a few minutes. Coins too small to
+  pay the network fee and still leave a valid output (dust) cannot be sent back.
 - The watcher runs inside our web server. While the server is down, nothing is released or refunded automatically.
   The refund stays valid, and anyone can broadcast it later.
 - Only the 10¢ report is held in the contract. The 50¢ launch kit is a plain payment to LaunchDesk, and its pay card
@@ -143,6 +145,8 @@ the `OP_RETURN` is `6a 03 4c4431 20 8447cc7290ece01c91673ef4eb8137c9332581040af7
   contract address under your payment.
 - Our server may release as soon as it has seen your payment, before it confirms. If a payment were double-spent
   after that, LaunchDesk would have delivered a report without being paid. That is a risk for us, not for you.
+- **Accepted risk (0-conf):** the 10¢ report (and the other small payments) start the run on an unconfirmed payment; a
+  double-spend could get one report for free, which at these prices we accept instead of making you wait for a block.
 
 ## What is public
 

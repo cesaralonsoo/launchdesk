@@ -59,6 +59,21 @@ export async function migrate() {
   await addColumn("quotes", "qr_sats", "INTEGER"); // F10: unique amount for the plain QR (BIP21) path
   await addColumn("jobs", "attempts", "INTEGER NOT NULL DEFAULT 0"); // R18
   await db.execute("CREATE UNIQUE INDEX IF NOT EXISTS projects_share ON projects(share_id) WHERE share_id IS NOT NULL");
+  // Pay gate: a refunded payment buys no more AI, and each paid stage runs at most MAX_STAGE_RUNS times (run + retries).
+  // Additive and idempotent: existing rows read as "not refunded, 0 runs so far".
+  await addColumn("payments", "refunded_at", "INTEGER");
+  await addColumn("payments", "runs", "INTEGER NOT NULL DEFAULT 0");
+  // Orders the escrow already refunded before this column existed (escrow_orders exists only with ESCROW=1).
+  const esc = await db.execute("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'escrow_orders'");
+  if (esc.rows.length)
+    await db.execute(
+      "UPDATE payments SET refunded_at = (SELECT e.updated_at FROM escrow_orders e WHERE e.project_id = payments.project_id AND e.stage = payments.stage) WHERE refunded_at IS NULL AND EXISTS (SELECT 1 FROM escrow_orders e WHERE e.project_id = payments.project_id AND e.stage = payments.stage AND e.status = 'refunded')",
+    );
+  // F10 plain-QR hardening: every unique QR amount handed out (never reused within 24 h), and when this server first
+  // saw each transaction to the merchant address (a QR payment must be first seen after its quote was made).
+  await db.execute("CREATE TABLE IF NOT EXISTS qr_amounts (sats INTEGER NOT NULL, project_id TEXT NOT NULL, stage TEXT NOT NULL, issued_at INTEGER NOT NULL)");
+  await db.execute("CREATE INDEX IF NOT EXISTS qr_amounts_sats ON qr_amounts(sats, issued_at)");
+  await db.execute("CREATE TABLE IF NOT EXISTS qr_seen (txid TEXT PRIMARY KEY, first_seen INTEGER NOT NULL)");
   // v7 (WS-INTEL): the analyst team's results (ResultsV7) and the shared web research they cite, one row per project.
   await db.execute("CREATE TABLE IF NOT EXISTS results_v7 (project_id TEXT PRIMARY KEY, json TEXT NOT NULL, research TEXT, updated_at INTEGER NOT NULL)");
 }
@@ -109,7 +124,7 @@ export async function getProject(id: string): Promise<Project | null> {
   const row = await getProjectRow(id);
   if (!row) return null;
   const [pays, jobs, v7] = await Promise.all([
-    exec("SELECT stage, txid, sats, cents, created_at FROM payments WHERE project_id = ?", [id]),
+    exec("SELECT stage, txid, sats, cents, created_at, refunded_at FROM payments WHERE project_id = ?", [id]),
     exec("SELECT dept, stage, status, json, model, error, queued_at, finished_at, attempts FROM jobs WHERE project_id = ?", [id]),
     exec("SELECT json FROM results_v7 WHERE project_id = ?", [id]),
   ]);
@@ -132,6 +147,7 @@ export async function getProject(id: string): Promise<Project | null> {
       sats: Number(p.sats),
       cents: Number(p.cents),
       at: Number(p.created_at),
+      ...(p.refunded_at != null ? { refunded: true as const } : {}),
     };
   }
   const order = (d: WorkDept) => (STAGE_DEPTS.validate as WorkDept[]).concat(STAGE_DEPTS.build).indexOf(d);
@@ -166,6 +182,24 @@ export async function getProject(id: string): Promise<Project | null> {
 const NAMES: Record<WorkDept, string> = { mia: "Mia", leo: "Leo", sam: "Sam", nova: "Nova", dex: "Dex", rae: "Rae", pip: "Pip" };
 /** R18: the human message shown in the Now card and team row (the raw error stays in the jobs table). */
 const humanError = (d: WorkDept) => `${NAMES[d]} hit a snag.`;
+
+/** The stage was paid and the money was not sent back: the only state in which AI may run for it. */
+export const paidFor = (p: Pick<Project, "payments">, stage: Stage) => !!p.payments[stage] && !p.payments[stage]!.refunded;
+
+/** Run + retries allowed per paid (project, stage). Past this the founder is asked to contact us. */
+export const MAX_STAGE_RUNS = 3;
+/**
+ * Claims one run of a paid stage: atomically counts it, and refuses (false) when the payment is missing, refunded,
+ * or already used MAX_STAGE_RUNS times. Call it right before a run or retry actually starts.
+ */
+export async function claimStageRun(projectId: string, stage: Stage): Promise<boolean> {
+  const r = await exec("UPDATE payments SET runs = runs + 1 WHERE project_id = ? AND stage = ? AND refunded_at IS NULL AND runs < ?", [projectId, stage, MAX_STAGE_RUNS]);
+  return r.rowsAffected > 0;
+}
+/** Records that the money for this stage went back to the customer (escrow refund). Idempotent. */
+export async function markPaymentRefunded(projectId: string, stage: string, at = Date.now()) {
+  await exec("UPDATE payments SET refunded_at = ? WHERE project_id = ? AND stage = ? AND refunded_at IS NULL", [at, projectId, stage]);
+}
 
 export const stageDone = (p: Project, stage: Stage) => STAGE_DEPTS[stage].every((d) => p.status[d] === "done");
 export type { DeptResults };

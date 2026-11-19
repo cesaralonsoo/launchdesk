@@ -598,28 +598,57 @@ export async function chooseTemplate(projectId: string, template: string): Promi
   return kit;
 }
 
-/** "Show 3 more": one new draw, avoiding the ideas already shown. One free redraw per kit. */
+/** Projects whose "Show 3 more" draw is running in this process (a second click gets 409, not a second draw). */
+const moreRunning = new Set<string>();
+export const moreLogosRunning = (projectId: string) => moreRunning.has(projectId);
+
+/**
+ * Claims the kit's one free redraw in the database, atomically, BEFORE any model call: true only for the first
+ * caller ever (across processes too). The flag stays set even when the draw then fails (no second free draw).
+ */
+async function claimMoreLogos(projectId: string): Promise<boolean> {
+  await ensureTable();
+  const r = await exec(
+    "UPDATE kits SET json = json_set(json, '$.logo.moreUsed', json('true')), updated_at = ? WHERE project_id = ? AND json_extract(json, '$.logo') IS NOT NULL AND COALESCE(json_extract(json, '$.logo.moreUsed'), 0) = 0",
+    [Date.now(), projectId],
+  );
+  return r.rowsAffected > 0;
+}
+
+/** "Show 3 more": one new draw, avoiding the ideas already shown. One free redraw per kit, ever. */
 export async function moreLogos(projectId: string, deps: KitDeps = defaultDeps): Promise<Kit> {
-  const kit = await loadKit(projectId);
-  if (!kit?.logo) throw new Error("Your logo is not ready yet.");
-  const shown = kit.logo.options.length;
-  // One new drawing per kit (spend): the first draw keeps up to 6, so more than 6 means it was already used.
-  if (shown > 6) throw new Error(`You have already seen ${shown} logo options.`);
-  return costScope(projectId, "kit-more", async () => {
-    const guard = kitGuard(projectId, "kit-more", KIT_EST.logo * 1.5);
-    const settle = guard.reserve("logo-more", KIT_EST.logo);
-    try {
-      const fresh = pickThree(await deps.logos(kit.brand, kit.logo!.options.map((o) => o.idea), { idea: (await getProject(projectId))?.idea ?? kit.brand.tagline }));
-      if (!fresh.length) throw new Error("No new logos this time. Please try again later.");
-      const ids = new Set(kit.logo!.options.map((o) => o.id));
-      kit.logo!.options.push(...fresh.map((o) => (ids.has(o.id) ? { ...o, id: `${o.id}-2` } : o)));
-      await saveKit(projectId, kit);
-      return kit;
-    } catch (e) {
-      if (e instanceof NotReady) throw new Error("More logo options are not available yet.");
-      throw e;
-    } finally {
-      settle();
-    }
-  });
+  if (moreRunning.has(projectId)) throw new Error("Your new logos are already being drawn. One moment.");
+  moreRunning.add(projectId);
+  try {
+    const kit = await loadKit(projectId);
+    if (!kit?.logo) throw new Error("Your logo is not ready yet.");
+    const shown = kit.logo.options.length;
+    // One new drawing per kit (spend): the first draw keeps up to 6, so more than 6 means it was already used.
+    if (kit.logo.moreUsed || shown > 6) throw new Error(`You have already used your free redraw (${shown} logo options).`);
+    if (!(await claimMoreLogos(projectId))) throw new Error("You have already used your free redraw.");
+    return await costScope(projectId, "kit-more", async () => {
+      const guard = kitGuard(projectId, "kit-more", KIT_EST.logo * 1.5);
+      const settle = guard.reserve("logo-more", KIT_EST.logo);
+      try {
+        const fresh = pickThree(await deps.logos(kit.brand, kit.logo!.options.map((o) => o.idea), { idea: (await getProject(projectId))?.idea ?? kit.brand.tagline }));
+        if (!fresh.length) throw new Error("No new logos this time. Your first options are still here.");
+        // Re-read: the founder may have chosen a logo while this one was drawing.
+        const now = (await loadKit(projectId)) ?? kit;
+        const logo = now.logo ?? kit.logo!;
+        const ids = new Set(logo.options.map((o) => o.id));
+        logo.options.push(...fresh.map((o) => (ids.has(o.id) ? { ...o, id: `${o.id}-2` } : o)));
+        logo.moreUsed = true;
+        now.logo = logo;
+        await saveKit(projectId, now);
+        return now;
+      } catch (e) {
+        if (e instanceof NotReady) throw new Error("More logo options are not available.");
+        throw e;
+      } finally {
+        settle();
+      }
+    });
+  } finally {
+    moreRunning.delete(projectId);
+  }
 }

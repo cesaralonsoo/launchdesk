@@ -203,7 +203,7 @@ export type Project = {
   id: string;
   idea: string;
   created_at: number;
-  payments: Partial<Record<Stage, { txid: string; sats: number; cents: number; at: number }>>;
+  payments: Partial<Record<Stage, { txid: string; sats: number; cents: number; at: number; refunded?: true }>>;
   status: Partial<Record<WorkDept, DeptStatus>>;
   results: DeptResults;
   timings: Partial<Record<Stage, { started: number; finished?: number }>>;

@@ -6,13 +6,13 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { Hono, type Context } from "hono";
 import { config } from "./config.js";
-import { exec, getProjectRow, type ProjectRow } from "./db.js";
+import { exec, getProject, getProjectRow, paidFor, type ProjectRow } from "./db.js";
 import { chooseLogo, chooseTemplate, defaultDeps, kitRunning, loadKit, moreLogos, safeBrand, siteUrl, type KitDeps } from "./kit.js";
 import { safeLogo } from "./site/render.js";
 import { allow, clientIp } from "./ratelimit.js";
 
 class KitError extends Error {
-  constructor(public status: 400 | 403 | 404 | 409 | 429, message: string) {
+  constructor(public status: 400 | 402 | 403 | 404 | 409 | 429, message: string) {
     super(message);
   }
 }
@@ -82,6 +82,9 @@ export function kitRoutes(deps: KitDeps = defaultDeps) {
 
   r.post("/api/projects/:id/kit/logo/more", async (c) => {
     const row = await owned(c);
+    // The redraw is part of the paid Launch kit: never without that payment, or after it was refunded.
+    const p = await getProject(row.id);
+    if (!p || !paidFor(p, "build")) throw new KitError(402, "The Launch kit is not paid, so no new logos can be drawn.");
     if (config.rateLimit.steer && !allow("kit-more", clientIp(c), config.rateLimit.steer, config.rateLimit.windowMs))
       throw new KitError(429, "Too many requests. Please wait a few minutes.");
     try {

@@ -129,6 +129,11 @@ assert.equal((await post("/api/projects/K1/kit/logo", { id: "zzz" })).status, 40
 assert.equal((await post("/api/projects/K1/kit/site", { template: "warm" })).status, 200);
 assert.equal((await kit.loadKit("K1"))!.site!.template, "warm");
 assert.equal((await post("/api/projects/K1/kit/site", { template: "neon" })).status, 409);
+// The redraw is part of the paid kit: refused (402, nothing drawn) until the build payment exists.
+calls.length = 0;
+assert.equal((await post("/api/projects/K1/kit/logo/more", {})).status, 402, "no build payment, no redraw");
+assert.deepEqual(calls, [], "no logo drawing without a payment");
+await exec("INSERT INTO payments (txid, project_id, stage, sats, cents, created_at) VALUES ('dev-k1', 'K1', 'build', 0, 50, ?)", [Date.now()]);
 const more = await post("/api/projects/K1/kit/logo/more", {});
 assert.equal(more.status, 200);
 assert.equal((await kit.loadKit("K1"))!.logo!.options.length, 7);

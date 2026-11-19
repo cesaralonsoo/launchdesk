@@ -10,7 +10,7 @@ import { allow, clientIp } from "./ratelimit.js";
 import { brakeGuard, brakeView, watchAiFetch } from "./brake.js";
 import { REPORT_CAP_USD } from "./cost.js";
 import { getTask } from "./offices/store.js";
-import { exec, getProject, getProjectRow, stageDone, type ProjectRow } from "./db.js";
+import { claimStageRun, exec, getProject, getProjectRow, paidFor, stageDone, type ProjectRow } from "./db.js";
 import * as jobs from "./jobs.js";
 import { isRunning, prepareStage, startStage } from "./jobs.js";
 import { SteerError, startSteer } from "./jobs-v7.js";
@@ -42,9 +42,10 @@ app.post(
     },
   }),
 );
-// Free AI calls (no payment): CEO notes, 3 more logos, the offices' follow-up questions. In mock mode they cost nothing.
+// AI calls included in a paid stage (no new payment): CEO notes and the one logo redraw. In mock mode they cost
+// nothing. /api/offices/bring makes no AI call at all (plain questions), so it needs no brake.
 const FREE_HEADROOM_USD = 0.05;
-for (const path of ["/api/projects/:id/steer", "/api/projects/:id/kit/logo/more", "/api/offices/bring"])
+for (const path of ["/api/projects/:id/steer", "/api/projects/:id/kit/logo/more"])
   app.post(path, brakeGuard({ skip: () => config.mockAi, headroom: () => FREE_HEADROOM_USD }));
 const officeTestOk = (c: Context) => config.mockAi || localDev(c);
 app.post("/api/offices/:sid/tasks", brakeGuard({ skip: (c) => officeTestOk(c) }));
@@ -116,6 +117,20 @@ function assertOwner(c: Context, row: ProjectRow | null, strict: boolean) {
 /** F2: the example pack is read-only. */
 function assertWritable(row: ProjectRow | null) {
   if (row?.example) throw new ApiError(403, "The example pack is read-only. Start your own idea to run the team.");
+}
+
+/** Pay gate for every route that starts AI on a paid stage: paid, not refunded. */
+function assertPaid(p: Project, stage: Stage) {
+  if (!p.payments[stage]) throw new ApiError(402, "This stage is not paid yet.");
+  if (!paidFor(p, stage)) throw new ApiError(402, "This payment was refunded, so the team cannot work on it again. Contact us if this is a mistake.");
+}
+/** Counts one run of a paid stage (run + retries, at most MAX_STAGE_RUNS) and rate-limits starts per IP. */
+async function claimRun(c: Context, p: Project, stage: Stage) {
+  assertPaid(p, stage);
+  if (!allow("run", clientIp(c), config.rateLimit.run, config.rateLimit.windowMs))
+    throw new ApiError(429, "That is a lot of runs in a few minutes. Please wait a little and try again.");
+  if (!(await claimStageRun(p.id, stage)))
+    throw new ApiError(402, "This step was already run the most times one payment allows. Contact us and we will sort it out.");
 }
 
 async function body<T>(c: Context): Promise<Partial<T>> {
@@ -207,15 +222,31 @@ async function loadForStage(id: string, stage: unknown) {
   return { p, stage };
 }
 
-/** F10: a 1–999 sat suffix no other open quote uses, so a plain QR payment can be matched by its exact amount. */
-async function uniqueQrSats(base: number): Promise<number> {
-  const open = await exec("SELECT qr_sats FROM quotes WHERE qr_sats IS NOT NULL AND expires_at > ?", [Date.now()]);
-  const used = new Set(open.rows.map((r) => Number(r.qr_sats)));
-  for (let i = 0; i < 50; i++) {
-    const v = base + 1 + Math.floor(Math.random() * 999);
-    if (!used.has(v)) return v;
+/** F10: no QR amount is handed out twice within this window (a late payment can only ever match its own quote). */
+const QR_REUSE_MS = 24 * 60 * 60_000;
+/**
+ * F10: a sat suffix (1–999, then up to 9999 if those are all taken) that no quote got in the last 24 h, so a plain QR
+ * payment can be matched by its exact amount to exactly one quote. Recorded at once in qr_amounts.
+ */
+async function uniqueQrSats(base: number, projectId: string, stage: Stage): Promise<number> {
+  const now = Date.now();
+  const recent = await exec("SELECT sats FROM qr_amounts WHERE issued_at > ? AND sats BETWEEN ? AND ?", [now - QR_REUSE_MS, base + 1, base + 9999]);
+  const used = new Set(recent.rows.map((r) => Number(r.sats)));
+  for (const span of [999, 9999]) {
+    const free: number[] = [];
+    for (let i = 1; i <= span; i++) if (!used.has(base + i)) free.push(base + i);
+    if (!free.length) continue;
+    const v = free[Math.floor(Math.random() * free.length)]!;
+    await exec("INSERT INTO qr_amounts (sats, project_id, stage, issued_at) VALUES (?, ?, ?, ?)", [v, projectId, stage, now]);
+    return v;
   }
-  return base + 1 + Math.floor(Math.random() * 999);
+  throw new ApiError(503, "Too many open payments right now, try again in a minute.");
+}
+/** F10: when this server first saw `txid` paying the merchant address (recorded on the first sighting). */
+async function firstSeen(txid: string): Promise<number> {
+  await exec("INSERT OR IGNORE INTO qr_seen (txid, first_seen) VALUES (?, ?)", [txid, Date.now()]);
+  const r = await exec("SELECT first_seen FROM qr_seen WHERE txid = ?", [txid]);
+  return Number(r.rows[0]?.first_seen ?? 0);
 }
 const bip21 = (sats: number) =>
   `${config.merchantAddress.startsWith("bitcoincash:") ? "" : "bitcoincash:"}${config.merchantAddress}?amount=${(sats / 1e8).toFixed(8).replace(/0+$/, "").replace(/\.$/, "")}`;
@@ -240,13 +271,15 @@ app.post("/api/projects/:id/quote", async (c) => {
     sats = Number(row.sats);
     expiresAt = Number(row.expires_at);
     rate = row.bch_usd == null ? await bchUsdOrZero() : Number(row.bch_usd);
-    qrSats = row.qr_sats == null ? await uniqueQrSats(sats) : Number(row.qr_sats);
+    qrSats = row.qr_sats == null ? await uniqueQrSats(sats, p.id, stage) : Number(row.qr_sats);
     if (row.qr_sats == null || row.bch_usd == null)
       await exec("UPDATE quotes SET bch_usd = ?, qr_sats = ? WHERE project_id = ? AND stage = ?", [rate || null, qrSats, p.id, stage]);
   } else {
-    sats = await centsToSats(config.priceCents[stage]);
     rate = await bchUsdOrZero();
-    qrSats = await uniqueQrSats(sats);
+    // No live price, no quote: never a 0 or stale-guess amount that could buy a run for nothing.
+    if (!(rate > 0)) throw new ApiError(503, "Prices are unavailable, try again in a minute.");
+    sats = await centsToSats(config.priceCents[stage]);
+    qrSats = await uniqueQrSats(sats, p.id, stage);
     expiresAt = now + QUOTE_MS;
     await exec("INSERT OR REPLACE INTO quotes (project_id, stage, sats, expires_at, bch_usd, qr_sats) VALUES (?, ?, ?, ?, ?, ?)", [
       p.id,
@@ -307,7 +340,8 @@ app.post("/api/projects/:id/pay", async (c) => {
       if (Number(row.expires_at) < Date.now() - 5 * 60_000) throw new ApiError(400, "The price quote expired. Please try again.");
       let found: { txid: string; sats: number } | null;
       try {
-        found = await findQrPayment(Number(row.qr_sats), Number(row.expires_at) - QUOTE_MS);
+        const since = Number(row.expires_at) - QUOTE_MS; // when the quote was made
+        found = await findQrPayment(Number(row.qr_sats), since, firstSeen);
       } catch {
         found = null; // network hiccup: the client keeps polling
       }
@@ -369,8 +403,9 @@ app.post("/api/projects/:id/run", async (c) => {
   const row = await getProjectRow(p.id);
   assertWritable(row);
   assertOwner(c, row, false);
-  if (!p.payments[stage]) throw new ApiError(402, "This stage is not paid yet.");
+  assertPaid(p, stage);
   if (!stageDone(p, stage) && !isRunning(p.id, stage)) {
+    await claimRun(c, p, stage);
     await prepareStage(p.id, stage);
     void startStage(p.id, stage);
   }
@@ -390,7 +425,7 @@ app.post("/api/projects/:id/steer", async (c) => {
   assertOwner(c, row, false);
   const p = await getProject(id);
   if (!p) throw new ApiError(404, "Project not found");
-  if (!p.payments.validate) throw new ApiError(402, "This stage is not paid yet.");
+  assertPaid(p, "validate");
   const { note, target } = await body<{ note: string; target: AnalystRole[] }>(c);
   const text = (typeof note === "string" ? note : "").replace(/\s+/g, " ").trim();
   if (text.length < 3) throw new ApiError(400, "Write a short note for your team.");
@@ -462,8 +497,9 @@ app.post("/api/projects/:id/retry", async (c) => {
   if (!WORK_DEPTS.includes(dept as WorkDept)) throw new ApiError(400, "Unknown department");
   const d = dept as WorkDept;
   const stage = deptStage(d);
-  if (!p.payments[stage]) throw new ApiError(402, "This stage is not paid yet.");
+  assertPaid(p, stage);
   if (p.status[d] !== "error") return c.json({ ok: true as const });
+  await claimRun(c, p, stage);
   if (jobsExtra.retryDept) await jobsExtra.retryDept(p.id, d);
   else if (!isRunning(p.id, stage)) {
     // Until jobs.retryDept lands: re-queue the failed department and run the stage on from there (free).
@@ -478,9 +514,10 @@ app.post("/api/projects/:id/skip", async (c) => {
   const { p } = await ownedProject(c);
   const { dept } = await body<{ dept: WorkDept }>(c);
   if (dept !== "nova" && dept !== "dex" && dept !== "rae") throw new ApiError(400, "Only Nova, Dex and Rae can be skipped.");
-  if (!p.payments.build) throw new ApiError(402, "This stage is not paid yet.");
+  assertPaid(p, "build");
   if (p.status[dept] !== "error") return c.json({ ok: true as const });
   if (!jobsExtra.skipDept) throw new ApiError(501, "Skipping is not available yet. Try again, free.");
+  await claimRun(c, p, "build"); // skipping continues the stage (more AI): it counts as a run
   await jobsExtra.skipDept(p.id, dept);
   return c.json({ ok: true as const });
 });

@@ -45,6 +45,8 @@ export interface LogoResult {
   options: LogoOption[];
   chosen: string;
   fallback: boolean;
+  /** The one free "Show 3 more" redraw was claimed (set before the draw starts; stays set if it fails). */
+  moreUsed?: boolean;
 }
 
 /** The 3 standard designs, plus "custom": the page designed for this business alone (site2, 16 Nov). */

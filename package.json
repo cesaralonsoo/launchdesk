@@ -13,7 +13,7 @@
     "start": "node dist/server/index.js",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p server/tsconfig.json --noEmit",
     "mutate": "node scripts/mutate-contract.mjs",
-    "test": "tsx test/payment.test.ts && tsx test/schema.test.ts && tsx test/flow.test.ts && tsx test/hardening.test.ts && tsx test/escrow.test.ts && tsx test/kit-app.test.ts && tsx test/verdict.test.ts && tsx test/escrow-flow.test.ts && tsx test/escrow-attacks.test.ts && tsx test/offices.test.ts && tsx test/kit.test.ts && tsx test/brake.test.ts && tsx test/v7.test.ts && tsx test/game.test.ts && tsx test/marketing.test.ts && tsx --test test/site.test.ts test/site-custom.test.ts test/site-photos.test.ts test/site-menu.test.ts test/kit-quality.test.ts",
+    "test": "tsx test/payment.test.ts && tsx test/schema.test.ts && tsx test/flow.test.ts && tsx test/hardening.test.ts && tsx test/escrow.test.ts && tsx test/kit-app.test.ts && tsx test/verdict.test.ts && tsx test/escrow-flow.test.ts && tsx test/escrow-attacks.test.ts && tsx test/offices.test.ts && tsx test/kit.test.ts && tsx test/brake.test.ts && tsx test/v7.test.ts && tsx test/game.test.ts && tsx test/marketing.test.ts && tsx --test test/paygate.test.ts test/site.test.ts test/site-custom.test.ts test/site-photos.test.ts test/site-menu.test.ts test/kit-quality.test.ts",
     "contracts": "node contracts/build.mjs"
   },
   "dependencies": {

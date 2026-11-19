@@ -9,7 +9,7 @@ import { mockJudge, preparedSteerFor, routeSteer, runAnalyst, runJudge } from ".
 import { assembleReport, emptyResearch, fallbackReport, ownerOf, researchBlock, sampleBlocks, sampleSteerFindings, type BlockResearch } from "./blocks-v7.js";
 import { adjustConfidence, alignSummary, alignVerdictMd, businessKind, econSummary, verdictSentence, marketOf, writeReport, type WrittenReport } from "./report-v7.js";
 import { config } from "./config.js";
-import { exec } from "./db.js";
+import { exec, getProject, paidFor } from "./db.js";
 import {
   applySteer, BLOCK_IDS, BLOCK_LIBRARY, BLOCK_OF_ROLE, blockRoster, buildReport, fallbackBlockPlans, finishWork, hasBlocks, hire, NOTES_MAX, pendingBlock, refreshBlocks,
   type AgentNote, type AnalystRole, type AnalystWork, type IdeaReport, type BlockId, type Finding, type JudgeDraft, type ResultsV7, type SteerPlan, type SteerResult, STEER_LIMIT,
@@ -190,7 +190,7 @@ const steering = new Set<string>();
 export const isSteering = (projectId: string) => steering.has(projectId);
 
 export class SteerError extends Error {
-  constructor(public status: 409 | 429, message: string) {
+  constructor(public status: 402 | 409 | 429, message: string) {
     super(message);
   }
 }
@@ -201,6 +201,9 @@ export class SteerError extends Error {
  */
 export async function startSteer(projectId: string, idea: string, note: string, target?: AnalystRole[]): Promise<{ id: string; ack: string; rerun: AnalystRole[] }> {
   if (steering.has(projectId)) throw new SteerError(409, "Your team is still working on the last note.");
+  // Steering is part of the paid report: never once the payment was refunded (defence in depth, the route checks too).
+  const paid = await getProject(projectId);
+  if (!paid || !paidFor(paid, "validate")) throw new SteerError(402, "This report is not paid, or its payment was refunded.");
   const v = await loadV7(projectId);
   if (!v?.report || v.status !== "done") throw new SteerError(409, "The report is not ready yet.");
   if (v.steers.length >= STEER_LIMIT) throw new SteerError(429, `You can steer the team ${STEER_LIMIT} times per stage.`);
