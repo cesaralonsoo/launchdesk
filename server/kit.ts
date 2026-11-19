@@ -12,6 +12,7 @@
 //                                 ready; it becomes the live design unless the founder already chose one by hand.
 import { statKind } from "./site/stat-kind.js";
 import { freeToUser, runDept } from "./ai.js";
+import { creditErrors } from "./brake.js";
 import { config } from "./config.js";
 import { Budget, BudgetError, costOf, costScope } from "./cost.js";
 import { exec, getProject, getProjectRow } from "./db.js";
@@ -365,6 +366,9 @@ async function runKitInner(projectId: string, deps: KitDeps, stage: string): Pro
   const p = await getProject(projectId);
   if (!p) throw new Error("Project not found");
   const guard = kitGuard(projectId, stage);
+  // Parts that fell back to templates in THIS run, and the "no credit" answers seen during it (see brake.creditErrors).
+  const fellBack: string[] = [];
+  const credit0 = creditErrors();
   let kit: Kit = (await loadKit(projectId)) ?? {
     brand: kitBrandFrom(p.results.nova, p),
     status: { brand: "queued", logo: "queued", site: "queued", marketing: "queued" },
@@ -394,6 +398,7 @@ async function runKitInner(projectId: string, deps: KitDeps, stage: string): Pro
       kit.brand = kitBrandFrom(nova, p);
     } catch (e) {
       console.error(`[kit] ${projectId} brand fell back:`, (e as Error).message);
+      fellBack.push("brand");
       kit.brand = kitBrandFrom(undefined, p);
     }
     await set("brand", "done");
@@ -419,6 +424,7 @@ async function runKitInner(projectId: string, deps: KitDeps, stage: string): Pro
       }
     } catch (e) {
       if (!(e instanceof NotReady)) console.error(`[kit] ${projectId} ${name} fell back:`, (e as Error).message);
+      fellBack.push(name);
       try {
         r = await fallback();
       } catch {
@@ -463,6 +469,13 @@ async function runKitInner(projectId: string, deps: KitDeps, stage: string): Pro
     ).then(() => customStep(projectId, kit, input, deps, guard, kitPhotos(projectId, kit, input, deps), save)),
     part<MarketingResult>("marketing", KIT_EST.marketing, () => deps.marketing(input), () => fallbackMarketing(input), (r) => (kit.marketing = { ...r, plan: r.plan && typeof r.plan === "object" && Array.isArray((r.plan as PlanV2).weeks) ? withValidateFirst(r.plan as PlanV2, input.report as ReportGate) : r.plan })),
   ]);
+  // Paid directly (no escrow): parts that fell back to templates because the AI ran out of credit during this run are
+  // owed back. Recorded on the kit and logged for a refund by hand; a local dev payment ("dev-…") is owed nothing.
+  const txid = p.payments.build?.txid ?? "";
+  if (!config.mockAi && fellBack.length && creditErrors() > credit0) {
+    kit.creditFallback = { parts: [...new Set([...(kit.creditFallback?.parts ?? []), ...fellBack])], at: Date.now() };
+    if (txid && !txid.startsWith("dev-")) console.error(`[refund-needed] kit ${projectId} paid (tx ${txid}) but AI credit ran out: ${fellBack.join(", ")} fell back to templates`);
+  }
   await save();
   return kit;
 }

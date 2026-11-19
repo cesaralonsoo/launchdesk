@@ -102,4 +102,6 @@ export interface Kit {
   site?: SiteResult;
   marketing?: MarketingResult;
   status: Record<"brand" | "logo" | "site" | "marketing", "queued" | "working" | "done" | "error">;
+  /** Set (server-side record) when parts fell back to templates because the AI ran out of credit during a run: owed back. */
+  creditFallback?: { parts: string[]; at: number };
 }

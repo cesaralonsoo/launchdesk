@@ -8,6 +8,7 @@ import { leoFromV7, memoFromV7 } from "./v7-bridge.js";
 import { mockJudge, preparedSteerFor, routeSteer, runAnalyst, runJudge } from "./ai-v7.js";
 import { assembleReport, emptyResearch, fallbackReport, ownerOf, researchBlock, sampleBlocks, sampleSteerFindings, type BlockResearch } from "./blocks-v7.js";
 import { adjustConfidence, alignSummary, alignVerdictMd, businessKind, econSummary, verdictSentence, marketOf, writeReport, type WrittenReport } from "./report-v7.js";
+import { creditErrors } from "./brake.js";
 import { config } from "./config.js";
 import { exec, getProject, paidFor } from "./db.js";
 import {
@@ -15,6 +16,60 @@ import {
   type AgentNote, type AnalystRole, type AnalystWork, type IdeaReport, type BlockId, type Finding, type JudgeDraft, type ResultsV7, type SteerPlan, type SteerResult, STEER_LIMIT,
 } from "./v7.js";
 import { samplesSteer, sampleResults, v7SampleFor } from "./v7-samples.js";
+
+/**
+ * Why a finished run is NOT a delivered report (null: it is one, and an escrowed payment may be released for it).
+ *  - "no-research": not one research block came back (AI credit, Haiku 529s, a web_search outage, every block past
+ *    RESEARCH_DEADLINE_MS). Whatever the writer does, a report with zero sources is not what was paid for.
+ *  - "no-credit": the writer fell back to the research notes and an AI "no credit / spend limit / bad key" answer
+ *    arrived DURING this run (creditHit). A writer that fell back for another reason (a timeout, two 500s) after some
+ *    research came back still delivers the report built from the notes.
+ * Sample runs (mock) always deliver.
+ */
+export function undeliveredReason(o: { mock: boolean; sourcedBlocks: number; fromNotes: boolean; creditHit: boolean }): "no-research" | "no-credit" | null {
+  if (o.mock) return null;
+  if (o.sourcedBlocks === 0) return "no-research";
+  if (o.fromNotes && o.creditHit) return "no-credit";
+  return null;
+}
+
+/** Research blocks that came back WITH sources. A block is ok whenever it has notes, gap-only notes included
+ *  ("Little public data…", "No usable web source found"), so ok alone does not mean a single source was found. */
+export function sourcedBlocksOf(research: readonly { ok: boolean; cites: readonly unknown[] }[]): number {
+  return research.filter((r) => r.ok && r.cites.length > 0).length;
+}
+
+/** How this project's validate payment comes back when its report fails: its own escrow order, a dev/test payment, or by hand. */
+type RefundPath = { kind: "escrow"; blocks: number } | { kind: "none" } | { kind: "manual"; txid: string };
+async function refundPathOf(projectId: string): Promise<RefundPath> {
+  // escrow_orders exists only on a server that ever ran with ESCROW=1: no table means no escrow order
+  const e = await exec("SELECT timeout_blocks FROM escrow_orders WHERE project_id = ? AND stage = 'validate' AND status = 'funded'", [projectId]).catch(() => null);
+  const blocks = Number(e?.rows[0]?.timeout_blocks);
+  if (e?.rows.length) return { kind: "escrow", blocks: Number.isInteger(blocks) && blocks > 0 ? blocks : 6 };
+  const pay = await exec("SELECT txid FROM payments WHERE project_id = ? AND stage = 'validate' AND refunded_at IS NULL", [projectId]).catch(() => null);
+  const txid = pay?.rows[0]?.txid == null ? "" : String(pay.rows[0].txid);
+  // no payment row, or a local dev payment ("dev-…", DEV_SKIP_PAYMENT / examples): nothing real to send back
+  return !txid || txid.startsWith("dev-") ? { kind: "none" } : { kind: "manual", txid };
+}
+/** About how long a refund after `blocks` BCH blocks (~10 min each) takes, in words. */
+const refundWait = (blocks: number) => (blocks < 5 ? `about ${blocks * 10} minutes` : Math.round(blocks / 6) <= 1 ? "about an hour" : `about ${Math.round(blocks / 6)} hours`);
+
+/** A paid report the AI could not research or write. Its message is what the customer sees (results.v7.error). */
+class AiUnavailable extends Error {
+  constructor(projectId: string, reason: "no-research" | "no-credit", path: RefundPath) {
+    const why = "Our AI research service is unavailable, so your report could not be written.";
+    super(
+      path.kind === "escrow"
+        ? `${why} Your payment stays in the contract and comes back to your wallet by itself in ${refundWait(path.blocks)}.`
+        : path.kind === "manual"
+          ? `${why} Tell us and we will send your payment back.`
+          : `${why} Please try again later.`,
+    );
+    const what = reason === "no-research" ? "no research block came back" : "the AI account ran out of credit during the run and the writer fell back";
+    console.error(`[jobs7] ${projectId} not delivered (${what}): the report fails${path.kind === "escrow" ? `, the escrow refunds it after ${path.blocks} blocks` : ""}`);
+    if (path.kind === "manual") console.error(`[refund-needed] report ${projectId} paid (tx ${path.txid}) but the AI could not write it`);
+  }
+}
 
 const ANALYST_DEADLINE_MS = 60_000;
 const withDeadline = <T>(p: Promise<T>, ms: number): Promise<T> => {
@@ -118,6 +173,8 @@ export async function runV7(projectId: string, idea: string, _research?: Researc
   const cur = await loadV7(projectId);
   if (cur?.status === "done" && cur.report) return;
   const t0 = Date.now();
+  // only "no credit" answers that arrive during THIS run count against it (see undeliveredReason)
+  const credit0 = creditErrors();
   try {
     const plans = fallbackBlockPlans(idea);
     const roster = blockRoster();
@@ -159,7 +216,10 @@ export async function runV7(projectId: string, idea: string, _research?: Researc
       }),
     );
     await saveBlockResearch(projectId, research);
-    if (!config.mockAi && research.every((r) => !r.ok)) console.warn(`[jobs7] ${projectId} no block research came back; the report is estimates only`);
+    const sourcedBlocks = sourcedBlocksOf(research);
+    // No research at all: not a deliverable report, so fail now (an escrowed payment is refunded) and skip the writer.
+    const early = undeliveredReason({ mock: config.mockAi, sourcedBlocks, fromNotes: false, creditHit: false });
+    if (early) throw new AiUnavailable(projectId, early, await refundPathOf(projectId));
     await update(projectId, (v) => ({ ...v, status: "judging" }));
     // writeReport retries the writer once and falls back to the notes; past the deadline the notes become the report.
     const w: WrittenReport = await withDeadline(writeReport(idea, research, { budget, onNote: writerNoteFor(projectId, t0) }), REPORT_DEADLINE_MS).catch((e) => {
@@ -167,6 +227,10 @@ export async function runV7(projectId: string, idea: string, _research?: Researc
       return { md: "", econ: null, econErr: "report timed out", invalidCites: 0, meta: {}, out: fallbackReport(idea, research), fromNotes: true };
     });
     if (w.fromNotes) console.warn(`[jobs7] ${projectId} report built from the research notes (no model write-up)`);
+    // The AI account ran out of credit during this run and the writer fell back: estimates from the notes are not a
+    // delivered report. The run fails, so an escrowed payment is never released and the watcher refunds it.
+    const late = undeliveredReason({ mock: config.mockAi, sourcedBlocks, fromNotes: !!w.fromNotes, creditHit: creditErrors() > credit0 });
+    if (late) throw new AiUnavailable(projectId, late, await refundPathOf(projectId));
     const a = assembleReport(w.out, research, { t0 });
     const work: AnalystWork[] = roster.map((x) => finishWork({ analyst: x.role, status: "done", findings: a.findings[x.role] ?? [], score: null, headline: a.blocks.find((b) => b.role === x.role)?.takeaway ?? "" }));
     // a negative margin counts against the idea only when it comes from sourced cost lines (evidenceAgainst)

@@ -36,12 +36,29 @@ Object.assign(process.env, {
 });
 delete process.env.ANTHROPIC_API_KEY;
 
+// The AI provider, faked before the app wraps fetch for the brake: every call answers "credit balance is too low".
+// Only the "AI out of credit" test below makes AI calls (with config.mockAi off for that run); nothing leaves the machine.
+const CREDIT = JSON.stringify({ type: "error", error: { type: "invalid_request_error", message: "Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits." } });
+let aiCalls = 0;
+const realFetch = globalThis.fetch;
+globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) => {
+  const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+  if (new URL(url).host === "api.anthropic.com") {
+    aiCalls++;
+    return new Response(CREDIT, { status: 400, headers: { "content-type": "application/json" } });
+  }
+  return realFetch(input, init);
+}) as typeof fetch;
+
 const chain = await import("../server/chain.js");
 const { app } = await import("../server/app.js");
 const { migrate, exec } = await import("../server/db.js");
 const { config } = await import("../server/config.js");
 const { installEscrow } = await import("../server/escrow/install.js");
-const { escrowTick } = await import("../server/escrow/watch.js");
+const { escrowTick, deliveredReport } = await import("../server/escrow/watch.js");
+const { runV7, loadV7, undeliveredReason, sourcedBlocksOf } = await import("../server/jobs-v7.js");
+const { getProject } = await import("../server/db.js");
+const brake = await import("../server/brake.js");
 const { escrowStraySweep } = await import("../server/escrow/service.js");
 await migrate();
 
@@ -248,6 +265,73 @@ test("late report: past the timeout the watcher refunds instead of releasing", a
   await runToDone(id, ownerKey);
   assert.deepEqual(await escrowTick(), { funded: 0, released: 0, refunded: 1 });
   assert.equal((await call("GET", `/api/escrow/${id}/validate`)).json.state, "refunded");
+});
+
+test("delivered or not: the rule that decides whether a finished run may be released", () => {
+  const live = { mock: false, sourcedBlocks: 4, fromNotes: false, creditHit: false };
+  assert.equal(undeliveredReason(live), null, "research and a model write-up: delivered");
+  assert.equal(undeliveredReason({ ...live, sourcedBlocks: 1 }), null, "some research and a model write-up: delivered");
+  assert.equal(undeliveredReason({ ...live, sourcedBlocks: 2, fromNotes: true }), null, "some research, the writer failed for another reason (timeout, 500s): delivered from the notes");
+  assert.equal(undeliveredReason({ ...live, sourcedBlocks: 2, fromNotes: true, creditHit: true }), "no-credit", "the writer fell back because credit ran out during the run");
+  assert.equal(undeliveredReason({ ...live, creditHit: true }), null, "a credit error during research, but the model still wrote it: delivered");
+  assert.equal(undeliveredReason({ ...live, sourcedBlocks: 0 }), "no-research", "zero sources is never released, even if the model wrote it");
+  assert.equal(undeliveredReason({ ...live, sourcedBlocks: 0, fromNotes: true, creditHit: true }), "no-research");
+  assert.equal(undeliveredReason({ ...live, mock: true, sourcedBlocks: 0, fromNotes: true, creditHit: true }), null, "sample runs always deliver");
+});
+
+test("ok blocks with gap-only notes and zero sources count as no research", () => {
+  const gapOnly = { ok: true, cites: [] as string[] };
+  assert.equal(sourcedBlocksOf([gapOnly, gapOnly, gapOnly, gapOnly]), 0, "every block ok but no cites: zero sourced blocks");
+  assert.equal(undeliveredReason({ mock: false, sourcedBlocks: sourcedBlocksOf([gapOnly, gapOnly]), fromNotes: false, creditHit: false }), "no-research", "never released");
+  assert.equal(sourcedBlocksOf([gapOnly, { ok: true, cites: ["https://a.example"] }, { ok: false, cites: [] }]), 1);
+});
+
+test("AI out of credit: the paid report fails, nothing is released, the escrow refunds the customer", async () => {
+  const { id, ownerKey } = await newProject();
+  const q = await realMoney(() => call("POST", `/api/projects/${id}/quote`, { stage: "validate", refundAddress: CUSTOMER }, ownerKey))();
+  const paid = await realMoney(() => call("POST", `/api/projects/${id}/pay`, { stage: "validate", txHex: walletPays(q.json.address, q.json.sats, chain.paymentTag(id, "validate")) }, ownerKey))();
+  assert.equal(paid.status, 200, JSON.stringify(paid.json));
+  // The other validate departments finished, so only the report decides whether the order is delivered.
+  for (const dept of ["mia", "leo", "sam"])
+    await exec("INSERT INTO jobs (project_id, dept, stage, status, queued_at, finished_at) VALUES (?, ?, 'validate', 'done', ?, ?) ON CONFLICT(project_id, dept) DO UPDATE SET status = 'done'", [id, dept, Date.now(), Date.now()]);
+
+  // A real (non-mock) report run whose every AI call answers 400 "credit balance is too low".
+  const key = config.anthropicKey;
+  config.mockAi = false;
+  (config as { anthropicKey: string }).anthropicKey = "test-placeholder-not-a-key";
+  try {
+    await runV7(id, config.sampleIdeas[0]!);
+  } finally {
+    config.mockAi = true;
+    (config as { anthropicKey: string }).anthropicKey = key;
+  }
+  try {
+    assert.ok(aiCalls > 0, "the run did call the (fake) AI");
+    assert.equal(brake.creditOut(), true, "the credit error tripped the brake");
+    assert.ok(brake.creditErrors() > 0, "the credit answers were counted");
+    const v7 = await loadV7(id);
+    assert.equal(v7?.status, "error", "an estimates-only fallback is not a delivered report");
+    assert.match(String(v7?.error), /comes back to your wallet by itself in about an hour/, "the wait comes from this order's own timeout (6 blocks)");
+    const p = (await getProject(id))!;
+    assert.equal(p.status.sam, "done");
+    assert.equal(deliveredReport(p, "validate"), null);
+    assert.equal((await call("GET", `/api/escrow/${id}/validate/report`)).status, 404);
+
+    // The watcher never releases it...
+    assert.deepEqual(await escrowTick(), { funded: 0, released: 0, refunded: 0 });
+    assert.equal((await call("GET", `/api/escrow/${id}/validate`)).json.state, "funded");
+    // ...and once the timeout is past, the existing refund sweep sends the money back.
+    mine(6);
+    await exec("UPDATE escrow_orders SET funded_at = ? WHERE project_id = ?", [Date.now() - 2 * 60 * 60_000, id]);
+    const t = await escrowTick();
+    assert.equal(t.released, 0);
+    assert.equal(t.refunded, 1);
+    const st = (await call("GET", `/api/escrow/${id}/validate`)).json;
+    assert.equal(st.state, "refunded");
+    assert.ok((await mock.getUtxos(CUSTOMER)).some((u) => u.txid === st.refundTxid));
+  } finally {
+    brake._resetBrake(); // the rest of this file takes payments again
+  }
 });
 
 test("watch funding: the wallet paid but the browser never came back to /pay", async () => {

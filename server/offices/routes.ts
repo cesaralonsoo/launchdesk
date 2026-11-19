@@ -9,6 +9,7 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { Hono, type Context } from "hono";
 import { broadcast, checkPaymentTx, RpcError } from "../chain.js";
+import { creditErrors } from "../brake.js";
 import { config, merchantOnMainnet } from "../config.js";
 import { getProject, getProjectRow } from "../db.js";
 import { loadV7 } from "../jobs-v7.js";
@@ -222,18 +223,22 @@ export function officeRoutes(deps: OfficeDeps = defaultOfficeDeps()) {
       txid = checked.txid;
       paidSats = checked.paidSats;
     }
-    if (await store.markPaid(t.id, txid, paidSats)) void work(s, t);
+    if (await store.markPaid(t.id, txid, paidSats)) void work(s, { ...t, txid }); // the paid txid: snag() and the refund log need it
     return c.json(await view(s));
   });
 
   /** Runs in the background; the inbox shows it working, then done (with used vs quoted) or failed (0¢). */
   async function work(s: store.SpaceRow, t: store.TaskRow) {
+    const credit0 = creditErrors(); // only "no credit" answers during THIS task count against it
     try {
       const out = await runTask(t.task, s.brain, t.input, `office:${s.id}`, deps.run);
       await store.finishTask(t.id, { result: out.result, usd: out.usd, usedCents: chargeCents(out.usd, t.quotedCents) });
     } catch (e) {
       console.error(`[offices] ${s.id} ${t.task}: ${(e as Error).message}`);
       await store.failTask(t.id, snag(t));
+    } finally {
+      // Paid directly (no escrow): a run during which the AI ran out of credit is owed back, by hand.
+      if (t.txid && !t.txid.startsWith("test-") && creditErrors() > credit0) console.error(`[refund-needed] office ${s.id} task ${t.id} (${t.task}) paid but AI credit ran out`);
     }
   }
 
