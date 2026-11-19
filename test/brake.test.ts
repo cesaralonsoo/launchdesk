@@ -63,7 +63,26 @@ assert.equal(B.classifyAiError(529), "overload");
 assert.equal(B.classifyAiError(400, '{"error":{"message":"max_tokens is too large"}}'), null, "an ordinary bad request is not a billing problem");
 assert.equal(B.classifyAiError(429), null, "a rate limit is not a billing problem");
 assert.equal(B.classifyAiError(500), null);
-ok("AI errors are classified (credit / key / overload / other)");
+// the console spend limit: no more calls until it is raised, so it counts as "credit"
+const SPEND_LIMIT = JSON.stringify({ type: "error", error: { type: "invalid_request_error", message: "You have reached your specified API usage limits. You will regain access on 2026-12-01 at 00:00 UTC." } });
+assert.equal(B.classifyAiError(400, SPEND_LIMIT), "credit");
+assert.equal(B.classifyAiError(429, SPEND_LIMIT), "credit");
+assert.equal(B.classifyAiError(400, '{"error":{"message":"you have reached your SPECIFIED api USAGE limits"}}'), "credit", "matched case-insensitively");
+assert.equal(B.classifyAiError(429, '{"error":{"type":"rate_limit_error","message":"Temporary usage limit reached, retry in 30 s"}}'), null, "a temporary 'usage limit' is not the console spend limit");
+assert.equal(B.classifyAiError(429, '{"error":{"type":"rate_limit_error","message":"This request would exceed the rate limit for your organization"}}'), null, "an ordinary rate limit is still not a billing problem");
+ok("AI errors are classified (credit / key / spend limit / overload / other)");
+assert.equal(B.creditOut(), false);
+const seen0 = B.creditErrors();
+B.noteAiAnswer(429, '{"error":{"type":"rate_limit_error","message":"rate limit"}}');
+assert.equal(B.creditErrors(), seen0, "a plain rate limit is not counted as a credit error");
+B.noteAiAnswer(400, SPEND_LIMIT);
+assert.equal(B.creditOut(), true);
+assert.equal(B.creditErrors(), seen0 + 1, "each credit answer is counted (runs compare against their start)");
+B.noteAiAnswer(402);
+assert.equal(B.creditErrors(), seen0 + 2, "still counted once the brake is already on");
+assert.equal(await B.brakeReason(), "credit");
+B._resetBrake();
+ok("a spend-limit answer turns the brake on for 'credit'");
 
 // ── 2. not paused: config says so, a quote is given
 assert.equal((await cfg()).paused, false);

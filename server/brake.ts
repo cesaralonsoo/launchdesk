@@ -2,7 +2,7 @@
 //
 // It turns on when:
 //   (a) the AI provider answers with an error that means "no credit / billing / bad key" (400 "credit balance",
-//       402, 401, 403), or with a storm of 529 "overloaded" answers;
+//       400/429 "usage limits" (the console spend limit), 402, 401, 403), or with a storm of 529 "overloaded" answers;
 //   (b) today's recorded AI spend (UTC day, kept in the ai_spend table so a restart remembers it) would pass
 //       DAILY_CAP_USD (default $3) with one more run;
 //   (c) PAUSE=1 is set in the environment (manual switch).
@@ -57,15 +57,31 @@ export function trip(reason: "credit" | "overload", detail = "", now = Date.now(
 export function classifyAiError(status: number, bodyText = ""): "credit" | "overload" | null {
   if (status === 401 || status === 403 || status === 402) return "credit";
   if (status === 400 && /credit balance|billing|purchase credits|plans\s*&\s*billing/i.test(bodyText)) return "credit";
+  // the console spend limit ("You have reached your specified API usage limits. You will regain access on …"): no more
+  // calls until the limit is raised. Anchored to that wording so a temporary 429 that merely says "usage limit" is not.
+  if ((status === 400 || status === 429) && /specified API usage limits|regain access on/i.test(bodyText)) return "credit";
   if (status === 529) return "overload";
   return null;
 }
 
-/** Feeds one AI provider answer (status and, for 400/402, its body) into the brake. */
+/** True once an AI answer said "no credit / spend limit / bad key" (until restart): AI work now falls back to templates. */
+export const creditOut = () => tripped?.reason === "credit";
+
+let creditErrorsSeen = 0;
+/**
+ * How many "no credit / spend limit / bad key" answers this process has seen. A run snapshots it at its start and
+ * compares at its end, so only credit errors DURING that run count against it (a trip left over from before a top-up
+ * without a restart does not fail later runs that worked).
+ */
+export const creditErrors = () => creditErrorsSeen;
+
+/** Feeds one AI provider answer (status and, for 400/402/429, its body) into the brake. */
 export function noteAiAnswer(status: number, bodyText = "", now = Date.now()) {
   const kind = classifyAiError(status, bodyText);
-  if (kind === "credit") trip("credit", `HTTP ${status} ${bodyText}`, now);
-  else if (kind === "overload") {
+  if (kind === "credit") {
+    creditErrorsSeen++;
+    trip("credit", `HTTP ${status} ${bodyText}`, now);
+  } else if (kind === "overload") {
     overloads = overloads.filter((t) => now - t < OVERLOAD_WINDOW_MS);
     overloads.push(now);
     if (overloads.length >= OVERLOAD_MAX) trip("overload", `${overloads.length} overloaded answers in 5 minutes`, now);
@@ -154,7 +170,7 @@ const urlOf = (input: unknown): string => (typeof input === "string" ? input : i
 let installed = false;
 /**
  * Wraps globalThis.fetch once so every AI client (they all use the SDK's default fetch, created lazily) reports its
- * error answers here. Answers from other hosts pass through untouched. The body of a 400/402 is read from a clone.
+ * error answers here. Answers from other hosts pass through untouched. The body of a 400/402/429 is read from a clone.
  */
 export function watchAiFetch(target: { fetch: typeof fetch } = globalThis) {
   if (target === globalThis && installed) return;
@@ -164,7 +180,7 @@ export function watchAiFetch(target: { fetch: typeof fetch } = globalThis) {
     const res = await base(input, init);
     try {
       if (!res.ok && aiHosts().has(new URL(urlOf(input)).host)) {
-        const text = res.status === 400 || res.status === 402 ? await res.clone().text().catch(() => "") : "";
+        const text = res.status === 400 || res.status === 402 || res.status === 429 ? await res.clone().text().catch(() => "") : "";
         noteAiAnswer(res.status, text);
       }
     } catch {
