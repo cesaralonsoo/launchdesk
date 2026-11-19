@@ -71,7 +71,8 @@ export async function loadKit(projectId: string): Promise<Kit | null> {
 export async function saveKit(projectId: string, kit: Kit) {
   await ensureTable();
   await exec(
-    "INSERT INTO kits (project_id, json, updated_at) VALUES (?, ?, ?) ON CONFLICT(project_id) DO UPDATE SET json = excluded.json, updated_at = excluded.updated_at",
+    // A whole-kit save never clears the one-free-redraw flag (a save that loaded the kit before /logo/more claimed it).
+    "INSERT INTO kits (project_id, json, updated_at) VALUES (?, ?, ?) ON CONFLICT(project_id) DO UPDATE SET json = CASE WHEN json_extract(kits.json, '$.logo.moreUsed') = 1 AND json_extract(excluded.json, '$.logo') IS NOT NULL THEN json_set(excluded.json, '$.logo.moreUsed', json('true')) ELSE excluded.json END, updated_at = excluded.updated_at",
     [projectId, JSON.stringify(kit), Date.now()],
   );
 }
@@ -582,9 +583,9 @@ export async function chooseLogo(projectId: string, id: string): Promise<Kit> {
   const kit = await loadKit(projectId);
   if (!kit?.logo) throw new Error("Your logo is not ready yet.");
   if (!kit.logo.options.some((o) => o.id === id)) throw new Error("That logo is not one of your options.");
-  kit.logo.chosen = id;
-  await saveKit(projectId, kit);
-  return kit;
+  // Targeted update: never rewrites the rest of the kit (a redraw adding options, its moreUsed flag).
+  await exec("UPDATE kits SET json = json_set(json, '$.logo.chosen', ?), updated_at = ? WHERE project_id = ?", [id, Date.now(), projectId]);
+  return (await loadKit(projectId)) ?? kit;
 }
 
 export async function chooseTemplate(projectId: string, template: string): Promise<Kit> {
@@ -592,10 +593,12 @@ export async function chooseTemplate(projectId: string, template: string): Promi
   const kit = await loadKit(projectId);
   if (!kit?.site) throw new Error("Your website is not ready yet.");
   if (template === "custom" && kit.site.custom?.status !== "done") throw new Error("Your own design is not ready yet.");
-  kit.site.template = template as SiteTemplate;
-  kit.site.picked = true;
-  await saveKit(projectId, kit);
-  return kit;
+  await exec("UPDATE kits SET json = json_set(json, '$.site.template', ?, '$.site.picked', json('true')), updated_at = ? WHERE project_id = ?", [
+    template,
+    Date.now(),
+    projectId,
+  ]);
+  return (await loadKit(projectId)) ?? kit;
 }
 
 /** Projects whose "Show 3 more" draw is running in this process (a second click gets 409, not a second draw). */

@@ -74,6 +74,8 @@ export async function migrate() {
   await db.execute("CREATE TABLE IF NOT EXISTS qr_amounts (sats INTEGER NOT NULL, project_id TEXT NOT NULL, stage TEXT NOT NULL, issued_at INTEGER NOT NULL)");
   await db.execute("CREATE INDEX IF NOT EXISTS qr_amounts_sats ON qr_amounts(sats, issued_at)");
   await db.execute("CREATE TABLE IF NOT EXISTS qr_seen (txid TEXT PRIMARY KEY, first_seen INTEGER NOT NULL)");
+  await db.execute("CREATE INDEX IF NOT EXISTS qr_amounts_issued ON qr_amounts(issued_at)");
+  await db.execute("CREATE INDEX IF NOT EXISTS qr_seen_first ON qr_seen(first_seen)");
   // v7 (WS-INTEL): the analyst team's results (ResultsV7) and the shared web research they cite, one row per project.
   await db.execute("CREATE TABLE IF NOT EXISTS results_v7 (project_id TEXT PRIMARY KEY, json TEXT NOT NULL, research TEXT, updated_at INTEGER NOT NULL)");
 }

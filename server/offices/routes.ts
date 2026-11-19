@@ -165,7 +165,8 @@ export function officeRoutes(deps: OfficeDeps = defaultOfficeDeps()) {
     const rate = deps.run.mock ? bchUsdCached() : await bchUsdOrZero();
     // A real server never quotes 0 sats: without a live price there is no price (a 0-sat quote would buy AI for free).
     if (!deps.run.mock && !(rate > 0)) throw new OfficeError(503, "Prices are unavailable, try again in a minute.");
-    const sats = rate > 0 ? Math.ceil((def.cents / 100 / rate) * 1e8) : 0;
+    // Never below dust: the pay route needs at least DUST_SATS, so a smaller quote could never be paid.
+    const sats = rate > 0 ? Math.max(DUST_SATS, Math.ceil((def.cents / 100 / rate) * 1e8)) : 0;
     const id = newId(12);
     const expiresAt = Date.now() + QUOTE_MS;
     await store.insertTask({ id, spaceId: s.id, task: def.id, office: def.office, title: def.title, input, quotedCents: def.cents, sats, expiresAt });

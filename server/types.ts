@@ -227,7 +227,7 @@ export type Quote = {
   address: string;
   tag: string;
   expiresAt: number;
-  bip21: string; // F10 "bitcoincash:<merchant>?amount=<bch>"
+  bip21?: string; // F10 "bitcoincash:<merchant>?amount=<bch>"; absent when no unique QR amount is free (wallet only)
   bchUsd: number; // rate used for this quote (receipts)
 };
 

@@ -87,6 +87,8 @@ export function kitRoutes(deps: KitDeps = defaultDeps) {
     if (!p || !paidFor(p, "build")) throw new KitError(402, "The Launch kit is not paid, so no new logos can be drawn.");
     if (config.rateLimit.steer && !allow("kit-more", clientIp(c), config.rateLimit.steer, config.rateLimit.windowMs))
       throw new KitError(429, "Too many requests. Please wait a few minutes.");
+    // While the kit itself is being built it saves the whole kit: a redraw then could be overwritten.
+    if (kitRunning(row.id)) throw new KitError(409, "Your kit is still being made. Try again when it is ready.");
     try {
       return c.json({ kit: await moreLogos(row.id, deps) });
     } catch (e) {

@@ -393,3 +393,136 @@ test("prices: the proto UI formats whatever the server sends", async () => {
   assert.equal(p.centsOf("validate"), 25);
   p.setPrices({ prices: { validate: 10, build: 50 }, officesFromCents: 2 });
 });
+
+// ---- review round 2 ------------------------------------------------------------------------------------------------
+test("QR slots used up: the quote still answers 200, wallet only (no bip21), and the QR watch refuses", async () => {
+  const { id, key } = await project();
+  const base = Math.ceil((0.1 / 400) * 1e8);
+  await db.exec(
+    "WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i + 1 FROM n WHERE i < 9999) INSERT INTO qr_amounts (sats, project_id, stage, issued_at) SELECT ? + i, 'old', 'validate', ? FROM n",
+    [base, Date.now() - 60_000],
+  );
+  try {
+    const q = await noAi(() => call(`/api/projects/${id}/quote`, { stage: "validate" }, key, "10.6.0.1"));
+    assert.equal(q.status, 200, JSON.stringify(q.json));
+    assert.equal(q.json.sats, base, "the wallet price is unchanged");
+    assert.equal(q.json.bip21, undefined, "no plain QR when no unique amount is free");
+    const again = await call(`/api/projects/${id}/quote`, { stage: "validate" }, key, "10.6.0.1");
+    assert.equal(again.status, 200, "a renewed quote is fine too");
+    const w = await noAi(() => call(`/api/projects/${id}/pay`, { stage: "validate", watch: true }, key, "10.6.0.1"));
+    assert.equal(w.status, 400);
+    assert.match(w.json.error, /no QR code/);
+  } finally {
+    await db.exec("DELETE FROM qr_amounts");
+  }
+});
+
+test("QR rows past their window are pruned (qr_amounts after 24 h, qr_seen after 30 days)", async () => {
+  const { pruneQr } = await import("../server/app.js");
+  const now = Date.now();
+  await db.exec("INSERT INTO qr_amounts (sats, project_id, stage, issued_at) VALUES (111, 'old', 'validate', ?), (112, 'new', 'validate', ?)", [now - 25 * 3600_000, now - 60_000]);
+  await db.exec("INSERT INTO qr_seen (txid, first_seen) VALUES ('old-seen', ?), ('new-seen', ?)", [now - 31 * 86400_000, now - 2 * 86400_000]);
+  await pruneQr(now, true);
+  assert.deepEqual((await db.exec("SELECT sats FROM qr_amounts WHERE sats IN (111, 112)")).rows.map((r) => Number(r.sats)), [112]);
+  assert.deepEqual((await db.exec("SELECT txid FROM qr_seen WHERE txid IN ('old-seen', 'new-seen')")).rows.map((r) => String(r.txid)), ["new-seen"]);
+  await db.exec("DELETE FROM qr_amounts");
+});
+
+test("new price quotes are rate-limited per IP (each one reserves a QR slot)", async () => {
+  resetRateLimits();
+  const before = config.rateLimit.quote;
+  config.rateLimit.quote = 2;
+  try {
+    const codes: number[] = [];
+    for (let i = 0; i < 3; i++) {
+      const { id, key } = await project();
+      codes.push((await call(`/api/projects/${id}/quote`, { stage: "validate" }, key, "10.7.0.1")).status);
+    }
+    assert.deepEqual(codes, [200, 200, 429]);
+    const { id, key } = await project();
+    assert.equal((await call(`/api/projects/${id}/quote`, { stage: "validate" }, key, "10.7.0.2")).status, 200, "another IP is not limited");
+  } finally {
+    config.rateLimit.quote = before;
+    resetRateLimits();
+    await db.exec("DELETE FROM qr_amounts");
+  }
+});
+
+test("project quote is never below dust either", async () => {
+  const { id, key } = await project();
+  config.fixedBchUsd = 100_000; // 10¢ = 100 sats at this price
+  try {
+    const q = await noAi(() => call(`/api/projects/${id}/quote`, { stage: "validate" }, key, "10.6.1.1"));
+    assert.equal(q.status, 200, JSON.stringify(q.json));
+    assert.equal(q.json.sats, 546);
+  } finally {
+    config.fixedBchUsd = 400;
+    await db.exec("DELETE FROM qr_amounts");
+  }
+});
+
+test("office quote is never below dust (a 2¢ task at a high BCH price can still be paid)", async () => {
+  const b = await call("/api/offices/bring", { what: "A small bakery in Ruzafa, Valencia", where: "Valencia" });
+  const { view, key } = b.json;
+  config.fixedBchUsd = 100_000; // 2¢ = 20 sats at this price
+  try {
+    const q = await noAi(() => call(`/api/offices/${view.id}/tasks`, { task: "replies", input: "Do you open on Sundays?" }, key));
+    assert.equal(q.status, 200, JSON.stringify(q.json));
+    assert.equal(q.json.quote.cents, 2);
+    assert.equal(q.json.quote.sats, 546);
+  } finally {
+    config.fixedBchUsd = 400;
+  }
+});
+
+test("run cap: a start already being set up (escrow watcher) is not counted again by the client's /run", async () => {
+  resetRateLimits();
+  const { id, key } = await project({ stage: "validate" });
+  const { reserveStart } = await import("../server/jobs.js");
+  const release = reserveStart(id, "validate");
+  assert.ok(release, "the watcher holds the start");
+  try {
+    assert.equal(reserveStart(id, "validate"), null, "nobody else can start it meanwhile");
+    const r = await noAi(() => call(`/api/projects/${id}/run`, { stage: "validate" }, key, "10.8.0.1"));
+    assert.equal(r.status, 200);
+    const runs = await db.exec("SELECT runs FROM payments WHERE project_id = ?", [id]);
+    assert.equal(Number(runs.rows[0]!.runs), 0, "the /run did not claim a second run");
+  } finally {
+    release!();
+  }
+  resetRateLimits();
+});
+
+test("moreUsed survives a whole-kit save that loaded the kit before the claim, and choosing a logo or design", async () => {
+  const { id } = await kitProject();
+  const stale = (await kit.loadKit(id))!; // loaded before the redraw was claimed
+  await db.exec("UPDATE kits SET json = json_set(json, '$.logo.moreUsed', json('true')) WHERE project_id = ?", [id]);
+  stale.status.marketing = "done";
+  await kit.saveKit(id, stale);
+  assert.equal((await kit.loadKit(id))!.logo!.moreUsed, true, "a stale save never clears the flag");
+  const k = await kit.chooseLogo(id, "b");
+  assert.equal(k.logo!.chosen, "b");
+  assert.equal(k.logo!.moreUsed, true);
+  assert.equal(k.logo!.options.length, 3);
+});
+
+test("logo/more while the kit itself is still being made -> 409, no draw", async () => {
+  const { id, key } = await kitProject();
+  await db.exec("UPDATE kits SET json = json_set(json, '$.status.marketing', 'working') WHERE project_id = ?", [id]);
+  let open!: () => void;
+  const gate = new Promise<void>((r) => (open = r));
+  let draws = 0;
+  const hang = new Proxy({}, { get: () => async () => (await gate, Promise.reject(new Error("stub dep"))) });
+  const running = kit.runKit(id, hang as never).catch(() => null);
+  assert.equal(kit.kitRunning(id), true);
+  const routes = kitRoutes({ ...kit.defaultDeps, logos: async () => (draws++, []) } as never);
+  resetRateLimits();
+  const r = await noAi(() => routes.request(`http://example.test/api/projects/${id}/kit/logo/more`, { method: "POST", headers: H(key, "10.9.0.1"), body: "{}" }));
+  assert.equal(r.status, 409);
+  assert.match(((await r.json()) as { error: string }).error, /still being made/);
+  assert.equal(draws, 0);
+  assert.equal((await kit.loadKit(id))!.logo!.moreUsed, undefined, "nothing was claimed");
+  open();
+  await running;
+  resetRateLimits();
+});

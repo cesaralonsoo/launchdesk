@@ -12,7 +12,7 @@ import { REPORT_CAP_USD } from "./cost.js";
 import { getTask } from "./offices/store.js";
 import { claimStageRun, exec, getProject, getProjectRow, paidFor, stageDone, type ProjectRow } from "./db.js";
 import * as jobs from "./jobs.js";
-import { isRunning, prepareStage, startStage } from "./jobs.js";
+import { isRunning, prepareStage, reserveStart, startStage } from "./jobs.js";
 import { SteerError, startSteer } from "./jobs-v7.js";
 import { ANALYST_ROLES, type AnalystRole } from "./v7.js";
 import { bchUsdCached, bchUsdOrZero, centsToSats } from "./price.js";
@@ -225,14 +225,17 @@ async function loadForStage(id: string, stage: unknown) {
   return { p, stage };
 }
 
+/** BCH dust limit: no quote asks for less (an output below it cannot be broadcast). */
+const DUST_SATS = 546;
 /** F10: no QR amount is handed out twice within this window (a late payment can only ever match its own quote). */
 const QR_REUSE_MS = 24 * 60 * 60_000;
 /**
  * F10: a sat suffix (1–999, then up to 9999 if those are all taken) that no quote got in the last 24 h, so a plain QR
  * payment can be matched by its exact amount to exactly one quote. Recorded at once in qr_amounts.
  */
-async function uniqueQrSats(base: number, projectId: string, stage: Stage): Promise<number> {
+async function uniqueQrSats(base: number, projectId: string, stage: Stage): Promise<number | null> {
   const now = Date.now();
+  await pruneQr(now);
   const recent = await exec("SELECT sats FROM qr_amounts WHERE issued_at > ? AND sats BETWEEN ? AND ?", [now - QR_REUSE_MS, base + 1, base + 9999]);
   const used = new Set(recent.rows.map((r) => Number(r.sats)));
   for (const span of [999, 9999]) {
@@ -243,7 +246,18 @@ async function uniqueQrSats(base: number, projectId: string, stage: Stage): Prom
     await exec("INSERT INTO qr_amounts (sats, project_id, stage, issued_at) VALUES (?, ?, ?, ?)", [v, projectId, stage, now]);
     return v;
   }
-  throw new ApiError(503, "Too many open payments right now, try again in a minute.");
+  // Every slot near this amount is taken: no plain QR for this quote (the wallet path still works). Never fail the quote.
+  return null;
+}
+/** qr_seen keeps a longer memory than the 24 h reuse window, so an old payment is never "first seen" again as new. */
+const QR_SEEN_KEEP_MS = 30 * 24 * 60 * 60_000;
+let qrPrunedAt = 0;
+/** Drops qr_amounts rows past the reuse window and old qr_seen rows (at most once an hour per process). */
+export async function pruneQr(now = Date.now(), force = false) {
+  if (!force && now - qrPrunedAt < 60 * 60_000) return;
+  qrPrunedAt = now;
+  await exec("DELETE FROM qr_amounts WHERE issued_at <= ?", [now - QR_REUSE_MS]);
+  await exec("DELETE FROM qr_seen WHERE first_seen <= ?", [now - QR_SEEN_KEEP_MS]);
 }
 /** F10: when this server first saw `txid` paying the merchant address (recorded on the first sighting). */
 async function firstSeen(txid: string): Promise<number> {
@@ -268,20 +282,24 @@ app.post("/api/projects/:id/quote", async (c) => {
   let sats: number;
   let expiresAt: number;
   let rate: number;
-  let qrSats: number;
+  let qrSats: number | null;
   const row = q.rows[0];
   if (row && Number(row.expires_at) > now + 60_000) {
     sats = Number(row.sats);
     expiresAt = Number(row.expires_at);
     rate = row.bch_usd == null ? await bchUsdOrZero() : Number(row.bch_usd);
     qrSats = row.qr_sats == null ? await uniqueQrSats(sats, p.id, stage) : Number(row.qr_sats);
-    if (row.qr_sats == null || row.bch_usd == null)
+    if ((row.qr_sats == null && qrSats != null) || row.bch_usd == null)
       await exec("UPDATE quotes SET bch_usd = ?, qr_sats = ? WHERE project_id = ? AND stage = ?", [rate || null, qrSats, p.id, stage]);
   } else {
     rate = await bchUsdOrZero();
     // No live price, no quote: never a 0 or stale-guess amount that could buy a run for nothing.
     if (!(rate > 0)) throw new ApiError(503, "Prices are unavailable, try again in a minute.");
-    sats = await centsToSats(config.priceCents[stage]);
+    // Each new quote row reserves a QR amount slot for 24 h: cap how fast one visitor can take them.
+    if (!allow("quote", clientIp(c), config.rateLimit.quote, config.rateLimit.windowMs))
+      throw new ApiError(429, "That is a lot of price quotes in a few minutes. Please wait a little and try again.");
+    // Never below the BCH dust limit: a smaller output cannot be broadcast, so that price could never be paid.
+    sats = Math.max(DUST_SATS, await centsToSats(config.priceCents[stage]));
     qrSats = await uniqueQrSats(sats, p.id, stage);
     expiresAt = now + QUOTE_MS;
     await exec("INSERT OR REPLACE INTO quotes (project_id, stage, sats, expires_at, bch_usd, qr_sats) VALUES (?, ?, ?, ?, ?, ?)", [
@@ -301,7 +319,7 @@ app.post("/api/projects/:id/quote", async (c) => {
     tag: paymentTag(p.id, stage),
     expiresAt,
     // F10: the plain QR asks for a unique amount (sats + 1–999) so the server can match it without an OP_RETURN tag.
-    bip21: bip21(qrSats),
+    ...(qrSats != null ? { bip21: bip21(qrSats) } : {}),
     bchUsd: rate,
   };
   return c.json(quote);
@@ -339,7 +357,8 @@ app.post("/api/projects/:id/pay", async (c) => {
       assertPayable();
       const q = await exec("SELECT qr_sats, expires_at FROM quotes WHERE project_id = ? AND stage = ?", [p.id, stage]);
       const row = q.rows[0];
-      if (!row || row.qr_sats == null) throw new ApiError(400, "Get a price quote first");
+      if (!row) throw new ApiError(400, "Get a price quote first");
+      if (row.qr_sats == null) throw new ApiError(400, "This price has no QR code. Pay from a connected wallet, or get a new price in a minute.");
       if (Number(row.expires_at) < Date.now() - 5 * 60_000) throw new ApiError(400, "The price quote expired. Please try again.");
       let found: { txid: string; sats: number } | null;
       try {
@@ -407,10 +426,15 @@ app.post("/api/projects/:id/run", async (c) => {
   assertWritable(row);
   assertOwner(c, row, false);
   assertPaid(p, stage);
-  if (!stageDone(p, stage) && !isRunning(p.id, stage)) {
-    await claimRun(c, p, stage);
-    await prepareStage(p.id, stage);
-    void startStage(p.id, stage);
+  const release = !stageDone(p, stage) ? reserveStart(p.id, stage) : null;
+  if (release) {
+    try {
+      await claimRun(c, p, stage);
+      await prepareStage(p.id, stage);
+      void startStage(p.id, stage);
+    } finally {
+      release();
+    }
   }
   return c.json({ ok: true as const });
 });
@@ -502,12 +526,21 @@ app.post("/api/projects/:id/retry", async (c) => {
   const stage = deptStage(d);
   assertPaid(p, stage);
   if (p.status[d] !== "error") return c.json({ ok: true as const });
-  await claimRun(c, p, stage);
-  if (jobsExtra.retryDept) await jobsExtra.retryDept(p.id, d);
-  else if (!isRunning(p.id, stage)) {
+  if (jobsExtra.retryDept) {
+    await claimRun(c, p, stage);
+    await jobsExtra.retryDept(p.id, d);
+  } else {
     // Until jobs.retryDept lands: re-queue the failed department and run the stage on from there (free).
-    await prepareStage(p.id, stage);
-    void startStage(p.id, stage);
+    const release = reserveStart(p.id, stage);
+    if (release) {
+      try {
+        await claimRun(c, p, stage);
+        await prepareStage(p.id, stage);
+        void startStage(p.id, stage);
+      } finally {
+        release();
+      }
+    }
   }
   return c.json({ ok: true as const });
 });

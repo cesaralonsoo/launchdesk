@@ -52,7 +52,7 @@ export const config = {
    */
   ownerKeyStrict: env.OWNER_KEY_STRICT === "1",
   /** Per IP: new projects, CEO notes and run/retry starts allowed per 10 minutes (0 = no limit). */
-  rateLimit: { create: int(env.RATE_LIMIT_CREATE, 12), steer: int(env.RATE_LIMIT_STEER, 8), run: int(env.RATE_LIMIT_RUN, 10), windowMs: 10 * 60_000 },
+  rateLimit: { create: int(env.RATE_LIMIT_CREATE, 12), steer: int(env.RATE_LIMIT_STEER, 8), run: int(env.RATE_LIMIT_RUN, 10), quote: int(env.RATE_LIMIT_QUOTE, 40), windowMs: 10 * 60_000 },
   /**
    * R1: how many proxies append to X-Forwarded-For in front of us. The visitor is that many entries from the right.
    * Default: 2 in production (Render's edge, plus room for its CDN hop; a shorter header clamps to its first entry),

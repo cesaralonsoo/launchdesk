@@ -161,6 +161,7 @@ Set in `render.yaml` (change them in Render's Environment tab if needed):
 | `TRUST_PROXY_SKIP_PRIVATE` | on in production | Drop private (internal) addresses from `X-Forwarded-For` first |
 | `PRICE_VALIDATE_CENTS`, `PRICE_BUILD_CENTS` | `10`, `50` | The report and Launch kit prices, in US cents. Every quote and every price on the home page and in the app follow them (the page gets them from the server and `/api/config`); office task prices come from `server/offices/catalog.ts` |
 | `RATE_LIMIT_RUN` | `10` | Per visitor: run or retry starts allowed per 10 minutes. Each paid step runs at most 3 times in all (first run plus retries) |
+| `RATE_LIMIT_QUOTE` | `40` | Per visitor: new price quotes allowed per 10 minutes (each one reserves a unique QR amount for 24 h) |
 
 To check a production build locally:
 
