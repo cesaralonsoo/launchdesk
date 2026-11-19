@@ -10,7 +10,7 @@ import { I } from "./icons";
 import { usd } from "./view";
 import { OFFICES_EVENT } from "../game/types";
 import "./kit-screen.css";
-import { priceText } from "../prices";
+import { launchNoteHtml, priceText } from "../prices";
 
 export type KitPayload = { kit: Kit | null; slug: string | null; siteUrl: string | null; running: boolean };
 export type KitScreenOpts = {
@@ -52,6 +52,7 @@ export function kitOfferHtml(cents = 50, sample = false): string {
       <li>${I.report(18)}<span><b>Your 30-day plan</b>What to do each week to win your first customers, with posts ready to copy.</span></li>
     </ul>
     <button class="btn btn-primary ko-go" data-act="next" type="button" data-st><span>Get my launch kit</span><span class="btn-price">${usd(cents)}</span></button>
+    ${launchNoteHtml("ko-launch")}
     <p class="ko-foot" data-st>${sample ? "Sample run · nothing is charged." : "Paid in Bitcoin Cash from your wallet."}</p>
   </section>`;
 }

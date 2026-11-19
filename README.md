@@ -3,8 +3,8 @@
 **Your startup team, for pennies.**
 
 Pitch your idea. A team of AI specialists checks it against real sources, then makes a logo, a live website and a
-30-day launch plan. You pay a few cents of Bitcoin Cash for each step, and the 10¢ report is held in a contract until
-it is delivered.
+30-day launch plan. You pay a small amount of Bitcoin Cash for each step (BCH BLAZE launch price until 30 Nov 2026:
+10¢ for the report, 50¢ for the launch kit), and the report payment is held in a contract until it is delivered.
 
 Built for **BCH BLAZE 2026** (Mainnet track).
 
@@ -32,13 +32,13 @@ WizardConnect, for a coffee kiosk idea in Barcelona.
 0. No wallet? Open https://launchdesk-bch.onrender.com and tap **"See a finished example"** under the idea box. It opens a real run (a coffee kiosk in
    Barcelona, paid 10¢ on mainnet) on its report, the proof panel and its launch kit, in about 5 seconds.
 1. Open the demo at https://launchdesk-bch.onrender.com and type a business idea.
-2. Pay **10¢** from a WizardConnect wallet (Selene, Cashonize, Paytaca). The money goes into a contract for this
+2. Pay **10¢** (launch price until 30 Nov 2026, then $1; see [Prices](#prices)) from a WizardConnect wallet (Selene, Cashonize, Paytaca). The money goes into a contract for this
    order only. It is held there, not paid to us yet.
 3. The team writes the report while you watch, with real source links. A full run took 78–102 seconds in our live
    tests.
 4. When the report is ready, the server releases the payment and writes the report's fingerprint on chain. The
    **"Proof on Bitcoin Cash"** panel links to the transaction and has a **"Check it"** button.
-5. Optional: the **50¢ launch kit** (logo options, a live website, a 30-day plan). This one is a plain payment, not
+5. Optional: the **50¢ launch kit** (launch price until 30 Nov 2026, then $5) (logo options, a live website, a 30-day plan). This one is a plain payment, not
    escrow.
 
 If no report arrives, the contract lets anyone send the money back to the paying wallet about one hour (6 blocks)
@@ -69,9 +69,9 @@ merchant with the report fingerprint on chain, or back to the customer after the
 
 `npm test` runs everything offline in mock mode. It needs no API key and makes no network calls.
 
-- **61 escrow tests.** Every transaction is checked by the real BCH virtual machine (libauth, through CashScript's
+- **62 escrow tests.** Every transaction is checked by the real BCH virtual machine (libauth, through CashScript's
   `MockNetworkProvider`):
-  - `test/escrow.test.ts`: 14 tests of the normal paths and the main rejections;
+  - `test/escrow.test.ts`: 15 tests of the normal paths and the main rejections, plus a $5-sized order;
   - `test/escrow-flow.test.ts`: 6 end-to-end tests through the real app: quote, pay, run, release, refund drill, and a
     re-quote by someone who is not the owner (refused);
   - `test/escrow-attacks.test.ts`: 41 named attacks and controls. They include paying the wrong address, a forged or
@@ -80,6 +80,9 @@ merchant with the report fingerprint on chain, or back to the customer after the
 - **Mutation check (`npm run mutate`).** `scripts/mutate-contract.mjs` removes each of the contract's 15 `require`
   lines in turn, recompiles it with cashc, and runs the attack tests against that weaker contract, in a temporary
   copy (the repo is never changed). It prints a table: 15 of 15 mutants are caught by at least one attack test.
+- **Prices (`test/pricing.test.ts`):** the launch-price switch by date (with an injected clock), `/api/config`, quotes
+  before and after the switch (an open quote keeps its amount), the home page note and the price formatting (10¢,
+  50¢, $1, $5).
 - **Other areas:** payments, report schema, the mock flow, rate limits, launch kit, verdicts, offices and the website
   generator (37 `node:test` cases in `test/site*.test.ts`, plus script-style checks).
 
@@ -102,6 +105,27 @@ node_modules/.bin/tsx --test test/escrow-attacks.test.ts
 - The AI is Anthropic's Claude. With `MOCK_AI=1`, or with no key, the app runs on sample data and payments are
   turned off.
 
+## Prices
+
+| Step | BCH BLAZE launch price, until 30 Nov 2026 23:59:59 (Madrid) | Regular price, from 1 Dec 2026 |
+|---|---|---|
+| Research report | 10¢ | $1 |
+| Launch kit (logo, website, 30-day plan) | 50¢ | $5 |
+| Office tasks | from 2¢, priced per task (`server/offices/catalog.ts`) | unchanged |
+
+- Every price comes from the server config (`PRICE_*` and `LAUNCH_PRICE_UNTIL`, see [Deploy](#deploy-render--turso)). One
+  function, `server/pricing.ts`, decides the price of each step at the moment of the request, so the switch at midnight
+  needs no restart or redeploy. Quotes, escrow orders, recorded payments, the home page and the app all use it.
+- A price quote already issued keeps its amount for its 15 minutes, even across the switch: the wallet is never asked
+  for a different amount than the one it was shown.
+- `GET /api/config` returns `prices` (today's), `regularPrices`, `launchPrice` (true while the launch price applies)
+  and `launchPriceUntil`.
+- While the launch price applies, the app shows one short line next to the report and kit prices: "BLAZE launch price ·
+  from 1 Dec: $1 report · $5 kit". After it, that line disappears and the regular prices show.
+- The AI spend caps do not change with the price (`REPORT_CAP_USD`, `KIT_SPEND_CAP_CENTS` = 45¢): every step costs us
+  less in AI than it is sold for, at the launch price and after it. The escrow contract has no upper limit on the
+  amount, so a $1 order works like a 10¢ one.
+
 ## Payments (without escrow)
 
 - The browser builds the transaction from the wallet's coins, and the wallet signs it over WizardConnect.
@@ -109,7 +133,7 @@ node_modules/.bin/tsx --test test/escrow-attacks.test.ts
   one order.
 - The server decodes it, checks the amount and the tag, broadcasts it, and only then runs the AI. Each transaction can
   be used once.
-- With `ESCROW=1` (server) and `VITE_ESCROW=1` (browser build), the 10¢ report is paid into the escrow contract
+- With `ESCROW=1` (server) and `VITE_ESCROW=1` (browser build), the report payment is made into the escrow contract
   instead. Both flags must be on together.
 
 ## Run locally
@@ -159,7 +183,9 @@ Set in `render.yaml` (change them in Render's Environment tab if needed):
 | `PAUSE` | unset | Set to `1` to pause new paid runs at once. Sample runs and the finished examples keep working |
 | `TRUST_PROXY_HOPS` | `2` in production | How many proxy hops (Render's edge) to skip in `X-Forwarded-For` when finding the visitor for rate limits |
 | `TRUST_PROXY_SKIP_PRIVATE` | on in production | Drop private (internal) addresses from `X-Forwarded-For` first |
-| `PRICE_VALIDATE_CENTS`, `PRICE_BUILD_CENTS` | `10`, `50` | The report and Launch kit prices, in US cents. Every quote and every price on the home page and in the app follow them (the page gets them from the server and `/api/config`); office task prices come from `server/offices/catalog.ts` |
+| `PRICE_VALIDATE_CENTS`, `PRICE_BUILD_CENTS` | `10`, `50` | The BCH BLAZE launch prices of the report and the Launch kit, in US cents, charged until `LAUNCH_PRICE_UNTIL`. Every quote and every price on the home page and in the app follow the price of the day (the page gets it from the server and `/api/config`); office task prices come from `server/offices/catalog.ts` |
+| `PRICE_VALIDATE_REGULAR_CENTS`, `PRICE_BUILD_REGULAR_CENTS` | `100`, `500` | The regular prices ($1 report, $5 kit), charged from the second after `LAUNCH_PRICE_UNTIL` |
+| `LAUNCH_PRICE_UNTIL` | `2026-11-30T23:59:59+01:00` | Last second of the launch price (ISO 8601 with an offset). No restart is needed when it passes |
 | `RATE_LIMIT_RUN` | `10` | Per visitor: run or retry starts allowed per 10 minutes. Each paid step runs at most 3 times in all (first run plus retries) |
 | `RATE_LIMIT_QUOTE` | `40` | Per visitor: new price quotes allowed per 10 minutes (each one reserves a unique QR amount for 24 h) |
 

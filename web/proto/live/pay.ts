@@ -9,7 +9,7 @@ import type { AppConfig, Quote, Stage } from "../../src/types";
 import { cancelPairing, newPairing, onWallet, pair, payWithWallet, receiveAddress, resume, walletName, walletState } from "../../src/wallet";
 import { esc } from "../ui/dom";
 import { ownerKey } from "../../src/app/projects";
-import { centsOf } from "../prices";
+import { centsOf, launchNoteHtml } from "../prices";
 
 /**
  * VITE_ESCROW=1 (default off): "Pay only if it delivers". The wallet pays a per-order safe address (a Bitcoin Cash
@@ -81,6 +81,7 @@ export function livePayHtml(stage: Stage, cents: number, avatars: string, title:
   <section class="pay pay-live">
     <header class="pay-top" data-st><span class="pay-merchant">${merchant}<b>LaunchDesk</b></span><span class="tag${mock ? " tag-demo" : ""}">${mock ? "Sample data" : "Bitcoin Cash · mainnet"}</span></header>
     <div class="pay-amount" data-st><b class="huge">${usd(cents)}</b><span class="pl-sats">in Bitcoin Cash</span></div>
+    ${launchNoteHtml("pay-launch")}
     <div class="pay-line" data-st><div class="pay-avs">${avatars}</div><div><b>${esc(title)}</b><span>${esc(line)}</span></div></div>
     <div class="pl-slot" data-st aria-live="polite"></div>
     <p class="pay-foot pl-foot" data-st>${mock ? "This server runs sample AI data. Nothing is charged." : heldInContract(stage) ? "Your payment waits in a Bitcoin Cash contract. If the report isn't delivered, it comes back to you about an hour after your payment confirms (6 blocks)." : stage === "validate" ? "You get a report. Building is a second step." : ESCROW ? "Paid from your wallet straight to LaunchDesk (not held in a contract). LaunchDesk never holds your keys." : "Paid from your wallet. LaunchDesk never holds your keys."}</p>
@@ -210,6 +211,9 @@ export function mountPay(root: HTMLElement, d: PayDeps): () => void {
     ctl?.abort();
     ctl = new AbortController();
     const q = quote;
+    // A quote keeps the price it was made at (server/pricing.ts): the card shows what the wallet is asked for.
+    const amt = root.querySelector<HTMLElement>(".pay-amount .huge");
+    if (amt && q.cents > 0 && amt.textContent !== usd(q.cents)) amt.textContent = usd(q.cents);
     try {
       const signing = payWithWallet(q.address, q.sats, q.tag, `LaunchDesk · ${d.stage === "validate" ? "Validate" : "Build"} · ${usd(q.cents)}`, ctl.signal);
       const timeout = new Promise<never>((_, ko) => later(() => ko(new Error("No answer from your wallet")), WALLET_TIMEOUT_MS));

@@ -17,7 +17,7 @@ import { centsLabel, OFFICE_IDS, OFFICE_NAME, STAGE_NAME, VERDICT_LABEL, type Ga
 import { createGameStore } from "./store";
 import { OFFICES_EVENT, type OfficeId, type OfficesOpenDetail, type Stage } from "./types";
 import "./hud.css";
-import { priceHtml, priceText } from "../prices";
+import { launchNoteHtml, priceHtml, priceText } from "../prices";
 
 export interface HudDeps {
   world: WorldV7 & WorldV8;
@@ -70,7 +70,10 @@ export function mountHud(host: HTMLElement, deps: HudDeps): () => void {
   const nextHtml = (g: GameState) => {
     const live = g.next.act === "offices" || g.next.act === "new" || g.next.act === "campus";
     const body = `<span class="hud-next-t"><em>Next:</em> ${esc(g.next.text)} · <span class="hud-price">${esc(g.next.price)}</span></span>${live ? I.arrow(14) : ""}`;
-    return live ? `<button type="button" class="hud-next" data-hud="next">${body}</button>` : `<p class="hud-next">${body}</p>`;
+    // The report or kit price is on show: the BLAZE launch-price line goes under it while the window is open.
+    const priced = g.next.price === priceText("validate") || g.next.price === priceText("build");
+    const note = priced ? launchNoteHtml("hud-launch") : "";
+    return (live ? `<button type="button" class="hud-next" data-hud="next">${body}</button>` : `<p class="hud-next">${body}</p>`) + note;
   };
   const roomsOfStage = (g: GameState): RoomInfo[] => {
     const st = g.stage ?? "research";

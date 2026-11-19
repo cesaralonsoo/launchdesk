@@ -18,7 +18,7 @@ import { exampleName, knownExamples, mainExample, pausedHtml } from "./example";
 import { fullSentences, leadLine, plainText, verdictWhy, VERDICT_RULE_V7 } from "../../../server/v7";
 import { OFFICES } from "../../../server/offices/catalog";
 import { projects as savedRuns } from "../../src/app/projects";
-import { centsOf, priceHtml, priceText } from "../prices";
+import { centsOf, launchNoteHtml, priceHtml, priceText } from "../prices";
 
 /** The 90-second tour's own accounting of the kit (flow/index.ts PAID_ALL). Shown prices come from ../prices. */
 export const KIT_CENTS = 50;
@@ -68,7 +68,7 @@ export function ideaHtml(placeholder: string, value: string, end = false, paused
       <textarea name="idea" rows="2" maxlength="280" placeholder="e.g. A coffee kiosk at a Barcelona metro exit, €3 flat whites" aria-label="Your idea">${esc(value)}</textarea>
       <button type="button" class="idea-try" data-act="try-idea">Try an example</button>
       <button class="btn btn-primary btn-go" type="submit"><span>Check my idea</span><span class="btn-price">${priceHtml("validate")}</span></button>
-    </div>`}
+    </div>${launchNoteHtml("v-launch")}`}
     <div class="v-alt" data-st>
       <button type="button" class="v-link" data-act="example"><b>See a finished company</b>${I.arrow(13)}<em>free · no wallet</em></button>
       <button type="button" class="v-link" data-act="tour"><span aria-hidden="true" class="v-play">▶</span><span>90-second tour</span></button>
@@ -86,6 +86,7 @@ export function payHtml(f: ProtoFlowV7, stage: 1 | 2, customIdea: boolean): stri
   <section class="pay">
     <header class="pay-top" data-st><span class="pay-merchant">${ldMark(18, undefined, true)}<b>LaunchDesk</b></span><span class="tag tag-demo">Sample · no payment</span></header>
     <div class="pay-amount" data-st><b class="huge">${usd(cents)}</b><span>in Bitcoin Cash</span></div>
+    ${launchNoteHtml("pay-launch")}
     <div class="pay-line" data-st><div class="pay-avs">${avs}</div><div><b>${title}</b><span>${esc(line)}</span></div></div>
     <button class="btn btn-primary btn-pay" data-act="approve" type="button" data-st${f.paidCents >= (stage === 1 ? 10 : 10 + KIT_CENTS) /* flow/index.ts PAID_ALL = validate + kit */ ? ' data-state="done"' : ""}>
       <span class="b-lbl">Approve</span><span class="spin" aria-hidden="true"></span>
@@ -420,7 +421,7 @@ export function officesFloorHtml(f: ProtoFlowV7, brand: string): string {
       return `<li><b>${esc(o.name)}</b><span>${esc(o.tasks.map((t) => t.title).join(" · "))}</span><em class="num">${o.tasks.length > 1 ? "from " : ""}${min}¢</em></li>`;
     }).join("")}</ul>
     ${f.demo ? "" : sample
-      ? `<footer class="rp-acts" data-st><button class="btn btn-primary" data-act="new" type="button"><span>Check your own idea</span><span class="btn-price">${priceHtml("validate")}</span></button></footer>`
+      ? `<footer class="rp-acts" data-st><button class="btn btn-primary" data-act="new" type="button"><span>Check your own idea</span><span class="btn-price">${priceHtml("validate")}</span></button></footer>${launchNoteHtml("rp-launch")}`
       : `<footer class="rp-acts" data-st><button class="btn btn-primary" data-act="open-offices" type="button"><span>Open the offices</span>${I.arrow(16)}</button></footer>`}
   </section>`;
 }
@@ -435,6 +436,7 @@ export function campusHtml(f: ProtoFlowV7): string {
       <p class="v-lede">One building per idea. Open one to go inside.</p></header>
     ${companiesList(f)}
     <footer class="rp-acts"><button class="btn btn-primary" data-act="new" type="button"><span>Check your next idea</span><span class="btn-price">${priceHtml("validate")}</span></button></footer>
+    ${launchNoteHtml("rp-launch")}
   </section>`;
 }
 
@@ -475,6 +477,7 @@ export function recapHtml(): string {
       <li><i class="st-dot" style="--c:${STAGES[1].c}">2</i><span><b>A launch kit</b>${priceHtml("build")} for a logo, a live website and a 30-day plan</span></li>
       <li><i class="st-dot" style="--c:${STAGES[2].c}">3</i><span><b>An office task</b>${priceHtml("offices")}, priced before it runs</span></li>
     </ol>
+    ${launchNoteHtml("rp-launch recap-launch")}
     <footer class="rp-acts" data-st>
       <button class="btn btn-primary" data-act="new" type="button"><span>Check my idea</span><span class="btn-price">${priceHtml("validate")}</span></button>
       <button class="btn btn-ghost" data-act="replay" type="button">${I.replay(15)}<span>Replay</span></button>

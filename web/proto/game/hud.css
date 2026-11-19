@@ -714,3 +714,17 @@ html.ld-reading .hud.phone:not([data-open="1"]) .hud-pill {
 html[data-ld-wide="1"] .gp-layer {
   display: none;
 }
+
+/* the BLAZE launch-price line under "Next" when it shows the report or kit price (web/proto/prices.ts launchNote) */
+.launch-note.hud-launch {
+  margin: 4px 0 0;
+  padding-left: 12px;
+  text-indent: -12px;
+  font-size: 11px;
+  line-height: 15px;
+  color: var(--hud-muted);
+  text-align: left;
+}
+.launch-note.hud-launch::before {
+  background: var(--hud-green, #0ac18e);
+}

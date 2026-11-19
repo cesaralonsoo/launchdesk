@@ -401,3 +401,18 @@ html.home .ui.v7 > :not(.overlay) { display: none !important; }
   .h-chip { right: 20px; bottom: 14px; }
   .h-cue { display: none; }
 }
+
+/* BCH BLAZE launch price (server/pricing.ts, web/proto/prices.ts launchNote): one quiet line under the price it
+   qualifies while the window is open; hidden (and empty) after it. Never a strike-through: the regular price has not
+   been charged yet. */
+.h-launch { margin: 10px 2px 0; font-size: 12.5px; line-height: 18px; color: var(--muted); font-feature-settings: "tnum"; text-wrap: balance; }
+.h-launch::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--bch); margin-right: 7px; vertical-align: 1.5px; }
+.h-launch:not([hidden]) + .h-links { margin-top: 12px; }
+.h-lede .h-launch { display: block; margin: 10px 0 0; font-size: 13px; }
+.h-start .h-launch { margin-top: 12px; }
+[data-launch-note][hidden] { display: none !important; }
+[data-launch-note] > span { white-space: nowrap; }
+@media (max-width: 767px) {
+  .h-launch { font-size: 12px; margin-top: 9px; letter-spacing: -.01em; }
+  .h-lede .h-launch { font-size: 12.5px; }
+}

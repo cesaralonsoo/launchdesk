@@ -896,3 +896,15 @@ html[data-scheme="dark"] .biz-brand .bm { color: var(--c-ink) !important; }
 @media (max-width: 720px) {
   .chrome::before { content: ""; position: absolute; inset: 0 0 -28px; background: linear-gradient(to bottom, color-mix(in srgb, var(--c-bg) 92%, transparent) 35%, transparent); pointer-events: none; z-index: -1; }
 }
+
+/* BCH BLAZE launch price line (web/proto/prices.ts launchNoteHtml): under the price it qualifies, while the window is
+   open. Hidden and empty after it. */
+.launch-note { margin: 0; font-size: 12px; line-height: 17px; color: var(--c-muted); text-align: center; font-variant-numeric: tabular-nums; text-wrap: balance; }
+.launch-note::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #0AC18E; margin-right: 6px; vertical-align: 1px; }
+[data-launch-note][hidden] { display: none !important; }
+[data-launch-note] > span { white-space: nowrap; }
+.pay-launch { margin-top: -4px; }
+.v-launch { margin-top: 10px; text-align: left; padding-left: 4px; }
+.ko-launch { margin-top: -6px; }
+.rp-launch { text-align: left; }
+@media (max-width: 400px) { .launch-note { font-size: 11.5px; letter-spacing: -.01em; } }
