@@ -20,6 +20,7 @@ const { p2pkhAddress, keyOf, readDeliveryHash } = await import("../server/escrow
 const MERCHANT = p2pkhAddress(new Uint8Array(20).fill(0xaa), "chipnet");
 Object.assign(process.env, {
   NODE_ENV: "test",
+  PRICE_NOW: "2026-11-20T12:00:00Z", // inside the BLAZE launch window (10¢ / 50¢); test/pricing.test.ts covers the switch
   MOCK_AI: "1", // the team runs on sample data; the pay step flips config.mockAi off (no key is set: no AI call possible)
   MOCK_DELAY_MS: "5",
   DEV_SKIP_PAYMENT: "0",

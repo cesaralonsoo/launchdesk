@@ -257,3 +257,36 @@ test("service: quote address, payment check, release with the report hash on cha
   assert.deepEqual(await svc.escrowRelease("p9", "validate", REPORT), { txid: rel.txid, reportHash: rel.reportHash }); // idempotent
   assert.match((await svc.escrowRefund("p9", "validate")).error ?? "", /delivered/);
 });
+
+// BLAZE launch price ends 30 Nov 2026: the regular prices ($1 report, $5 kit) are 10x larger. The covenant has no
+// upper bound on the amount (only the 2000-sat fee cap), so a large order releases and refunds whole.
+test("regular prices: a $5 order (5,000,000 sats, i.e. BCH at $100) releases and refunds like a 10¢ one", async () => {
+  const BIG = 5_000_000;
+  {
+    const { provider, escrow, funding } = setup(BIG);
+    const tx = buildRelease(escrow, funding, HASH, KEYS);
+    assert.ok(tx.fee > 0 && tx.fee <= MAX_FEE_SATS);
+    await send(provider, tx.hex);
+    const d = decodeTransaction(hexToBin(tx.hex));
+    assert.ok(typeof d !== "string");
+    assert.equal(Number(d.outputs[0].valueSatoshis), BIG - tx.fee);
+  }
+  {
+    const { provider, escrow, funding } = setup(BIG);
+    const tx = buildRefund(escrow, funding);
+    await send(provider, tx.hex);
+    const d = decodeTransaction(hexToBin(tx.hex));
+    assert.ok(typeof d !== "string");
+    assert.equal(Number(d.outputs[0].valueSatoshis), BIG - tx.fee);
+  }
+  // the funding check takes the quote's floor (99% of it); nothing caps it from above
+  const { escrow } = setup(BIG);
+  const lock = hexToBin(escrow.lockingBytecodeHex);
+  const d = utf8ToBin("LD1:p123:validate");
+  const hex = binToHex(encodeTransaction({
+    version: 2, locktime: 0,
+    inputs: [{ outpointTransactionHash: hexToBin("12".repeat(32)), outpointIndex: 0, sequenceNumber: 0xffffffff, unlockingBytecode: new Uint8Array() }],
+    outputs: [{ lockingBytecode: lock, valueSatoshis: BigInt(BIG) }, { lockingBytecode: Uint8Array.from([0x6a, d.length, ...d]), valueSatoshis: 0n }],
+  }));
+  assert.equal(checkFunding(hex, escrow, Math.floor(BIG * 0.99), "LD1:p123:validate").sats, BIG);
+});

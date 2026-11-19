@@ -13,6 +13,7 @@ import { config } from "../config.js";
 import { claimStageRun, exec, getProject, paidFor, stageDone } from "../db.js";
 import { prepareStage, reserveStart, startStage } from "../jobs.js";
 import type { Project, Stage } from "../types.js";
+import { quotedCents } from "../pricing.js";
 import { sha256 } from "./contract.js";
 import { depthOf, escrowMarkFunded, isStray, escrowRefund, escrowRefundSweep, escrowRelease, escrowStraySweep, getRow, straySweepRunning, setRow, table, type Row } from "./service.js";
 
@@ -53,7 +54,7 @@ async function watchFunding(r: Row): Promise<boolean> {
   const known = await exec("SELECT txid FROM payments WHERE project_id = ? AND stage = ?", [id, stage]);
   if (!known.rows.length) {
     await exec("INSERT OR IGNORE INTO payments (txid, project_id, stage, sats, cents, created_at) VALUES (?, ?, ?, ?, ?, ?)", [
-      u.tx_hash, id, stage, u.value, config.priceCents[stage], Date.now(),
+      u.tx_hash, id, stage, u.value, await quotedCents(id, stage as Stage), Date.now(),
     ]);
     const p = await getProject(id);
     const release = p && paidFor(p, stage) && !stageDone(p, stage) ? reserveStart(id, stage) : null;

@@ -232,7 +232,13 @@ export type Quote = {
 };
 
 export type AppConfig = {
-  prices: Record<Stage, number>; // cents (env PRICE_VALIDATE_CENTS / PRICE_BUILD_CENTS)
+  prices: Record<Stage, number>; // cents, today's (server/pricing.ts: the launch price until its end, then the regular one)
+  /** The regular prices in cents (PRICE_VALIDATE_REGULAR_CENTS / PRICE_BUILD_REGULAR_CENTS). */
+  regularPrices?: Record<Stage, number>;
+  /** True while the BCH BLAZE launch price applies. */
+  launchPrice?: boolean;
+  /** Last second of the launch price, ISO 8601 (LAUNCH_PRICE_UNTIL). */
+  launchPriceUntil?: string;
   /** The cheapest office task, in cents (the "from 2¢" line). */
   officesFromCents?: number;
   merchantAddress: string;

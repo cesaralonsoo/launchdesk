@@ -11,6 +11,11 @@ for (const file of [".env", "/etc/secrets/.env"]) {
 
 const env = process.env;
 const int = (v: string | undefined, d: number) => (v && /^\d+$/.test(v) ? Number(v) : d);
+const date = (v: string | undefined, d: string) => {
+  const t = v ? Date.parse(v) : NaN;
+  if (v && !Number.isFinite(t)) console.warn(`[config] LAUNCH_PRICE_UNTIL=${v} is not a date: using ${d}`);
+  return Number.isFinite(t) ? t : Date.parse(d);
+};
 
 export const STAGES = ["validate", "build"] as const satisfies readonly Stage[];
 export type { Stage };
@@ -23,10 +28,18 @@ export const config = {
   /** Mock delay per department, ms. Default: random 2–4 s so the office animation can be developed. */
   mockDelayMs: env.MOCK_DELAY_MS && /^\d+$/.test(env.MOCK_DELAY_MS) ? Number(env.MOCK_DELAY_MS) : null,
   merchantAddress: env.MERCHANT_ADDRESS || "",
+  /** BCH BLAZE launch prices, in US cents: they apply until launchPriceUntil (server/pricing.ts decides). */
   priceCents: {
     validate: int(env.PRICE_VALIDATE_CENTS, 10),
     build: int(env.PRICE_BUILD_CENTS, 50), // WP4: the Launch kit (logo, website, 30-day plan)
   } satisfies Record<Stage, number>,
+  /** The regular prices, in US cents, from the second after launchPriceUntil: report $1, Launch kit $5. */
+  regularPriceCents: {
+    validate: int(env.PRICE_VALIDATE_REGULAR_CENTS, 100),
+    build: int(env.PRICE_BUILD_REGULAR_CENTS, 500),
+  } satisfies Record<Stage, number>,
+  /** Last second of the launch price (epoch ms). LAUNCH_PRICE_UNTIL, ISO 8601 with an offset; default 30 Nov 2026 23:59:59 Madrid. */
+  launchPriceUntil: date(env.LAUNCH_PRICE_UNTIL, "2026-11-30T23:59:59+01:00"),
   databaseUrl: env.DATABASE_URL || "file:local.db",
   databaseToken: env.DATABASE_TOKEN || undefined,
   /** Optional absolute origin for generated site URLs (e.g. https://launchdesk.app). Empty: relative /s/<slug>. */

@@ -26,6 +26,7 @@ const MERCHANT = "bitcoincash:qp9d679zvayvudj65nd9zlgezvjplr8g3vea64wad0";
 const dir = mkdtempSync(join(tmpdir(), "launchdesk-paygate-"));
 Object.assign(process.env, {
   NODE_ENV: "test",
+  PRICE_NOW: "2026-11-20T12:00:00Z", // inside the BLAZE launch window (10¢ / 50¢); test/pricing.test.ts covers the switch
   MOCK_AI: "0",
   ANTHROPIC_API_KEY: "sk-test-dummy",
   ANTHROPIC_BASE_URL: `http://127.0.0.1:${(stub.address() as AddressInfo).port}`,

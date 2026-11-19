@@ -10,6 +10,7 @@ import { cashAddressToLockingBytecode, encodeTransaction, binToHex, utf8ToBin, h
 const dir = mkdtempSync(join(tmpdir(), "launchdesk-hard-"));
 Object.assign(process.env, {
   NODE_ENV: "test",
+  PRICE_NOW: "2026-11-20T12:00:00Z", // inside the BLAZE launch window (10¢ / 50¢); test/pricing.test.ts covers the switch
   MOCK_AI: "0",
   ANTHROPIC_API_KEY: "test-placeholder-not-a-key", // real-money mode; this test never calls the API
   BCH_USD_FIXED: "460",

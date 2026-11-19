@@ -8,6 +8,7 @@ import { join } from "node:path";
 const dir = mkdtempSync(join(tmpdir(), "launchdesk-test-"));
 Object.assign(process.env, {
   NODE_ENV: "test",
+  PRICE_NOW: "2026-11-20T12:00:00Z", // inside the BLAZE launch window (10¢ / 50¢); test/pricing.test.ts covers the switch
   MOCK_AI: "1",
   MOCK_DELAY_MS: "20",
   DEV_SKIP_PAYMENT: "1",

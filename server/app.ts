@@ -16,6 +16,7 @@ import { isRunning, prepareStage, reserveStart, startStage } from "./jobs.js";
 import { SteerError, startSteer } from "./jobs-v7.js";
 import { ANALYST_ROLES, type AnalystRole } from "./v7.js";
 import { bchUsdCached, bchUsdOrZero, centsToSats } from "./price.js";
+import { currentPrices, fmtCents, launchNote, launchNoteInner, pricingView, quotedCents, stagePriceCents } from "./pricing.js";
 import { kitRoutes } from "./kit-routes.js";
 import { exampleRoutes } from "./examples.js";
 import { officeRoutes } from "./offices/routes.js";
@@ -156,7 +157,8 @@ app.get("/healthz", async (c) => {
 app.get("/api/config", async (c) =>
   c.json({
     ...(await brakeView()),
-    prices: config.priceCents,
+    // Today's prices (the BLAZE launch price until its end, then the regular ones), the regular ones and the end date.
+    ...pricingView(),
     // The cheapest office task today ("from 2¢" in the UI), from the same catalog the quotes use.
     officesFromCents: Math.min(...Object.values(OFFICE_TASKS).map((t) => t.cents)),
     merchantAddress: config.merchantAddress,
@@ -278,14 +280,17 @@ app.post("/api/projects/:id/quote", async (c) => {
   assertOwner(c, qrow, !!qb.refundAddress);
   assertPayable();
   const now = Date.now();
-  const q = await exec("SELECT sats, expires_at, bch_usd, qr_sats FROM quotes WHERE project_id = ? AND stage = ?", [p.id, stage]);
+  const q = await exec("SELECT sats, expires_at, bch_usd, qr_sats, cents FROM quotes WHERE project_id = ? AND stage = ?", [p.id, stage]);
   let sats: number;
+  let cents: number;
   let expiresAt: number;
   let rate: number;
   let qrSats: number | null;
   const row = q.rows[0];
   if (row && Number(row.expires_at) > now + 60_000) {
+    // A quote already issued keeps its amount (and the price it was made at), even across the launch-price switch.
     sats = Number(row.sats);
+    cents = row.cents == null ? stagePriceCents(stage) : Number(row.cents);
     expiresAt = Number(row.expires_at);
     rate = row.bch_usd == null ? await bchUsdOrZero() : Number(row.bch_usd);
     qrSats = row.qr_sats == null ? await uniqueQrSats(sats, p.id, stage) : Number(row.qr_sats);
@@ -299,22 +304,24 @@ app.post("/api/projects/:id/quote", async (c) => {
     if (!allow("quote", clientIp(c), config.rateLimit.quote, config.rateLimit.windowMs))
       throw new ApiError(429, "That is a lot of price quotes in a few minutes. Please wait a little and try again.");
     // Never below the BCH dust limit: a smaller output cannot be broadcast, so that price could never be paid.
-    sats = Math.max(DUST_SATS, await centsToSats(config.priceCents[stage]));
+    cents = stagePriceCents(stage);
+    sats = Math.max(DUST_SATS, await centsToSats(cents));
     qrSats = await uniqueQrSats(sats, p.id, stage);
     expiresAt = now + QUOTE_MS;
-    await exec("INSERT OR REPLACE INTO quotes (project_id, stage, sats, expires_at, bch_usd, qr_sats) VALUES (?, ?, ?, ?, ?, ?)", [
+    await exec("INSERT OR REPLACE INTO quotes (project_id, stage, sats, expires_at, bch_usd, qr_sats, cents) VALUES (?, ?, ?, ?, ?, ?, ?)", [
       p.id,
       stage,
       sats,
       expiresAt,
       rate || null,
       qrSats,
+      cents,
     ]);
   }
   const quote: Quote = {
     stage,
     sats,
-    cents: config.priceCents[stage],
+    cents,
     address: config.merchantAddress,
     tag: paymentTag(p.id, stage),
     expiresAt,
@@ -407,7 +414,7 @@ app.post("/api/projects/:id/pay", async (c) => {
         p.id,
         stage,
         sats,
-        config.priceCents[stage],
+        await quotedCents(p.id, stage),
         Date.now(),
       ]);
     } catch {
@@ -685,20 +692,24 @@ app.get("/r/:shareId", async (c, next) => {
   );
 });
 
-/** Prices as the UI shows them (web/proto/prices.ts fmtCents): 10 → "10¢", 150 → "$1.50". */
-const fmtCents = (c: number) => (c < 100 ? `${c}¢` : `$${(c / 100).toFixed(c % 100 ? 2 : 0)}`);
 /**
  * The home page with today's prices already in it (no flash of the defaults): every data-price span gets the
- * configured price (PRICE_VALIDATE_CENTS / PRICE_BUILD_CENTS, the offices catalog), and so do the link-preview meta
+ * price of the day (server/pricing.ts: the launch price, then the regular one; the offices catalog), and so do the link-preview meta
  * tags, which name the report price. The browser re-applies the same values from /api/config.
  */
-export function withPrices(html: string): string {
+export function withPrices(html: string, now?: number): string {
+  const prices = currentPrices(now);
   const text: Record<string, string> = {
-    validate: fmtCents(config.priceCents.validate),
-    build: fmtCents(config.priceCents.build),
+    validate: fmtCents(prices.validate),
+    build: fmtCents(prices.build),
     offices: `from ${fmtCents(Math.min(...Object.values(OFFICE_TASKS).map((t) => t.cents)))}`,
   };
+  const note = launchNote(now);
   return html
+    // The BLAZE launch-price line: filled while the window is open, hidden after it.
+    .replace(/(<(p|span|div)\b[^>]*?\sdata-launch-note)(?:\s+hidden)?>(?:[^<]+|<span>[^<]*<\/span>)*(<\/\2>)/g, (_m, open: string, _t: string, close: string) =>
+      note ? `${open}>${launchNoteInner(note)}${close}` : `${open} hidden>${close}`,
+    )
     .replace(/(<(span|tspan) data-price="(validate|build|offices)">)[^<]*(<\/\2>)/g, (_m, open: string, _t: string, k: string, close: string) => open + text[k] + close)
     .replace(/(<meta\s+(?:name|property)="(?:description|og:description|twitter:description)"\s+content=")([^"]*)(")/gi, (_m, a: string, body: string, b: string) => a + body.replace(/\b10¢/g, text.validate!) + b);
 }

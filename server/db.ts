@@ -57,6 +57,7 @@ export async function migrate() {
   await addColumn("projects", "example", "INTEGER NOT NULL DEFAULT 0"); // F2: read-only seed
   await addColumn("quotes", "bch_usd", "REAL"); // F10/R22: rate used for the quote
   await addColumn("quotes", "qr_sats", "INTEGER"); // F10: unique amount for the plain QR (BIP21) path
+  await addColumn("quotes", "cents", "INTEGER"); // the price the quote was made at (launch or regular); NULL = legacy
   await addColumn("jobs", "attempts", "INTEGER NOT NULL DEFAULT 0"); // R18
   await db.execute("CREATE UNIQUE INDEX IF NOT EXISTS projects_share ON projects(share_id) WHERE share_id IS NOT NULL");
   // Pay gate: a refunded payment buys no more AI, and each paid stage runs at most MAX_STAGE_RUNS times (run + retries).

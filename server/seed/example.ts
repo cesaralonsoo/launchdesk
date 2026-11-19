@@ -5,6 +5,7 @@
 import { sanitize, type AiDept } from "../ai.js";
 import { config } from "../config.js";
 import { exec } from "../db.js";
+import { stagePriceCents } from "../pricing.js";
 import * as mocks from "../mocks.js";
 import { STAGE_DEPTS, type DeptResults, type Stage, type WorkDept } from "../types.js";
 
@@ -74,7 +75,7 @@ export async function seedExample(): Promise<void> {
       `dev-example-${stage}`,
       EXAMPLE_ID,
       stage,
-      config.priceCents[stage],
+      stagePriceCents(stage),
       created,
     ]);
   }
