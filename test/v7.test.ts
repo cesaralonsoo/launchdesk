@@ -754,5 +754,22 @@ assert.equal(data.brandSignOf(data.SAMPLE_V7)?.name, "Pausa");
   assert.match(wp, /"double" is 2×/);
 }
 
+{
+  // display only: an unlinked finding that names its source in words is not "No source cited" (the stored bytes stay)
+  const NS = "No source cited in the report", NAMED = "Names a source but does not link it";
+  assert.equal(v7.estimateBasis("A range of €3–4.50 (barcelonatourism.org, August 2026; no source id).", NS), NAMED);
+  assert.equal(v7.estimateBasis("Three Marks lists a flat white at €2.50 (guidavera menu, undated; no source id).", NS), NAMED);
+  assert.equal(v7.estimateBasis("Fixed costs of €3.20 per cup (mycoffee.guide; no source id).", NS), NAMED);
+  assert.equal(v7.estimateBasis("A unit at 2,350 € a month (estimate; both listings are undated, and the second was formerly hospitality).", NS), NS);
+  assert.equal(v7.estimateBasis("Most kiosks open at 7 am.", NS), NS);
+  assert.equal(v7.estimateBasis("Counts were not found (barcelonatourism.org).", "Not found in the research"), "Not found in the research");
+  assert.equal(v7.estimateBasis("x", undefined), undefined);
+  // the finished example's stored findings: every one that names a source in words is relabelled, nothing else
+  const ex = JSON.parse(readFileSync(new URL("../server/seed/examples/finished/coffee-kiosk-barcelona.json", import.meta.url), "utf8"));
+  const unlinked = (ex.v7.json.work as Array<{ findings: Finding[] }>).flatMap((w) => w.findings).filter((f) => !f.source && f.basis === NS);
+  assert.ok(unlinked.length >= 5);
+  for (const f of unlinked) assert.equal(v7.estimateBasis(f.text, f.basis), NAMED, f.text);
+}
+
 void (null as unknown as IdeaReport);
 console.log("v7 invariants: all passed");

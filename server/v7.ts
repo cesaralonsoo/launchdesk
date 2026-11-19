@@ -310,6 +310,17 @@ const DOMAIN = /\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|org|net|es|cat|eu|io|co|gu
  *  in-words source for a fact it had no [S#] for. Not a parenthesis with a figure or a plain aside. */
 const isInlineCite = (inner: string) =>
   DOMAIN.test(inner) || /\bundated\b|\bno source\b/i.test(inner) || /^[^,;()]{0,40}[,;]\s*(?:(?:[A-Z][a-z]+|\d{1,2} [A-Z][a-z]+)\s+)?(?:19|20)\d{2}(?:\s*;\s*estimate)?\s*$/.test(inner.trim()) || /^\s*(?:[A-Z][a-z]+\s+)?(?:19|20)\d{2}\s*$/.test(inner);
+/** Pure, display only: the label after "Estimate ·" for an unlinked finding. Older stored reports say "No source cited
+ *  in the report" even when the text names its source in words ("(barcelonatourism.org, August 2026)", "(guidavera
+ *  menu, undated)"); those read as "Names a source but does not link it", as new runs already say. The stored text and
+ *  its bytes are never changed. */
+export function estimateBasis(text: string | null | undefined, basis: string | null | undefined): string | undefined {
+  const b = basis ?? undefined;
+  if (!b || !/^no source cited in the report\.?$/i.test(b.trim())) return b;
+  const t = String(text ?? "");
+  const named = DOMAIN.test(t) || /\((?!\s*estimate\b)[^(),;]{2,40},\s*(?:undated|(?:[A-Z][a-z]+\s+)?(?:19|20)\d{2})\b/.test(t);
+  return named ? "Names a source but does not link it" : b;
+}
 /** Pure: text as a reader sees it: no [S#] research ids, no "no source id" notes, spacing before punctuation fixed. */
 export function plainText(s: string): string {
   return String(s ?? "")

@@ -720,6 +720,9 @@ const servePricedIndex = (c: Context, next: () => Promise<void>) => {
 
 // Built app (production). /s/:slug and /r/:id are answered above with classic.html; /proto.html is served as a
 // file (alias of the v7 app); every other client route (/, /p/:id, …) falls back to the v7 index.html, with prices.
+// the older free example pack (id "example", the plain /s/pausa page): its link now opens the real, paid finished example
+app.get("/p/example", (c) => c.redirect(`/p/ex-coffee-bcn${new URL(c.req.url).search}`, 302));
+app.get("/p/example/", (c) => c.redirect(`/p/ex-coffee-bcn${new URL(c.req.url).search}`, 302));
 app.get("/", servePricedIndex);
 app.get("/index.html", servePricedIndex);
 app.use("/*", serveStatic({ root: "./dist/web" }));

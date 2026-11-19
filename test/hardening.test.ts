@@ -173,6 +173,14 @@ for (const s of Object.values(V7_SAMPLES)) {
 assert.equal(Math.round(usdOf("claude-sonnet-5-5", { input_tokens: 1_000_000, output_tokens: 100_000 }) * 100) / 100, 3);
 assert.equal(Math.round(usdOf("claude-haiku-5-5", { input_tokens: 10_000, output_tokens: 1_000, server_tool_use: { web_search_requests: 2 } }) * 10000) / 10000, 0.0215);
 
+// the older example link opens the real finished example (a page route only: the API is untouched)
+{
+  const r = await app.request("http://localhost/p/example?x=1");
+  assert.equal(r.status, 302);
+  assert.equal(r.headers.get("location"), "/p/ex-coffee-bcn?x=1");
+  assert.notEqual((await app.request("http://localhost/api/projects/example")).status, 302, "API routes are not redirected");
+}
+
 rmSync(dir, { recursive: true, force: true });
 console.log("hardening: all passed");
 process.exit(0);
