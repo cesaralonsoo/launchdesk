@@ -1,6 +1,11 @@
 # LaunchDesk
 
+
+**[Live demo](https://launchdesk-bch.onrender.com)** · <!-- SLIDES_URL --><!-- BUIDL_URL -->**[Finished example](https://launchdesk-bch.onrender.com/p/ex-coffee-bcn)**
+
 **Your startup team, for pennies.**
+
+<img src="docs/deck/cover-home.png" alt="The LaunchDesk home page: a 3D office, the idea box with the Validate button, and the 'See a finished company' link" width="420">
 
 Pitch your idea. A team of AI specialists checks it against real sources, then makes a logo, a live website and a
 30-day launch plan. You pay a small amount of Bitcoin Cash for each step (BCH BLAZE launch price until 30 Nov 2026:
@@ -8,7 +13,7 @@ Pitch your idea. A team of AI specialists checks it against real sources, then m
 
 Built for **BCH BLAZE 2026** (Mainnet track).
 
-**Live demo: https://launchdesk-bch.onrender.com**. No wallet needed to look around: tap **"See a finished example"**.
+**Live demo: https://launchdesk-bch.onrender.com**. No wallet needed to look around: tap **"See a finished company"**.
 
 ## Proven on Bitcoin Cash mainnet
 
@@ -21,6 +26,8 @@ WizardConnect, for a coffee kiosk idea in Barcelona.
 | Release after delivery | [`661ca57b…ee23`](https://blockchair.com/bitcoin-cash/transaction/661ca57bd66b7bbc61667724fb104c506b263f68474d6a068a97b5ba91abee23) | 47,985 sats to the merchant (fee 599 sats), plus `OP_RETURN "LD1" 8447cc72…50ecd5`, the SHA-256 of the delivered report |
 | Refund after the timeout | not yet run on mainnet | Tested offline (see below). The mainnet drill is pending |
 
+<img src="docs/deck/bch-proof.png" alt="The 'Proof on Bitcoin Cash' panel of the finished example: both transactions, the report fingerprint and a 'Match' result" width="560">
+
 - The contract address was `bitcoincash:pd092n6eyfv78vms0eed9f463smzmzzpqu5lmqfjnky7fy6wv3kv7azv40dvw` (P2SH32).
 - The fingerprint shown on the report page equals the one on chain. The page's "Check it" button said "Match".
 - The contract is [`contracts/LaunchDeskEscrow.cash`](contracts/LaunchDeskEscrow.cash).
@@ -29,7 +36,7 @@ WizardConnect, for a coffee kiosk idea in Barcelona.
 
 ## What a judge sees (about 2 minutes)
 
-0. No wallet? Open https://launchdesk-bch.onrender.com and tap **"See a finished example"** under the idea box. It opens a real run (a coffee kiosk in
+0. No wallet? Open https://launchdesk-bch.onrender.com and tap **"See a finished company"** under the idea box. It opens a real run (a coffee kiosk in
    Barcelona, paid 10¢ on mainnet) on its report, the proof panel and its launch kit, in about 5 seconds.
 1. Open the demo at https://launchdesk-bch.onrender.com and type a business idea.
 2. Pay **10¢** (launch price until 30 Nov 2026, then $1; see [Prices](#prices)) from a WizardConnect wallet (Selene, Cashonize, Paytaca). The money goes into a contract for this
@@ -67,13 +74,21 @@ merchant with the report fingerprint on chain, or back to the customer after the
 
 ## Tests
 
-`npm test` runs everything offline in mock mode. It needs no API key and makes no network calls.
+`npm test` needs no API key and no wallet. Run it with `MOCK_AI=1 BCH_USD_FIXED=400`: the AI runs on sample data, the BCH
+price is fixed, and nothing goes to the network. Without `BCH_USD_FIXED`, a few launch kit tests ask a public BCH price feed
+once; they pass offline too.
 
-- **62 escrow tests.** Every transaction is checked by the real BCH virtual machine (libauth, through CashScript's
+On 19 Nov 2026 `npm test` printed 180 `node:test` results, all passing (15 + 11 + 41 escrow, then 113 in the last
+batch), plus script-style checks that stop at the first failure. Some log lines show API errors such as "credit
+balance is too low": `test/brake.test.ts` fakes them on purpose to test the spend brake. No real API call is made.
+
+- **67 escrow tests.** Every transaction is checked by the real BCH virtual machine (libauth, through CashScript's
   `MockNetworkProvider`):
   - `test/escrow.test.ts`: 15 tests of the normal paths and the main rejections, plus a $5-sized order;
-  - `test/escrow-flow.test.ts`: 6 end-to-end tests through the real app: quote, pay, run, release, refund drill, and a
-    re-quote by someone who is not the owner (refused);
+  - `test/escrow-flow.test.ts`: 11 end-to-end tests through the real app: quote, pay, run, release, refund drill, a
+    late report, a wallet payment the browser never reported back, a re-quote by someone who is not the owner
+    (refused), and 5 stray-coin cases (an underpayment, a second payment, a payment to a stale quote, and others: each goes back
+    through the keyless refund and never starts a run);
   - `test/escrow-attacks.test.ts`: 41 named attacks and controls. They include paying the wrong address, a forged or
     replayed report signature, a fee 1 sat over the limit, extra outputs or inputs, a tampered `OP_RETURN`, token
     minting, an early refund, a refund to someone else, and merging two payments.
@@ -84,7 +99,8 @@ merchant with the report fingerprint on chain, or back to the customer after the
   before and after the switch (an open quote keeps its amount), the home page note and the price formatting (10¢,
   50¢, $1, $5).
 - **Other areas:** payments, report schema, the mock flow, rate limits, launch kit, verdicts, offices and the website
-  generator (37 `node:test` cases in `test/site*.test.ts`, plus script-style checks).
+  generator (51 `node:test` cases in `test/site*.test.ts`), logo options (`test/brand.test.ts`), report quality rules (`test/quality.test.ts`), plus script-style
+  checks.
 
 To run only the attack tests:
 
@@ -142,7 +158,7 @@ node_modules/.bin/tsx --test test/escrow-attacks.test.ts
 cp .env.example .env   # MOCK_AI=1 runs without an API key
 npm install
 npm run dev            # web on :5173, API on :8790
-MOCK_AI=1 npm test
+MOCK_AI=1 BCH_USD_FIXED=400 npm test   # no network, no secrets
 npm run typecheck
 npm run build
 ```
@@ -199,7 +215,8 @@ NODE_ENV=production PORT=8899 DATABASE_URL=file:local.db npm start   # serves /,
 ## Pre-existing work
 
 The idea and a visual sketch existed before the hackathon. All the code in this repository is new, written during
-BLAZE 2026.
+BLAZE 2026. First commit: [`877ea57`](https://github.com/cesaralonsoo/launchdesk/commit/877ea57), 14 Nov 2026 20:20
+(+01:00). The full history is public.
 
 ## Licence
 
