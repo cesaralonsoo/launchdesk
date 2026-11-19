@@ -45,6 +45,20 @@ export function startStage(projectId: string, stage: Stage): Promise<void> {
 
 export const isRunning = (projectId: string, stage: Stage) => active.has(`${projectId}:${stage}`);
 
+/** Starts being set up right now (claim + prepare in flight), so two starters never both count a run. */
+const starting = new Set<string>();
+/**
+ * Reserves the one start of a stage, synchronously: null when the stage is already running or another caller (the
+ * escrow watcher, or the client's /run right after paying) is setting it up. Call the returned release once
+ * startStage() has been called (or the start failed).
+ */
+export function reserveStart(projectId: string, stage: Stage): (() => void) | null {
+  const key = `${projectId}:${stage}`;
+  if (active.has(key) || starting.has(key)) return null;
+  starting.add(key);
+  return () => void starting.delete(key);
+}
+
 async function prepare(projectId: string, stage: Stage, reset: boolean) {
   const project = await getProject(projectId);
   if (!project) throw new Error("Project not found");

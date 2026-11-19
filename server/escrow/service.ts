@@ -145,17 +145,23 @@ export async function escrowVerifyPayment(projectId: string, stage: string, txHe
   return { txid: f.txid, paidSats: f.sats, vout: f.vout };
 }
 /** Records the funding output (idempotent for the same tx). */
-export async function escrowMarkFunded(projectId: string, stage: string, f: { txid: string; vout: number; sats: number }) {
-  if (await isStray(f.txid)) return;
+/** True when the order is (now, or already was) funded by exactly this coin; false when it was not marked (stray, other coin). */
+export async function escrowMarkFunded(projectId: string, stage: string, f: { txid: string; vout: number; sats: number }): Promise<boolean> {
+  if (await isStray(f.txid)) return false;
   const r = await getRow(projectId, stage);
-  if (!r || (r.status !== "quoted" && r.funding_txid !== f.txid)) return;
-  if (r.status === "quoted") await setRow(projectId, stage, { status: "funded", funding_txid: f.txid, funding_vout: f.vout, sats: f.sats, funded_at: Date.now() });
+  if (!r) return false;
+  if (r.status === "quoted") {
+    await setRow(projectId, stage, { status: "funded", funding_txid: f.txid, funding_vout: f.vout, sats: f.sats, funded_at: Date.now() });
+    return true;
+  }
+  return r.funding_txid === f.txid && Number(r.funding_vout) === f.vout;
 }
 
 /** Drop-in for chain.ts checkPaymentTx() when ESCROW=1: same return shape. The caller still broadcasts. */
 export async function escrowCheckPayment(projectId: string, stage: string, txHex: string, minSats: number): Promise<{ txid: string; paidSats: number }> {
   const f = await escrowVerifyPayment(projectId, stage, txHex, minSats);
-  await escrowMarkFunded(projectId, stage, { txid: f.txid, vout: f.vout, sats: f.paidSats });
+  if (!(await escrowMarkFunded(projectId, stage, { txid: f.txid, vout: f.vout, sats: f.paidSats })))
+    throw new Error("This payment does not fund this order (it is being sent back, or the order is paid another way).");
   return { txid: f.txid, paidSats: f.paidSats };
 }
 
@@ -244,12 +250,14 @@ const straysTable = () =>
     txid TEXT NOT NULL, vout INTEGER NOT NULL, project_id TEXT NOT NULL, stage TEXT NOT NULL, sats INTEGER NOT NULL,
     refund_txid TEXT, note TEXT, at INTEGER NOT NULL, PRIMARY KEY (txid, vout))`));
 /** True when `txid` is (or was) being returned by the stray sweep. */
-async function isStray(txid: string): Promise<boolean> {
+export async function isStray(txid: string): Promise<boolean> {
   await straysTable();
   return (await exec("SELECT 1 FROM escrow_strays WHERE txid = ?", [txid])).rows.length > 0;
 }
 /** How long after its last change an order's address is still watched for strays. */
 const STRAY_WATCH_MS = 7 * 24 * 60 * 60_000;
+/** At most this many order addresses are checked per sweep (one Electrum call each). */
+const STRAY_MAX_ORDERS = 500;
 /** The minimum a refund output may carry (BCH dust limit). */
 const DUST_SATS = 546;
 
@@ -258,10 +266,28 @@ const DUST_SATS = 546;
  * after this are still being watched for funding (watch.ts), so their coins at or above the price are left to it.
  * Returns the number of refunds broadcast. Never throws for one coin (its note says why it waits).
  */
+let strayRun: Promise<number> | null = null;
+/** True while a stray sweep is in flight (the watcher then skips its turn instead of queueing another). */
+export const straySweepRunning = () => strayRun !== null;
 export async function escrowStraySweep(activeSince = Date.now() - 3 * 60 * 60_000): Promise<number> {
+  // One sweep at a time per process: a second caller waits for the running one, then sweeps again itself.
+  while (strayRun) await strayRun.catch(() => 0);
+  const run = straySweep(activeSince);
+  strayRun = run;
+  try {
+    return await run;
+  } finally {
+    if (strayRun === run) strayRun = null;
+  }
+}
+async function straySweep(activeSince: number): Promise<number> {
   await table();
   await straysTable();
-  const rows = (await exec("SELECT * FROM escrow_orders WHERE updated_at > ? OR status IN ('quoted', 'funded')", [Date.now() - STRAY_WATCH_MS])).rows as Row[];
+  // Bounded: orders changed in the last 7 days, plus funded ones (their coin is still in the contract). A quote nobody
+  // paid stays 'quoted' forever, so status alone would grow this list without end. Newest first, at most STRAY_MAX_ORDERS.
+  const rows = (
+    await exec("SELECT * FROM escrow_orders WHERE updated_at > ? OR status = 'funded' ORDER BY updated_at DESC LIMIT ?", [Date.now() - STRAY_WATCH_MS, STRAY_MAX_ORDERS])
+  ).rows as Row[];
   let n = 0;
   for (const r of rows) {
     const id = String(r.project_id);

@@ -12,10 +12,10 @@
 // It also mounts the /api/escrow routes and starts the watcher (funding, release with the report hash, refunds).
 import type { Context, Hono, MiddlewareHandler, Next } from "hono";
 import { holdCheckedPayment, paymentTag } from "../chain.js";
-import { exec } from "../db.js";
+import { exec, markPaymentRefunded } from "../db.js";
 import { allow, clientIp } from "../ratelimit.js";
 import { escrowRoutes } from "./routes.js";
-import { escrowMarkFunded, escrowOn, escrowQuoteAddress, escrowVerifyPayment } from "./service.js";
+import { escrowMarkFunded, escrowOn, isStray, escrowQuoteAddress, escrowVerifyPayment } from "./service.js";
 import { ESCROW_STAGES, startEscrowWatcher } from "./watch.js";
 
 type Body = { stage?: string; refundAddress?: string; txHex?: string; dev?: boolean; watch?: boolean };
@@ -65,13 +65,19 @@ const pay: MiddlewareHandler = async (c, next) => {
   } catch (e) {
     return c.json({ error: (e as Error).message }, 400);
   }
+  // Re-checked right before the route records the payment: the stray sweep may have claimed this coin meanwhile.
+  if (await isStray(f.txid)) return c.json({ error: "This payment is being sent back to your wallet (it arrived outside its order). Nothing was charged." }, 400);
   const release = holdCheckedPayment(txHex, paymentTag(id, stage), { txid: f.txid, paidSats: f.paidSats });
   try {
     await next();
   } finally {
     release();
   }
-  if (c.res.status === 200) await escrowMarkFunded(id, stage, { txid: f.txid, vout: f.vout, sats: f.paidSats });
+  if (c.res.status === 200 && !(await escrowMarkFunded(id, stage, { txid: f.txid, vout: f.vout, sats: f.paidSats }))) {
+    // Lost a race to the stray sweep: that coin goes back, so the payment row it made buys no AI (/run checks this).
+    const own = await exec("SELECT 1 FROM payments WHERE project_id = ? AND stage = ? AND txid = ?", [id, stage, f.txid]);
+    if (own.rows.length && (await isStray(f.txid))) await markPaymentRefunded(id, stage);
+  }
 };
 
 const refundLimit: MiddlewareHandler = async (c: Context, next: Next) => {

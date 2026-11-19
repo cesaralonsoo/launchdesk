@@ -11,10 +11,10 @@ import { binToHex, hexToBin } from "@bitauth/libauth";
 import { electrum } from "../chain.js";
 import { config } from "../config.js";
 import { claimStageRun, exec, getProject, paidFor, stageDone } from "../db.js";
-import { prepareStage, startStage, isRunning } from "../jobs.js";
+import { prepareStage, reserveStart, startStage } from "../jobs.js";
 import type { Project, Stage } from "../types.js";
 import { sha256 } from "./contract.js";
-import { depthOf, escrowMarkFunded, escrowRefund, escrowRefundSweep, escrowRelease, escrowStraySweep, getRow, setRow, table, type Row } from "./service.js";
+import { depthOf, escrowMarkFunded, isStray, escrowRefund, escrowRefundSweep, escrowRelease, escrowStraySweep, getRow, straySweepRunning, setRow, table, type Row } from "./service.js";
 
 /** Only the $0.10 validate run is escrowed; the build stage keeps the direct payment. */
 export const ESCROW_STAGES: readonly Stage[] = ["validate"];
@@ -41,18 +41,31 @@ async function watchFunding(r: Row): Promise<boolean> {
   const quoted = Number(q.rows[0]?.sats ?? 0);
   if (!quoted) return false;
   const list = await electrum<Array<{ tx_hash: string; tx_pos: number; value: number }>>("blockchain.scripthash.listunspent", [scripthashOf(r)]);
-  const u = list.find((x) => x.value >= Math.floor(quoted * 0.99));
+  let u: (typeof list)[number] | undefined;
+  for (const x of list) {
+    if (x.value < Math.floor(quoted * 0.99)) continue;
+    if (await isStray(x.tx_hash)) continue; // being sent back by the stray sweep: never a payment, never a run
+    u = x;
+    break;
+  }
   if (!u) return false;
-  await escrowMarkFunded(id, stage, { txid: u.tx_hash, vout: u.tx_pos, sats: u.value });
+  if (!(await escrowMarkFunded(id, stage, { txid: u.tx_hash, vout: u.tx_pos, sats: u.value }))) return false;
   const known = await exec("SELECT txid FROM payments WHERE project_id = ? AND stage = ?", [id, stage]);
   if (!known.rows.length) {
     await exec("INSERT OR IGNORE INTO payments (txid, project_id, stage, sats, cents, created_at) VALUES (?, ?, ?, ?, ?, ?)", [
       u.tx_hash, id, stage, u.value, config.priceCents[stage], Date.now(),
     ]);
     const p = await getProject(id);
-    if (p && paidFor(p, stage) && !stageDone(p, stage) && !isRunning(id, stage) && (await claimStageRun(id, stage))) {
-      await prepareStage(id, stage);
-      void startStage(id, stage);
+    const release = p && paidFor(p, stage) && !stageDone(p, stage) ? reserveStart(id, stage) : null;
+    if (release) {
+      try {
+        if (await claimStageRun(id, stage)) {
+          await prepareStage(id, stage);
+          void startStage(id, stage);
+        }
+      } finally {
+        release();
+      }
     }
   }
   return true;
@@ -88,7 +101,7 @@ export async function escrowTick(): Promise<TickResult> {
   try {
     await table();
     const since = Date.now() - 3 * 60 * 60_000; // a quote is held 15 min; look a while longer for late wallets
-    const rows = (await exec("SELECT * FROM escrow_orders WHERE status IN ('quoted', 'funded') ORDER BY updated_at")).rows as Row[];
+    const rows = (await exec("SELECT * FROM escrow_orders WHERE status = 'funded' OR (status = 'quoted' AND updated_at >= ?) ORDER BY updated_at", [since])).rows as Row[];
     for (const r0 of rows) {
       const id = String(r0.project_id);
       const stage = String(r0.stage);
@@ -110,7 +123,8 @@ export async function escrowTick(): Promise<TickResult> {
     out.refunded += await escrowRefundSweep().catch(() => 0);
     if (Date.now() - lastStray >= STRAY_EVERY_MS) {
       lastStray = Date.now();
-      await escrowStraySweep(since).catch((e) => console.warn("[escrow] strays", (e as Error).message));
+      // Outside the tick lock: one Electrum call per watched order must never hold up funding, auto-start or release.
+      if (!straySweepRunning()) void escrowStraySweep(since).catch((e) => console.warn("[escrow] strays", (e as Error).message));
     }
   } finally {
     ticking = false;

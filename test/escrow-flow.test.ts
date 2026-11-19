@@ -348,3 +348,31 @@ test("strays: a full payment to a stale quote is returned, and /pay can no longe
   assert.match(pay.json.error, /sent back/);
   assert.equal((await exec("SELECT 1 FROM payments WHERE project_id = ?", [id])).rows.length, 0, "no payment, so no run");
 });
+
+test("strays: a coin already claimed as stray (refund broadcast failed) never becomes a payment or a run", async () => {
+  const { id, ownerKey } = await newProject();
+  const tag = chain.paymentTag(id, "validate");
+  const q = await realMoney(() => call("POST", `/api/projects/${id}/quote`, { stage: "validate", refundAddress: CUSTOMER }, ownerKey))();
+  const hex = walletPays(q.json.address, q.json.sats, tag);
+  const txid = await mock.sendRawTransaction(hex);
+  heights.set(txid, 0);
+  // The sweep claimed it earlier and its refund broadcast failed: the claim stays, the coin stays unspent.
+  await exec("INSERT INTO escrow_strays (txid, vout, project_id, stage, sats, note, at) VALUES (?, 0, ?, 'validate', ?, 'refund: network down', ?)", [txid, id, q.json.sats, Date.now()]);
+  assert.equal((await escrowTick()).funded, 0, "the watcher skips a stray coin");
+  assert.equal((await exec("SELECT 1 FROM payments WHERE project_id = ?", [id])).rows.length, 0, "no payment row from the watcher");
+  const pay = await realMoney(() => call("POST", `/api/projects/${id}/pay`, { stage: "validate", txHex: hex }, ownerKey))();
+  assert.equal(pay.status, 400);
+  assert.equal((await exec("SELECT 1 FROM payments WHERE project_id = ?", [id])).rows.length, 0, "no payment row from /pay");
+  assert.equal((await call("GET", `/api/escrow/${id}/validate`)).json.state, "quoted");
+});
+
+test("strays: the sweep only looks at orders changed in the last 7 days (plus funded ones)", async () => {
+  const { id, ownerKey } = await newProject();
+  const tag = chain.paymentTag(id, "validate");
+  const q = await realMoney(() => call("POST", `/api/projects/${id}/quote`, { stage: "validate", refundAddress: CUSTOMER }, ownerKey))();
+  await exec("UPDATE escrow_orders SET updated_at = ? WHERE project_id = ?", [Date.now() - 8 * 24 * 60 * 60_000, id]);
+  heights.set(await mock.sendRawTransaction(walletPays(q.json.address, q.json.sats - 3_000, tag)), 0);
+  mine(6);
+  await escrowStraySweep();
+  assert.equal((await exec("SELECT 1 FROM escrow_strays WHERE project_id = ?", [id])).rows.length, 0, "an old quote's address is not scanned");
+});
