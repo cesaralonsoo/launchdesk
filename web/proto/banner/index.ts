@@ -60,7 +60,7 @@ export function mountTopBar(el: HTMLElement): () => void {
   const ext = `<svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M4.5 2.5h5v5M9.5 2.5 3 9"/></svg>`;
   const slides = linkReady(SLIDES_URL) ? `<a href="${escAttr(SLIDES_URL)}" target="_blank" rel="noopener">Slides${ext}</a>` : "";
   const code = linkReady(REPO_URL) ? `<a href="${escAttr(REPO_URL)}" target="_blank" rel="noopener">Code${ext}</a>` : "";
-  const video = `<a href="${escAttr(VIDEO_URL)}" target="_blank" rel="noopener">Video${ext}</a>`;
+  const video = `<a class="h-blaze-vid" href="${escAttr(VIDEO_URL)}" target="_blank" rel="noopener">Video${ext}</a>`;
   const fresh = `<a class="h-blaze-new" href="${escAttr(FIRST_COMMIT_URL)}" target="_blank" rel="noopener" title="No earlier code or demo: the first commit is from 14 Nov 2026, after the Kick-Off">Built during BLAZE${ext}</a>`;
   const bare = EMBER_ADDRESS.replace(/^bitcoincash:/, "");
   const short = `${bare.slice(0, 4)}…${bare.slice(-4)}`;
