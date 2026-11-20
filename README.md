@@ -78,15 +78,15 @@ merchant with the report fingerprint on chain, or back to the customer after the
 price is fixed, and nothing goes to the network. Without `BCH_USD_FIXED`, a few launch kit tests ask a public BCH price feed
 once; they pass offline too.
 
-On 19 Nov 2026 `npm test` printed 180 `node:test` results, all passing (15 + 11 + 41 escrow, then 113 in the last
+On 20 Nov 2026 `npm test` printed 183 `node:test` results, all passing (15 + 14 + 41 escrow, then 113 in the last
 batch), plus script-style checks that stop at the first failure. Some log lines show API errors such as "credit
 balance is too low": `test/brake.test.ts` fakes them on purpose to test the spend brake. No real API call is made.
 
-- **67 escrow tests.** Every transaction is checked by the real BCH virtual machine (libauth, through CashScript's
+- **70 escrow tests.** Every transaction is checked by the real BCH virtual machine (libauth, through CashScript's
   `MockNetworkProvider`):
   - `test/escrow.test.ts`: 15 tests of the normal paths and the main rejections, plus a $5-sized order;
-  - `test/escrow-flow.test.ts`: 11 end-to-end tests through the real app: quote, pay, run, release, refund drill, a
-    late report, a wallet payment the browser never reported back, a re-quote by someone who is not the owner
+  - `test/escrow-flow.test.ts`: 14 end-to-end tests through the real app: quote, pay, run, release, refund drill, a
+    paid report the AI could not write (refunded, never delivered), a late report, a wallet payment the browser never reported back, a re-quote by someone who is not the owner
     (refused), and 5 stray-coin cases (an underpayment, a second payment, a payment to a stale quote, and others: each goes back
     through the keyless refund and never starts a run);
   - `test/escrow-attacks.test.ts`: 41 named attacks and controls. They include paying the wrong address, a forged or
