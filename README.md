@@ -1,7 +1,7 @@
 # LaunchDesk
 
 
-**[Live demo](https://launchdesk-bch.onrender.com)** · <!-- SLIDES_URL -->**[Slides](https://docs.google.com/presentation/d/14SM9PMZJ2VYIJ2yJ_TzGsC_Pdk8lL67EFjpPrYioalM/edit?usp=sharing)** · <!-- BUIDL_URL -->**[Finished example](https://launchdesk-bch.onrender.com/p/ex-coffee-bcn)**
+**[Live demo](https://launchdesk-bch.onrender.com)** · <!-- SLIDES_URL -->**[Slides](https://docs.google.com/presentation/d/14SM9PMZJ2VYIJ2yJ_TzGsC_Pdk8lL67EFjpPrYioalM/edit?usp=sharing)** · <!-- BUIDL_URL -->**[Finished example](https://launchdesk-bch.onrender.com/p/ex-coffee-bcn)** · **[Video (2 min)](https://youtu.be/I7OzmWD8n7Y)** · **[BUIDL](https://dorahacks.io/build/51438)**
 
 **Your startup team, for pennies.**
 

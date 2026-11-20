@@ -131,21 +131,43 @@ function opReturn(text: string) {
 
 type Utxo = { tx_hash: string; tx_pos: number; value: number; child: number; index: number; addr: string };
 
-/** Finds spendable BCH (no tokens) on the first receive and change addresses. */
+/** Addresses scanned per batch; scanning stops after a whole batch with no history (the usual HD gap limit). */
+const GAP = 20;
+const MAX_INDEX = 1000;
+
+/**
+ * Finds spendable BCH (no tokens) on the receive and change chains. Like a wallet's own sync, it keeps
+ * scanning in batches until GAP addresses in a row have never been used, so long-used wallets whose coins
+ * sit on later addresses are still found.
+ */
 async function findUtxos(): Promise<Utxo[]> {
   const el = await connectElectrum();
   try {
-    const slots: Array<[number, number]> = [];
-    for (let i = 0; i < 30; i++) slots.push([RECEIVE, i]);
-    for (let i = 0; i < 20; i++) slots.push([CHANGE, i]);
-    const found = await Promise.all(
-      slots.map(async ([child, index]) => {
-        const addr = addressAt(child, index);
-        const list = await el.call<any[]>("blockchain.address.listunspent", [addr, "exclude_tokens"]);
-        return list.map((u) => ({ tx_hash: u.tx_hash, tx_pos: u.tx_pos, value: u.value, child, index, addr }));
-      }),
-    );
-    return found.flat();
+    const scanChain = async (child: number) => {
+      const out: Utxo[] = [];
+      let lastUsed = -1;
+      for (let start = 0; start < MAX_INDEX && start <= lastUsed + GAP; start += GAP) {
+        const batch = await Promise.all(
+          Array.from({ length: GAP }, async (_, k) => {
+            const index = start + k;
+            const addr = addressAt(child, index);
+            const [hist, list] = await Promise.all([
+              el.call<any[]>("blockchain.address.get_history", [addr]).catch(() => [] as any[]),
+              el.call<any[]>("blockchain.address.listunspent", [addr, "exclude_tokens"]),
+            ]);
+            const utxos = list.map((u) => ({ tx_hash: u.tx_hash, tx_pos: u.tx_pos, value: u.value, child, index, addr }));
+            return { index, used: hist.length > 0 || list.length > 0, utxos };
+          }),
+        );
+        for (const r of batch) {
+          if (r.used) lastUsed = Math.max(lastUsed, r.index);
+          out.push(...r.utxos);
+        }
+      }
+      return out;
+    };
+    const [receive, change] = await Promise.all([scanChain(RECEIVE), scanChain(CHANGE)]);
+    return [...receive, ...change];
   } finally {
     el.close();
   }

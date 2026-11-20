@@ -12,3 +12,7 @@ export const linkReady = (u: string) => /^https:\/\//.test(u) && u !== SLIDES_PL
 /** CashTokens-aware (z) address for EMBER2026 donations. */
 export const EMBER_ADDRESS = "bitcoincash:zp9d679zvayvudj65nd9zlgezvjplr8g3v7hftqmju";
 export const EVENT_LABEL = "BCH BLAZE 2026";
+/** The 2-minute film (unlisted on YouTube). */
+export const VIDEO_URL = env.VITE_VIDEO_URL?.trim() || "https://youtu.be/I7OzmWD8n7Y";
+/** No pre-existing code: the repo's first commit, made after the Kick-Off on 14 Nov 2026. */
+export const FIRST_COMMIT_URL = "https://github.com/cesaralonsoo/launchdesk/commit/877ea57";

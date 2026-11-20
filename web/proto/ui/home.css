@@ -52,6 +52,7 @@ html.home .ui.v7 > :not(.overlay) { display: none !important; }
 @media (max-width: 1100px) {
   .h-blaze-tr, .h-blaze-al { display: none; }
   .h-blaze-as { display: inline; }
+  .h-blaze-new { display: none !important; } /* still in the footer */
 }
 
 /* ─── top bar ─── */
