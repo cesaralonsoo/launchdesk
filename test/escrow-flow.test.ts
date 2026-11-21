@@ -471,8 +471,15 @@ test("v2: with ESCROW_V2=1 a new order uses the receipt contract; an order quote
   const old = await newProject();
   const oq = await realMoney(() => call("POST", `/api/projects/${old.id}/quote`, { stage: "validate", refundAddress: CUSTOMER }, old.ownerKey))();
   assert.equal((await realMoney(() => call("POST", `/api/projects/${old.id}/pay`, { stage: "validate", txHex: walletPays(oq.json.address, oq.json.sats, chain.paymentTag(old.id, "validate")) }, old.ownerKey))()).status, 200);
+  // ...and one only quoted (a wallet may be paying it right now).
+  const open = await newProject();
+  const openQ = await realMoney(() => call("POST", `/api/projects/${open.id}/quote`, { stage: "validate", refundAddress: CUSTOMER }, open.ownerKey))();
   process.env.ESCROW_V2 = "1";
   try {
+    // Re-quoting the open order for the same wallet keeps its contract (and address) when the flag flips.
+    const again = await realMoney(() => call("POST", `/api/projects/${open.id}/quote`, { stage: "validate", refundAddress: CUSTOMER }, open.ownerKey))();
+    assert.equal(again.json.address, openQ.json.address);
+    assert.equal((await exec("SELECT contract_version FROM escrow_orders WHERE project_id = ?", [open.id])).rows[0]?.contract_version, 1);
     const { id, ownerKey } = await newProject();
     const q = await realMoney(() => call("POST", `/api/projects/${id}/quote`, { stage: "validate", refundAddress: CUSTOMER }, ownerKey))();
     assert.equal(q.status, 200, JSON.stringify(q.json));

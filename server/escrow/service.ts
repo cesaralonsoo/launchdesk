@@ -137,7 +137,9 @@ export async function escrowQuoteAddress(projectId: string, stage: string, refun
   if (existing && existing.status !== "quoted") return { address: String(existing.address), timeoutBlocks: Number(existing.timeout_blocks) };
   const pubs = pubsOf(keys());
   const order = { ref: paymentTag(projectId, stage), merchantAddress: config.merchantAddress, refundAddress, timeoutBlocks: timeoutBlocks() };
-  const version = newOrderVersion();
+  // A re-quote for the same wallet keeps the order's contract version (so its address does not move when ESCROW_V2 is
+  // flipped while a quote is open: a wallet may already be paying it). A new wallet or a new order gets the current one.
+  const version = existing && String(existing.refund_address) === refundAddress ? versionOf(existing) : newOrderVersion();
   const e = makeEscrow(order, pubs, chainProvider(n), version);
   await exec(
     `INSERT OR REPLACE INTO escrow_orders (project_id, stage, ref, network, merchant_address, refund_address, release_pk, oracle_pk,
