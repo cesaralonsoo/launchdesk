@@ -17,7 +17,7 @@ Built for **BCH BLAZE 2026** (Mainnet track).
 
 ## Proven on Bitcoin Cash mainnet
 
-On 16 Nov 2026 we ran one real order through the escrow contract. It was paid from the Selene wallet over
+On 16 Nov 2026 we ran the first real order through the escrow contract. It was paid from the Selene wallet over
 WizardConnect, for a coffee kiosk idea in Barcelona.
 
 | Step | Transaction | What happened |
@@ -27,6 +27,9 @@ WizardConnect, for a coffee kiosk idea in Barcelona.
 | Refund drill: payment | [`16106ef3…1b5a`](https://blockchair.com/bitcoin-cash/transaction/16106ef3936c7f87c21a86ca727fc173fa98923fb1d5578603a9944455081b5a) | 21 Nov 2026: 50,000 sats from Selene into a second order's contract (same contract, same production key) |
 | Refund drill: too early | rejected by the network | Broadcast before 6 blocks: nodes refused it with `non-BIP68-final`. The timeout is enforced by Bitcoin Cash itself, not by us |
 | Refund drill: refund | [`33219ae2…e4d8`](https://blockchair.com/bitcoin-cash/transaction/33219ae2f3831e0ac907e7635936379db7621caf965531c47ddb1e9aa04ee4d8) | After 6 blocks: 49,612 sats back to the customer's address (fee 388 sats). Built with `contracts/refund-offline.ts`, no key and no server |
+| Second real order: payment | [`8ad38911…2c42`](https://blockchair.com/bitcoin-cash/transaction/8ad38911ff23d78e69dd05f91dd1aecc3cc4fe6b16686b1e96a6e25152722c42) | 21 Nov 2026: 50,969 sats (10¢) from Selene web over WizardConnect, for a mobile bike repair van in Valencia. Report delivered in about 2 minutes |
+| Second real order: release | [`67189e07…121e`](https://blockchair.com/bitcoin-cash/transaction/67189e078d78451b2e293eddc8d7345b779ccbdcefa0a94e99dc4334102a121e) | 50,370 sats to the merchant, plus `OP_RETURN "LD1" 5e8b137e…4c0ce5`, the SHA-256 of that report |
+| Second real order: launch kit | [`70c8b20a…7c56`](https://blockchair.com/bitcoin-cash/transaction/70c8b20a804366d96cb83280085c66a33a32d8de6b245146de25bba1df717c56) | 254,622 sats (50¢) for the logo, website and 30-day plan, tagged `LD1:<project>:build`. Paid straight to the merchant, not held in a contract |
 
 <img src="docs/deck/bch-proof.png" alt="The 'Proof on Bitcoin Cash' panel of the finished example: both transactions, the report fingerprint and a 'Match' result" width="560">
 

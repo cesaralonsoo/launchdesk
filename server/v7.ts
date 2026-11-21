@@ -327,6 +327,8 @@ export function plainText(s: string): string {
     .replace(/\s*\[S\d+(?:\s*[,;]\s*(?:S\d+|estimate))*(?:\s+[^\]\n]{0,160})?\]/gi, "")
     .replace(/\s*[;,]\s*no source (?:id|cited)\b/gi, "")
     .replace(/\s*\(\s*no source (?:id|cited)\s*\)/gi, "")
+    // the writer's evidence tags (+) (−) (=) (?) are for scoring, not for the reader
+    .replace(/(^|\s)\((?:\+|−|-|=|\?)\)(?=\s|[.,;:!?)]|$)/g, "$1")
     .replace(/\s+/g, " ")
     .replace(/\s+([.,;:!?])/g, "$1")
     .trim();
