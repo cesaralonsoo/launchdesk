@@ -10,14 +10,18 @@
 // Env: ESCROW=1, ESCROW_WIF (server hot key, WIF), ESCROW_ORACLE_WIF (optional, defaults to ESCROW_WIF),
 //      ESCROW_NETWORK=mainnet|chipnet (default mainnet; chipnet also needs ELECTRUM_SERVERS pointing at chipnet),
 //      ESCROW_TIMEOUT_BLOCKS (default 6 ≈ 1 h). MERCHANT_ADDRESS is where releases pay out.
+//      ESCROW_V2=1 (default off): NEW orders use contracts/LaunchDeskEscrowV2.cash, whose release also mints the
+//      customer a receipt NFT (commitment = report SHA-256). The version is stored per order (contract_version), so
+//      every existing order keeps rebuilding, releasing and refunding with the contract it was paid into.
 // Network calls go through the existing server/chain.ts electrum() + broadcast() (with failover).
 import { binToHex, hexToBin } from "@bitauth/libauth";
 import type { Network, NetworkProvider, SpendableUtxo } from "cashscript";
 import { broadcast, electrum, paymentTag } from "../chain.js";
 import { config } from "../config.js";
-import { exec, markPaymentRefunded } from "../db.js";
+import { addColumn, exec, markPaymentRefunded } from "../db.js";
 import {
   DEFAULT_TIMEOUT_BLOCKS,
+  RECEIPT_SATS,
   buildRefund,
   buildRelease,
   checkFunding,
@@ -29,6 +33,7 @@ import {
   type Escrow,
   type EscrowKeys,
   type EscrowNet,
+  type EscrowVersion,
   type Funding,
 } from "./contract.js";
 
@@ -37,6 +42,8 @@ let send: (hex: string, txid: string) => Promise<void> = broadcast;
 export const __setEscrowBroadcast = (fn: typeof send) => void (send = fn);
 
 export const escrowOn = () => process.env.ESCROW === "1";
+/** Contract version for orders quoted from now on (existing orders keep theirs). */
+export const newOrderVersion = (): EscrowVersion => (process.env.ESCROW_V2 === "1" ? 2 : 1);
 export const net = (): EscrowNet => (process.env.ESCROW_NETWORK === "chipnet" ? "chipnet" : "mainnet");
 const timeoutBlocks = () => {
   const n = Number(process.env.ESCROW_TIMEOUT_BLOCKS);
@@ -75,8 +82,9 @@ export function chainProvider(n: EscrowNet = net()): NetworkProvider {
 
 // ---- store -------------------------------------------------------------------------------------------------------
 let ready: Promise<unknown> | null = null;
-export const table = () =>
-  (ready ??= exec(`CREATE TABLE IF NOT EXISTS escrow_orders (
+export const table = () => (ready ??= createTable().catch((e) => ((ready = null), Promise.reject(e))));
+const createTable = async () => {
+  await exec(`CREATE TABLE IF NOT EXISTS escrow_orders (
     project_id TEXT NOT NULL, stage TEXT NOT NULL,
     ref TEXT NOT NULL, network TEXT NOT NULL,
     merchant_address TEXT NOT NULL, refund_address TEXT NOT NULL,
@@ -86,7 +94,11 @@ export const table = () =>
     funding_txid TEXT, funding_vout INTEGER, sats INTEGER, funded_at INTEGER,
     report_hash TEXT, report_body TEXT, release_txid TEXT, refund_txid TEXT, note TEXT,
     updated_at INTEGER NOT NULL,
-    PRIMARY KEY (project_id, stage))`));
+    PRIMARY KEY (project_id, stage))`);
+  // v2 (receipt NFT): which contract an order was quoted with. Every row from before this column is a v1 order.
+  await addColumn("escrow_orders", "contract_version", "INTEGER NOT NULL DEFAULT 1");
+};
+export const versionOf = (r: Row): EscrowVersion => (Number(r.contract_version ?? 1) === 2 ? 2 : 1);
 
 export type Row = Record<string, unknown>;
 export async function getRow(projectId: string, stage: string): Promise<Row | null> {
@@ -108,6 +120,7 @@ function escrowOf(r: Row): Escrow {
     { ref: String(r.ref), merchantAddress: String(r.merchant_address), refundAddress: String(r.refund_address), timeoutBlocks: Number(r.timeout_blocks) },
     { releasePk: hexToBin(String(r.release_pk)), oraclePk: hexToBin(String(r.oracle_pk)) },
     chainProvider(String(r.network) as EscrowNet),
+    versionOf(r),
   );
 }
 const fundingOf = (r: Row): Funding => ({ txid: String(r.funding_txid), vout: Number(r.funding_vout), sats: Number(r.sats) });
@@ -124,12 +137,13 @@ export async function escrowQuoteAddress(projectId: string, stage: string, refun
   if (existing && existing.status !== "quoted") return { address: String(existing.address), timeoutBlocks: Number(existing.timeout_blocks) };
   const pubs = pubsOf(keys());
   const order = { ref: paymentTag(projectId, stage), merchantAddress: config.merchantAddress, refundAddress, timeoutBlocks: timeoutBlocks() };
-  const e = makeEscrow(order, pubs, chainProvider(n));
+  const version = newOrderVersion();
+  const e = makeEscrow(order, pubs, chainProvider(n), version);
   await exec(
     `INSERT OR REPLACE INTO escrow_orders (project_id, stage, ref, network, merchant_address, refund_address, release_pk, oracle_pk,
-      timeout_blocks, address, locking_hex, redeem_hex, status, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,'quoted',?)`,
+      timeout_blocks, address, locking_hex, redeem_hex, status, contract_version, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,'quoted',?,?)`,
     [projectId, stage, order.ref, n, order.merchantAddress, refundAddress, binToHex(pubs.releasePk), binToHex(pubs.oraclePk),
-      e.timeoutBlocks, e.address, e.lockingBytecodeHex, e.contract.bytecode, Date.now()],
+      e.timeoutBlocks, e.address, e.lockingBytecodeHex, e.contract.bytecode, version, Date.now()],
   );
   return { address: e.address, timeoutBlocks: e.timeoutBlocks };
 }
@@ -352,6 +366,10 @@ export type EscrowStatus = {
   reportHash: string | null;
   timeoutBlocks: number;
   network: EscrowNet;
+  /** 1 = original contract; 2 = the release also mints the customer a receipt NFT. */
+  contractVersion: EscrowVersion;
+  /** v2, released from a vout-0 coin: the receipt NFT the customer's wallet now holds (null otherwise). */
+  receipt: { category: string; commitment: string; sats: number; txid: string; url: string } | null;
   /** Block explorer pages for the release / refund transactions (null until they exist). */
   releaseUrl: string | null;
   refundUrl: string | null;
@@ -368,6 +386,7 @@ export type EscrowStatus = {
     oraclePk: string;
     timeoutBlocks: number;
     funding: string | null;
+    contractVersion: EscrowVersion;
   };
 };
 /** Block explorer page for one transaction on the order's network. */
@@ -387,6 +406,17 @@ export async function escrowStatus(projectId: string, stage: string, opts: { own
     reportHash: s("report_hash"),
     timeoutBlocks: Number(r.timeout_blocks),
     network: String(r.network) as EscrowNet,
+    contractVersion: versionOf(r),
+    receipt:
+      versionOf(r) === 2 && r.release_txid && r.report_hash && Number(r.funding_vout) === 0
+        ? {
+            category: String(r.funding_txid),
+            commitment: String(r.report_hash),
+            sats: RECEIPT_SATS,
+            txid: String(r.release_txid),
+            url: explorerTxUrl(String(r.network) as EscrowNet, String(r.release_txid)),
+          }
+        : null,
     releaseUrl: r.release_txid ? explorerTxUrl(String(r.network) as EscrowNet, String(r.release_txid)) : null,
     refundUrl: r.refund_txid ? explorerTxUrl(String(r.network) as EscrowNet, String(r.refund_txid)) : null,
     refundDetails: {
@@ -400,6 +430,7 @@ export async function escrowStatus(projectId: string, stage: string, opts: { own
       oraclePk: String(r.oracle_pk),
       timeoutBlocks: Number(r.timeout_blocks),
       funding: r.funding_txid ? `${String(r.funding_txid)}:${Number(r.funding_vout)}:${Number(r.sats)}` : null,
+      contractVersion: versionOf(r),
     },
   };
 }

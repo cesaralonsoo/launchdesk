@@ -99,6 +99,27 @@ Real example on mainnet (16 Nov 2026), release
 [`661ca57b…ee23`](https://blockchair.com/bitcoin-cash/transaction/661ca57bd66b7bbc61667724fb104c506b263f68474d6a068a97b5ba91abee23):
 the `OP_RETURN` is `6a 03 4c4431 20 8447cc7290ece01c91673ef4eb8137c9332581040af710030aa3c9195350ecd5`.
 
+### v2 (behind `ESCROW_V2`): a receipt NFT in your wallet
+Orders quoted while the server runs with `ESCROW_V2=1` use [`contracts/LaunchDeskEscrowV2.cash`](contracts/LaunchDeskEscrowV2.cash).
+It is off by default; each order stores its contract version, so older orders never change contract.
+- The refund is exactly the same as above.
+- The release has the same checks, plus: when your payment sits at output 0 of your payment transaction (the
+  LaunchDesk payment page always builds it that way), the release must have **exactly three outputs**, and the third
+  must pay **your own address** exactly 1,000 sats carrying a new NFT. Its category must be your payment's txid
+  (a CashTokens genesis from the escrowed coin), it must be immutable (no mutable or minting capability), hold no
+  fungible tokens, and its commitment must be the report's 32-byte SHA-256: the same fingerprint as the `OP_RETURN`.
+  The merchant output still carries no tokens, and the fee limit stays 2,000 sats.
+- The 1,000 sats for the receipt come out of the escrowed amount, so LaunchDesk receives that much less.
+- A token can only be created from an input that spends output 0. If someone pays the contract from a hand-built
+  transaction with the contract at another output, no receipt is possible, and the release is the original
+  two-output release.
+- Tested by `test/escrow-v2.test.ts` (receipt attacks: wrong commitment, NFT to the merchant or a thief, wrong
+  category, missing NFT, fungible tokens added, mutable or minting NFT, extra outputs, a wrong receipt amount), by
+  the 41 attacks of `escrow-attacks.test.ts` re-run against v2, and by `npm run mutate:v2` (each of v2's 23 `require`
+  lines removed in turn; all 23 are caught).
+- Your wallet must support CashTokens to show the receipt (Selene, Cashonize and Paytaca do). A
+  wallet without CashTokens support might not show it, and could destroy it when spending that coin.
+
 ## How the contract is tested
 
 - `test/escrow.test.ts`: the normal paths and the main rejections.

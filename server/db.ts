@@ -81,7 +81,8 @@ export async function migrate() {
   await db.execute("CREATE TABLE IF NOT EXISTS results_v7 (project_id TEXT PRIMARY KEY, json TEXT NOT NULL, research TEXT, updated_at INTEGER NOT NULL)");
 }
 
-async function addColumn(table: string, column: string, type: string) {
+/** Adds a column if it is missing (idempotent; works on SQLite, libsql and Turso). */
+export async function addColumn(table: string, column: string, type: string) {
   const info = await db.execute(`PRAGMA table_info(${table})`);
   if (!info.rows.some((r) => r.name === column)) await db.execute(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
 }

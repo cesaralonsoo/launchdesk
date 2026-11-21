@@ -5,6 +5,7 @@
 //   npx tsx --env-file=.env contracts/refund-offline.ts \
 //     --project <projectId> --refund <customer bitcoincash:q… address> --funding <txid>:<vout>:<sats> \
 //     [--merchant <bitcoincash:q…>] [--timeout 6] [--net mainnet|chipnet] [--release-pk <hex> --oracle-pk <hex>]
+//     [--version 1|2]   (escrow_orders.contract_version; 2 = the receipt-NFT contract, default 1)
 //
 // Public keys come from --release-pk/--oracle-pk (escrow_orders.release_pk / oracle_pk), else from ESCROW_WIF /
 // ESCROW_ORACLE_WIF in the environment. The merchant defaults to MERCHANT_ADDRESS. The script prints the contract
@@ -35,6 +36,7 @@ const escrow = makeEscrow(
   },
   pubs,
   offline,
+  args.get("version") === "2" ? 2 : 1,
 );
 const tx = buildRefund(escrow, { txid: need("txid", txid), vout: Number(vout), sats: Number(sats) });
 console.log(`contract address (must match the paid address): ${escrow.address}`);

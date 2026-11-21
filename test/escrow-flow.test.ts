@@ -461,3 +461,77 @@ test("strays: the sweep only looks at orders changed in the last 7 days (plus fu
   await escrowStraySweep();
   assert.equal((await exec("SELECT 1 FROM escrow_strays WHERE project_id = ?", [id])).rows.length, 0, "an old quote's address is not scanned");
 });
+
+// ---- v2 (ESCROW_V2=1): the release also gives the customer a receipt NFT -------------------------------------------
+test("v2: with ESCROW_V2=1 a new order uses the receipt contract; an order quoted before keeps v1", async () => {
+  // This file creates many projects from one test "IP": lift the per-IP limits for the v2 tests below.
+  config.rateLimit.create = 1000;
+  config.rateLimit.run = 1000;
+  // An order quoted (and paid) while the flag was off...
+  const old = await newProject();
+  const oq = await realMoney(() => call("POST", `/api/projects/${old.id}/quote`, { stage: "validate", refundAddress: CUSTOMER }, old.ownerKey))();
+  assert.equal((await realMoney(() => call("POST", `/api/projects/${old.id}/pay`, { stage: "validate", txHex: walletPays(oq.json.address, oq.json.sats, chain.paymentTag(old.id, "validate")) }, old.ownerKey))()).status, 200);
+  process.env.ESCROW_V2 = "1";
+  try {
+    const { id, ownerKey } = await newProject();
+    const q = await realMoney(() => call("POST", `/api/projects/${id}/quote`, { stage: "validate", refundAddress: CUSTOMER }, ownerKey))();
+    assert.equal(q.status, 200, JSON.stringify(q.json));
+    assert.equal((await exec("SELECT contract_version FROM escrow_orders WHERE project_id = ?", [id])).rows[0]?.contract_version, 2);
+    assert.equal((await exec("SELECT contract_version FROM escrow_orders WHERE project_id = ?", [old.id])).rows[0]?.contract_version, 1);
+    const paid = await realMoney(() => call("POST", `/api/projects/${id}/pay`, { stage: "validate", txHex: walletPays(q.json.address, q.json.sats, chain.paymentTag(id, "validate")) }, ownerKey))();
+    assert.equal(paid.status, 200, JSON.stringify(paid.json));
+    const fundingTxid = paid.json.payments.validate.txid;
+    let st = (await call("GET", `/api/escrow/${id}/validate`, undefined, ownerKey)).json;
+    assert.equal(st.contractVersion, 2);
+    assert.equal(st.receipt, null);
+    assert.equal(st.refundDetails.contractVersion, 2);
+
+    await runToDone(id, ownerKey);
+    await runToDone(old.id, old.ownerKey);
+    assert.equal((await escrowTick()).released, 2);
+
+    st = (await call("GET", `/api/escrow/${id}/validate`)).json;
+    assert.equal(st.state, "released");
+    assert.equal(st.receipt.category, fundingTxid);
+    assert.equal(st.receipt.commitment, st.reportHash);
+    assert.equal(st.receipt.url, st.releaseUrl);
+    const rel = decodeTransaction(hexToBin((await mock.getRawTransaction(st.releaseTxid))!));
+    assert.ok(typeof rel !== "string");
+    assert.equal(rel.outputs.length, 3);
+    assert.equal(readDeliveryHash(rel.outputs[1]!.lockingBytecode), st.reportHash);
+    assert.equal(binToHex(rel.outputs[2]!.token!.category), fundingTxid);
+    assert.equal(rel.outputs[2]!.token!.nft!.capability, "none");
+    assert.equal(binToHex(rel.outputs[2]!.token!.nft!.commitment), st.reportHash);
+    const nft = (await mock.getUtxos(CUSTOMER)).find((u) => u.txid === st.releaseTxid);
+    assert.equal(nft?.token?.nft?.commitment, st.reportHash, "the customer's wallet holds the receipt");
+    assert.ok(Number(rel.outputs[0]!.valueSatoshis) >= q.json.sats - 2000 - 1000);
+
+    // The v1 order released with its own contract (2 outputs, no receipt).
+    const ost = (await call("GET", `/api/escrow/${old.id}/validate`)).json;
+    assert.equal(ost.state, "released");
+    assert.equal(ost.contractVersion, 1);
+    assert.equal(ost.receipt, null);
+    const orel = decodeTransaction(hexToBin((await mock.getRawTransaction(ost.releaseTxid))!));
+    assert.ok(typeof orel !== "string");
+    assert.equal(orel.outputs.length, 2);
+  } finally {
+    delete process.env.ESCROW_V2;
+  }
+});
+
+test("v2: a v2 order is still refunded by the keyless path when the report is not delivered", async () => {
+  process.env.ESCROW_V2 = "1";
+  try {
+    const { id, ownerKey } = await newProject();
+    const q = await realMoney(() => call("POST", `/api/projects/${id}/quote`, { stage: "validate", refundAddress: CUSTOMER }, ownerKey))();
+    assert.equal((await realMoney(() => call("POST", `/api/projects/${id}/pay`, { stage: "validate", txHex: walletPays(q.json.address, q.json.sats, chain.paymentTag(id, "validate")) }, ownerKey))()).status, 200);
+    mine(6);
+    const r = await call("POST", `/api/escrow/${id}/validate/refund`);
+    assert.equal(r.status, 200, JSON.stringify(r.json));
+    const st = (await call("GET", `/api/escrow/${id}/validate`)).json;
+    assert.equal(st.state, "refunded");
+    assert.equal(st.contractVersion, 2);
+  } finally {
+    delete process.env.ESCROW_V2;
+  }
+});

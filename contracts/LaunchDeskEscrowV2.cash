@@ -1,0 +1,63 @@
+pragma cashscript ^0.14.0;
+
+// LaunchDesk escrow v2 (behind ESCROW_V2=1): v1 (LaunchDeskEscrow.cash) plus an on-chain receipt for the customer.
+//
+// Same two ways out as v1:
+//   release(): LaunchDesk release key AND a report signature over orderId ++ reportHash. Output 0 pays the merchant
+//              (no tokens), output 1 is OP_RETURN "LD1" <reportHash>, and when the escrowed coin sits at outpoint
+//              index 0 of its funding tx (the LaunchDesk wallet flow always builds it that way) output 2 MUST be the
+//              customer's receipt: exactly `receiptSats` to the customer's own address (refundPkh) carrying a new
+//              immutable NFT whose category is the funding txid (a CashTokens genesis from this very input) and whose
+//              commitment is reportHash. So the customer's wallet holds proof of which report they paid for.
+//              A token genesis is only possible from an input spending outpoint index 0; a coin at any other index
+//              (someone paid with a hand-built tx) is released exactly like v1, without the receipt.
+//   refund():  unchanged from v1: after `timeout` blocks, no signature, everything (minus a capped fee) back to the
+//              customer.
+contract LaunchDeskEscrowV2(
+    bytes20 merchantPkh,   // where a release pays out (the LaunchDesk merchant wallet, P2PKH)
+    pubkey releasePk,      // server hot key that signs the release transaction
+    pubkey oraclePk,       // key that signs "this report was delivered for this order" (may equal releasePk)
+    bytes20 refundPkh,     // the customer's own address (P2PKH): refund AND receipt NFT go here
+    int timeout,           // refund unlocks after this many blocks since funding (6 = about 1 hour)
+    bytes32 orderId        // sha256 of the order reference; also makes every order address unique
+) {
+    function release(sig releaseSig, datasig reportSig, bytes32 reportHash) {
+        require(checkSig(releaseSig, releasePk));
+        require(checkDataSig(reportSig, orderId + reportHash, oraclePk));
+
+        require(tx.inputs.length == 1);
+
+        int amount = tx.inputs[this.activeInputIndex].value;
+        require(tx.outputs[0].lockingBytecode == new LockingBytecodeP2PKH(merchantPkh));
+        require(tx.outputs[0].tokenCategory == 0x);
+
+        require(tx.outputs[1].value == 0);
+        require(tx.outputs[1].lockingBytecode == new LockingBytecodeNullData([0x4c4431, reportHash]));
+        require(tx.outputs[1].tokenCategory == 0x);
+
+        if (tx.inputs[this.activeInputIndex].outpointIndex == 0) {
+            require(tx.outputs.length == 3);
+            require(tx.outputs[0].value >= amount - 3000);
+            require(tx.outputs[2].lockingBytecode == new LockingBytecodeP2PKH(refundPkh));
+            require(tx.outputs[2].value == 1000);
+            require(tx.outputs[2].tokenCategory == tx.inputs[this.activeInputIndex].outpointTransactionHash);
+            require(tx.outputs[2].nftCommitment == reportHash);
+            require(tx.outputs[2].tokenAmount == 0);
+        } else {
+            require(tx.outputs.length == 2);
+            require(tx.outputs[0].value >= amount - 2000);
+        }
+    }
+
+    function refund() {
+        require(this.age >= timeout);
+
+        require(tx.inputs.length == 1);
+        require(tx.outputs.length == 1);
+
+        int amount = tx.inputs[this.activeInputIndex].value;
+        require(tx.outputs[0].lockingBytecode == new LockingBytecodeP2PKH(refundPkh));
+        require(tx.outputs[0].value >= amount - 2000);
+        require(tx.outputs[0].tokenCategory == 0x);
+    }
+}

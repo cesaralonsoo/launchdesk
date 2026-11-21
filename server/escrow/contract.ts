@@ -5,7 +5,7 @@
 //   checkFunding(tx)     -> the customer's funding tx really pays this contract (and carries the LD1 tag)
 //   reportHashOf(bytes)  -> sha256 of the delivered report (what goes on chain)
 //   signReport()         -> the report signature checkDataSig verifies (over orderId ++ reportHash)
-//   buildRelease()       -> merchant payout + OP_RETURN "LD1" <reportHash>
+//   buildRelease()       -> merchant payout + OP_RETURN "LD1" <reportHash> (+ v2: receipt NFT to the customer)
 //   buildRefund()        -> after `timeout` blocks, all of it back to the customer; no signature needed
 import { createHash } from "node:crypto";
 import {
@@ -20,12 +20,18 @@ import {
 } from "@bitauth/libauth";
 import { Contract, SignatureTemplate, TransactionBuilder, type NetworkProvider, type SpendableUtxo } from "cashscript";
 import { escrowArtifact } from "./artifact.js";
+import { escrowArtifactV2 } from "./artifact-v2.js";
 
 /** Must match the `amount - 2000` cap in the contract: the most a release or refund may leave as miner fee. */
 export const MAX_FEE_SATS = 2000;
 /** 6 blocks ≈ 1 hour. Relative to the confirmation of the funding output (BIP68, block based). */
 export const DEFAULT_TIMEOUT_BLOCKS = 6;
 const DUST = 546;
+/** v2 only: the exact value of the receipt NFT output (contract: `tx.outputs[2].value == 1000`), paid from the escrow. */
+export const RECEIPT_SATS = 1000;
+
+/** 1 = contracts/LaunchDeskEscrow.cash, 2 = contracts/LaunchDeskEscrowV2.cash (receipt NFT). Fixed per order. */
+export type EscrowVersion = 1 | 2;
 
 export type EscrowNet = "mainnet" | "chipnet";
 const prefixOf = (net: EscrowNet) => (net === "mainnet" ? "bitcoincash" : "bchtest");
@@ -75,6 +81,9 @@ export function p2pkhAddress(pkh: Uint8Array, net: EscrowNet): string {
   return typeof r === "string" ? r : r.address;
 }
 
+/** OP_DUP OP_HASH160 <pkh> OP_EQUALVERIFY OP_CHECKSIG */
+export const p2pkhLock = (pkh: Uint8Array) => Uint8Array.from([0x76, 0xa9, 0x14, ...pkh, 0x88, 0xac]);
+
 export function keyOf(wif: string): { priv: Uint8Array; pub: Uint8Array } {
   const d = decodePrivateKeyWif(wif);
   if (typeof d === "string") throw new Error("Escrow key misconfigured (bad WIF)");
@@ -91,20 +100,23 @@ export interface Escrow {
   timeoutBlocks: number;
   order: EscrowOrder;
   net: EscrowNet;
+  version: EscrowVersion;
 }
 
-export function makeEscrow(order: EscrowOrder, keys: EscrowKeys | EscrowPubs, provider: NetworkProvider): Escrow {
+export function makeEscrow(order: EscrowOrder, keys: EscrowKeys | EscrowPubs, provider: NetworkProvider, version: EscrowVersion = 1): Escrow {
+  if (version !== 1 && version !== 2) throw new Error("Unknown escrow contract version");
   const net: EscrowNet = provider.network === "mainnet" ? "mainnet" : "chipnet";
   const timeoutBlocks = order.timeoutBlocks ?? DEFAULT_TIMEOUT_BLOCKS;
   if (!Number.isInteger(timeoutBlocks) || timeoutBlocks < 1 || timeoutBlocks > 0xffff) throw new Error("Bad escrow timeout");
   const orderId = orderIdOf(order.ref);
   const { releasePk, oraclePk } = pubsOf(keys);
+  // Both versions take the same constructor arguments and expose the same release()/refund() ABI.
   const contract = new Contract(
-    escrowArtifact,
+    (version === 2 ? escrowArtifactV2 : escrowArtifact) as typeof escrowArtifact,
     [pkhOf(order.merchantAddress, net), releasePk, oraclePk, pkhOf(order.refundAddress, net), BigInt(timeoutBlocks), orderId],
     { provider, contractType: "p2sh32" },
   );
-  return { contract, address: contract.address, lockingBytecodeHex: contract.lockingBytecode, orderId, timeoutBlocks, order, net };
+  return { contract, address: contract.address, lockingBytecodeHex: contract.lockingBytecode, orderId, timeoutBlocks, order, net, version };
 }
 
 /** OP_RETURN "LD1" <reportHash>, byte for byte what LockingBytecodeNullData([0x4c4431, reportHash]) builds. */
@@ -147,7 +159,7 @@ export function checkFunding(txHex: string, escrow: Escrow, minSats: number, tag
   const f = best as Funding | null;
   if (!f) throw new Error("This payment does not go to the order's safe address. Nothing was taken.");
   if (f.sats < minSats) throw new Error(`Payment too small: ${f.sats} sats, the price is ${minSats} sats.`);
-  if (f.sats < MAX_FEE_SATS + DUST) throw new Error("Payment too small to hold in escrow.");
+  if (f.sats < MAX_FEE_SATS + DUST + (escrow.version === 2 ? RECEIPT_SATS : 0)) throw new Error("Payment too small to hold in escrow.");
   return { ...f, txid: hashTransaction(bin) };
 }
 
@@ -189,17 +201,41 @@ export interface BuiltTx {
 }
 const done = (r: { hex: string; fee: number }): BuiltTx => ({ ...r, txid: hashTransaction(hexToBin(r.hex)) });
 
-/** Release: pays the merchant and fingerprints the report. Throws if the VM rejects it (no broadcast here). */
+/** v2: a release mints the receipt NFT only when the escrowed coin is at outpoint index 0 (CashTokens genesis rule). */
+export const mintsReceipt = (escrow: Escrow, funding: Funding) => escrow.version === 2 && funding.vout === 0;
+
+/**
+ * The receipt NFT a v2 release gives the customer: category = funding txid (genesis from the escrow input), immutable,
+ * commitment = reportHash. CashScript/libauth take the category in the same (display) byte order as a txid.
+ */
+export const receiptToken = (funding: Funding, reportHash: Uint8Array) => ({
+  amount: 0n,
+  category: funding.txid,
+  nft: { capability: "none" as const, commitment: binToHex(reportHash) },
+});
+
+/**
+ * Release: pays the merchant and fingerprints the report; a v2 order (funded at vout 0) also sends the customer the
+ * receipt NFT, paid from the escrowed value. Throws if the VM rejects it (no broadcast here).
+ */
 export function buildRelease(escrow: Escrow, funding: Funding, reportHash: Uint8Array, keys: EscrowKeys): BuiltTx {
   const reportSig = signReport(escrow, reportHash, keys);
   const merchant = p2pkhAddress(pkhOf(escrow.order.merchantAddress, escrow.net), escrow.net);
+  const receipt = mintsReceipt(escrow, funding);
   return done(
-    feeFor((fee) =>
-      new TransactionBuilder({ provider: escrow.contract.provider })
+    feeFor((fee) => {
+      const tb = new TransactionBuilder({ provider: escrow.contract.provider })
         .addInput(fundingUtxo(escrow, funding), escrow.contract.unlock.release(new SignatureTemplate(keyOf(keys.releaseWif).priv), reportSig, reportHash))
-        .addOutput({ to: merchant, amount: BigInt(funding.sats - fee) })
-        .addOutput({ to: deliveryOpReturn(reportHash), amount: 0n }),
-    ),
+        .addOutput({ to: merchant, amount: BigInt(funding.sats - fee - (receipt ? RECEIPT_SATS : 0)) })
+        .addOutput({ to: deliveryOpReturn(reportHash), amount: 0n });
+      if (receipt)
+        tb.addOutput({
+          to: p2pkhLock(pkhOf(escrow.order.refundAddress, escrow.net)), // raw P2PKH script: same coins as the q/z address
+          amount: BigInt(RECEIPT_SATS),
+          token: receiptToken(funding, reportHash),
+        });
+      return tb;
+    }),
   );
 }
 

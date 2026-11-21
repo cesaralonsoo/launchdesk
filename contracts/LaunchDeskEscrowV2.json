@@ -1,0 +1,164 @@
+{
+  "contractName": "LaunchDeskEscrowV2",
+  "constructorInputs": [
+    {
+      "name": "merchantPkh",
+      "type": "bytes20"
+    },
+    {
+      "name": "releasePk",
+      "type": "pubkey"
+    },
+    {
+      "name": "oraclePk",
+      "type": "pubkey"
+    },
+    {
+      "name": "refundPkh",
+      "type": "bytes20"
+    },
+    {
+      "name": "timeout",
+      "type": "int"
+    },
+    {
+      "name": "orderId",
+      "type": "bytes32"
+    }
+  ],
+  "abi": [
+    {
+      "name": "release",
+      "inputs": [
+        {
+          "name": "releaseSig",
+          "type": "sig"
+        },
+        {
+          "name": "reportSig",
+          "type": "datasig"
+        },
+        {
+          "name": "reportHash",
+          "type": "bytes32"
+        }
+      ]
+    },
+    {
+      "name": "refund",
+      "inputs": []
+    }
+  ],
+  "bytecode": "OP_6 OP_PICK OP_0 OP_NUMEQUAL OP_IF OP_9 OP_ROLL OP_SIZE 20 OP_EQUALVERIFY OP_8 OP_ROLL OP_3 OP_ROLL OP_CHECKSIGVERIFY OP_7 OP_ROLL OP_6 OP_ROLL OP_2 OP_PICK OP_CAT OP_4 OP_ROLL OP_CHECKDATASIGVERIFY OP_TXINPUTCOUNT OP_1 OP_NUMEQUALVERIFY OP_INPUTINDEX OP_UTXOVALUE OP_0 OP_OUTPUTBYTECODE 76a914 OP_4 OP_ROLL OP_CAT 88ac OP_CAT OP_EQUALVERIFY OP_0 OP_OUTPUTTOKENCATEGORY OP_0 OP_EQUALVERIFY OP_1 OP_OUTPUTVALUE OP_0 OP_NUMEQUALVERIFY OP_1 OP_OUTPUTBYTECODE 6a 034c4431 OP_CAT 20 OP_4 OP_PICK OP_CAT OP_CAT OP_EQUALVERIFY OP_1 OP_OUTPUTTOKENCATEGORY OP_0 OP_EQUALVERIFY OP_INPUTINDEX OP_OUTPOINTINDEX OP_0 OP_NUMEQUAL OP_IF OP_TXOUTPUTCOUNT OP_3 OP_NUMEQUALVERIFY OP_0 OP_OUTPUTVALUE OP_OVER b80b OP_SUB OP_GREATERTHANOREQUAL OP_VERIFY OP_2 OP_OUTPUTBYTECODE 76a914 OP_4 OP_PICK OP_CAT 88ac OP_CAT OP_EQUALVERIFY OP_2 OP_OUTPUTVALUE e803 OP_NUMEQUALVERIFY OP_2 OP_OUTPUTTOKENCATEGORY OP_INPUTINDEX OP_OUTPOINTTXHASH OP_EQUALVERIFY OP_2 OP_OUTPUTTOKENCOMMITMENT OP_2 OP_PICK OP_EQUALVERIFY OP_2 OP_OUTPUTTOKENAMOUNT OP_0 OP_NUMEQUALVERIFY OP_ELSE OP_TXOUTPUTCOUNT OP_2 OP_NUMEQUALVERIFY OP_0 OP_OUTPUTVALUE OP_OVER d007 OP_SUB OP_GREATERTHANOREQUAL OP_VERIFY OP_ENDIF OP_2DROP OP_2DROP OP_DROP OP_1 OP_ELSE OP_6 OP_ROLL OP_1 OP_NUMEQUALVERIFY OP_4 OP_ROLL OP_CHECKSEQUENCEVERIFY OP_DROP OP_TXINPUTCOUNT OP_1 OP_NUMEQUALVERIFY OP_TXOUTPUTCOUNT OP_1 OP_NUMEQUALVERIFY OP_INPUTINDEX OP_UTXOVALUE OP_0 OP_OUTPUTBYTECODE 76a914 OP_6 OP_ROLL OP_CAT 88ac OP_CAT OP_EQUALVERIFY OP_0 OP_OUTPUTVALUE OP_SWAP d007 OP_SUB OP_GREATERTHANOREQUAL OP_VERIFY OP_0 OP_OUTPUTTOKENCATEGORY OP_0 OP_EQUALVERIFY OP_2DROP OP_2DROP OP_1 OP_ENDIF",
+  "source": "pragma cashscript ^0.14.0;\n\n// LaunchDesk escrow v2 (behind ESCROW_V2=1): v1 (LaunchDeskEscrow.cash) plus an on-chain receipt for the customer.\n//\n// Same two ways out as v1:\n//   release(): LaunchDesk release key AND a report signature over orderId ++ reportHash. Output 0 pays the merchant\n//              (no tokens), output 1 is OP_RETURN \"LD1\" <reportHash>, and when the escrowed coin sits at outpoint\n//              index 0 of its funding tx (the LaunchDesk wallet flow always builds it that way) output 2 MUST be the\n//              customer's receipt: exactly `receiptSats` to the customer's own address (refundPkh) carrying a new\n//              immutable NFT whose category is the funding txid (a CashTokens genesis from this very input) and whose\n//              commitment is reportHash. So the customer's wallet holds proof of which report they paid for.\n//              A token genesis is only possible from an input spending outpoint index 0; a coin at any other index\n//              (someone paid with a hand-built tx) is released exactly like v1, without the receipt.\n//   refund():  unchanged from v1: after `timeout` blocks, no signature, everything (minus a capped fee) back to the\n//              customer.\ncontract LaunchDeskEscrowV2(\n    bytes20 merchantPkh,   // where a release pays out (the LaunchDesk merchant wallet, P2PKH)\n    pubkey releasePk,      // server hot key that signs the release transaction\n    pubkey oraclePk,       // key that signs \"this report was delivered for this order\" (may equal releasePk)\n    bytes20 refundPkh,     // the customer's own address (P2PKH): refund AND receipt NFT go here\n    int timeout,           // refund unlocks after this many blocks since funding (6 = about 1 hour)\n    bytes32 orderId        // sha256 of the order reference; also makes every order address unique\n) {\n    function release(sig releaseSig, datasig reportSig, bytes32 reportHash) {\n        require(checkSig(releaseSig, releasePk));\n        require(checkDataSig(reportSig, orderId + reportHash, oraclePk));\n\n        require(tx.inputs.length == 1);\n\n        int amount = tx.inputs[this.activeInputIndex].value;\n        require(tx.outputs[0].lockingBytecode == new LockingBytecodeP2PKH(merchantPkh));\n        require(tx.outputs[0].tokenCategory == 0x);\n\n        require(tx.outputs[1].value == 0);\n        require(tx.outputs[1].lockingBytecode == new LockingBytecodeNullData([0x4c4431, reportHash]));\n        require(tx.outputs[1].tokenCategory == 0x);\n\n        if (tx.inputs[this.activeInputIndex].outpointIndex == 0) {\n            require(tx.outputs.length == 3);\n            require(tx.outputs[0].value >= amount - 3000);\n            require(tx.outputs[2].lockingBytecode == new LockingBytecodeP2PKH(refundPkh));\n            require(tx.outputs[2].value == 1000);\n            require(tx.outputs[2].tokenCategory == tx.inputs[this.activeInputIndex].outpointTransactionHash);\n            require(tx.outputs[2].nftCommitment == reportHash);\n            require(tx.outputs[2].tokenAmount == 0);\n        } else {\n            require(tx.outputs.length == 2);\n            require(tx.outputs[0].value >= amount - 2000);\n        }\n    }\n\n    function refund() {\n        require(this.age >= timeout);\n\n        require(tx.inputs.length == 1);\n        require(tx.outputs.length == 1);\n\n        int amount = tx.inputs[this.activeInputIndex].value;\n        require(tx.outputs[0].lockingBytecode == new LockingBytecodeP2PKH(refundPkh));\n        require(tx.outputs[0].value >= amount - 2000);\n        require(tx.outputs[0].tokenCategory == 0x);\n    }\n}\n",
+  "fingerprint": "77694c276b8b23e1fffa7811738e5e08ac22e82cb3ba31bc74b80c50814c80de",
+  "debug": {
+    "bytecode": "5679009c63597a82012088587a537aad577a567a52797e547abbc3519dc0c600cd0376a914547a7e0288ac7e8800d1008851cc009d51cd016a04034c44317e012054797e7e8851d10088c0c9009c63c4539d00cc7802b80b94a26952cd0376a91454797e0288ac7e8852cc02e8039d52d1c0c88852d252798852d3009d67c4529d00cc7802d00794a269686d6d755167567a519d547ab275c3519dc4519dc0c600cd0376a914567a7e0288ac7e8800cc7c02d00794a26900d100886d6d5168",
+    "sourceMap": "24:4:50:5;;;;;:56:24:74;;;;;25:25:25:35;;:37::46;;:8::49:1;26:29:26:38:0;;:40::47;;:50::60;;:40:::1;:62::70:0;;:8::73:1;28:16:28:32:0;:36::37;:8::39:1;30:31:30:52:0;:21::59:1;31:27:31:28:0;:16::45:1;:49::86:0;:74::85;;:49::86:1;;;:8::88;32:27:32:28:0;:16::43:1;:47::49:0;:8::51:1;34:27:34:28:0;:16::35:1;:39::40:0;:8::42:1;35:27:35:28:0;:16::45:1;:49::100:0;:78::86;::::1;:88::98:0;;;::::1;;:8::102;36:27:36:28:0;:16::43:1;:47::49:0;:8::51:1;38:22:38:43:0;:12::58:1;:62::63:0;:12:::1;:65:46:9:0;39:20:39:37;:41::42;:12::44:1;40:31:40:32:0;:20::39:1;:43::49:0;:52::56;:43:::1;:20;:12::58;41:31:41:32:0;:20::49:1;:53::88:0;:78::87;;:53::88:1;;;:12::90;42:31:42:32:0;:20::39:1;:43::47:0;:12::49:1;43:31:43:32:0;:20::47:1;:61::82:0;:51::107:1;:12::109;44:31:44:32:0;:20::47:1;:51::61:0;;:12::63:1;45:31:45:32:0;:20::45:1;:49::50:0;:12::52:1;46:15:49:9:0;47:20:47:37;:41::42;:12::44:1;48:31:48:32:0;:20::39:1;:43::49:0;:52::56;:43:::1;:20;:12::58;46:15:49:9;24:76:50:5;;;;:4;52::62::0;;;;53:28:53:35;;:8::37:1;;55:16:55:32:0;:36::37;:8::39:1;56:16:56:33:0;:37::38;:8::40:1;58:31:58:52:0;:21::59:1;59:27:59:28:0;:16::45:1;:49::84:0;:74::83;;:49::84:1;;;:8::86;60:27:60:28:0;:16::35:1;:39::45:0;:48::52;:39:::1;:16;:8::54;61:27:61:28:0;:16::43:1;:47::49:0;:8::51:1;52:22:62:5;;;16:0:63:1",
+    "logs": [],
+    "requires": [
+      {
+        "ip": 20,
+        "line": 25
+      },
+      {
+        "ip": 30,
+        "line": 26
+      },
+      {
+        "ip": 33,
+        "line": 28
+      },
+      {
+        "ip": 44,
+        "line": 31
+      },
+      {
+        "ip": 48,
+        "line": 32
+      },
+      {
+        "ip": 52,
+        "line": 34
+      },
+      {
+        "ip": 63,
+        "line": 35
+      },
+      {
+        "ip": 67,
+        "line": 36
+      },
+      {
+        "ip": 75,
+        "line": 39
+      },
+      {
+        "ip": 82,
+        "line": 40
+      },
+      {
+        "ip": 91,
+        "line": 41
+      },
+      {
+        "ip": 95,
+        "line": 42
+      },
+      {
+        "ip": 100,
+        "line": 43
+      },
+      {
+        "ip": 105,
+        "line": 44
+      },
+      {
+        "ip": 109,
+        "line": 45
+      },
+      {
+        "ip": 113,
+        "line": 47
+      },
+      {
+        "ip": 120,
+        "line": 48
+      },
+      {
+        "ip": 133,
+        "line": 53
+      },
+      {
+        "ip": 137,
+        "line": 55
+      },
+      {
+        "ip": 140,
+        "line": 56
+      },
+      {
+        "ip": 151,
+        "line": 59
+      },
+      {
+        "ip": 158,
+        "line": 60
+      },
+      {
+        "ip": 162,
+        "line": 61
+      }
+    ],
+    "sourceTags": "5:9:pv"
+  },
+  "compiler": {
+    "name": "cashc",
+    "version": "0.14.0",
+    "options": {
+      "enforceFunctionParameterTypes": true,
+      "enforceLocktimeGuard": true
+    }
+  },
+  "updatedAt": "2026-11-16T00:00:00.000Z"
+}

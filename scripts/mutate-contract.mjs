@@ -2,38 +2,55 @@
 // recompiles it with cashc, and runs the named attack tests (test/escrow-attacks.test.ts) against that weaker
 // contract. A mutant is "caught" when at least one attack test fails, which proves that test depends on the line.
 //
-// Run: npm run mutate        (offline: every transaction is checked by a local mock network, nothing is broadcast)
+// Run: npm run mutate        (v1: contracts/LaunchDeskEscrow.cash against test/escrow-attacks.test.ts)
+//      npm run mutate:v2     (v2: contracts/LaunchDeskEscrowV2.cash against test/escrow-v2.test.ts)
+//                            (offline: every transaction is checked by a local mock network, nothing is broadcast)
 //
 // Everything runs in a temporary copy of server/ and the test file, so the repo's contract and artifact are never
 // changed, even if the script is stopped half way.
 import { compileString } from "cashc";
 import { spawnSync } from "node:child_process";
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const SRC = readFileSync(join(ROOT, "contracts", "LaunchDeskEscrow.cash"), "utf8");
-const TEST = "test/escrow-attacks.test.ts";
+const V2 = process.argv.includes("--v2");
+const CONTRACT = V2 ? "contracts/LaunchDeskEscrowV2.cash" : "contracts/LaunchDeskEscrow.cash";
+const SRC = readFileSync(join(ROOT, CONTRACT), "utf8");
+// v2: the 41 v1 attacks re-run against v2 (ESCROW_ATTACK_VERSION=2, coin at vout 1) plus the receipt attacks.
+const TESTS = V2 ? ["test/escrow-attacks.test.ts", "test/escrow-v2.test.ts"] : ["test/escrow-attacks.test.ts"];
+const TEST = TESTS.join(" + ");
+const ARTIFACT_FILE = V2 ? "artifact-v2.ts" : "artifact.ts";
+const ARTIFACT_NAME = V2 ? "escrowArtifactV2" : "escrowArtifact";
+// node_modules may live in a parent folder (e.g. a git worktree inside the main checkout)
+let MODULES = join(ROOT, "node_modules");
+for (let d = ROOT; !existsSync(MODULES) && dirname(d) !== d; d = dirname(d)) MODULES = join(dirname(d), "node_modules");
 
 const tmp = mkdtempSync(join(tmpdir(), "launchdesk-mutate-"));
 const cleanup = () => rmSync(tmp, { recursive: true, force: true });
 process.on("SIGINT", () => (cleanup(), process.exit(130)));
 cpSync(join(ROOT, "server"), join(tmp, "server"), { recursive: true });
 mkdirSync(join(tmp, "test"), { recursive: true });
-cpSync(join(ROOT, TEST), join(tmp, TEST));
+for (const t of TESTS) cpSync(join(ROOT, t), join(tmp, t));
 cpSync(join(ROOT, "package.json"), join(tmp, "package.json"));
-symlinkSync(join(ROOT, "node_modules"), join(tmp, "node_modules"), "dir");
-const TSX = join(ROOT, "node_modules", ".bin", "tsx");
+symlinkSync(MODULES, join(tmp, "node_modules"), "dir");
+const TSX = join(MODULES, ".bin", "tsx");
 
 const artifactTs = (a) =>
-  `// mutant (scripts/mutate-contract.mjs)\nexport const escrowArtifact = ${JSON.stringify(a, null, 2)} as const;\n`;
+  `// mutant (scripts/mutate-contract.mjs)\nexport const ${ARTIFACT_NAME} = ${JSON.stringify(a, null, 2)} as const;\n`;
 function runTests(artifact) {
-  writeFileSync(join(tmp, "server", "escrow", "artifact.ts"), artifactTs(artifact));
-  const r = spawnSync(TSX, [TEST], { cwd: tmp, encoding: "utf8", env: { ...process.env, MOCK_AI: "1" }, timeout: 300_000 });
-  const fails = [...(r.stdout ?? "").matchAll(/^not ok \d+ - (.+)$/gm)].map((m) => m[1]);
-  return { ok: r.status === 0, fails };
+  writeFileSync(join(tmp, "server", "escrow", ARTIFACT_FILE), artifactTs(artifact));
+  let ok = true;
+  const fails = [];
+  for (const t of TESTS) {
+    const env = { ...process.env, MOCK_AI: "1", ...(V2 ? { ESCROW_ATTACK_VERSION: "2" } : {}) };
+    const r = spawnSync(TSX, [t], { cwd: tmp, encoding: "utf8", env, timeout: 300_000 });
+    fails.push(...[...(r.stdout ?? "").matchAll(/^not ok \d+ - (.+)$/gm)].map((m) => m[1]));
+    if (r.status !== 0) ok = false;
+  }
+  return { ok, fails };
 }
 
 // the function each line belongs to, for the table
@@ -54,7 +71,7 @@ try {
     console.error(`The attack tests fail on the unchanged contract (${base.fails.length} failing). Fix that first.`);
     exit = 2;
   } else {
-    console.log(`Contract: contracts/LaunchDeskEscrow.cash · ${targets.length} require lines · tests: ${TEST}\n`);
+    console.log(`Contract: ${CONTRACT} · ${targets.length} require lines · tests: ${TEST}\n`);
     console.log("| # | function | removed line | result | first attack test that caught it |");
     console.log("|---|---|---|---|---|");
     let caught = 0;

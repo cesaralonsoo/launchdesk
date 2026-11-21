@@ -30,3 +30,5 @@
   .ep-check, .ep-out, .ep-how { display: none; }
 }
 @media (max-width: 520px) { .ep-panel { padding: 14px; } }
+.ep-receipt { margin: 0; font-weight: 600; }
+.ep-receipt a { color: var(--c-ink); }

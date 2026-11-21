@@ -71,6 +71,12 @@ customer wallet ──pay──▶ order contract (one P2SH32 address per order)
 
 No other spend is valid. That stays true even for someone holding the LaunchDesk keys.
 
+**v2 (behind `ESCROW_V2`, off by default): a receipt NFT.** [`contracts/LaunchDeskEscrowV2.cash`](contracts/LaunchDeskEscrowV2.cash)
+is the same contract plus one rule: the release must also send the customer's own address 1,000 sats carrying a new
+immutable CashTokens NFT whose category is the payment's txid and whose commitment is the report's SHA-256. So the
+customer's wallet holds proof of which report they bought. Only orders quoted while `ESCROW_V2=1` use it (the version
+is stored per order); every other order keeps the original contract. Tests: `test/escrow-v2.test.ts`, `npm run mutate:v2`.
+
 **One key today, honestly.** In production `ESCROW_ORACLE_WIF` is not set, so the report-signature key is the same
 key as the release key. The release signature already commits to the `OP_RETURN` output, so today the data signature
 adds no second factor. It is a hook for a future independent checker (a separate key, kept off the web host), and
@@ -97,6 +103,8 @@ balance is too low": `test/brake.test.ts` fakes them on purpose to test the spen
   - `test/escrow-attacks.test.ts`: 41 named attacks and controls. They include paying the wrong address, a forged or
     replayed report signature, a fee 1 sat over the limit, extra outputs or inputs, a tampered `OP_RETURN`, token
     minting, an early refund, a refund to someone else, and merging two payments.
+  - v2 (behind `ESCROW_V2`): `test/escrow-v2.test.ts` (27 receipt-NFT controls and attacks) and 2 more end-to-end
+    tests in `test/escrow-flow.test.ts`, which then has 16.
 - **Mutation check (`npm run mutate`).** `scripts/mutate-contract.mjs` removes each of the contract's 15 `require`
   lines in turn, recompiles it with cashc, and runs the attack tests against that weaker contract, in a temporary
   copy (the repo is never changed). It prints a table: 15 of 15 mutants are caught by at least one attack test.

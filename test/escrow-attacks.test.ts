@@ -46,6 +46,12 @@ const OTHER_HASH = reportHashOf("a different, cheaper report");
 const PRICE = 30_000;
 const FEE = 1000;
 
+// The same attacks also run against the v2 contract (contracts/LaunchDeskEscrowV2.cash) with ESCROW_ATTACK_VERSION=2
+// (npm run mutate:v2 does this). Its coin then sits at vout 1, where v2 releases exactly like v1 (no receipt NFT is
+// possible), so every shared require() line is attacked the same way; test/escrow-v2.test.ts covers the receipt branch.
+const VERSION = process.env.ESCROW_ATTACK_VERSION === "2" ? 2 : 1;
+const DEFAULT_VOUT = VERSION === 2 ? 1 : 0;
+
 let txCounter = 0;
 /** A fresh funding coin for `escrow` (at vout 0 unless told otherwise) on its own mock network. */
 function setup(opts: { sats?: number; vout?: number; ref?: string; refund?: string; timeout?: number; token?: Output["token"] } = {}) {
@@ -54,11 +60,12 @@ function setup(opts: { sats?: number; vout?: number; ref?: string; refund?: stri
     { ref: opts.ref ?? REF, merchantAddress: MERCHANT, refundAddress: opts.refund ?? CUSTOMER, timeoutBlocks: opts.timeout ?? 6 },
     KEYS,
     provider,
+    VERSION,
   );
   const sats = opts.sats ?? PRICE;
   const txid = (++txCounter).toString(16).padStart(64, "e");
-  provider.addUtxo(escrow.address, { txid, vout: opts.vout ?? 0, satoshis: BigInt(sats), token: opts.token });
-  const funding: Funding = { txid, vout: opts.vout ?? 0, sats };
+  provider.addUtxo(escrow.address, { txid, vout: opts.vout ?? DEFAULT_VOUT, satoshis: BigInt(sats), token: opts.token });
+  const funding: Funding = { txid, vout: opts.vout ?? DEFAULT_VOUT, sats };
   return { provider, escrow, funding };
 }
 type Ctx = ReturnType<typeof setup>;
@@ -239,7 +246,7 @@ test("attack: release adds an outside input (e.g. to pay the fee or mix in other
 // =====================================================================================================================
 test("replay: report signature from another order (different reference, so different contract) is rejected", async () => {
   const c = setup();
-  const other = makeEscrow({ ref: "LD1:pOther:validate", merchantAddress: MERCHANT, refundAddress: CUSTOMER, timeoutBlocks: 6 }, KEYS, c.provider);
+  const other = makeEscrow({ ref: "LD1:pOther:validate", merchantAddress: MERCHANT, refundAddress: CUSTOMER, timeoutBlocks: 6 }, KEYS, c.provider, VERSION);
   assert.notEqual(other.address, c.escrow.address);
   const replayed = signReport(other, HASH, KEYS);
   await rejectedByContract(c.provider, release(c, [merchantOut(PRICE - FEE), tagOut()], { reportSig: replayed }));
@@ -260,7 +267,7 @@ test("replay: the release-key signature of one payment cannot release a second p
   const c = setup();
   const relHex = buildRelease(c.escrow, c.funding, HASH, KEYS).hex;
   const txid2 = "c".repeat(64);
-  c.provider.addUtxo(c.escrow.address, { txid: txid2, vout: 0, satoshis: BigInt(PRICE) });
+  c.provider.addUtxo(c.escrow.address, { txid: txid2, vout: c.funding.vout, satoshis: BigInt(PRICE) });
   const moved = mutate(relHex, (tx) => {
     tx.inputs[0]!.outpointTransactionHash = hexToBin(txid2);
   });

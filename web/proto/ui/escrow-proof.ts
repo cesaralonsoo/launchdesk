@@ -26,10 +26,12 @@ type Status = {
   reportHash: string | null;
   releaseUrl: string | null;
   refundUrl: string | null;
+  /** v2 orders (ESCROW_V2): the receipt NFT the release gave the customer's wallet. */
+  receipt?: { category: string; commitment: string; txid: string; url: string } | null;
   /** Public values to refund with no LaunchDesk server (contracts/refund-offline.ts); refundAddress only for the owner. */
   refundDetails?: {
     project: string; ref: string; network: string; contractAddress: string; merchantAddress: string; refundAddress: string | null;
-    releasePk: string; oraclePk: string; timeoutBlocks: number; funding: string | null;
+    releasePk: string; oraclePk: string; timeoutBlocks: number; funding: string | null; contractVersion?: number;
   };
 };
 
@@ -96,13 +98,14 @@ function html(id: string, s: Status): string {
   return `<h3>Proof on Bitcoin Cash</h3>
     <p>When this report was delivered, its fingerprint was written into a public Bitcoin Cash transaction. If anyone changes a single letter of the report, the fingerprint no longer matches.</p>
     <div class="ep-fp"><span>Report fingerprint</span><code title="${esc(s.reportHash)}">${esc(s.reportHash)}</code></div>
+    ${s.receipt ? `<p class="ep-receipt">Your receipt NFT is in your wallet. ${link(s.receipt.url, "See it")}</p>` : ""}
     <p class="ep-links">${link(s.releaseUrl, "See the record")}<button type="button" class="v-link ep-check">Check it</button><span class="ep-out" aria-live="polite"></span></p>
     <details class="ep-how"><summary>Check it yourself</summary>
       <ol>
         <li><a href="${esc(base(id))}/report" download="launchdesk-report.json">Download the report data</a> (the exact text that was fingerprinted).</li>
         <li>Get its SHA-256 with any tool. On a Mac or Linux: <code>shasum -a 256 launchdesk-report.json</code>. On Windows: <code>certutil -hashfile launchdesk-report.json SHA256</code>.</li>
         <li>The result should be <code>${esc(short(s.reportHash))}</code> (the full fingerprint above).</li>
-        <li>Open the record. Its last output (OP_RETURN) holds <code>4c4431</code> (“LD1”) followed by the same fingerprint.</li>
+        <li>Open the record. Its OP_RETURN output holds <code>4c4431</code> (“LD1”) followed by the same fingerprint.</li>
       </ol>
       <p>The PDF is a printout of this page, so its own fingerprint differs: check the report data instead.</p>
     </details>`;
@@ -125,7 +128,7 @@ async function check(id: string, out: HTMLElement) {
 /** A small text file with the order's public values and the exact command that rebuilds the refund offline. */
 function downloadRefund(d: NonNullable<Status["refundDetails"]>) {
   const refund = d.refundAddress ?? "<your wallet's bitcoincash: address>";
-  const cmd = `npx tsx contracts/refund-offline.ts --project ${d.project} --refund ${refund} --funding ${d.funding ?? "<txid>:<vout>:<sats>"} --merchant ${d.merchantAddress} --timeout ${d.timeoutBlocks} --net ${d.network} --release-pk ${d.releasePk} --oracle-pk ${d.oraclePk}`;
+  const cmd = `npx tsx contracts/refund-offline.ts --project ${d.project} --refund ${refund} --funding ${d.funding ?? "<txid>:<vout>:<sats>"} --merchant ${d.merchantAddress} --timeout ${d.timeoutBlocks} --net ${d.network} --release-pk ${d.releasePk} --oracle-pk ${d.oraclePk}${d.contractVersion === 2 ? " --version 2" : ""}`;
   const text = `LaunchDesk refund details (public values: no key can be made from them)
 
 Order:             ${d.ref}
