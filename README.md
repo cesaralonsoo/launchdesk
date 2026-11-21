@@ -8,7 +8,7 @@
 > **For the judges, in 4 lines**
 > - **Cool:** an AI team in a 3D office checks your business idea with real sources; the delivered report's SHA-256 is written on chain.
 > - **Slick:** no account. Tap "See a finished company" (free, no wallet), or pay 10¢ with one approval in Selene over WizardConnect.
-> - **Works:** live on BCH mainnet since 16 Nov. Both ways out of the escrow contract ran on mainnet (release and keyless refund), plus a second real order that also bought the 50¢ launch kit. 183 automated tests, 70 of them on the escrow.
+> - **Works:** live on BCH mainnet since 16 Nov. Both ways out of the escrow contract ran on mainnet (release and keyless refund), plus a second real order that also bought the 50¢ launch kit. 212 automated tests, 99 of them on the escrow.
 > - **Money:** a report costs us about 8¢ in AI and sells for $1 from 1 Dec (10¢ during BLAZE). A card's fixed fee (~30¢) is bigger than the whole launch price; on Bitcoin Cash our release fee was 599 sats.
 >
 > Honest limits: today one server key signs the release, and every mainnet payment so far came from the builder's own wallet.
@@ -116,11 +116,11 @@ merchant with the report fingerprint on chain, or back to the customer after the
 price is fixed, and nothing goes to the network. Without `BCH_USD_FIXED`, a few launch kit tests ask a public BCH price feed
 once; they pass offline too.
 
-On 20 Nov 2026 `npm test` printed 183 `node:test` results, all passing (15 + 14 + 41 escrow, then 113 in the last
+On 22 Nov 2026 `npm test` printed 212 `node:test` results, all passing (15 + 16 + 41 + 27 escrow, then 113 in the last
 batch), plus script-style checks that stop at the first failure. Some log lines show API errors such as "credit
 balance is too low": `test/brake.test.ts` fakes them on purpose to test the spend brake. No real API call is made.
 
-- **70 escrow tests.** Every transaction is checked by the real BCH virtual machine (libauth, through CashScript's
+- **99 escrow tests.** Every transaction is checked by the real BCH virtual machine (libauth, through CashScript's
   `MockNetworkProvider`):
   - `test/escrow.test.ts`: 15 tests of the normal paths and the main rejections, plus a $5-sized order;
   - `test/escrow-flow.test.ts`: 14 end-to-end tests through the real app: quote, pay, run, release, refund drill, a
