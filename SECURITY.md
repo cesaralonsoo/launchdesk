@@ -125,8 +125,9 @@ the `OP_RETURN` is `6a 03 4c4431 20 8447cc7290ece01c91673ef4eb8137c9332581040af7
   that weaker contract, in a temporary copy. It prints a table. Result on 16 Nov 2026: 15 of 15 caught, so no single
   check in the contract is untested.
 - **Limit:** the mock network does not track block heights. The tests check the sequence rules the contract enforces.
-  The real wait (6 confirmations) is enforced by Bitcoin Cash nodes. On mainnet, the release path is proven (see the
-  README). The refund drill on mainnet is pending.
+  The real wait (6 confirmations) is enforced by Bitcoin Cash nodes. On mainnet, both paths are proven (see the
+  README): the release on 16 Nov 2026, and on 21 Nov 2026 a refund drill where an early refund was rejected by nodes
+  (`non-BIP68-final`) and the keyless refund went through after 6 blocks (`33219ae2…e4d8`).
 - No outside security review has been done.
 
 ## Other limits worth knowing

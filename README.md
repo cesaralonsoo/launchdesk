@@ -24,11 +24,13 @@ WizardConnect, for a coffee kiosk idea in Barcelona.
 |---|---|---|
 | Payment into the contract | [`b127d21e…6472`](https://blockchair.com/bitcoin-cash/transaction/b127d21e7122fe0201c88aeeee39c1d0b85bd0cceb821673b2e9b6e0a69c6472) | 48,584 sats (10¢) to this order's own contract address, plus an `OP_RETURN` tag `LD1:<project>:validate` |
 | Release after delivery | [`661ca57b…ee23`](https://blockchair.com/bitcoin-cash/transaction/661ca57bd66b7bbc61667724fb104c506b263f68474d6a068a97b5ba91abee23) | 47,985 sats to the merchant (fee 599 sats), plus `OP_RETURN "LD1" 8447cc72…50ecd5`, the SHA-256 of the delivered report |
-| Refund after the timeout | not yet run on mainnet | Tested offline (see below). The mainnet drill is pending |
+| Refund drill: payment | [`16106ef3…1b5a`](https://blockchair.com/bitcoin-cash/transaction/16106ef3936c7f87c21a86ca727fc173fa98923fb1d5578603a9944455081b5a) | 21 Nov 2026: 50,000 sats from Selene into a second order's contract (same contract, same production key) |
+| Refund drill: too early | rejected by the network | Broadcast before 6 blocks: nodes refused it with `non-BIP68-final`. The timeout is enforced by Bitcoin Cash itself, not by us |
+| Refund drill: refund | [`33219ae2…e4d8`](https://blockchair.com/bitcoin-cash/transaction/33219ae2f3831e0ac907e7635936379db7621caf965531c47ddb1e9aa04ee4d8) | After 6 blocks: 49,612 sats back to the customer's address (fee 388 sats). Built with `contracts/refund-offline.ts`, no key and no server |
 
 <img src="docs/deck/bch-proof.png" alt="The 'Proof on Bitcoin Cash' panel of the finished example: both transactions, the report fingerprint and a 'Match' result" width="560">
 
-- The contract address was `bitcoincash:pd092n6eyfv78vms0eed9f463smzmzzpqu5lmqfjnky7fy6wv3kv7azv40dvw` (P2SH32).
+- The contract address was `bitcoincash:pd092n6eyfv78vms0eed9f463smzmzzpqu5lmqfjnky7fy6wv3kv7azv40dvw` (P2SH32) for the release, and `bitcoincash:p0rxfcq9tnzg299m66ys8as58tl2yeuprzr0zdmy4cgjc3s73yayk0ranweju` for the refund drill. So both ways out of the contract have run on mainnet.
 - The fingerprint shown on the report page equals the one on chain. The page's "Check it" button said "Match".
 - The contract is [`contracts/LaunchDeskEscrow.cash`](contracts/LaunchDeskEscrow.cash).
 - [SECURITY.md](SECURITY.md) explains in plain words what we can and cannot do with your money. It includes the honest
