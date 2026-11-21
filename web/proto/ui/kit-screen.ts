@@ -45,7 +45,7 @@ export function kitOfferHtml(cents = 50, sample = false): string {
   <section class="kit-offer">
     <span class="eyebrow" data-st>Next step</span>
     <h2 class="t-display" data-st>Launch kit</h2>
-    <p class="ko-sub" data-st>Your logo, your website and your 30-day plan · ${usd(cents)}. Made for this idea in about a minute.</p>
+    <p class="ko-sub" data-st>Your logo, your website and your 30-day plan · ${usd(cents)}. Made for this idea: the website goes online first, the rest follows within minutes.</p>
     <ul class="ko-list" data-st>
       <li>${I.brand(18)}<span><b>Your logo</b>Three options to choose from. Download it for print and social.</span></li>
       <li>${I.globe(18)}<span><b>Your website</b>Online straight away, with your own link and real photos. A design made just for your idea follows a few minutes later. Customers can reserve and pay.</span></li>

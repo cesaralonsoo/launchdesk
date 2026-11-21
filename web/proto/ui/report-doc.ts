@@ -102,7 +102,7 @@ export function workHtml(f: ProtoFlowV7): string {
     <header class="wk-head" data-st>
       <span class="eyebrow">Research in progress</span>
       <h2 class="t-display">Your team is on it</h2>
-      <p class="wk-sub">They research with real sources. You get one complete report to read when they finish, usually in about a minute.</p>
+      <p class="wk-sub">They research with real sources. You get one complete report to read when they finish, usually in 60 to 90 seconds.</p>
     </header>
     <div class="wk-prog" data-st>${progressBar(f)}</div>
     <ol class="wk-team" data-st>${teamRows(f)}</ol>
