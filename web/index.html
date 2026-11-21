@@ -113,7 +113,7 @@
             <div class="h-steps">
               <article class="h-step" style="--c:var(--s1)">
                 <div class="h-step-h"><span class="h-n">1</span><b>Research</b><span class="h-price"><span data-price="validate">10¢</span></span></div>
-                <p class="h-time">About 2 minutes</p>
+                <p class="h-time">First finding in ~12 s · verdict in ~90 s</p>
                 <p>Three to five analysts picked for your idea read real sources: demand, competitors, prices, rules. You get a score out of 10 with the formula on show, and a Go, Test first or No-go.</p>
                 <div class="h-vis h-vis-rep" role="img" aria-label="Score of the finished example: 5.5 out of 10, Test first, from four weighted factors"><div class="h-rep-top"><span class="h-rep-s">5.5<small>/10</small></span><span class="h-rep-v">Test first</span></div><ul class="h-rep-f"><li><span>Customers &amp; demand <em>24%</em></span><i><b style="width:60%;background:#22A06B"></b></i><strong>6.0</strong></li><li><span>Competition &amp; alternatives <em>29%</em></span><i><b style="width:50%;background:#3B82F6"></b></i><strong>5.0</strong></li><li><span>Money <em>18%</em></span><i><b style="width:50%;background:#CA8A04"></b></i><strong>5.0</strong></li><li><span>Risks &amp; how to start <em>29%</em></span><i><b style="width:60%;background:#8B7CF6"></b></i><strong>6.0</strong></li></ul><p class="h-rep-m">0.24×6 + 0.29×5 + 0.18×5 + 0.29×6 = 5.5</p><span class="h-rep-p">Paid on Bitcoin Cash · check the proof</span></div>
                 <p class="h-cap"><span class="h-src">Real report</span> · <span data-h="cap-report">Sortida · coffee kiosk in Barcelona · 5.5 Test first</span></p>
@@ -126,7 +126,7 @@
                   <div class="h-logo"><img src="./public/home/shot-logo.webp" width="264" height="150" alt="The chosen logo of the finished example"><span>Chosen logo<br>from the studio's options</span></div>
                   <div class="h-browser"><div class="h-bar"><i></i><i></i><i></i><span data-h="site-url">/s/sortida</span></div><img src="./public/home/shot-site.webp" width="1100" height="621" loading="lazy" alt="The website the launch kit made for the finished example"></div>
                 </div>
-                <p class="h-cap"><span class="h-src">Real kit</span> · from a second run of the same idea · <a href="/s/sortida" data-h="site-link" target="_blank" rel="noopener">the site is online →</a></p>
+                <p class="h-cap"><span class="h-src">Real AI kit</span> · made in an unpaid test run of the same idea · <a href="/s/sortida" data-h="site-link" target="_blank" rel="noopener">the site is online →</a></p>
               </article>
               <article class="h-step" style="--c:var(--s3)">
                 <div class="h-step-h"><span class="h-n">3</span><b>Offices</b><span class="h-price"><span data-price="offices">from 2¢</span></span></div>
@@ -144,7 +144,7 @@
           <div class="h-wrap">
             <p class="h-kick"><i class="h-dot"></i>Bitcoin Cash escrow</p>
             <h2 class="h-h2">Your <span data-price="validate">10¢</span> waits in a contract, not in our wallet.</h2>
-            <p class="h-lede">You pay into a CashScript contract on Bitcoin Cash. We can only take the money by writing your report's SHA-256 fingerprint on-chain. If no report comes, after 6 blocks (about an hour) it goes back to your wallet: our server sends it, and if it is down, anyone can. It can go nowhere else.</p>
+            <p class="h-lede">You pay into a CashScript contract on Bitcoin Cash. We can only take the money by writing your report's SHA-256 fingerprint on-chain. If no report comes, after 6 blocks (about an hour) it goes back to your wallet: our server sends it, and if it is down, you can send it yourself with the refund file you download. It can go nowhere else.</p>
             <div class="h-bch">
               <div class="h-flow">
                 <svg class="h-flow-h" viewBox="0 0 1000 200" role="img" aria-label="Locked, then delivered, then released; or a refund after 6 blocks">
@@ -192,7 +192,7 @@
               <h3 id="h-guar-t">What the contract guarantees, and what you still trust us with</h3>
               <ul>
                 <li><b>Release needs our key and your report's fingerprint.</b> The contract checks that the payout writes <code>OP_RETURN "LD1" &lt;SHA-256 of the report&gt;</code>. On mainnet: <a href="https://blockchair.com/bitcoin-cash/transaction/661ca57bd66b7bbc61667724fb104c506b263f68474d6a068a97b5ba91abee23" target="_blank" rel="noopener">661ca57b…ee23 ↗</a></li>
-                <li><b>Refund needs no key at all.</b> After 6 blocks anyone can send it, and it can only go to your own address. A refund sent too early was refused by the network (<code>non-BIP68-final</code>); after 6 blocks it went through: <a href="https://blockchair.com/bitcoin-cash/transaction/33219ae2f3831e0ac907e7635936379db7621caf965531c47ddb1e9aa04ee4d8" target="_blank" rel="noopener">33219ae2…e4d8 ↗</a></li>
+                <li><b>Refund needs no key at all.</b> After 6 blocks anyone holding the order's refund file can send it, and it can only go to your own address. A refund sent too early was refused by the network (<code>non-BIP68-final</code>); after 6 blocks it went through: <a href="https://blockchair.com/bitcoin-cash/transaction/33219ae2f3831e0ac907e7635936379db7621caf965531c47ddb1e9aa04ee4d8" target="_blank" rel="noopener">33219ae2…e4d8 ↗</a></li>
                 <li><b>What you trust us with:</b> deciding that a report is ready, and its quality. The fingerprint proves which report we delivered, not that it is good. If we never deliver, Bitcoin Cash gives your money back, not us.</li>
               </ul>
               <p><a href="https://github.com/cesaralonsoo/launchdesk/blob/main/contracts/LaunchDeskEscrow.cash" target="_blank" rel="noopener">Read the contract (LaunchDeskEscrow.cash) ↗</a> · <a href="https://github.com/cesaralonsoo/launchdesk/blob/main/SECURITY.md" target="_blank" rel="noopener">Security notes ↗</a> · 70 escrow tests, 41 of them attack cases and controls</p>
@@ -265,7 +265,7 @@
             <div class="h-faq">
               <details><summary>Is the research real?</summary><p>On paid runs, yes: analysts read the web and cite every source. The tour and practice runs use sample data and say so.</p></details>
               <details><summary>What if the verdict is No-go?</summary><p>You keep the report. A No-go for <span data-price="validate">10¢</span> is cheaper than finding out in six months. Try another idea.</p></details>
-              <details><summary>Why Bitcoin Cash?</summary><p>A <span data-price="validate">10¢</span> payment only works when the fee is a fraction of a cent, and the escrow is a contract anyone can check.</p></details>
+              <details><summary>Why Bitcoin Cash, and not a card?</summary><p>A card charge carries a fixed fee of about 30¢ (Stripe in the US: 2.9% + 30¢), more than the whole <span data-price="validate">10¢</span> price. On Bitcoin Cash the fee is a fraction of a cent. The contract also gives you a refund no one can block: no key, no chargeback form, no account, no card details.</p></details>
               <details><summary>Which wallet do I need?</summary><p>A Bitcoin Cash wallet that supports WizardConnect: Selene, Cashonize or Paytaca. You scan its QR code or open it on the same device. You can read the finished example without a wallet.</p></details>
             </div>
           </div>

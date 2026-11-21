@@ -155,6 +155,8 @@ the `OP_RETURN` is `6a 03 4c4431 20 8447cc7290ece01c91673ef4eb8137c9332581040af7
   `GET /api/escrow/:id/:stage/report` (the exact report bytes whose SHA-256 is on chain) need no key. This is on
   purpose: anyone holding the project link can already read the report, and the fingerprint is only useful if
   anyone can re-hash it. Your refund address is returned only with the owner key.
+- The finished example on the home page has its proof at `GET /api/examples/:id/proof` and
+  `GET /api/examples/:id/proof/report` (for example `ex-coffee-bcn`): the 16 Nov 2026 mainnet payment and release.
 
 ## Reporting a problem
 
