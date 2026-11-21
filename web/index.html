@@ -45,7 +45,8 @@
     <div id="ui"></div>
 
     <div id="ld-home" class="ldh">
-      <div class="h-blaze" id="blaze-top" role="region" aria-label="BCH BLAZE 2026"><div class="h-blaze-in"><span class="h-blaze-ev"><i aria-hidden="true"></i><b>BCH BLAZE 2026</b></span></div></div>
+      <!-- BCH BLAZE 2026 banner, in the HTML itself so it shows before any script runs (the script then adds Copy). -->
+      <div class="h-blaze" id="blaze-top" role="region" aria-label="BCH BLAZE 2026"><div class="h-blaze-in"><span class="h-blaze-ev"><i aria-hidden="true"></i><b><span class="h-blaze-bch">BCH </span>BLAZE 2026</b><span class="h-blaze-tr"> · Mainnet track</span></span><span class="h-blaze-r"><a href="https://docs.google.com/presentation/d/14SM9PMZJ2VYIJ2yJ_TzGsC_Pdk8lL67EFjpPrYioalM" target="_blank" rel="noopener">Slides<svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M4.5 2.5h5v5M9.5 2.5 3 9"/></svg></a><a class="h-blaze-vid" href="https://youtu.be/I7OzmWD8n7Y" target="_blank" rel="noopener">Video<svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M4.5 2.5h5v5M9.5 2.5 3 9"/></svg></a><a href="https://github.com/cesaralonsoo/launchdesk" target="_blank" rel="noopener">Code<svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M4.5 2.5h5v5M9.5 2.5 3 9"/></svg></a><a class="h-blaze-new" href="https://github.com/cesaralonsoo/launchdesk/commit/877ea57" target="_blank" rel="noopener" title="No earlier code or demo: the first commit is from 14 Nov 2026, after the Kick-Off">Built during BLAZE<svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M4.5 2.5h5v5M9.5 2.5 3 9"/></svg></a><span class="h-blaze-vote"><span class="h-blaze-vl">Vote with </span><b>EMBER2026</b> <code title="bitcoincash:zp9d679zvayvudj65nd9zlgezvjplr8g3v7hftqmju"><span class="h-blaze-al">bitcoincash:zp9d679zvayvudj65nd9zlgezvjplr8g3v7hftqmju</span><span class="h-blaze-as" aria-hidden="true">zp9d…qmju</span></code></span></span></div></div>
       <header class="h-top">
         <div class="h-top-l">
           <a class="h-brand" href="/" aria-label="LaunchDesk home">
@@ -186,6 +187,15 @@
                 </div>
                 <p class="h-fine">The <span data-price="build">50¢</span> kit and office tasks are paid straight from your wallet, not held in a contract. LaunchDesk never holds your keys.</p>
               </div>
+            </div>
+            <div class="h-guar" aria-labelledby="h-guar-t">
+              <h3 id="h-guar-t">What the contract guarantees, and what you still trust us with</h3>
+              <ul>
+                <li><b>Release needs our key and your report's fingerprint.</b> The contract checks that the payout writes <code>OP_RETURN "LD1" &lt;SHA-256 of the report&gt;</code>. On mainnet: <a href="https://blockchair.com/bitcoin-cash/transaction/661ca57bd66b7bbc61667724fb104c506b263f68474d6a068a97b5ba91abee23" target="_blank" rel="noopener">661ca57b…ee23 ↗</a></li>
+                <li><b>Refund needs no key at all.</b> After 6 blocks anyone can send it, and it can only go to your own address. A refund sent too early was refused by the network (<code>non-BIP68-final</code>); after 6 blocks it went through: <a href="https://blockchair.com/bitcoin-cash/transaction/33219ae2f3831e0ac907e7635936379db7621caf965531c47ddb1e9aa04ee4d8" target="_blank" rel="noopener">33219ae2…e4d8 ↗</a></li>
+                <li><b>What you trust us with:</b> deciding that a report is ready, and its quality. The fingerprint proves which report we delivered, not that it is good. If we never deliver, Bitcoin Cash gives your money back, not us.</li>
+              </ul>
+              <p><a href="https://github.com/cesaralonsoo/launchdesk/blob/main/contracts/LaunchDeskEscrow.cash" target="_blank" rel="noopener">Read the contract (LaunchDeskEscrow.cash) ↗</a> · <a href="https://github.com/cesaralonsoo/launchdesk/blob/main/SECURITY.md" target="_blank" rel="noopener">Security notes ↗</a> · 70 escrow tests, 41 of them attack cases and controls</p>
             </div>
           </div>
         </section>
