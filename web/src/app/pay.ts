@@ -84,7 +84,7 @@ function connectView(opts: { onExample?: () => void } = {}): ConnectView {
   const phone = h(
     "div",
     { class: "pc-row pc-phone" },
-    h("div", { class: "pc-h" }, h("b", null, "BCH wallet on your phone"), h("span", { class: "pc-sub" }, "Scan with Selene, Cashonize or Paytaca.")),
+    h("div", { class: "pc-h" }, h("b", null, "BCH wallet on your phone"), h("span", { class: "pc-sub" }, "Scan with Selene or another WizardConnect wallet.")),
     h(
       "div",
       { class: "pc-pair" },
@@ -114,7 +114,7 @@ function connectView(opts: { onExample?: () => void } = {}): ConnectView {
       h(
         "ol",
         null,
-        h("li", null, "Install Selene or Paytaca on your phone."),
+        h("li", null, "Install the Selene wallet on your phone."),
         h("li", null, "Add $1 of BCH from any exchange."),
         h("li", null, "Come back and scan the code above."),
       ),

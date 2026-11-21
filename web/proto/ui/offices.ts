@@ -86,7 +86,7 @@ function mountTaskPay(slot: HTMLElement, d: TaskPayDeps): () => void {
       const s = w.walletState();
       if (s === "ready") return set(`<div class="pl-with"><span>Pay with</span><b>${esc(w.walletName())}</b></div><button class="btn btn-primary btn-pay" type="button" data-ofp="pay"><span class="b-lbl">Pay ${cents(d.cents)} and run</span></button>${testLink}`);
       if (s === "pairing" || s === "connecting") return set(`<div class="pl-with"><span class="pl-spin"></span><span>Waiting for your wallet</span></div>${testLink}`);
-      set(`<button class="btn btn-primary btn-pay" type="button" data-ofp="connect"><span class="b-lbl">Connect wallet</span></button><p class="pl-hint">WizardConnect · Selene, Cashonize, Paytaca</p>${testLink}`);
+      set(`<button class="btn btn-primary btn-pay" type="button" data-ofp="connect"><span class="b-lbl">Connect wallet</span></button><p class="pl-hint">WizardConnect · tested with Selene</p>${testLink}`);
     };
     const showQr = () => {
       try {

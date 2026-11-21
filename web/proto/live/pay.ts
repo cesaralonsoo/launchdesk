@@ -131,7 +131,7 @@ export function mountPay(root: HTMLElement, d: PayDeps): () => void {
       return set(`<div class="pl-with"><span class="pl-spin"></span><span>Reconnecting to your wallet</span></div>${dev()}`);
     }
     if (s === "pairing") return code(pair);
-    set(`${btn("connect", "Connect wallet")}<p class="pl-hint">WizardConnect · Selene, Cashonize, Paytaca</p>${dev()}`);
+    set(`${btn("connect", "Connect wallet")}<p class="pl-hint">WizardConnect · tested with Selene</p>${dev()}`);
   }
   // pair()/newPairing() emit "pairing" before their code exists: the wallet listener must not re-enter them.
   let pairing = false;

@@ -1,9 +1,17 @@
 # LaunchDesk
 
 
-**[Live demo](https://launchdesk-bch.onrender.com)** · <!-- SLIDES_URL -->**[Slides](https://docs.google.com/presentation/d/14SM9PMZJ2VYIJ2yJ_TzGsC_Pdk8lL67EFjpPrYioalM/edit?usp=sharing)** · <!-- BUIDL_URL -->**[Finished example](https://launchdesk-bch.onrender.com/p/ex-coffee-bcn)** · **[Video (2 min)](https://youtu.be/I7OzmWD8n7Y)** · **[BUIDL](https://dorahacks.io/build/51438)**
+**[Live demo](https://launchdesk-bch.onrender.com)** · <!-- SLIDES_URL -->**[Slides](https://docs.google.com/presentation/d/14SM9PMZJ2VYIJ2yJ_TzGsC_Pdk8lL67EFjpPrYioalM/edit?usp=sharing)** · **[Finished example](https://launchdesk-bch.onrender.com/p/ex-coffee-bcn)** · **[Video (2 min)](https://youtu.be/I7OzmWD8n7Y)** · <!-- BUIDL_URL -->**[BUIDL](https://dorahacks.io/build/51438)**
 
 **Your startup team, for cents. Paid in BCH.**
+
+> **For the judges, in 4 lines**
+> - **Cool:** an AI team in a 3D office checks your business idea with real sources; the delivered report's SHA-256 is written on chain.
+> - **Slick:** no account. Tap "See a finished company" (free, no wallet), or pay 10¢ with one approval in Selene over WizardConnect.
+> - **Works:** live on BCH mainnet since 16 Nov. Both ways out of the escrow contract ran on mainnet (release and keyless refund), plus a second real order that also bought the 50¢ launch kit. 183 automated tests, 70 of them on the escrow.
+> - **Money:** a report costs us about 8¢ in AI and sells for $1 from 1 Dec (10¢ during BLAZE). A card's fixed fee (~30¢) is bigger than the whole launch price; on Bitcoin Cash our release fee was 599 sats.
+>
+> Honest limits: today one server key signs the release, and every mainnet payment so far came from the builder's own wallet.
 
 <img src="docs/deck/cover-home.png" alt="The LaunchDesk home page: a 3D office, the idea box with the Validate button, and the 'See a finished company' link" width="420">
 
@@ -44,7 +52,7 @@ WizardConnect, for a coffee kiosk idea in Barcelona.
 0. No wallet? Open https://launchdesk-bch.onrender.com and tap **"See a finished company"** under the idea box. It opens a real run (a coffee kiosk in
    Barcelona, paid 10¢ on mainnet) on its report, the proof panel and its launch kit, in about 5 seconds.
 1. Open the demo at https://launchdesk-bch.onrender.com and type a business idea.
-2. Pay **10¢** (launch price until 30 Nov 2026, then $1; see [Prices](#prices)) from a WizardConnect wallet (Selene, Cashonize, Paytaca). The money goes into a contract for this
+2. Pay **10¢** (launch price until 30 Nov 2026, then $1; see [Prices](#prices)) from a WizardConnect wallet (tested with Selene, on the web, Android and iOS). The money goes into a contract for this
    order only. It is held there, not paid to us yet.
 3. The team writes the report while you watch, with real source links. A full run took 78–102 seconds in our live
    tests.
@@ -57,6 +65,25 @@ If no report arrives, the contract lets anyone send the money back to the paying
 after the payment confirms. No signature is needed. Our server sends that refund by itself while it is running; if it
 is down, anyone can still send it with `contracts/refund-offline.ts` and the "Download refund details" file from the
 proof panel (public values only).
+
+## Business
+
+| Step | AI cost (measured, 21 Nov order) | BLAZE price (until 30 Nov) | Price from 1 Dec | Gross margin from 1 Dec |
+|---|---|---|---|---|
+| Research report (escrowed) | about 8¢ | 10¢ | $1 | about 92% |
+| Launch kit (logo, live website, 30-day plan) | about 27¢ | 50¢ | $5 | about 95% |
+| Office tasks | real cost | 3× real cost, from 2¢ | same | about 67% |
+
+- **Who pays:** people about to put savings into a small business (a kiosk, a van, a shop, a local service) who would
+  otherwise skip research. Reports search in the idea's own language and currency; both mainnet orders were Spanish ideas.
+- **Why Bitcoin Cash, not a card:** a card charge costs 2.9% + 30¢ (Stripe, US), more than a 10¢ sale and a third of a $1
+  sale. On BCH the release cost 599 sats, and the refund is enforced by the contract, not by our goodwill.
+- **Every kit makes a new BCH merchant:** the generated website's "Reserve" button is a Bitcoin Cash QR that pays the
+  founder's own wallet. LaunchDesk takes no cut and never holds that money.
+- **Spend is capped in code** (`REPORT_CAP_USD`, `KIT_SPEND_CAP_CENTS`), so a run cannot cost more than it sells for. If a
+  report fails, the escrow returns the money and we absorb the AI cost.
+- **Where we are, honestly:** two real orders on mainnet, both paid by the builder, plus a refund drill. No outside
+  customer yet; the next milestone is ten paid reports from people we do not know.
 
 ## How the escrow works
 
